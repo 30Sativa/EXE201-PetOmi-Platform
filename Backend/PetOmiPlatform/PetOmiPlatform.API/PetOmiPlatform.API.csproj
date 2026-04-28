@@ -15,4 +15,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PetOmiPlatform.Application\PetOmiPlatform.Application.csproj" />
+    <ProjectReference Include="..\PetOmiPlatform.Infrastructure\PetOmiPlatform.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

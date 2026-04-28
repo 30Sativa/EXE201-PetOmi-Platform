@@ -1,3 +1,6 @@
 <Solution>
   <Project Path="PetOmiPlatform.API/PetOmiPlatform.API.csproj" />
+  <Project Path="PetOmiPlatform.Application/PetOmiPlatform.Application.csproj" />
+  <Project Path="PetOmiPlatform.Domain/PetOmiPlatform.Domain.csproj" />
+  <Project Path="PetOmiPlatform.Infrastructure/PetOmiPlatform.Infrastructure.csproj" />
 </Solution>

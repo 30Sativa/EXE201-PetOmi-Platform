@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\PetOmiPlatform.Application\PetOmiPlatform.Application.csproj" />
+    <ProjectReference Include="..\PetOmiPlatform.Domain\PetOmiPlatform.Domain.csproj" />
+  </ItemGroup>
+
 </Project>

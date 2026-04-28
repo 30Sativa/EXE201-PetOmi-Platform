@@ -1,75 +1,77 @@
-# React + TypeScript + Vite
+# My React App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## 🚀 Tech Stack
 
-Currently, two official plugins are available:
+- React + TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Zustand
+- React Hook Form + Zod
+- Axios
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📦 Setup
 
-## React Compiler
-
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
-
-Note: This will impact Vite dev & build performances.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🔧 Scripts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev      # chạy local
+npm run build    # build production
+npm run preview  # xem bản build
+npm run lint     # lint
 ```
+
+## ⚙️ Environment
+
+- Tạo file `.env` nếu cần cấu hình API hoặc biến môi trường khác.
+- Ví dụ (tùy dự án):
+
+```bash
+VITE_API_BASE_URL=https://api.example.com
+```
+
+## 📁 Structure
+
+```
+src/
+  components/
+  pages/
+  stores/
+  services/
+  schemas/
+```
+
+## 🧩 Folder Details
+
+- `components/`: UI dùng lại (button, modal, table, form field...).
+- `pages/`: màn hình chính (route level).
+- `stores/`: global state với Zustand.
+- `services/`: gọi API qua Axios, tách theo domain.
+- `schemas/`: validation schema dùng Zod.
+
+## 🔌 API Conventions
+
+- Mỗi domain tách một file service riêng.
+- Không gọi API trực tiếp trong component UI, luôn đi qua `services/`.
+- Trả dữ liệu đã được normalize nếu cần.
+
+## 🧠 State Management
+
+- Zustand chỉ dùng cho global state (auth, user, settings, cart...).
+- Local state nên dùng `useState` hoặc `useReducer` trong component.
+
+## 📝 Forms
+
+- Form dùng React Hook Form + Zod.
+- Schema đặt tại `schemas/` và import vào form.
+- Ưu tiên `zodResolver` để validate.
+
+## 🧠 Notes
+
+- Zustand chi dung cho global state
+- API goi qua services/
+- Form dung RHF + Zod

@@ -15,7 +15,6 @@
     <Folder Include="External\" />
     <Folder Include="Caching\" />
     <Folder Include="Identity\" />
-    <Folder Include="Persistence\DbContext\" />
     <Folder Include="Services\" />
     <Folder Include="Repositories\" />
   </ItemGroup>

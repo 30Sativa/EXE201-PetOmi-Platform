@@ -13,7 +13,7 @@ namespace PetOmiPlatform.Infrastructure
         {
             //  DbContext (DB-first)
             services.AddDbContext<PetOmniDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("Default")));
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
             //  Repositories
             //services.AddScoped<IUserRepository, UserRepository>();

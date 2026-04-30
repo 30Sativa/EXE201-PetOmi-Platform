@@ -1,5 +1,6 @@
 ﻿using PetOmiPlatform.Domain.Common;
 using PetOmiPlatform.Domain.Exceptions;
+using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
@@ -48,7 +49,7 @@ namespace PetOmiPlatform.Domain.Entities
             bool emailVerified,
             int failedLoginAttempts,
             DateTime? lockoutUntil,
-            DateTime createAt,
+            DateTime createdAt,
             DateTime? updatedAt,
             DateTime? lastLoginAt,
             DateTime? deletedAt,
@@ -62,7 +63,7 @@ namespace PetOmiPlatform.Domain.Entities
                 EmailVerified = emailVerified,
                 FailedLoginAttempts = failedLoginAttempts,
                 LockoutUntil = lockoutUntil,
-                CreatedAt = createAt,
+                CreatedAt = createdAt,
                 UpdatedAt = updatedAt,
                 LastLoginAt = lastLoginAt,
                 DeletedAt = deletedAt,
@@ -72,15 +73,33 @@ namespace PetOmiPlatform.Domain.Entities
         }
         // === Factory Methods (Creation Logic) ===
 
+        public static UserDomain Create(Email email, PasswordHash password)
+        {
+            return new UserDomain(email, password);
+        }
 
         // === Behavior Methods (Domain Logic) ===
+
+        public void ValidateLogin(string password, IPasswordHasher passwordHasher) 
+        {
+            EnsureCanLogin();
+            if(!passwordHasher.Verify(password, PasswordHash.Value))
+            {
+                RecordLoginFailure();
+                throw new DomainException("Mật khẩu không đúng.");
+            }
+             RecordLoginSuccess();
+        }
+
+
         public void VerifyEmail()
         {
+            if (EmailVerified) { throw new DomainException("Email đã được xác minh trước đó. "); }
             EmailVerified = true;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void RecordLoginSuccess()
+        public void RecordLoginSuccess()    
         {
             FailedLoginAttempts = 0;
             LockoutUntil = null;

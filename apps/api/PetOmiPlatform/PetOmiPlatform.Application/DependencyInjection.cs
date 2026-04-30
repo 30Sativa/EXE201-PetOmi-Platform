@@ -23,11 +23,12 @@ namespace PetOmiPlatform.Application
             services.AddValidatorsFromAssembly(assembly);
 
             // Pipeline Behaviors (thứ tự QUAN TRỌNG)
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
+            // Thứ tự đúng — ngoài vào trong
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));           // 1. Log request
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>)); // 2. Bắt exception
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));        // 3. Validate trước
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));       // 4. Transaction sau
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));       // 5. Đo performance
 
             return services;
         }

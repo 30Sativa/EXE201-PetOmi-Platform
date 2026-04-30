@@ -16,9 +16,9 @@
     <Folder Include="Caching\" />
     <Folder Include="Identity\" />
     <Folder Include="Services\" />
-    <Folder Include="Repositories\" />
   </ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
 			<PrivateAssets>all</PrivateAssets>
@@ -31,5 +31,6 @@
 		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.7" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.7" />
+		<PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
 	</ItemGroup>
 </Project>

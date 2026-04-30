@@ -67,8 +67,12 @@ namespace PetOmiPlatform.Domain.Entities
 
         //=== Factory method for creating a new refresh token ===
 
-
+        public static RefreshTokensDomain Create(Guid userId, string tokenHash, int days = 7)
+        {
+            return new RefreshTokensDomain(userId, tokenHash, DateTime.UtcNow.AddDays(days));
+        }
         //=== Behavior Methods (Domain Logic) ===
+
 
 
         public bool IsExpired()
@@ -88,6 +92,10 @@ namespace PetOmiPlatform.Domain.Entities
             if (!IsActive())
             {
                 throw new DomainException("Không thể sử dụng một token đã bị thu hồi hoặc đã hết hạn.");
+            }
+            if(IsReuseAttack())
+            {
+                throw new DomainException("Phát hiện tấn công tái sử dụng token. Token đã bị thu hồi và có token thay thế.");
             }
             LastUsedAt = DateTime.UtcNow;
         }
@@ -121,10 +129,10 @@ namespace PetOmiPlatform.Domain.Entities
         public void EnsureValid()
         {
             if (IsRevoked)
-                throw new Exception("Token revoked");
+                throw new DomainException("Token đã bị thu hồi.");
 
             if (IsExpired())
-                throw new Exception("Token expired");
+                throw new DomainException("Token đã hết hạn.");
         }
 
     }

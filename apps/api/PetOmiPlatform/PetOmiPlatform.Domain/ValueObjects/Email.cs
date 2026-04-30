@@ -2,36 +2,39 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PetOmiPlatform.Domain.ValueObjects
 {
     public sealed class Email : IEquatable<Email>
     {
+        // Regex chuẩn hơn 
+        private static readonly Regex EmailRegex = new(
+            @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+            RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
         public string Value { get; }
         public string NormalizedValue { get; }
 
         public Email(string value)
         {
-            if(string.IsNullOrEmpty(value)) throw new DomainException("Email không được để trống");
-            if(!value.Contains("@")) throw new DomainException("Email không hợp lệ");
+            if (string.IsNullOrWhiteSpace(value))
+                throw new DomainException("Email không được để trống");
 
-            Value = value.Trim();
-            NormalizedValue = Value.ToLower();
+            value = value.Trim();
+
+            if (!EmailRegex.IsMatch(value))
+                throw new DomainException("Email không hợp lệ");
+
+            Value = value;
+            NormalizedValue = value.ToLowerInvariant();
         }
 
-        public bool Equals(Email? other)
-        {
-            return other is not null &&  NormalizedValue == other.NormalizedValue;
-        }
+        public bool Equals(Email? other) =>
+            other is not null && NormalizedValue == other.NormalizedValue;
 
-        public override bool Equals(object? obj)
-        {
-            return Equals(obj as Email);
-        }
-
-        public override int GetHashCode()
-        {
-            return NormalizedValue.GetHashCode();
-        }
+        public override bool Equals(object? obj) => Equals(obj as Email);
+        public override int GetHashCode() => NormalizedValue.GetHashCode();
+        public override string ToString() => Value;
     }
 }

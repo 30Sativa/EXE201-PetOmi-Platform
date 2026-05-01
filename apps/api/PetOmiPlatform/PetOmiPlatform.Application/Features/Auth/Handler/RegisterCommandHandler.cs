@@ -5,6 +5,7 @@ using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
+using PetOmiPlatform.Domain.Interfaces.Services;
 using PetOmiPlatform.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;

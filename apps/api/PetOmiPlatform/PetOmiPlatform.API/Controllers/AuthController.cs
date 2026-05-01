@@ -6,6 +6,8 @@ using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Feature.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Features.Auth.Command;
+using PetOmiPlatform.Application.Features.Auth.DTOs.Request;
+using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -23,6 +25,13 @@ namespace PetOmiPlatform.API.Controllers
         {
             var result = await Mediator.Send(new RegisterCommand(request));
             return Ok(BaseResponse<RegisterResponse>.Ok(result));
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(LoginRequest request)
+        {
+            var result = await Mediator.Send(new LoginCommand(request));
+            return Ok(BaseResponse<LoginResponse>.Ok(result));
         }
     }
 }

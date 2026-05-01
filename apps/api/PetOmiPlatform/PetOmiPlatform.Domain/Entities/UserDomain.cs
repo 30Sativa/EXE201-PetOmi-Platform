@@ -1,6 +1,6 @@
 ﻿using PetOmiPlatform.Domain.Common;
 using PetOmiPlatform.Domain.Exceptions;
-using PetOmiPlatform.Domain.Interfaces.Repositories;
+using PetOmiPlatform.Domain.Interfaces.Services;
 using PetOmiPlatform.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;

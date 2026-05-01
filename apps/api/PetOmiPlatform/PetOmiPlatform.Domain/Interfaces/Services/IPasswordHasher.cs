@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PetOmiPlatform.Domain.Interfaces.Repositories
+namespace PetOmiPlatform.Domain.Interfaces.Services
 {
     public interface IPasswordHasher
     {

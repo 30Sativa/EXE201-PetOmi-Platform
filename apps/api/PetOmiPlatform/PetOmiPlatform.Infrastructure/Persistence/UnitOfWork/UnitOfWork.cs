@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Domain.Interfaces;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 using System;
 using System.Collections.Generic;

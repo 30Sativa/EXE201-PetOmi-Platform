@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using PetOmiPlatform.Application.Feature.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using System;
 using System.Collections.Generic;
@@ -7,9 +6,9 @@ using System.Text;
 
 namespace PetOmiPlatform.Application.Features.Auth.Validation
 {
-    public class RegisterCommandValidator : AbstractValidator<RegisterCommand>
+    public class LoginCommandValidator : AbstractValidator<LoginCommand>
     {
-        public RegisterCommandValidator()
+        public LoginCommandValidator()
         {
             RuleFor(x => x.Request.Email)
                 .NotEmpty().WithMessage("Email không được để trống")

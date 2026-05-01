@@ -1,9 +1,9 @@
 ﻿using Org.BouncyCastle.Crypto.Generators;
-using PetOmiPlatform.Domain.Interfaces.Repositories;
 using BCrypt.Net;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using PetOmiPlatform.Domain.Interfaces.Services;
 
 namespace PetOmiPlatform.Infrastructure.Security.PasswordHasher
 {

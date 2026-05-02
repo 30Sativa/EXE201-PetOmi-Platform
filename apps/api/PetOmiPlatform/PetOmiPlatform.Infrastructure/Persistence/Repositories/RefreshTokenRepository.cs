@@ -22,6 +22,17 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = refreshToken.ToEntity();
             await _context.RefreshTokens.AddAsync(entity);
         }
+
+        public async Task<RefreshTokensDomain> GetActiveTokenBySessionIdAsync(Guid sessionId)
+        {
+            // UserSessions giữ RefreshTokenId → join để lấy token
+            var session = await _context.UserSessions
+                .Include(s => s.RefreshToken)
+                .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.IsActive);
+
+            return session?.RefreshToken?.ToDomain();
+        }
+
         public async Task<List<RefreshTokensDomain>> GetActiveTokensByUserIdAsync(Guid userId)
         {
             var entities = await _context.RefreshTokens.Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiresAt > DateTime.UtcNow).ToListAsync();

@@ -32,6 +32,7 @@ namespace PetOmiPlatform.API.Middlewares
                     && ex is not ValidationException
                     && ex is not ForbiddenException
                     && ex is not ConflictException
+                    && ex is UnauthorizedException
                     && ex is not DomainException)
                     _logger.LogError(ex, "Unhandled exception occurred");
                 else
@@ -58,6 +59,8 @@ namespace PetOmiPlatform.API.Middlewares
                                             new List<string> { e.Message }),
 
                 ConflictException e => (StatusCodes.Status409Conflict,
+                                            new List<string> { e.Message }),
+                UnauthorizedException e=> (StatusCodes.Status401Unauthorized,
                                             new List<string> { e.Message }),
 
                 DomainException e => (StatusCodes.Status400BadRequest,

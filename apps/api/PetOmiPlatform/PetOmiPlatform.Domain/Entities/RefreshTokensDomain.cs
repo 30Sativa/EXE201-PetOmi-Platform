@@ -67,9 +67,9 @@ namespace PetOmiPlatform.Domain.Entities
 
         //=== Factory method for creating a new refresh token ===
 
-        public static RefreshTokensDomain Create(Guid userId, string tokenHash, int days = 7)
+        public static RefreshTokensDomain Create(Guid userId,string tokenHash, int days = 7)
         {
-            return new RefreshTokensDomain(userId, tokenHash, DateTime.UtcNow.AddDays(days));
+            return new RefreshTokensDomain(userId,  tokenHash, DateTime.UtcNow.AddDays(days));
         }
         //=== Behavior Methods (Domain Logic) ===
 

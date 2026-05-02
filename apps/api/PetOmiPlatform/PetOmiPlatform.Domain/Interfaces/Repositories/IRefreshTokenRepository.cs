@@ -12,6 +12,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
 
         //Dùng cho logout, revoke token, check reuse attack
         Task<List<RefreshTokensDomain>> GetActiveTokensByUserIdAsync(Guid userId);
+        Task<RefreshTokensDomain> GetActiveTokenBySessionIdAsync(Guid sessionId);
         Task UpdateAsync(RefreshTokensDomain refreshToken);
     }
 }

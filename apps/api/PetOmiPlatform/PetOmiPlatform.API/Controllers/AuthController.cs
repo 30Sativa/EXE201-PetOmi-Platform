@@ -33,5 +33,12 @@ namespace PetOmiPlatform.API.Controllers
             var result = await Mediator.Send(new LoginCommand(request));
             return Ok(BaseResponse<LoginResponse>.Ok(result));
         }
+
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            var result = await Mediator.Send(new RefreshTokenCommand(request));
+            return Ok(BaseResponse<RefreshTokenResponse>.Ok(result));
+        }
     }
 }

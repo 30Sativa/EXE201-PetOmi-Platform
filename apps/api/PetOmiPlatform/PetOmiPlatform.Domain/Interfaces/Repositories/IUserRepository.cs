@@ -16,6 +16,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task AddAsync(UserDomain user);
 
         Task UpdateAsync(UserDomain user);
+
     }
 }
  

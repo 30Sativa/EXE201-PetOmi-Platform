@@ -8,5 +8,6 @@ namespace PetOmiPlatform.Application.Features.Auth.DTOs.Request
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+        public Guid? DeviceId { get; set; }
     }
 }

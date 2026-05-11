@@ -59,7 +59,7 @@ namespace PetOmiPlatform.Domain.Entities
             {
                 Id = id,
                 Email = new Email(email),
-                PasswordHash = new PasswordHash(passwordHash),
+                PasswordHash = passwordHash != null ? new PasswordHash(passwordHash) : null,
                 EmailVerified = emailVerified,
                 FailedLoginAttempts = failedLoginAttempts,
                 LockoutUntil = lockoutUntil,
@@ -83,12 +83,14 @@ namespace PetOmiPlatform.Domain.Entities
         public void ValidateLogin(string password, IPasswordHasher passwordHasher) 
         {
             EnsureCanLogin();
-            if(!passwordHasher.Verify(password, PasswordHash.Value))
+            if (PasswordHash == null)
+                throw new DomainException("Tài khoản này đăng nhập bằng mạng xã hội, không có mật khẩu.");
+            if (!passwordHasher.Verify(password, PasswordHash.Value))
             {
                 RecordLoginFailure();
                 throw new DomainException("Mật khẩu không đúng.");
             }
-             RecordLoginSuccess();
+            RecordLoginSuccess();
         }
 
 

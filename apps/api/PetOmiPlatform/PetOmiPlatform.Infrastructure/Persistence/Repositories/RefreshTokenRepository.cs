@@ -39,6 +39,12 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entities.Select(e => e.ToDomain()).ToList();
         }
 
+        public async Task<RefreshTokensDomain> GetByIdAsync(Guid id)
+        {
+            var entity = await _context.RefreshTokens.FindAsync(id);
+            return entity?.ToDomain();
+        }
+
         public async Task<RefreshTokensDomain> GetByTokenHashAsync(string tokenHash)
         {
             var entity = _context.RefreshTokens.FirstOrDefault(rt => rt.TokenHash == tokenHash);

@@ -14,5 +14,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<List<RefreshTokensDomain>> GetActiveTokensByUserIdAsync(Guid userId);
         Task<RefreshTokensDomain> GetActiveTokenBySessionIdAsync(Guid sessionId);
         Task UpdateAsync(RefreshTokensDomain refreshToken);
+
+        Task<RefreshTokensDomain> GetByIdAsync(Guid id);
     }
 }

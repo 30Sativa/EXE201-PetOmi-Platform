@@ -8,9 +8,10 @@ namespace PetOmiPlatform.Domain.ValueObjects
     public sealed class PasswordHash 
     {
         public string Value { get; }
-        public PasswordHash(string hash)
+        public PasswordHash(string? hash)
         {
-            if(string.IsNullOrEmpty(hash)) throw new DomainException("PasswordHash không được để trống");
+            if (hash != null && string.IsNullOrWhiteSpace(hash))
+                throw new DomainException("PasswordHash không hợp lệ");
             Value = hash;
         }
     }

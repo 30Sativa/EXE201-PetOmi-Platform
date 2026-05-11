@@ -57,8 +57,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 // Revoke token cũ nếu có
                 if (session.RefreshTokenId.HasValue)
                 {
-                    var oldToken = await _refreshTokenRepository.GetByTokenHashAsync(
-                        session.RefreshTokenId.Value.ToString());
+                    var oldToken = await _refreshTokenRepository.GetByIdAsync(session.RefreshTokenId.Value);
                     oldToken?.Revoke();
                     if (oldToken != null)
                         await _refreshTokenRepository.UpdateAsync(oldToken);

@@ -38,12 +38,14 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task<UserSessionDomain?> GetByUserAndDeviceAsync(Guid userId, Guid? deviceId)
         {
+
             var entity = await _dbContext.UserSessions
                 .FirstOrDefaultAsync(s =>
                 s.UserId == userId &&
                 s.DeviceId == deviceId &&
                 s.IsActive);
-
+            if (entity == null)
+                return null;
             return entity.ToDomain();
         }
 

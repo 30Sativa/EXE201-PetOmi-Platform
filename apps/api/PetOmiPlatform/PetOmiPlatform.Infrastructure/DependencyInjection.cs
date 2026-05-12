@@ -12,6 +12,7 @@ using PetOmiPlatform.Infrastructure.Persistence.UnitOfWork;
 using PetOmiPlatform.Infrastructure.Security.Jwt;
 using PetOmiPlatform.Infrastructure.Security.PasswordHasher;
 using PetOmiPlatform.Infrastructure.Security.Token;
+using PetOmiPlatform.Infrastructure.Services;
 namespace PetOmiPlatform.Infrastructure
 {
     public static class DependencyInjection
@@ -24,7 +25,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddDbContext<PetOmniDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
             services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-
+            services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
             //  Repositories
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -34,8 +35,10 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
             services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
+            services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
+            services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             //  Services (infra only)
-            // services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IEmailService, EmailService>();
 
             return services;
         }

@@ -15,7 +15,6 @@
     <Folder Include="External\" />
     <Folder Include="Caching\" />
     <Folder Include="Identity\" />
-    <Folder Include="Services\" />
   </ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />

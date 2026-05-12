@@ -60,5 +60,25 @@ namespace PetOmiPlatform.API.Controllers
             await Mediator.Send(new LogoutAllCommand(userId));
             return Ok(BaseResponse<object>.Ok(null, "Đăng xuất tất cả thiết bị thành công."));
         }
+        [HttpGet("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromQuery] string token)
+        {
+            await Mediator.Send(new VerifyEmailCommand(token));
+            return Ok(BaseResponse<object>.Ok(null, "Xác minh email thành công."));
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            await Mediator.Send(new ForgotPasswordCommand(request));
+            return Ok(BaseResponse<object>.Ok(null, "Nếu email tồn tại, chúng tôi đã gửi link đặt lại mật khẩu."));
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            await Mediator.Send(new ResetPasswordCommand(request));
+            return Ok(BaseResponse<object>.Ok(null, "Đặt lại mật khẩu thành công."));
+        }
     }
 }

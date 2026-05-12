@@ -14,14 +14,17 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             return RefreshTokensDomain.Reconstitute(
                 id: entity.RefreshTokenId,
                 userId: entity.UserId,
+                deviceId: entity.DeviceId,
                 tokenHash: entity.TokenHash,
                 expiresAt: entity.ExpiresAt,
                 isRevoked: entity.IsRevoked,
                 revokedAt: entity.RevokedAt,
                 replacedByTokenId: entity.ReplacedByToken,
+                createdByIp: entity.CreatedByIp,
+                userAgent: entity.UserAgent,
                 createdAt: entity.CreatedAt,
                 lastUsedAt: entity.LastUsedAt
-                );
+        );
         }
 
         //Domain -> EF core

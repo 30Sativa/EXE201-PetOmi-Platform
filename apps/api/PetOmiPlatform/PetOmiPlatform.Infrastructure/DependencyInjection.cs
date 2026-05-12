@@ -33,7 +33,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<ITokenGenerator, TokenGenerator>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IUserSessionRepository, UserSessionRepository>();
-            // ✅ Services (infra only)
+            services.AddScoped<IUserDeviceRepository, UserDeviceRepository>();
+            //  Services (infra only)
             // services.AddScoped<IEmailService, EmailService>();
 
             return services;

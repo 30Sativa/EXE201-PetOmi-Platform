@@ -22,6 +22,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         private readonly IJwtService _jwtService;
         private readonly ITokenGenerator _tokenGenerator;
         private readonly IUserSessionRepository _userSession;
+        private readonly IUserDeviceRepository _userDeviceRepository;
 
         public LoginCommandHandler(
             IUserRepository userRepository,
@@ -30,7 +31,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             IPasswordHasher passwordHasher,
             IJwtService jwtService,
             ITokenGenerator tokenGenerator, 
-            IUserSessionRepository userSessionRepository)
+            IUserSessionRepository userSessionRepository,
+            IUserDeviceRepository userDeviceRepository)
         {
             _userRepository = userRepository;
             _refreshTokenRepository = refreshTokenRepository;
@@ -39,6 +41,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             _jwtService = jwtService;
             _tokenGenerator = tokenGenerator;
             _userSession = userSessionRepository;
+            _userDeviceRepository = userDeviceRepository;
         }
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
@@ -48,9 +51,28 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
 
             // 2. Validate login — domain xử lý
             user.ValidateLogin(request.Request.Password, _passwordHasher);
+            
+            // 3. find or create device
+            var device = await _userDeviceRepository.GetByFingerprintAsync(user.Id, request.Request.DeviceFingerprint);
 
-            // 3. Find or Create session theo deviceId
-            var session = await _userSession.GetByUserAndDeviceAsync(user.Id, request.Request.DeviceId);
+            if(device != null)
+            {
+                // check block
+                device.EnsureNotBlocked();
+                device.UpdateLastLogin(request.Request.UserAgent);
+                await _userDeviceRepository.UpdateAsync(device);
+            }
+            else
+            {
+                //create new device
+                device = UserDeviceDomain.Create(userId: user.Id, deviceName: request.Request.DeviceName, deviceType: request.Request.DeviceType, deviceFingerprint: request.Request.DeviceFingerprint, userAgent: request.Request.UserAgent);
+
+                await _userDeviceRepository.AddAsync(device);
+                 await _unitOfWork.SaveChangesAsync(cancellationToken); // save device trước để có Id
+            }
+
+            // 4. Find or Create session theo deviceId
+            var session = await _userSession.GetByUserAndDeviceAsync(user.Id, device.Id);
 
             if (session != null)
             {
@@ -66,7 +88,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             else
             {
                 // Tạo session mới
-                session = UserSessionDomain.Create(user.Id, request.Request.DeviceId);
+                session = UserSessionDomain.Create(user.Id, device.Id);
                 await _userSession.AddAsync(session);
                 await _unitOfWork.SaveChangesAsync(cancellationToken); // ← save session trước để có Id
             }
@@ -74,7 +96,15 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             // 4. Tạo refresh token mới
             var refreshTokenRaw = _tokenGenerator.GenerateRefreshToken();
             var refreshTokenHash = _tokenGenerator.HashToken(refreshTokenRaw);
-            var refreshToken = RefreshTokensDomain.Create(user.Id, refreshTokenHash);
+
+
+            var refreshToken = RefreshTokensDomain.Create(
+                userId: user.Id,
+                tokenHash: refreshTokenHash,
+                deviceId: device.Id,                     
+                createdByIp: request.Request.IpAddress,  
+                userAgent: request.Request.UserAgent     
+                );
             await _refreshTokenRepository.AddAsync(refreshToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken); //  save token để có Id
 

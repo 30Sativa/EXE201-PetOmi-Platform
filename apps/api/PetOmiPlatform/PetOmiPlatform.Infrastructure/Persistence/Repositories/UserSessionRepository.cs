@@ -23,6 +23,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             await _dbContext.UserSessions.AddAsync(entity);
         }
 
+        public async Task<List<UserSessionDomain>> GetActiveSessionsByUserIdAsync(Guid userId)
+        {
+            var entities = await _dbContext.UserSessions.Where(s => s.UserId == userId && s.IsActive).ToListAsync();
+
+            return entities.Select(e => e.ToDomain()).ToList();
+        }
+
         public async Task<UserSessionDomain?> GetByIdAsync(Guid sessionId)
         {
             var entity = await _dbContext.UserSessions.FindAsync(sessionId);

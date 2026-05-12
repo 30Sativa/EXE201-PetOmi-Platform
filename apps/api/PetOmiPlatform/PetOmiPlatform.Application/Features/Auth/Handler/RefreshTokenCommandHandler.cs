@@ -51,9 +51,9 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             {
                 if (token.ReplacedByTokenId != null)
                 {
-                    // Reuse attack → tìm session qua UserSessions.RefreshTokenId
-                    var sessions = await _sessionRepository.GetByRefreshTokenIdAsync(token.Id);
-                    foreach (var s in sessions)
+                    // Đổi tên thành attackedSessions để tránh trùng
+                    var attackedSessions = await _sessionRepository.GetByRefreshTokenIdAsync(token.Id);
+                    foreach (var s in attackedSessions)
                     {
                         s.Revoke();
                         await _sessionRepository.UpdateAsync(s);
@@ -64,9 +64,9 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 throw new UnauthorizedException("Token đã bị thu hồi.");
             }
 
-            // 4. Load session qua UserSessions.RefreshTokenId
-            var session = await _sessionRepository.GetByRefreshTokenIdAsync(token.Id)
-                .ContinueWith(t => t.Result.FirstOrDefault());
+            // 4. Load session — đổi tên thành tokenSessions
+            var tokenSessions = await _sessionRepository.GetByRefreshTokenIdAsync(token.Id);
+            var session = tokenSessions.FirstOrDefault();
 
             if (session == null || !session.IsActive)
                 throw new UnauthorizedException("Session không hợp lệ.");
@@ -78,7 +78,9 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             // 6. Tạo token mới
             var newTokenRaw = _tokenGenerator.GenerateRefreshToken();
             var newTokenHash = _tokenGenerator.HashToken(newTokenRaw);
-            var newToken = RefreshTokensDomain.Create(token.UserId, newTokenHash);
+
+            var newToken = RefreshTokensDomain.Create(userId: token.UserId,tokenHash: newTokenHash, deviceId: token.DeviceId);
+
             await _refreshTokenRepository.AddAsync(newToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken); // ← save để có Id
 
@@ -91,7 +93,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             await _sessionRepository.UpdateAsync(session);
 
             // 9. Save tất cả
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);  
 
             // 10. Generate access token mới
             var newAccessToken = _jwtService.GenerateToken(user);

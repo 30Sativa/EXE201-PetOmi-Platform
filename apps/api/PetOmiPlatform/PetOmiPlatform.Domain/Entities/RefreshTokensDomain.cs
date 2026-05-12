@@ -10,6 +10,8 @@ namespace PetOmiPlatform.Domain.Entities
     {
         public Guid UserId { get; private set; }
 
+        public Guid? DeviceId { get; private set; }
+
         public string TokenHash { get; private set; }
         public DateTime ExpiresAt { get; private set; }
 
@@ -17,6 +19,9 @@ namespace PetOmiPlatform.Domain.Entities
         public DateTime? RevokedAt { get; private set; }
 
         public Guid? ReplacedByTokenId { get; private set; }
+
+        public string? CreatedByIp { get; private set; } 
+        public string? UserAgent { get; private set; }
 
         public DateTime CreatedAt { get; private set; }
         public DateTime? LastUsedAt { get; private set; }
@@ -27,25 +32,36 @@ namespace PetOmiPlatform.Domain.Entities
         private RefreshTokensDomain() { }
 
 
-        private RefreshTokensDomain(Guid userId, string tokenHash, DateTime expiresAt)
+        private RefreshTokensDomain(Guid userId, Guid? deviceId,string tokenHash,DateTime expiresAt,string? createdByIp,string? userAgent)
         {
             Id = Guid.NewGuid();
+
             UserId = userId;
+            DeviceId = deviceId;
+
             TokenHash = tokenHash;
             ExpiresAt = expiresAt;
+
             IsRevoked = false;
             ReplacedByTokenId = null;
+
+            CreatedByIp = createdByIp;
+            UserAgent = userAgent;
+
             CreatedAt = DateTime.UtcNow;
         }
 
         public static RefreshTokensDomain Reconstitute(
             Guid id,
             Guid userId,
+            Guid? deviceId,
             string tokenHash,
             DateTime expiresAt,
             bool isRevoked,
             DateTime? revokedAt,
             Guid? replacedByTokenId,
+            string? createdByIp,
+            string? userAgent,
             DateTime createdAt,
             DateTime? lastUsedAt)
         {
@@ -53,11 +69,14 @@ namespace PetOmiPlatform.Domain.Entities
             {
                 Id = id,
                 UserId = userId,
+                DeviceId = deviceId,
                 TokenHash = tokenHash,
                 ExpiresAt = expiresAt,
                 IsRevoked = isRevoked,
                 RevokedAt = revokedAt,
                 ReplacedByTokenId = replacedByTokenId,
+                CreatedByIp = createdByIp,
+                UserAgent = userAgent,
                 CreatedAt = createdAt,
                 LastUsedAt = lastUsedAt
             };
@@ -67,9 +86,9 @@ namespace PetOmiPlatform.Domain.Entities
 
         //=== Factory method for creating a new refresh token ===
 
-        public static RefreshTokensDomain Create(Guid userId,string tokenHash, int days = 7)
+        public static RefreshTokensDomain Create(Guid userId, string tokenHash, int days = 7, Guid? deviceId = null, string? createdByIp = null, string? userAgent = null)
         {
-            return new RefreshTokensDomain(userId,  tokenHash, DateTime.UtcNow.AddDays(days));
+            return new RefreshTokensDomain(userId, deviceId, tokenHash, DateTime.UtcNow.AddDays(days),createdByIp,userAgent);
         }
         //=== Behavior Methods (Domain Logic) ===
 

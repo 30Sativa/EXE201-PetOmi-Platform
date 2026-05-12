@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PetOmiPlatform.API.Common;
@@ -8,6 +9,7 @@ using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
+using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -39,6 +41,24 @@ namespace PetOmiPlatform.API.Controllers
         {
             var result = await Mediator.Send(new RefreshTokenCommand(request));
             return Ok(BaseResponse<RefreshTokenResponse>.Ok(result));
+        }
+
+        [HttpPost("logout")]
+        [Authorize] // ← cần JWT
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            await Mediator.Send(new LogoutCommand(request));
+            return Ok(BaseResponse<object>.Ok(null, "Đăng xuất thành công."));
+        }
+
+        [HttpPost("logout-all")]
+        [Authorize]
+        public async Task<IActionResult> LogoutAll()
+        {
+            // Lấy UserId từ JWT claim
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await Mediator.Send(new LogoutAllCommand(userId));
+            return Ok(BaseResponse<object>.Ok(null, "Đăng xuất tất cả thiết bị thành công."));
         }
     }
 }

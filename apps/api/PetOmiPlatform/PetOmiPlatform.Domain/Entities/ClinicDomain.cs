@@ -57,7 +57,7 @@ namespace PetOmiPlatform.Domain.Entities
                 Phone = phone,
                 Email = email,
                 LicenseNumber = licenseNumber,
-                Status = ClinicStatus.Pending,
+                Status = Enum.Parse<ClinicStatus>(status),
                 RejectedReason = rejectedReason,
                 ReviewedByAdminId = reviewedByAdminId,
                 CreatedAt = createdAt,

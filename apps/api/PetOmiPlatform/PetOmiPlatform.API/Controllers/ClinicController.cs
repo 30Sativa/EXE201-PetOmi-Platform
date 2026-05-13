@@ -22,11 +22,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Tạo phòng khám mới ở trạng thái Pending. User phải có VetProfile trước và sẽ được gán ClinicOwner.
         /// </summary>
         [HttpPost]
-        [ProducesResponseType(typeof(BaseResponse<CreateClinicResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status409Conflict)]
+
         public async Task<IActionResult> CreateClinic([FromBody] CreateClinicRequest request)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

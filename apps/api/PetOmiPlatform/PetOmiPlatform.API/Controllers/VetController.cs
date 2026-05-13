@@ -23,11 +23,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Tạo hồ sơ bác sĩ thú y cho user đang đăng nhập. Mỗi user chỉ có một VetProfile.
         /// </summary>
         [HttpPost("profile")]
-        [ProducesResponseType(typeof(BaseResponse<CreateVetProfileResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status409Conflict)]
+
         public async Task<IActionResult> CreateVetProfile([FromBody] CreateVetProfileRequest request)
         {
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

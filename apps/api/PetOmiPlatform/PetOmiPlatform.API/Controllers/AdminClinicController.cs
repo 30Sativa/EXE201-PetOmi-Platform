@@ -22,10 +22,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Admin duyệt phòng khám đang Pending. Clinic chuyển sang Approved và lưu admin đã duyệt.
         /// </summary>
         [HttpPost("{clinicId:guid}/approve")]
-        [ProducesResponseType(typeof(BaseResponse<ReviewClinicResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+    
         public async Task<IActionResult> ApproveClinic(Guid clinicId)
         {
             var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -37,10 +34,6 @@ namespace PetOmiPlatform.API.Controllers
         /// Admin từ chối phòng khám đang Pending. Clinic chuyển sang Rejected và các VetClinic active của clinic bị deactivate.
         /// </summary>
         [HttpPost("{clinicId:guid}/reject")]
-        [ProducesResponseType(typeof(BaseResponse<ReviewClinicResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RejectClinic(Guid clinicId, [FromBody] RejectClinicRequest request)
         {
             var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

@@ -25,9 +25,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Đăng ký tài khoản mới. User được gán role Owner mặc định và hệ thống gửi email xác minh.
         /// </summary>
         [HttpPost("register")]
-        [ProducesResponseType(typeof(BaseResponse<RegisterResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status409Conflict)]
+
         public async Task<IActionResult> Register(RegisterRequest request)
         {
             var result = await Mediator.Send(new RegisterCommand(request));
@@ -38,10 +36,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Đăng nhập bằng email/password, tạo access token, refresh token, device và session.
         /// </summary>
         [HttpPost("login")]
-        [ProducesResponseType(typeof(BaseResponse<LoginResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+
         public async Task<IActionResult> Login(LoginRequest request)
         {
             var result = await Mediator.Send(new LoginCommand(request));
@@ -52,9 +47,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Làm mới access token bằng refresh token còn hiệu lực.
         /// </summary>
         [HttpPost("refresh-token")]
-        [ProducesResponseType(typeof(BaseResponse<RefreshTokenResponse>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
+
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             var result = await Mediator.Send(new RefreshTokenCommand(request));
@@ -66,9 +59,7 @@ namespace PetOmiPlatform.API.Controllers
         /// </summary>
         [HttpPost("logout")]
         [Authorize] // ← cần JWT
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
+
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
             await Mediator.Send(new LogoutCommand(request));
@@ -80,8 +71,7 @@ namespace PetOmiPlatform.API.Controllers
         /// </summary>
         [HttpPost("logout-all")]
         [Authorize]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status401Unauthorized)]
+
         public async Task<IActionResult> LogoutAll()
         {
             // Lấy UserId từ JWT claim
@@ -93,9 +83,6 @@ namespace PetOmiPlatform.API.Controllers
         /// Xác minh email bằng token được gửi qua email.
         /// </summary>
         [HttpGet("verify-email")]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> VerifyEmail([FromQuery] string token)
         {
             await Mediator.Send(new VerifyEmailCommand(token));
@@ -106,8 +93,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Gửi email đặt lại mật khẩu nếu email tồn tại trong hệ thống.
         /// </summary>
         [HttpPost("forgot-password")]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
+
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             await Mediator.Send(new ForgotPasswordCommand(request));
@@ -118,9 +104,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Đặt lại mật khẩu bằng token reset password hợp lệ.
         /// </summary>
         [HttpPost("reset-password")]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status404NotFound)]
+
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
             await Mediator.Send(new ResetPasswordCommand(request));

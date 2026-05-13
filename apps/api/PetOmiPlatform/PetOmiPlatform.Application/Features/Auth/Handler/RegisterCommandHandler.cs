@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using PetOmiPlatform.Domain.Constants;
 namespace PetOmiPlatform.Application.Features.Auth.Handler
 {
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>
@@ -22,7 +23,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly ITokenGenerator _tokenGenerator;
-
+        private readonly IUserRoleRepository _userRoleRepository;
         public RegisterCommandHandler(
             IUserRepository userRepository,
             IPasswordHasher passwordHasher,
@@ -30,7 +31,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             IEmailVerificationTokenRepository emailVerificationRepository,
             IEmailService emailService,
             IConfiguration configuration, 
-            ITokenGenerator tokenGenerator)
+            ITokenGenerator tokenGenerator,
+            IUserRoleRepository userRoleRepository)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
@@ -39,6 +41,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             _emailService = emailService;
             _configuration = configuration;
             _tokenGenerator = tokenGenerator;
+            _userRoleRepository = userRoleRepository;
         }
 
         public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -56,9 +59,10 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             // 3. Tạo user
             var user = UserDomain.Create(email, new PasswordHash(passwordHash));
             await _userRepository.AddAsync(user);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 4. Tạo verification token
+            // 4. Gán role mặc định cho user
+            await _userRoleRepository.AddAsync(user.Id, RoleConstants.OwnerId);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
 
             var rawToken = _tokenGenerator.GenerateRefreshToken();

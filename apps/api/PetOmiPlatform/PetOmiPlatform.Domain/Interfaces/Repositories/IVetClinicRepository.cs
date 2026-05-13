@@ -6,5 +6,6 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
     public interface IVetClinicRepository
     {
         Task AddClinicOwnerAsync(Guid vetProfileId, Guid clinicId);
+        Task DeactivateByClinicIdAsync(Guid clinicId);
     }
 }

@@ -32,12 +32,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .AnyAsync(c => c.LicenseNumber == licenseNumber);
         }
 
-        public Task UpdateAsync(ClinicDomain clinic)
-        {
-            return UpdateTrackedAsync(clinic);
-        }
-
-        private async Task UpdateTrackedAsync(ClinicDomain clinic)
+        public async Task UpdateAsync(ClinicDomain clinic)
         {
             var entity = await _context.Clinics.FindAsync(clinic.Id);
             if (entity == null) return;

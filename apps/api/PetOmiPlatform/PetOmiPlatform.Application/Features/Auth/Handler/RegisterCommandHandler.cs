@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Configuration;
-using PetOmiPlatform.Domain.Constants;
+using PetOmiPlatform.Domain.Common.Constants;
 namespace PetOmiPlatform.Application.Features.Auth.Handler
 {
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>

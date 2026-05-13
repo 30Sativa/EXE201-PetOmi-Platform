@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PetOmiPlatform.Domain.Constants
+namespace PetOmiPlatform.Domain.Common.Constants
 {
     public static class RoleConstants
     {

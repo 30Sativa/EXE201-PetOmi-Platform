@@ -38,6 +38,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<IUserRoleRepository, UserRoleRepository>();
+            services.AddScoped<IVetProfileRepository, VetProfileRepository>();
             //  Services (infra only)
             services.AddScoped<IEmailService, EmailService>();
 

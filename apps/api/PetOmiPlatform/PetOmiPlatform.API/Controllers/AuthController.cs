@@ -39,8 +39,14 @@ namespace PetOmiPlatform.API.Controllers
 
         public async Task<IActionResult> Login(LoginRequest request)
         {
-            var result = await Mediator.Send(new LoginCommand(request));
-            return Ok(BaseResponse<LoginResponse>.Ok(result));
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+            if (string.IsNullOrEmpty(userAgent))
+            {
+                userAgent = "Unknown";
+            }
+            var result = await Mediator.Send(new LoginCommand(ipAddress, userAgent, request));
+            return Ok(BaseResponse<LoginResponse>.Ok(result));  
         }
 
         /// <summary>

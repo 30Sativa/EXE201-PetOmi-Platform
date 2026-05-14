@@ -1,18 +1,22 @@
-﻿using System.Net;
-using System.Net.Mail;
-using PetOmiPlatform.Application.Interfaces;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Infrastructure.Common.Settings;
+using Resend;
 
 namespace PetOmiPlatform.Infrastructure.Services
 {
     public class EmailService : IEmailService
     {
-        private readonly SmtpSettings _settings;
-
-        public EmailService(IOptions<SmtpSettings> settings)
-            => _settings = settings.Value;
-
+        private readonly ResendClient _resendClient;
+        private readonly IConfiguration _configuration;
+        public EmailService(
+            ResendClient resendClient,
+            IConfiguration configuration)
+        {
+            _resendClient = resendClient;
+            _configuration = configuration;
+        }
         public async Task SendEmailVerificationAsync(string toEmail, string verificationLink)
         {
             var subject = "Xác minh email của bạn - PetOmi";
@@ -41,22 +45,17 @@ namespace PetOmiPlatform.Infrastructure.Services
 
         private async Task SendAsync(string toEmail, string subject, string body)
         {
-            using var client = new SmtpClient(_settings.Host, _settings.Port)
-            {
-                Credentials = new NetworkCredential(_settings.Username, _settings.Password),
-                EnableSsl = true
-            };
+            var fromEmail = _configuration["Resend:FromEmail"];
 
-            var message = new MailMessage
+            var message = new EmailMessage
             {
-                From = new MailAddress(_settings.From, "PetOmi Platform"),
+                From = fromEmail,
+                To = toEmail,
                 Subject = subject,
-                Body = body,
-                IsBodyHtml = true
+                HtmlBody = body
             };
-            message.To.Add(toEmail);
 
-            await client.SendMailAsync(message);
+            await _resendClient.EmailSendAsync(message);
         }
     }
 }

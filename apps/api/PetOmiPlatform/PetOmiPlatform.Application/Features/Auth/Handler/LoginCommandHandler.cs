@@ -59,13 +59,13 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             {
                 // check block
                 device.EnsureNotBlocked();
-                device.UpdateLastLogin(request.Request.UserAgent);
+                device.UpdateLastLogin(request.UserAgent);
                 await _userDeviceRepository.UpdateAsync(device);
             }
             else
             {
                 //create new device
-                device = UserDeviceDomain.Create(userId: user.Id, deviceName: request.Request.DeviceName, deviceType: request.Request.DeviceType, deviceFingerprint: request.Request.DeviceFingerprint, userAgent: request.Request.UserAgent);
+                device = UserDeviceDomain.Create(userId: user.Id, deviceName: request.Request.DeviceName, deviceType: request.Request.DeviceType, deviceFingerprint: request.Request.DeviceFingerprint, userAgent: request.UserAgent);
 
                 await _userDeviceRepository.AddAsync(device);
                  await _unitOfWork.SaveChangesAsync(cancellationToken); // save device trước để có Id
@@ -102,8 +102,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 userId: user.Id,
                 tokenHash: refreshTokenHash,
                 deviceId: device.Id,                     
-                createdByIp: request.Request.IpAddress,  
-                userAgent: request.Request.UserAgent     
+                createdByIp: request.IpAddress,  
+                userAgent: request.UserAgent
                 );
             await _refreshTokenRepository.AddAsync(refreshToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken); //  save token để có Id

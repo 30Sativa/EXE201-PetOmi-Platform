@@ -13,6 +13,8 @@ using PetOmiPlatform.Infrastructure.Security.Jwt;
 using PetOmiPlatform.Infrastructure.Security.PasswordHasher;
 using PetOmiPlatform.Infrastructure.Security.Token;
 using PetOmiPlatform.Infrastructure.Services;
+using Resend;
+
 namespace PetOmiPlatform.Infrastructure
 {
     public static class DependencyInjection
@@ -21,12 +23,24 @@ namespace PetOmiPlatform.Infrastructure
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            //  DbContext (DB-first)
+            // DbContext
             services.AddDbContext<PetOmniDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
-            services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-            services.Configure<SmtpSettings>(configuration.GetSection("SmtpSettings"));
-            //  Repositories
+                options.UseSqlServer(
+                    configuration.GetConnectionString("DefaultConnection")));
+
+            // Jwt
+            services.Configure<JwtSettings>(
+                configuration.GetSection("JwtSettings"));
+
+            // Resend
+            services.Configure<ResendClientOptions>(options =>
+            {
+                options.ApiToken = configuration["Resend:ApiKey"];
+            });
+            services.AddHttpClient();
+            services.AddTransient<ResendClient>();
+
+            // Repositories
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -41,7 +55,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IVetProfileRepository, VetProfileRepository>();
             services.AddScoped<IClinicRepository, ClinicRepository>();
             services.AddScoped<IVetClinicRepository, VetClinicRepository>();
-            //  Services (infra only)
+
+            // Services
             services.AddScoped<IEmailService, EmailService>();
 
             return services;

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace PetOmiPlatform.Application.Features.Auth.Command
 {
-    public record LoginCommand(LoginRequest Request) : IRequest<LoginResponse>
+    public record LoginCommand(string? IpAddress,string? UserAgent, LoginRequest Request) : IRequest<LoginResponse>
     {
     }
 }

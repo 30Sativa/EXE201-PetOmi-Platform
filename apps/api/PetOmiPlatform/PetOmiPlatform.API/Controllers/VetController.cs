@@ -29,6 +29,6 @@ namespace PetOmiPlatform.API.Controllers
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await Mediator.Send(new CreateVetProfileCommand(userId, request));
             return Ok(BaseResponse<CreateVetProfileResponse>.Ok(result));
-        }
+        }  
     }
 }

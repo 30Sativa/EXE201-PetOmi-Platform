@@ -1,15 +1,29 @@
-import LoginPage from "./pages/LoginPage"
+import { useEffect, useState } from "react"
+
+import AuthPage from "./pages/AuthPage"
+import LandingPage from "./pages/LandingPage"
+
+const getRoute = () => window.location.hash.replace("#", "") || "/"
 
 function App() {
+  const [route, setRoute] = useState(getRoute)
 
+  useEffect(() => {
+    const handleRouteChange = () => setRoute(getRoute())
 
-  return (
-    <>
+    window.addEventListener("hashchange", handleRouteChange)
+    return () => window.removeEventListener("hashchange", handleRouteChange)
+  }, [])
 
-    <LoginPage></LoginPage>
-    
-    </>
-  )
+  if (route === "/login") {
+    return <AuthPage initialMode="login" />
+  }
+
+  if (route === "/register") {
+    return <AuthPage initialMode="register" />
+  }
+
+  return <LandingPage />
 }
 
 export default App

@@ -1,1 +1,192 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: var(--po-font-sans);
+  --font-display: var(--po-font-display);
+
+  --color-po-bg: var(--po-color-bg);
+  --color-po-surface: var(--po-color-surface);
+  --color-po-surface-muted: var(--po-color-surface-muted);
+  --color-po-border: var(--po-color-border);
+  --color-po-border-strong: var(--po-color-border-strong);
+  --color-po-text: var(--po-color-text);
+  --color-po-text-muted: var(--po-color-text-muted);
+  --color-po-text-subtle: var(--po-color-text-subtle);
+  --color-po-text-inverse: var(--po-color-text-inverse);
+  --color-po-primary: var(--po-color-primary);
+  --color-po-primary-hover: var(--po-color-primary-hover);
+  --color-po-primary-soft: var(--po-color-primary-soft);
+  --color-po-primary-contrast: var(--po-color-primary-contrast);
+  --color-po-accent: var(--po-color-accent);
+  --color-po-accent-soft: var(--po-color-accent-soft);
+  --color-po-success: var(--po-color-success);
+  --color-po-success-soft: var(--po-color-success-soft);
+  --color-po-warning: var(--po-color-warning);
+  --color-po-warning-soft: var(--po-color-warning-soft);
+  --color-po-danger: var(--po-color-danger);
+  --color-po-danger-soft: var(--po-color-danger-soft);
+
+  --animate-fade-up: po-fade-up 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-fade-in: po-fade-in 520ms ease both;
+  --animate-float: po-float 5.8s ease-in-out infinite;
+  --animate-soft-pulse: po-soft-pulse 2.8s ease-in-out infinite;
+}
+
+:root {
+  color-scheme: light;
+
+  --po-font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --po-font-display: "Nunito Sans", Inter, ui-sans-serif, system-ui, sans-serif;
+
+  --po-color-bg: #fafaf9;
+  --po-color-app-bg: linear-gradient(135deg, rgb(250 250 249 / 96%) 0%, rgb(240 253 250 / 72%) 46%, rgb(255 247 237 / 82%) 100%);
+  --po-color-surface: #ffffff;
+  --po-color-surface-muted: #f5f5f4;
+  --po-color-border: #e7e5e4;
+  --po-color-border-strong: #d6d3d1;
+
+  --po-color-text: #1c1917;
+  --po-color-text-muted: #57534e;
+  --po-color-text-subtle: #78716c;
+  --po-color-text-inverse: #ffffff;
+
+  --po-color-primary: #0f766e;
+  --po-color-primary-hover: #115e59;
+  --po-color-primary-soft: #ccfbf1;
+  --po-color-primary-contrast: #ffffff;
+
+  --po-color-accent: #f97316;
+  --po-color-accent-soft: #ffedd5;
+
+  --po-color-success: #16a34a;
+  --po-color-success-soft: #dcfce7;
+  --po-color-warning: #d97706;
+  --po-color-warning-soft: #fef3c7;
+  --po-color-danger: #dc2626;
+  --po-color-danger-soft: #fee2e2;
+
+  --po-focus-ring: 0 0 0 3px rgb(13 148 136 / 24%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  scroll-behavior: auto;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background: var(--po-color-app-bg), var(--po-color-bg);
+  color: var(--po-color-text);
+  font-family: var(--po-font-sans);
+  letter-spacing: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+img,
+svg,
+video,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--po-focus-ring);
+}
+
+::selection {
+  background: var(--po-color-primary-soft);
+  color: var(--po-color-text);
+}
+
+@keyframes po-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes po-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes po-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes po-soft-pulse {
+  0%,
+  100% {
+    opacity: 0.78;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

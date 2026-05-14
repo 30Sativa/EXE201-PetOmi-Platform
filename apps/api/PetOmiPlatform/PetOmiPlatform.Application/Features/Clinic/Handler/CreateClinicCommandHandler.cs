@@ -3,6 +3,7 @@ using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Clinic.Command;
 using PetOmiPlatform.Application.Features.Clinic.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
@@ -32,19 +33,20 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
 
         public async Task<CreateClinicResponse> Handle(CreateClinicCommand command, CancellationToken cancellationToken)
         {
-            var user = await _userRepository.GetByIdAsync(command.UserId)
-                ?? throw new NotFoundException("Không tìm thấy tài khoản.");
+            // 1. Kiểm tra user có VetProfile không
+            //    Phải là bác sĩ mới được tạo clinic
+            var vetProfile = await _vetProfileRepository.GetByUserIdAsync(command.UserId)
+                ?? throw new NotFoundException("Bạn cần tạo VetProfile trước khi mở phòng khám.");
 
-            var vetProfile = await _vetProfileRepository.GetByUserIdAsync(user.Id)
-                ?? throw new ConflictException("Tài khoản cần tạo VetProfile trước khi tạo phòng khám.");
-
-            if (!string.IsNullOrWhiteSpace(command.Request.LicenseNumber))
+            // 2. Kiểm tra LicenseNumber chưa bị trùng
+            if (command.Request.LicenseNumber != null)
             {
                 var exists = await _clinicRepository.ExistsByLicenseNumberAsync(command.Request.LicenseNumber);
                 if (exists)
-                    throw new ConflictException("Số giấy phép phòng khám đã tồn tại.");
+                    throw new ConflictException("Số giấy phép này đã được đăng ký.");
             }
 
+            // 3. Tạo Clinic — Status mặc định "Pending"
             var clinic = ClinicDomain.Create(
                 clinicName: command.Request.ClinicName,
                 address: command.Request.Address,
@@ -52,21 +54,26 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 email: command.Request.Email,
                 licenseNumber: command.Request.LicenseNumber
             );
-
             await _clinicRepository.AddAsync(clinic);
-            await _vetClinicRepository.AddClinicOwnerAsync(vetProfile.Id, clinic.Id);
+
+            // 4. Auto gán ClinicOwner cho người tạo
+            //    VetClinic = hợp đồng giữa VetProfile và Clinic
+            var vetClinic = new VetClinicDomain(
+                vetProfileId: vetProfile.Id,
+                clinicId: clinic.Id,
+                roleId: ClinicRoleConstants.ClinicOwnerId
+            );
+            await _vetClinicRepository.AddAsync(vetClinic);
+
+            // 5. SaveChanges 1 lần cho cả Clinic + VetClinic
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new CreateClinicResponse
             {
                 ClinicId = clinic.Id,
-                VetProfileId = vetProfile.Id,
                 ClinicName = clinic.ClinicName,
-                Address = clinic.Address,
-                Phone = clinic.Phone,
-                Email = clinic.Email,
                 LicenseNumber = clinic.LicenseNumber,
-                Status = clinic.Status.ToString()
+                Status = clinic.Status.ToString() // enum → string
             };
         }
     }

@@ -1,8 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Domain.Common.Constants;
+using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
+using PetOmiPlatform.Infrastructure.Mappers;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 using PetOmiPlatform.Infrastructure.Persistence.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 {
@@ -13,6 +15,12 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         public VetClinicRepository(PetOmniDbContext context)
         {
             _context = context;
+        }
+
+        public async Task AddAsync(VetClinicDomain vetClinic)
+        {
+            var entity = vetClinic.ToEntity();
+            await _context.VetClinics.AddAsync(entity);
         }
 
         public async Task AddClinicOwnerAsync(Guid vetProfileId, Guid clinicId)
@@ -46,6 +54,16 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 vetClinic.EndDate = endDate;
                 vetClinic.UpdatedAt = now;
             }
+        }
+
+        public Task<bool> ExistsAsync(Guid vetProfileId, Guid clinicId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> IsClinicOwnerAsync(Guid userId, Guid clinicId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

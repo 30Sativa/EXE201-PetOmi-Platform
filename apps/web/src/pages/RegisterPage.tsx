@@ -2,34 +2,25 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
-import { LoginRequestSchema, type LoginRequest } from "../schemas/auth.schema"
-import { loginApi } from "../services/auth.service"
+import { RegisterRequestSchema, type RegisterRequest } from "../schemas/auth.schema"
+import { registerApi } from "../services/auth.service"
 
-type LoginPageProps = {
-  onSwitchToRegister?: () => void
+type RegisterPageProps = {
+  onSwitchToLogin?: () => void
 }
 
 const getErrorMessage = (error: unknown) => {
   if (typeof error === "object" && error !== null && "response" in error) {
     const apiError = error as { response?: { data?: { message?: string } } }
-    return apiError.response?.data?.message ?? "Đăng nhập thất bại. Vui lòng thử lại."
+    return apiError.response?.data?.message ?? "Đăng ký thất bại. Vui lòng thử lại."
   }
 
   if (error instanceof Error) return error.message
 
-  return "Đăng nhập thất bại. Vui lòng thử lại."
+  return "Đăng ký thất bại. Vui lòng thử lại."
 }
 
-const createDeviceFingerprint = () => {
-  const storedFingerprint = localStorage.getItem("petomi-device-fingerprint")
-  if (storedFingerprint) return storedFingerprint
-
-  const fingerprint = crypto.randomUUID()
-  localStorage.setItem("petomi-device-fingerprint", fingerprint)
-  return fingerprint
-}
-
-export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
+export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
 
@@ -37,27 +28,23 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginRequest>({
-    resolver: zodResolver(LoginRequestSchema),
+  } = useForm<RegisterRequest>({
+    resolver: zodResolver(RegisterRequestSchema),
     defaultValues: {
       email: "",
       password: "",
-      deviceName: "PetOmi Web",
-      deviceType: "web",
     },
   })
 
-  const onSubmit = async (data: LoginRequest) => {
+  const onSubmit = async (data: RegisterRequest) => {
     try {
-      await loginApi({
-        ...data,
-        deviceFingerprint: createDeviceFingerprint(),
-        deviceName: data.deviceName ?? "PetOmi Web",
-        deviceType: data.deviceType ?? "web",
+      await registerApi({
+        email: data.email,
+        password: data.password,
       })
 
       setStatus("success")
-      setMessage("Đăng nhập thành công.")
+      setMessage("Đăng ký thành công. Hãy kiểm tra email để xác minh tài khoản.")
     } catch (error) {
       setStatus("error")
       setMessage(getErrorMessage(error))
@@ -67,11 +54,11 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   return (
     <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
       <div className="grid gap-2">
-        <label htmlFor="login-email" className="text-sm font-extrabold text-po-text">
+        <label htmlFor="register-email" className="text-sm font-extrabold text-po-text">
           Email
         </label>
         <input
-          id="login-email"
+          id="register-email"
           type="email"
           autoComplete="email"
           placeholder="owner@petomi.vn"
@@ -82,22 +69,18 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
       </div>
 
       <div className="grid gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <label htmlFor="login-password" className="text-sm font-extrabold text-po-text">
-            Mật khẩu
-          </label>
-          <a href="#forgot-password" className="text-sm font-bold text-po-primary no-underline transition hover:text-po-primary-hover">
-            Quên mật khẩu?
-          </a>
-        </div>
+        <label htmlFor="register-password" className="text-sm font-extrabold text-po-text">
+          Mật khẩu
+        </label>
         <input
-          id="login-password"
+          id="register-password"
           type="password"
-          autoComplete="current-password"
-          placeholder="Nhập mật khẩu"
+          autoComplete="new-password"
+          placeholder="Tối thiểu 6 ký tự"
           className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary"
           {...register("password")}
         />
+        <p className="text-sm text-po-text-subtle">Dùng ít nhất 6 ký tự để bảo vệ tài khoản.</p>
         {errors.password?.message ? <p className="text-sm font-semibold text-po-danger">{errors.password.message}</p> : null}
       </div>
 
@@ -112,13 +95,13 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
         type="submit"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
+        {isSubmitting ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
       </button>
 
       <p className="text-center text-sm text-po-text-muted">
-        Chưa có tài khoản?{" "}
-        <button type="button" onClick={onSwitchToRegister} className="font-extrabold text-po-primary hover:text-po-primary-hover">
-          Đăng ký ngay
+        Đã có tài khoản?{" "}
+        <button type="button" onClick={onSwitchToLogin} className="font-extrabold text-po-primary hover:text-po-primary-hover">
+          Đăng nhập
         </button>
       </p>
     </form>

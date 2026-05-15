@@ -1,12 +1,34 @@
 import { ArrowUpRight, PawPrint } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import { Button } from "@/components/ui/button"
-
 const footerLinks = [
-  { title: "Platform", links: ["AI Care", "Pet profiles", "Bookings", "Adoption"] },
-  { title: "Clinics", links: ["Vet dashboard", "Care notes", "Trust badges", "Analytics"] },
-  { title: "Company", links: ["About", "Careers", "Press", "Contact"] },
+  {
+    title: "Nền tảng",
+    links: [
+      { label: "AI tư vấn", href: "#services" },
+      { label: "Hồ sơ thú cưng", href: "#services" },
+      { label: "Đặt lịch", href: "#booking" },
+      { label: "Chia sẻ dữ liệu", href: "#services" },
+    ],
+  },
+  {
+    title: "Clinic",
+    links: [
+      { label: "Vet portal", href: "#veterinary" },
+      { label: "Lịch hẹn", href: "#booking" },
+      { label: "Queue", href: "#booking" },
+      { label: "Kết quả khám", href: "#veterinary" },
+    ],
+  },
+  {
+    title: "Admin",
+    links: [
+      { label: "Duyệt clinic", href: "#admin" },
+      { label: "User management", href: "#admin" },
+      { label: "Audit log", href: "#admin" },
+      { label: "GDPR", href: "#admin" },
+    ],
+  },
 ]
 
 export default function Footer() {
@@ -14,15 +36,18 @@ export default function Footer() {
     <footer className="border-t border-po-border bg-white/90">
       <div className="mx-auto w-[min(100%-24px,1200px)] py-12">
         <div className="rounded-[32px] border border-po-border bg-po-surface-muted px-6 py-10 text-center shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Ready to begin?</p>
-          <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Create a care plan your pet will love.</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Bắt đầu ngay</p>
+          <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Một nền tảng cho Owner, Vet và Admin.</h2>
           <p className="mt-3 text-sm text-po-text-muted">
-            Start with free AI guidance, then connect with vetted clinics when you are ready.
+            AI tư vấn, đặt lịch, hồ sơ sức khỏe số và luồng duyệt clinic rõ ràng.
           </p>
-          <Button className="mt-6 h-12 rounded-full bg-po-primary px-6 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 hover:bg-po-primary-hover">
-            Join PetOmi
+          <Link
+            to="/register"
+            className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:bg-po-primary-hover"
+          >
+            Bắt đầu miễn phí
             <ArrowUpRight className="size-4" />
-          </Button>
+          </Link>
         </div>
 
         <div className="mt-12 grid gap-10 md:grid-cols-[1.1fr_1.9fr]">
@@ -34,8 +59,7 @@ export default function Footer() {
               <span className="text-base">PetOmi</span>
             </Link>
             <p className="mt-4 text-sm leading-6 text-po-text-muted">
-              Premium pet-care experiences for modern families. Built with warm AI guidance and trusted clinical
-              workflows.
+              Nền tảng Pet Advisor AI kết nối chủ nuôi, bác sĩ và admin bằng dữ liệu đồng bộ.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">
@@ -43,8 +67,8 @@ export default function Footer() {
               <div key={column.title} className="grid gap-2 text-sm">
                 <p className="font-semibold text-po-text">{column.title}</p>
                 {column.links.map((link) => (
-                  <a key={link} href="#" className="text-po-text-muted transition hover:text-po-text">
-                    {link}
+                  <a key={link.label} href={link.href} className="text-po-text-muted transition hover:text-po-text">
+                    {link.label}
                   </a>
                 ))}
               </div>

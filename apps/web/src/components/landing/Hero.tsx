@@ -10,13 +10,13 @@ interface Highlight {
 
 const highlights: Highlight[] = [
   {
-    title: "AI pet care concierge",
-    description: "Gentle triage, next-step guidance, and peace of mind in minutes.",
+    title: "Urgency pre-check 2-level",
+    description: "Cảnh báo khẩn cấp, ưu tiên lịch khám và hướng dẫn xử lý an toàn.",
     icon: Sparkles,
   },
   {
-    title: "One tap booking",
-    description: "Match with verified clinics and pick a time that fits your routine.",
+    title: "Smart booking bridge",
+    description: "Gợi ý clinic phù hợp và slot gấp dựa trên mức độ khẩn.",
     icon: CalendarCheck,
   },
 ]
@@ -30,25 +30,24 @@ export default function Hero() {
       <div className="mx-auto grid w-[min(100%-24px,1200px)] gap-10 py-16 md:grid-cols-[1.1fr_0.9fr] md:py-20">
         <div className="flex flex-col justify-center">
           <span className="w-fit rounded-full border border-po-border bg-white px-3 py-1 text-xs font-semibold uppercase text-po-text-muted">
-            Modern pet-care SaaS
+            Pet Advisor AI Platform
           </span>
           <h1 className="mt-5 text-4xl font-extrabold leading-tight text-po-text md:text-5xl">
-            Premium care journeys for pets, designed for busy owners.
+            AI chăm sóc thú cưng cho Owner, Vet và Admin.
           </h1>
           <p className="mt-4 text-base leading-7 text-po-text-muted md:text-lg">
-            PetOmi blends warm AI guidance, trusted clinics, and beautifully organized pet records so you can focus on
-            cuddles instead of paperwork.
+            Tư vấn AI có cảnh báo khẩn, hồ sơ sức khỏe số suốt vòng đời, đặt lịch và vận hành clinic trong một nền tảng.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button className="h-12 rounded-full bg-po-primary px-6 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 hover:bg-po-primary-hover">
-              Get started free
+              Bắt đầu miễn phí
               <ArrowUpRight className="size-4" />
             </Button>
             <Button
               variant="outline"
               className="h-12 rounded-full border-po-border bg-white px-6 text-sm font-semibold text-po-text"
             >
-              View live demo
+              Xem luồng demo
             </Button>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -80,24 +79,24 @@ export default function Hero() {
               <div className="rounded-[20px] bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-semibold text-po-text">Bella, 2 yrs</p>
+                    <p className="text-sm font-semibold text-po-text">Bella, 2 tuổi</p>
                     <p className="text-xs text-po-text-muted">Golden Retriever</p>
                   </div>
                   <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                    Calm check
+                    Normal
                   </span>
                 </div>
                 <div className="mt-4 grid gap-3">
                   <div className="rounded-2xl border border-po-border bg-po-surface-muted px-3 py-2 text-xs text-po-text-muted">
-                    AI note: hydration + gentle walk recommended.
+                    AI pre-check: ưu tiên theo dõi và đặt lịch trong 48h.
                   </div>
                   <div className="rounded-2xl border border-po-border bg-white px-3 py-2 text-xs text-po-text-muted">
-                    Next visit: Friday, 9:30 AM
+                    Slot đề xuất: Thứ Sáu, 9:30
                   </div>
                 </div>
               </div>
               <div className="mt-4 rounded-[20px] border border-white/70 bg-white/70 p-4 text-xs text-po-text-muted">
-                Your pet timeline is synced with trusted vets and reminders.
+                Hồ sơ sức khỏe được đồng bộ và chia sẻ có kiểm soát với clinic.
               </div>
             </div>
           </div>

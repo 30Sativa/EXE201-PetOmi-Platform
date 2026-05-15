@@ -8,9 +8,9 @@ interface Slot {
 }
 
 const slots: Slot[] = [
-  { time: "09:30", label: "Morning" },
-  { time: "11:00", label: "Late morning" },
-  { time: "16:45", label: "Afternoon" },
+  { time: "09:30", label: "Sáng" },
+  { time: "11:00", label: "Cuối sáng" },
+  { time: "16:45", label: "Chiều" },
 ]
 
 export default function BookingPreview() {
@@ -18,18 +18,17 @@ export default function BookingPreview() {
     <section id="booking" className="py-16">
       <div className="mx-auto grid w-[min(100%-24px,1200px)] gap-10 md:grid-cols-[1fr_1.1fr] md:items-center">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Pet booking preview</p>
-          <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">A booking flow that feels calm.</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Smart booking</p>
+          <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Đặt lịch dựa trên mức độ khẩn.</h2>
           <p className="mt-4 text-base leading-7 text-po-text-muted">
-            Owners see availability, reviews, and care highlights in one place. Clinics receive structured intakes that
-            reduce no-shows.
+            AI pre-check gợi ý clinic và slot phù hợp. Chủ nuôi thấy rõ queue, clinic nhận intake có cấu trúc.
           </p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {[
-              { icon: MapPin, title: "Nearby clinics", text: "Smart matching based on care needs." },
-              { icon: ShieldCheck, title: "Verified reviews", text: "Transparent quality signals." },
-              { icon: CalendarDays, title: "Flexible slots", text: "Real-time availability." },
-              { icon: Clock, title: "Fast intake", text: "Pre-filled history & symptoms." },
+              { icon: MapPin, title: "Clinic gần bạn", text: "Tìm trong bán kính 1-10km." },
+              { icon: ShieldCheck, title: "Review minh bạch", text: "Đánh giá sau khám." },
+              { icon: CalendarDays, title: "Slot theo urgency", text: "Ưu tiên lịch gấp khi cần." },
+              { icon: Clock, title: "QR check-in", text: "Vào hàng đợi nhanh chóng." },
             ].map((item) => {
               const Icon = item.icon
               return (
@@ -44,9 +43,9 @@ export default function BookingPreview() {
         </div>
         <div className="rounded-[32px] border border-po-border bg-white p-6 shadow-xl">
           <div className="rounded-[24px] bg-po-surface-muted p-5">
-            <p className="text-xs font-semibold uppercase text-po-text-subtle">Appointment</p>
-            <h3 className="mt-2 text-lg font-semibold text-po-text">Paw & Pines Veterinary</h3>
-            <p className="text-xs text-po-text-muted">District 2, 2.1 km away</p>
+            <p className="text-xs font-semibold uppercase text-po-text-subtle">Lịch hẹn</p>
+            <h3 className="mt-2 text-lg font-semibold text-po-text">PetOmi Clinic District 2</h3>
+            <p className="text-xs text-po-text-muted">Cách bạn 2.1 km</p>
             <div className="mt-4 space-y-2">
               {slots.map((slot) => (
                 <div key={slot.time} className="flex items-center justify-between rounded-2xl border border-po-border bg-white px-3 py-2 text-sm">
@@ -56,7 +55,7 @@ export default function BookingPreview() {
               ))}
             </div>
             <Button className="mt-5 h-10 w-full rounded-full bg-po-primary text-sm font-semibold text-white hover:bg-po-primary-hover">
-              Confirm booking
+              Xác nhận lịch hẹn
             </Button>
           </div>
         </div>

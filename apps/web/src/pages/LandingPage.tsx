@@ -1,4 +1,4 @@
-import AdoptionSection from "@/components/landing/AdoptionSection"
+import AdminSection from "@/components/landing/AdminSection"
 import BookingPreview from "@/components/landing/BookingPreview"
 import FAQ from "@/components/landing/FAQ"
 import Footer from "@/components/landing/Footer"
@@ -18,7 +18,7 @@ export default function LandingPage() {
       <Services />
       <BookingPreview />
       <VetConsultation />
-      <AdoptionSection />
+      <AdminSection />
       <Testimonials />
       <FAQ />
       <Footer />

@@ -1,4 +1,4 @@
-import { Award, ShieldCheck, Users } from "lucide-react"
+import { AlertTriangle, Layers, ShieldCheck, Users } from "lucide-react"
 
 interface StatItem {
   label: string
@@ -7,15 +7,16 @@ interface StatItem {
 }
 
 const stats: StatItem[] = [
-  { label: "Happy pet owners", value: "24k+", icon: Users },
-  { label: "Vet partners", value: "320", icon: ShieldCheck },
-  { label: "Care plans delivered", value: "18k", icon: Award },
+  { label: "Tính năng core", value: "103+", icon: Layers },
+  { label: "Vai trò vận hành", value: "3", icon: Users },
+  { label: "Theo dõi lịch hẹn", value: "24/7", icon: ShieldCheck },
+  { label: "Urgency pre-check", value: "2-level", icon: AlertTriangle },
 ]
 
 export default function TrustedStats() {
   return (
     <section className="py-12">
-      <div className="mx-auto grid w-[min(100%-24px,1100px)] gap-6 rounded-[32px] border border-po-border bg-white/80 p-6 shadow-sm md:grid-cols-3">
+      <div className="mx-auto grid w-[min(100%-24px,1100px)] gap-6 rounded-[32px] border border-po-border bg-white/80 p-6 shadow-sm md:grid-cols-4">
         {stats.map((stat) => {
           const Icon = stat.icon
           return (

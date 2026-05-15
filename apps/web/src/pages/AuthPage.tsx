@@ -43,14 +43,14 @@ export default function AuthPage({ initialMode = "login" }: AuthPageProps) {
             {mode === "login" ? "Đăng nhập vào hệ thống" : "Tạo tài khoản mới"}
           </h1>
           <p className="max-w-2xl text-base leading-7 text-po-text-muted">
-            Truy cập hồ sơ thú cưng, lịch hẹn clinic, thiết bị đăng nhập và các trạng thái xác minh trong một tài khoản duy nhất.
+            Tài khoản dùng chung cho Owner/Vet với quản lý thiết bị, xác minh email và bảo mật nâng cao.
           </p>
 
           <div className="grid max-w-2xl gap-3">
             {[
-              ["Clinic review", "Clinic mới cần được admin phê duyệt trước khi hoạt động."],
-              ["Secure sessions", "Mỗi phiên đăng nhập được gắn với thiết bị và refresh token riêng."],
-              ["Email verification", "Tài khoản có luồng xác minh email để giảm rủi ro giả mạo."],
+              ["Role toggle", "Chuyển đổi Owner ↔ Vet khi có clinic."],
+              ["Device management", "Theo dõi và khóa thiết bị đăng nhập lạ."],
+              ["Email verification", "Xác minh email và tăng cường bảo mật tài khoản."],
             ].map(([title, text]) => (
               <div key={title} className="grid gap-2 rounded-lg border border-po-border bg-white/70 p-4 backdrop-blur transition motion-safe:animate-fade-up hover:-translate-y-0.5 hover:border-teal-700/30 hover:bg-white md:grid-cols-[160px_1fr]">
                 <strong className="text-sm text-po-text">{title}</strong>

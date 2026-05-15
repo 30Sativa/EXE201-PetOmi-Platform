@@ -9,28 +9,28 @@ interface ServiceItem {
 
 const services: ServiceItem[] = [
   {
-    title: "AI symptom check",
-    description: "Warm, evidence-based triage and next-step guidance any time of day.",
+    title: "AI triage + RAG",
+    description: "Phân loại intent, cảnh báo khẩn và gợi ý bước xử lý dựa trên knowledge base.",
     icon: Sparkles,
-    tag: "Instant answers",
+    tag: "Cảnh báo 2-level",
   },
   {
-    title: "Smart pet profiles",
-    description: "Centralize vaccines, visits, and prescriptions in a single timeline.",
+    title: "Hồ sơ sức khỏe số",
+    description: "Một ID suốt vòng đời: lịch sử khám, tiêm phòng, đơn thuốc và chia sẻ có kiểm soát.",
     icon: PawPrint,
-    tag: "Lifetime record",
+    tag: "Hồ sơ suốt đời",
   },
   {
-    title: "Verified clinics",
-    description: "Book with clinics vetted for care quality, transparency, and empathy.",
+    title: "Smart clinic locator",
+    description: "Tìm clinic gần đây, lọc theo chuyên khoa, đánh giá và đặt lịch nhanh.",
     icon: ShieldPlus,
-    tag: "Trusted partners",
+    tag: "Booking thông minh",
   },
   {
-    title: "Wellness plans",
-    description: "Personalized care plans with gentle reminders and easy rescheduling.",
+    title: "Clinic operations",
+    description: "Quản lý bác sĩ, dịch vụ, lịch hẹn, queue và đồng bộ kết quả sau khám.",
     icon: HeartPulse,
-    tag: "Always on track",
+    tag: "Clinic workspace",
   },
 ]
 
@@ -40,13 +40,13 @@ export default function Services() {
       <div className="mx-auto w-[min(100%-24px,1200px)]">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Services</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Tính năng core</p>
             <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">
-              Everything your pet needs, beautifully organized.
+              Đủ nghiêm túc cho vận hành clinic, vẫn dễ dùng cho chủ nuôi.
             </h2>
           </div>
           <p className="max-w-md text-sm text-po-text-muted">
-            Built for modern pet families who want gentle guidance, seamless bookings, and premium clinic experiences.
+            Kết nối Owner, Vet và Admin bằng một luồng dữ liệu rõ ràng và tự động.
           </p>
         </div>
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">

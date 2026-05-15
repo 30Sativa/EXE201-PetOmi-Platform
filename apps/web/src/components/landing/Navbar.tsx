@@ -1,8 +1,6 @@
 import { Heart, PawPrint } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import { Button } from "@/components/ui/button"
-
 interface NavLink {
   label: string
   href: string
@@ -13,11 +11,11 @@ interface NavbarProps {
 }
 
 const defaultLinks: NavLink[] = [
-  { label: "Services", href: "#services" },
-  { label: "Booking", href: "#booking" },
-  { label: "Veterinary", href: "#veterinary" },
-  { label: "Adoption", href: "#adoption" },
-  { label: "Testimonials", href: "#testimonials" },
+  { label: "Tính năng", href: "#services" },
+  { label: "Đặt lịch", href: "#booking" },
+  { label: "Clinic", href: "#veterinary" },
+  { label: "Admin", href: "#admin" },
+  { label: "Câu hỏi", href: "#faq" },
 ]
 
 export default function Navbar({ links = defaultLinks }: NavbarProps) {
@@ -40,16 +38,19 @@ export default function Navbar({ links = defaultLinks }: NavbarProps) {
         </nav>
 
         <div className="flex items-center gap-2">
-          <a
-            href="#faq"
+          <Link
+            to="/login"
             className="hidden rounded-full px-3 py-2 text-sm font-semibold text-po-text-muted transition hover:text-po-text md:inline-flex"
           >
-            FAQ
-          </a>
-          <Button className="h-10 rounded-full bg-po-primary px-4 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 hover:bg-po-primary-hover">
+            Đăng nhập
+          </Link>
+          <Link
+            to="/register"
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:bg-po-primary-hover"
+          >
             <Heart className="size-4" />
-            Join waitlist
-          </Button>
+            Bắt đầu
+          </Link>
         </div>
       </div>
     </header>

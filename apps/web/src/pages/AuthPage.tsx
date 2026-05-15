@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 
 import LoginPage from "./LoginPage"
 import RegisterPage from "./RegisterPage"
@@ -11,6 +12,7 @@ type AuthPageProps = {
 
 export default function AuthPage({ initialMode = "login" }: AuthPageProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
+  const navigate = useNavigate()
 
   useEffect(() => {
     setMode(initialMode)
@@ -18,20 +20,20 @@ export default function AuthPage({ initialMode = "login" }: AuthPageProps) {
 
   const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode)
-    window.history.replaceState(null, "", nextMode === "login" ? "#/login" : "#/register")
+    navigate(nextMode === "login" ? "/login" : "/register", { replace: true })
   }
 
   return (
     <main className="min-h-screen text-po-text">
       <header className="mx-auto flex min-h-20 w-[min(100%-32px,1280px)] items-center justify-between gap-4 motion-safe:animate-fade-in">
-        <a href="#" aria-label="Trang chủ PetOmi" className="flex items-center gap-2 font-extrabold text-po-text no-underline">
+        <Link to="/" aria-label="Trang chủ PetOmi" className="flex items-center gap-2 font-extrabold text-po-text no-underline">
           <span className="grid size-9 place-items-center rounded-md bg-po-primary text-sm text-white">P</span>
           <span>PetOmi</span>
-        </a>
+        </Link>
 
-        <a href="#" className="text-sm font-extrabold text-po-text-muted no-underline transition hover:text-po-primary">
+        <Link to="/" className="text-sm font-extrabold text-po-text-muted no-underline transition hover:text-po-primary">
           Về trang chủ
-        </a>
+        </Link>
       </header>
 
       <section className="mx-auto grid min-h-[calc(100vh-80px)] w-[min(100%-32px,1180px)] items-center gap-10 py-8 lg:grid-cols-[1fr_480px] lg:gap-20">

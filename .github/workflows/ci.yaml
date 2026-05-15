@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "feature/**"
+      - "fix/**"
+
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ci:
+    name: Build, Test, Docker check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Show project structure
+        run: |
+          echo "============Project structure============"
+          pwd
+          ls -la
+          echo "========================================"
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Show .NET info
+        run: dotnet --info
+
+      - name: Restore dependencies
+        run: |
+          echo "========== RESTORE START =========="
+          dotnet restore
+          echo "========== RESTORE DONE =========="
+
+      - name: Build project
+        run: |
+          echo "========== BUILD START =========="
+          dotnet build --no-restore --configuration Release
+          echo "========== BUILD DONE =========="
+
+      - name: Run tests
+        run: |
+          echo "========== TEST START =========="
+          dotnet test --no-build --configuration Release
+          echo "========== TEST DONE =========="

@@ -28,7 +28,8 @@ namespace PetOmiPlatform.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ExceptionHandlingBehavior<,>)); // 2. Bắt exception
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));        // 3. Validate trước
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));       // 4. Transaction sau
-            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));       // 5. Đo performance
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditLogBehavior<,>));         // 5. Audit log
+            services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));       // 6. Đo performance
 
             return services;
         }

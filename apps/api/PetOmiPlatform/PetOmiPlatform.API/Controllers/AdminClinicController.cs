@@ -27,7 +27,7 @@ namespace PetOmiPlatform.API.Controllers
         {
             var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await Mediator.Send(new ApproveClinicCommand(adminId, clinicId));
-            return Ok(BaseResponse<ReviewClinicResponse>.Ok(result));
+            return Ok(BaseResponse<ReviewClinicResponse>.Ok(result, "Phòng khám đã được duyệt."));
         }
 
         /// <summary>
@@ -37,8 +37,8 @@ namespace PetOmiPlatform.API.Controllers
         public async Task<IActionResult> RejectClinic(Guid clinicId, [FromBody] RejectClinicRequest request)
         {
             var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-            var result = await Mediator.Send(new RejectClinicCommand(adminId, clinicId, request));
-            return Ok(BaseResponse<ReviewClinicResponse>.Ok(result));
+            var result = await Mediator.Send(new RejectClinicCommand(adminId, clinicId, request.Reason));
+            return Ok(BaseResponse<ReviewClinicResponse>.Ok(result, "Phòng khám đã bị từ chối."));
         }
     }
 }

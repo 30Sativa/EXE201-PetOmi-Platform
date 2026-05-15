@@ -13,6 +13,7 @@ GO
 INSERT INTO Roles (RoleID, RoleName) VALUES
     ('11111111-0000-0000-0000-000000000001', 'Owner'),  -- Chủ nuôi, auto gán khi đăng ký
     ('11111111-0000-0000-0000-000000000002', 'Admin');  -- Quản trị viên, gán thủ công
+    ('11111111-0000-0000-0000-000000000003', 'Vet'); -- Bác sĩ, gán thủ công (nếu cần quyền global, hiện tại chưa có)
 -- Bảng Permissions và RolePermissions (global) giữ trống ở giai đoạn này
 -- Mở ra khi cần phân quyền Admin theo role con (support, moderator, finance...)
 

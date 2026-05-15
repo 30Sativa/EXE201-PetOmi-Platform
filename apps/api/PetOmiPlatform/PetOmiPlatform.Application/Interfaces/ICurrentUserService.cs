@@ -10,5 +10,8 @@ namespace PetOmiPlatform.Application.Interfaces
         string? Email { get; }
         string? Role { get; }
         bool IsAuthenticated { get; }
+
+        string? IpAddress { get; }   
+        string? UserAgent { get; }
     }
 }

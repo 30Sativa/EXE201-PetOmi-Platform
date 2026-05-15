@@ -1,6 +1,5 @@
 using MediatR;
 using PetOmiPlatform.Application.Common.Interfaces;
-using PetOmiPlatform.Application.Features.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using System;
 using System.Collections.Generic;
@@ -8,10 +7,10 @@ using System.Text;
 
 namespace PetOmiPlatform.Application.Features.Auth.Command
 {
-    public record LoginCommand(string? IpAddress, string? UserAgent, LoginRequest Request) : IRequest<LoginResponse>, IAuditableCommand
+    public record ToggleRoleCommand(Guid UserId, string TargetRole, Guid? ClinicId = null) : IRequest<ToggleRoleResponse>, IAuditableCommand
     {
-        public Guid? UserId => null;
-        public string Action => "Login";
+        Guid? IAuditableCommand.UserId => UserId;
+        public string Action => $"ToggleRole:{TargetRole}";
         public string Category => "Auth";
     }
 }

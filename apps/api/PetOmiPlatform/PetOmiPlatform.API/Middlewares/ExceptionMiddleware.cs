@@ -32,7 +32,7 @@ namespace PetOmiPlatform.API.Middlewares
                     && ex is not ValidationException
                     && ex is not ForbiddenException
                     && ex is not ConflictException
-                    && ex is UnauthorizedException
+                    && ex is not UnauthorizedException
                     && ex is not DomainException)
                     _logger.LogError(ex, "Unhandled exception occurred");
                 else

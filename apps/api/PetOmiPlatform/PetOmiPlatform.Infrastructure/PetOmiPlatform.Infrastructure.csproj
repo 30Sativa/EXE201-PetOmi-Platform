@@ -17,6 +17,9 @@
     <Folder Include="Identity\" />
   </ItemGroup>
 	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">

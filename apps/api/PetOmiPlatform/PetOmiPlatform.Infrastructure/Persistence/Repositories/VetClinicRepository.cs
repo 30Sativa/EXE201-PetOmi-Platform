@@ -56,14 +56,23 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             }
         }
 
-        public Task<bool> ExistsAsync(Guid vetProfileId, Guid clinicId)
+        public async Task<bool> ExistsAsync(Guid vetProfileId, Guid clinicId)
         {
-            throw new NotImplementedException();
+            return await _context.VetClinics.AnyAsync(vc => vc.VetProfileId == vetProfileId
+               && vc.ClinicId == clinicId
+                && vc.IsActive);
+        }
+
+        public async Task<bool> IsClinicApprovedAsync(Guid clinicId)
+        {
+            return await _context.Clinics.AnyAsync(c => c.ClinicId == clinicId && c.Status == "Approved");
         }
 
         public Task<bool> IsClinicOwnerAsync(Guid userId, Guid clinicId)
         {
-            throw new NotImplementedException();
+            return _context.VetClinics.AnyAsync(vc=> vc.VetProfile.UserId == userId
+               && vc.ClinicId == clinicId
+                && vc.IsActive);
         }
     }
 }

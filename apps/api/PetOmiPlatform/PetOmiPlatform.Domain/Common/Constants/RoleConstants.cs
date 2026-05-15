@@ -8,7 +8,7 @@ namespace PetOmiPlatform.Domain.Common.Constants
     {
         public static readonly Guid OwnerId = Guid.Parse("11111111-0000-0000-0000-000000000001");
         public static readonly Guid AdminId = Guid.Parse("11111111-0000-0000-0000-000000000002");
-
+        public static readonly Guid VetId = Guid.Parse("11111111-0000-0000-0000-000000000003");
         public const string Owner = "Owner";
         public const string Admin = "Admin";
         public const string Vet = "Vet";

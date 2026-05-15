@@ -13,7 +13,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Validation
             RuleFor(x => x.ClinicId)
                 .NotEmpty().WithMessage("ClinicId không được để trống");
 
-            RuleFor(x => x.Request.Reason)
+            RuleFor(x => x.Reason)
                 .NotEmpty().WithMessage("Lý do từ chối không được để trống")
                 .MaximumLength(500).WithMessage("Lý do từ chối không được vượt quá 500 ký tự");
         }

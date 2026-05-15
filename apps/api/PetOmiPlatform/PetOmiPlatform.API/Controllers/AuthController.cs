@@ -116,5 +116,30 @@ namespace PetOmiPlatform.API.Controllers
             await Mediator.Send(new ResetPasswordCommand(request));
             return Ok(BaseResponse<object>.Ok(null, "Đặt lại mật khẩu thành công."));
         }
+
+
+        /// <summary>
+        /// Bật hoặc tắt vai trò được chỉ định cho người dùng hiện tại trong ngữ cảnh của một phòng khám cụ thể.
+        /// </summary>
+        /// <remarks>
+        /// Người dùng phải được xác thực để gọi phương thức này. Thao tác sẽ được thực hiện
+        /// trong ngữ cảnh của người dùng hiện đang đăng nhập.
+        /// </remarks>
+        /// <param name="request">
+        /// Yêu cầu chứa vai trò cần bật/tắt và mã định danh của phòng khám. Không được để null.
+        /// </param>
+        /// <returns>
+        /// Một IActionResult chứa kết quả của thao tác bật/tắt vai trò.
+        /// Trả về phản hồi thành công kèm thông tin vai trò đã được cập nhật.
+        /// </returns>
+
+        [HttpPost("toggle-role")]
+        [Authorize]
+        public async Task<IActionResult> ToggleRole([FromBody] ToggleRoleRequest request)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await Mediator.Send(new ToggleRoleCommand(userId, request.TargetRole, request.ClinicId));
+            return Ok(BaseResponse<ToggleRoleResponse>.Ok(result));
+        }
     }
 }

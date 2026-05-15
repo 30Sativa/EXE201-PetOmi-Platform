@@ -55,7 +55,9 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IVetProfileRepository, VetProfileRepository>();
             services.AddScoped<IClinicRepository, ClinicRepository>();
             services.AddScoped<IVetClinicRepository, VetClinicRepository>();
-
+            services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
             // Services
             services.AddScoped<IEmailService, EmailService>();
 

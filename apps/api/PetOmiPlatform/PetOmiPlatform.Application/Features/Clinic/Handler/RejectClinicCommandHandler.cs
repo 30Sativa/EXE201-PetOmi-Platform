@@ -28,7 +28,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
             var clinic = await _clinicRepository.GetByIdAsync(command.ClinicId)
                 ?? throw new NotFoundException("Không tìm thấy phòng khám.");
 
-            clinic.Reject(command.AdminId, command.Request.Reason);
+            clinic.Reject(command.AdminId, command.Reason);
 
             await _clinicRepository.UpdateAsync(clinic);
             await _vetClinicRepository.DeactivateByClinicIdAsync(clinic.Id);

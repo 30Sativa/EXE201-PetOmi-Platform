@@ -3,6 +3,7 @@ using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Vet.Command;
 using PetOmiPlatform.Application.Features.Vet.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System;
@@ -15,16 +16,19 @@ namespace PetOmiPlatform.Application.Features.Vet.Handler
     {
         private readonly IVetProfileRepository _vetProfileRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IUserRoleRepository _userRoleRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateVetProfileCommandHandler(
             IVetProfileRepository vetProfileRepository,
             IUserRepository userRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IUserRoleRepository userRoleRepository)
         {
             _vetProfileRepository = vetProfileRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _userRoleRepository = userRoleRepository;
         }
 
         public async Task<CreateVetProfileResponse> Handle(
@@ -48,6 +52,8 @@ namespace PetOmiPlatform.Application.Features.Vet.Handler
             );
 
             await _vetProfileRepository.AddAsync(vetProfile);
+
+            await _userRoleRepository.AddAsync(user.Id, RoleConstants.VetId);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new CreateVetProfileResponse

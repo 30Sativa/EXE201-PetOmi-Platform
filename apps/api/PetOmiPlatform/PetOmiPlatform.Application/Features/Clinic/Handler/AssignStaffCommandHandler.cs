@@ -3,6 +3,7 @@ using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Clinic.Command;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Common.Constants;
+using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System;
 using System.Collections.Generic;

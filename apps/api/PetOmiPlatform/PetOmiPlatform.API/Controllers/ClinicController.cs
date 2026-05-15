@@ -29,5 +29,16 @@ namespace PetOmiPlatform.API.Controllers
             var result = await Mediator.Send(new CreateClinicCommand(userId, request));
             return Ok(BaseResponse<CreateClinicResponse>.Ok(result));
         }
+
+        /// <summary>
+        /// Gán bác sĩ vào phòng khám. User phải là ClinicOwner của phòng khám đó mới có quyền gán. Bác sĩ được gán phải có VetProfile và sẽ được gán Role tương ứng (ví dụ: "Vet", "Assistant").
+        /// </summary>
+        [HttpPost("{clinicId}/staff")]
+        public async Task<IActionResult> AssignStaff(Guid clinicId, [FromBody] AssignStaffRequest request)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await Mediator.Send(new AssignStaffCommand(userId, clinicId, request));
+            return Ok(BaseResponse<object>.Ok(null, "Gán bác sĩ thành công."));
+        }
     }
 }

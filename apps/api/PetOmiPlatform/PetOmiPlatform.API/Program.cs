@@ -1,7 +1,9 @@
-
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
+using PetOmiPlatform.API.Common.Authorization;
 using PetOmiPlatform.API.Middlewares;
 using PetOmiPlatform.Application;
+using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Infrastructure;
 using System.Reflection;
 
@@ -12,7 +14,6 @@ var builder = WebApplication.CreateBuilder(args);
 // =======================
 
 builder.Services.AddControllers();
-
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(c =>
@@ -44,11 +45,30 @@ builder.Services.AddSwaggerGen(c =>
 
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    c.IncludeXmlComments(xmlPath);
+    if (File.Exists(xmlPath))
+        c.IncludeXmlComments(xmlPath);
 });
 
-// Application + Infrastructure
+// Application layer
 builder.Services.AddApplication();
+
+// Authorization policies — phải trước AddInfrastructure
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(Policies.OwnerOnly, policy =>
+        policy.Requirements.Add(new ActiveRoleRequirement(RoleConstants.Owner)));
+
+    options.AddPolicy(Policies.AdminOnly, policy =>
+        policy.Requirements.Add(new ActiveRoleRequirement(RoleConstants.Admin)));
+
+    options.AddPolicy(Policies.VetOnly, policy =>
+        policy.Requirements.Add(new ActiveRoleRequirement(RoleConstants.Vet)));
+});
+
+// Authorization handler
+builder.Services.AddScoped<IAuthorizationHandler, ActiveRoleHandler>();
+
+// Infrastructure layer — sau cùng
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // =======================
@@ -58,7 +78,7 @@ builder.Services.AddInfrastructure(builder.Configuration);
 var app = builder.Build();
 
 // =======================
-// MIDDLEWARE
+// MIDDLEWARE PIPELINE
 // =======================
 
 app.UseMiddleware<ExceptionMiddleware>();

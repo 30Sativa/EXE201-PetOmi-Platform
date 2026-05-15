@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 
@@ -23,6 +24,7 @@ const getErrorMessage = (error: unknown) => {
 export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -72,14 +74,24 @@ export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
         <label htmlFor="register-password" className="text-sm font-extrabold text-po-text">
           Mật khẩu
         </label>
-        <input
-          id="register-password"
-          type="password"
-          autoComplete="new-password"
-          placeholder="Tối thiểu 6 ký tự"
-          className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary"
-          {...register("password")}
-        />
+        <div className="relative">
+          <input
+            id="register-password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="Tối thiểu 6 ký tự"
+            className="h-12 w-full rounded-lg border border-po-border bg-white px-4 pr-12 text-[15px] text-po-text transition focus:border-po-primary"
+            {...register("password")}
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-po-text-muted transition hover:text-po-text"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         <p className="text-sm text-po-text-subtle">Dùng ít nhất 6 ký tự để bảo vệ tài khoản.</p>
         {errors.password?.message ? <p className="text-sm font-semibold text-po-danger">{errors.password.message}</p> : null}
       </div>

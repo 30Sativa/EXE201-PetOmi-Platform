@@ -1,6 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod"
+import { Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
+import { Link } from "react-router-dom"
 
 import { LoginRequestSchema, type LoginRequest } from "../schemas/auth.schema"
 import { loginApi } from "../services/auth.service"
@@ -32,6 +34,7 @@ const createDeviceFingerprint = () => {
 export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     register,
@@ -86,18 +89,28 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
           <label htmlFor="login-password" className="text-sm font-extrabold text-po-text">
             Mật khẩu
           </label>
-          <a href="#forgot-password" className="text-sm font-bold text-po-primary no-underline transition hover:text-po-primary-hover">
+          <Link to="/forgot-password" className="text-sm font-bold text-po-primary no-underline transition hover:text-po-primary-hover">
             Quên mật khẩu?
-          </a>
+          </Link>
         </div>
-        <input
-          id="login-password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Nhập mật khẩu"
-          className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary"
-          {...register("password")}
-        />
+        <div className="relative">
+          <input
+            id="login-password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            placeholder="Nhập mật khẩu"
+            className="h-12 w-full rounded-lg border border-po-border bg-white px-4 pr-12 text-[15px] text-po-text transition focus:border-po-primary"
+            {...register("password")}
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-po-text-muted transition hover:text-po-text"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.password?.message ? <p className="text-sm font-semibold text-po-danger">{errors.password.message}</p> : null}
       </div>
 

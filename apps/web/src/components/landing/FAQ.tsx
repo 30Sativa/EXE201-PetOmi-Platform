@@ -32,7 +32,7 @@ export default function FAQ() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">FAQ</p>
           <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Answers for calm pet care planning.</h2>
         </div>
-        <Accordion type="single" className="mt-8 grid gap-4">
+        <Accordion className="mt-8 grid gap-4">
           {faqItems.map((item) => (
             <AccordionItem key={item.question} value={item.question}>
               <AccordionHeader>

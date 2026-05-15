@@ -30,24 +30,40 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+          include-prerelease: true
 
       - name: Show .NET info
         run: dotnet --info
 
       - name: Restore dependencies
+        working-directory: apps/api/PetOmiPlatform
         run: |
           echo "========== RESTORE START =========="
           dotnet restore
           echo "========== RESTORE DONE =========="
 
       - name: Build project
+        working-directory: apps/api/PetOmiPlatform
         run: |
           echo "========== BUILD START =========="
           dotnet build --no-restore --configuration Release
           echo "========== BUILD DONE =========="
 
       - name: Run tests
+        working-directory: apps/api/PetOmiPlatform
         run: |
           echo "========== TEST START =========="
           dotnet test --no-build --configuration Release
           echo "========== TEST DONE =========="
+
+      - name: Docker build check
+        working-directory: apps/api/PetOmiPlatform
+        run: |
+          echo "========== DOCKER BUILD START =========="
+          if [ ! -f Dockerfile ]; then
+            echo "Dockerfile not found"
+            exit 1
+          fi
+
+          docker build -t dummy-image -f Dockerfile .
+          echo "========== DOCKER BUILD DONE =========="

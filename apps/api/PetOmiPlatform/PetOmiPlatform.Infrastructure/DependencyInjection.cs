@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PetOmiPlatform.Application.Interfaces;
@@ -56,6 +56,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IClinicRepository, ClinicRepository>();
             services.AddScoped<IVetClinicRepository, VetClinicRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<IPetRepository, PetRepository>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             // Services

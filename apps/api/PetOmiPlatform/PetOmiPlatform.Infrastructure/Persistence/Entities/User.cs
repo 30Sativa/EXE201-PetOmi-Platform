@@ -11,7 +11,7 @@ public partial class User
 
     public string NormalizedEmail { get; set; } = null!;
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
 
     public bool EmailVerified { get; set; }
 
@@ -34,6 +34,8 @@ public partial class User
     public virtual ICollection<Clinic> Clinics { get; set; } = new List<Clinic>();
 
     public virtual ICollection<EmailVerificationToken> EmailVerificationTokens { get; set; } = new List<EmailVerificationToken>();
+
+    public virtual ICollection<ExternalLogin> ExternalLogins { get; set; } = new List<ExternalLogin>();
 
     public virtual ICollection<LoginOtptoken> LoginOtptokens { get; set; } = new List<LoginOtptoken>();
 

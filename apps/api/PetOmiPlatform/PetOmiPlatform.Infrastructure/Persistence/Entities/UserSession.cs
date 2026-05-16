@@ -27,6 +27,12 @@ public partial class UserSession
 
     public DateTime CreatedAt { get; set; }
 
+    public string? ActiveRole { get; set; }
+
+    public Guid? ActiveClinicId { get; set; }
+
+    public virtual Clinic? ActiveClinic { get; set; }
+
     public virtual UserDevice? Device { get; set; }
 
     public virtual RefreshToken? RefreshToken { get; set; }

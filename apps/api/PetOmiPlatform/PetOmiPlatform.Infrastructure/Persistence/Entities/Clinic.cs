@@ -29,5 +29,7 @@ public partial class Clinic
 
     public virtual User? ReviewedByAdmin { get; set; }
 
+    public virtual ICollection<UserSession> UserSessions { get; set; } = new List<UserSession>();
+
     public virtual ICollection<VetClinic> VetClinics { get; set; } = new List<VetClinic>();
 }

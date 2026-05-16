@@ -1,9 +1,11 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.Application.Common.Models;
+using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Feature.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Features.Auth.Command;
@@ -140,6 +142,36 @@ namespace PetOmiPlatform.API.Controllers
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var result = await Mediator.Send(new ToggleRoleCommand(userId, request.TargetRole, request.ClinicId));
             return Ok(BaseResponse<ToggleRoleResponse>.Ok(result));
+        }
+
+        /// <summary>
+        /// Redirect user đến Google consent screen
+        /// </summary>
+        [HttpGet("google/login")]
+        public IActionResult GoogleLogin()
+        {
+            var redirectUrl = Url.Action(nameof(GoogleCallback), "Auth", null, Request.Scheme);
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, "Google");
+        }
+
+        /// <summary>
+        /// Google callback — nhận code, xử lý login/register, trả JWT
+        /// </summary>
+        [HttpGet("google/callback")]
+        public async Task<IActionResult> GoogleCallback()
+        {
+            // Lấy access token từ Google authentication result
+            var authenticateResult = await HttpContext.AuthenticateAsync("Google");
+
+            if (!authenticateResult.Succeeded)
+                throw new UnauthorizedException("Xác thực Google thất bại.");
+
+            var accessToken = authenticateResult.Properties?.GetTokenValue("access_token")
+                ?? throw new UnauthorizedException("Không lấy được access token từ Google.");
+
+            var result = await Mediator.Send(new GoogleLoginCommand(accessToken));
+            return Ok(BaseResponse<LoginResponse>.Ok(result));
         }
     }
 }

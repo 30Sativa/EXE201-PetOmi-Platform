@@ -1,11 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Domain.Interfaces.Services;
 using PetOmiPlatform.Infrastructure.Common.Settings;
+using PetOmiPlatform.Infrastructure.External;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 using PetOmiPlatform.Infrastructure.Persistence.Repositories;
 using PetOmiPlatform.Infrastructure.Persistence.UnitOfWork;
@@ -14,6 +17,7 @@ using PetOmiPlatform.Infrastructure.Security.PasswordHasher;
 using PetOmiPlatform.Infrastructure.Security.Token;
 using PetOmiPlatform.Infrastructure.Services;
 using Resend;
+using System.Text;
 
 namespace PetOmiPlatform.Infrastructure
 {
@@ -28,9 +32,40 @@ namespace PetOmiPlatform.Infrastructure
                 options.UseSqlServer(
                     configuration.GetConnectionString("DefaultConnection")));
 
-            // Jwt
+            // Jwt Settings
             services.Configure<JwtSettings>(
                 configuration.GetSection("JwtSettings"));
+
+            // JWT Authentication
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                var jwtSettings = configuration.GetSection("JwtSettings");
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings["Issuer"],
+                    ValidAudience = jwtSettings["Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(jwtSettings["Secret"]!))
+                };
+            })
+            .AddGoogle("Google", options =>  
+            {
+                options.ClientId = configuration["Authentication:Google:ClientId"]!;
+                options.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
+                options.CallbackPath = "/api/auth/google/callback";
+                options.Scope.Add("email");
+                options.Scope.Add("profile");
+            });
+
 
             // Resend
             services.Configure<ResendClientOptions>(options =>
@@ -58,6 +93,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IExternalLoginRepository, ExternalLoginRepository>();
+            services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
             // Services
             services.AddScoped<IEmailService, EmailService>();
 

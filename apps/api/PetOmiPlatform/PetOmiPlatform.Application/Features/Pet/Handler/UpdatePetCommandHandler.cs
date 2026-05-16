@@ -49,7 +49,22 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             // 4. Lưu DB
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return CreatePetCommandHandler.MapToResponse(pet);
+            return new PetResponse
+            {
+                PetId = pet.Id,
+                OwnerUserId = pet.OwnerUserId,
+                Name = pet.Name,
+                Species = pet.Species,
+                Breed = pet.Breed,
+                Gender = pet.Gender,
+                IsNeutered = pet.IsNeutered,
+                DateOfBirth = pet.DateOfBirth,
+                IsBirthDateEstimated = pet.IsBirthDateEstimated,
+                AvatarUrl = pet.AvatarUrl,
+                Color = pet.Color,
+                CreatedAt = pet.CreatedAt,
+                UpdatedAt = pet.UpdatedAt
+            };
         }
     }
 }

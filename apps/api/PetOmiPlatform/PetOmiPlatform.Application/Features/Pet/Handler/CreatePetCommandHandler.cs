@@ -51,26 +51,24 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             // 3. Lưu vào DB
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 4. Trả về response
-            return MapToResponse(pet);
+            // 4. Trả về response — mỗi handler tự quyết định shape của mình
+            return new PetResponse
+            {
+                PetId = pet.Id,
+                OwnerUserId = pet.OwnerUserId,
+                Name = pet.Name,
+                Species = pet.Species,
+                Breed = pet.Breed,
+                Gender = pet.Gender,
+                IsNeutered = pet.IsNeutered,
+                DateOfBirth = pet.DateOfBirth,
+                IsBirthDateEstimated = pet.IsBirthDateEstimated,
+                AvatarUrl = pet.AvatarUrl,
+                Color = pet.Color,
+                CreatedAt = pet.CreatedAt,
+                UpdatedAt = pet.UpdatedAt
+            };
         }
-
-        // Map domain → response DTO (dùng chung trong các handler của Pet)
-        internal static PetResponse MapToResponse(PetDomain pet) => new()
-        {
-            PetId = pet.Id,
-            OwnerUserId = pet.OwnerUserId,
-            Name = pet.Name,
-            Species = pet.Species,
-            Breed = pet.Breed,
-            Gender = pet.Gender,
-            IsNeutered = pet.IsNeutered,
-            DateOfBirth = pet.DateOfBirth,
-            IsBirthDateEstimated = pet.IsBirthDateEstimated,
-            AvatarUrl = pet.AvatarUrl,
-            Color = pet.Color,
-            CreatedAt = pet.CreatedAt,
-            UpdatedAt = pet.UpdatedAt
-        };
     }
 }
+

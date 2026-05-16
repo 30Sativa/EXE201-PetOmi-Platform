@@ -7,8 +7,8 @@ ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 
 # Chạy với non-root user để tăng bảo mật
-RUN adduser --disabled-password --gecos "" appuser && chown -R appuser /app
-USER appuser
+# Official .NET images already define a non-root user via APP_UID.
+USER $APP_UID
 
 # ============================================================
 # Stage 2: Restore dependencies (layer cache riêng biệt)
@@ -66,6 +66,6 @@ RUN dotnet publish "PetOmiPlatform.API.csproj" \
 FROM base AS final
 WORKDIR /app
 
-COPY --from=publish /app/publish .
+COPY --from=publish --chown=$APP_UID:$APP_UID /app/publish .
 
 ENTRYPOINT ["dotnet", "PetOmiPlatform.API.dll"]

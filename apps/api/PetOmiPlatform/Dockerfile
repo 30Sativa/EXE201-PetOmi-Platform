@@ -41,8 +41,7 @@ WORKDIR "/src/PetOmiPlatform.API"
 # Da restore o stage tren, khong can restore lai
 RUN dotnet build "PetOmiPlatform.API.csproj" \
     -c $BUILD_CONFIGURATION \
-    --no-restore \
-    -o /app/build
+    --no-restore
 
 # ============================================================
 # Stage 4: Publish

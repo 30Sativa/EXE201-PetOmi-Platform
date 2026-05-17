@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -57,6 +57,14 @@ public partial class PetOmniDbContext : DbContext
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Data Source=(local);Database=PetOmni_DB;Trusted_Connection=True;TrustServerCertificate=True;");
+
+    // DbSet cho bảng Pets — hồ sơ thú cưng
+    public virtual DbSet<Pet> Pets { get; set; }
+
+//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+//        => optionsBuilder.UseSqlServer("Data Source=(local);Database=PetOmni_DB;Trusted_Connection=True;TrustServerCertificate=True;");
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -538,6 +546,40 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey<VetProfile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__VetProfil__UserI__6477ECF3");
+        });
+
+        // Cấu hình bảng Pets
+        modelBuilder.Entity<Pet>(entity =>
+        {
+            entity.HasKey(e => e.PetId).HasName("PK__Pets__48E53862");
+
+            entity.Property(e => e.PetId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("PetID");
+            entity.Property(e => e.OwnerUserId)
+                .HasColumnName("OwnerUserID");
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Species).HasMaxLength(50);
+            entity.Property(e => e.Breed).HasMaxLength(100);
+            entity.Property(e => e.Gender).HasMaxLength(20);
+            entity.Property(e => e.IsNeutered).HasMaxLength(20);
+            entity.Property(e => e.AvatarUrl)
+                .HasMaxLength(500)
+                .HasColumnName("AvatarURL");
+            entity.Property(e => e.Color).HasMaxLength(200);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            // FK: Pet → User (chủ nuôi)
+            entity.HasOne(d => d.Owner)
+                .WithMany()
+                .HasForeignKey(d => d.OwnerUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Pets_OwnerUser");
         });
 
         OnModelCreatingPartial(modelBuilder);

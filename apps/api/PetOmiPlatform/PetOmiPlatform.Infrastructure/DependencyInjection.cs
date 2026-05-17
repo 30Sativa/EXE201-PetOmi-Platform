@@ -1,4 +1,8 @@
+
+
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,6 +12,7 @@ using PetOmiPlatform.Domain.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Domain.Interfaces.Services;
 using PetOmiPlatform.Infrastructure.Common.Settings;
+using PetOmiPlatform.Infrastructure.External;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 using PetOmiPlatform.Infrastructure.Persistence.Repositories;
 using PetOmiPlatform.Infrastructure.Persistence.UnitOfWork;
@@ -31,6 +36,11 @@ namespace PetOmiPlatform.Infrastructure
                 options.UseSqlServer(
                     configuration.GetConnectionString("DefaultConnection")));
 
+
+            // Jwt Settings
+            services.Configure<JwtSettings>(
+                configuration.GetSection("JwtSettings"));
+
             // Jwt
             var jwtSection = configuration.GetSection("JwtSettings");
             services.Configure<JwtSettings>(jwtSection);
@@ -52,6 +62,9 @@ namespace PetOmiPlatform.Infrastructure
                             Encoding.UTF8.GetBytes(jwtSettings.Secret))
                     };
                 });
+
+
+
 
             // Resend
             services.Configure<ResendClientOptions>(options =>
@@ -80,6 +93,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IPetRepository, PetRepository>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IExternalLoginRepository, ExternalLoginRepository>();
+            services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
             // Services
             services.AddScoped<IEmailService, EmailService>();
 

@@ -78,6 +78,19 @@ namespace PetOmiPlatform.Domain.Entities
             return new UserDomain(email, password);
         }
 
+        public static UserDomain CreateWithoutPassword(Email email)
+        {
+            return new UserDomain
+            {
+                Id = Guid.NewGuid(),
+                Email = email,
+                PasswordHash = null,
+                EmailVerified = true,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
+        }
+
         // === Behavior Methods (Domain Logic) ===
 
         public void ValidateLogin(string password, IPasswordHasher passwordHasher) 

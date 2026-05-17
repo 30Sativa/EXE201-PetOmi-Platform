@@ -11,59 +11,80 @@ on:
       - main
 
 jobs:
-  ci:
-    name: Build, Test, Docker check
+  build:
+    name: Build .NET project
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Show project structure
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Show environment info
         run: |
-          echo "============Project structure============"
-          pwd
-          ls -la
-          echo "========================================"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Event: ${{ github.event_name }}"
+
+      - name: Restore dependencies
+        working-directory: apps/api/PetOmiPlatform
+        run: dotnet restore
+
+      - name: Build project
+        working-directory: apps/api/PetOmiPlatform
+        run: dotnet build --no-restore --configuration Release
+
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
-          include-prerelease: true
-
-      - name: Show .NET info
-        run: dotnet --info
+          dotnet-version: "10.0.x"
 
       - name: Restore dependencies
         working-directory: apps/api/PetOmiPlatform
-        run: |
-          echo "========== RESTORE START =========="
-          dotnet restore
-          echo "========== RESTORE DONE =========="
+        run: dotnet restore
 
       - name: Build project
         working-directory: apps/api/PetOmiPlatform
-        run: |
-          echo "========== BUILD START =========="
-          dotnet build --no-restore --configuration Release
-          echo "========== BUILD DONE =========="
+        run: dotnet build --no-restore --configuration Release
 
       - name: Run tests
         working-directory: apps/api/PetOmiPlatform
-        run: |
-          echo "========== TEST START =========="
-          dotnet test --no-build --configuration Release
-          echo "========== TEST DONE =========="
+        run: dotnet test --no-build --configuration Release
 
-      - name: Docker build check
+  docker:
+    name: Docker build check
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify Dockerfile exists
         working-directory: apps/api/PetOmiPlatform
         run: |
-          echo "========== DOCKER BUILD START =========="
           if [ ! -f Dockerfile ]; then
             echo "Dockerfile not found"
             exit 1
           fi
 
-          docker build -t dummy-image -f Dockerfile .
-          echo "========== DOCKER BUILD DONE =========="
+      - name: Docker build check
+        working-directory: apps/api/PetOmiPlatform
+        run: docker build -t dummy-image -f Dockerfile .

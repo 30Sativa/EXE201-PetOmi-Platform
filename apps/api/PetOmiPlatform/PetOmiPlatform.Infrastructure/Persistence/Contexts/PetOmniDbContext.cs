@@ -22,6 +22,8 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
 
+    public virtual DbSet<ExternalLogin> ExternalLogins { get; set; }
+
     public virtual DbSet<LoginOtptoken> LoginOtptokens { get; set; }
 
     public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
@@ -52,12 +54,17 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<VetProfile> VetProfiles { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=(local);Database=PetOmni_DB;Trusted_Connection=True;TrustServerCertificate=True;");
+
     // DbSet cho bảng Pets — hồ sơ thú cưng
     public virtual DbSet<Pet> Pets { get; set; }
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
 //        => optionsBuilder.UseSqlServer("Data Source=(local);Database=PetOmni_DB;Trusted_Connection=True;TrustServerCertificate=True;");
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -142,6 +149,30 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__EmailVeri__UserI__7C4F7684");
+        });
+
+        modelBuilder.Entity<ExternalLogin>(entity =>
+        {
+            entity.HasKey(e => e.ExternalLoginId).HasName("PK__External__A8FDB38E2F4A91D6");
+
+            entity.HasIndex(e => new { e.Provider, e.ProviderKey }, "UQ_ExternalLogins").IsUnique();
+
+            entity.Property(e => e.ExternalLoginId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ExternalLoginID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.Provider).HasMaxLength(50);
+            entity.Property(e => e.ProviderKey).HasMaxLength(255);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ExternalLogins)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__ExternalL__UserI__5224328E");
         });
 
         modelBuilder.Entity<LoginOtptoken>(entity =>
@@ -388,6 +419,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.AccessTokenJti)
                 .HasMaxLength(255)
                 .HasColumnName("AccessTokenJTI");
+            entity.Property(e => e.ActiveClinicId).HasColumnName("ActiveClinicID");
+            entity.Property(e => e.ActiveRole).HasMaxLength(20);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
@@ -403,6 +436,10 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.RefreshTokenId).HasColumnName("RefreshTokenID");
             entity.Property(e => e.UserAgent).HasMaxLength(500);
             entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.ActiveClinic).WithMany(p => p.UserSessions)
+                .HasForeignKey(d => d.ActiveClinicId)
+                .HasConstraintName("FK_UserSessions_ActiveClinic");
 
             entity.HasOne(d => d.Device).WithMany(p => p.UserSessions)
                 .HasForeignKey(d => d.DeviceId)

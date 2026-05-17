@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
@@ -14,6 +16,7 @@ using PetOmiPlatform.Infrastructure.Security.PasswordHasher;
 using PetOmiPlatform.Infrastructure.Security.Token;
 using PetOmiPlatform.Infrastructure.Services;
 using Resend;
+using System.Text;
 
 namespace PetOmiPlatform.Infrastructure
 {
@@ -29,8 +32,26 @@ namespace PetOmiPlatform.Infrastructure
                     configuration.GetConnectionString("DefaultConnection")));
 
             // Jwt
-            services.Configure<JwtSettings>(
-                configuration.GetSection("JwtSettings"));
+            var jwtSection = configuration.GetSection("JwtSettings");
+            services.Configure<JwtSettings>(jwtSection);
+
+            var jwtSettings = jwtSection.Get<JwtSettings>()!;
+            services
+                .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer           = true,
+                        ValidateAudience         = true,
+                        ValidateLifetime         = true,
+                        ValidateIssuerSigningKey  = true,
+                        ValidIssuer              = jwtSettings.Issuer,
+                        ValidAudience            = jwtSettings.Audience,
+                        IssuerSigningKey         = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(jwtSettings.Secret))
+                    };
+                });
 
             // Resend
             services.Configure<ResendClientOptions>(options =>
@@ -56,6 +77,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IClinicRepository, ClinicRepository>();
             services.AddScoped<IVetClinicRepository, VetClinicRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+            services.AddScoped<IPetRepository, PetRepository>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             // Services

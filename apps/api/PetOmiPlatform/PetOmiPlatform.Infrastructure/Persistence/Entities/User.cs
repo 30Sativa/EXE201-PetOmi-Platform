@@ -41,6 +41,12 @@ public partial class User
 
     public virtual ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
 
+    public virtual ICollection<PetUserAccess> PetUserAccessGrantedByUsers { get; set; } = new List<PetUserAccess>();
+
+    public virtual ICollection<PetUserAccess> PetUserAccessUsers { get; set; } = new List<PetUserAccess>();
+
+    public virtual ICollection<Pet> Pets { get; set; } = new List<Pet>();
+
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
     public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();

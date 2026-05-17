@@ -1,32 +1,27 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
 
-// EF Core entity tương ứng với bảng Pets trong DB
 public partial class Pet
 {
     public Guid PetId { get; set; }
 
-    public Guid OwnerUserId { get; set; }           // FK → Users.UserID
+    public Guid OwnerUserId { get; set; }
 
     public string Name { get; set; } = null!;
 
-    public string Species { get; set; } = null!;    // "Dog" / "Cat"
+    public string Species { get; set; } = null!;
 
     public string? Breed { get; set; }
 
-    public string? Gender { get; set; }             // "Male" / "Female" / "Unknown"
-
-    public string? IsNeutered { get; set; }         // "Yes" / "No" / "Unknown"
+    public string? Gender { get; set; }
 
     public DateOnly? DateOfBirth { get; set; }
 
-    public bool IsBirthDateEstimated { get; set; }  // true = ngày sinh ước tính
+    public bool IsBirthDateEstimated { get; set; }
 
     public string? AvatarUrl { get; set; }
-
-    public string? Color { get; set; }
 
     public bool IsActive { get; set; }
 
@@ -36,6 +31,15 @@ public partial class Pet
 
     public DateTime? UpdatedAt { get; set; }
 
-    // Navigation property
-    public virtual User Owner { get; set; } = null!;
+    public virtual User OwnerUser { get; set; } = null!;
+
+    public virtual PetHealthProfile? PetHealthProfile { get; set; }
+
+    public virtual ICollection<PetMedicalRecord> PetMedicalRecords { get; set; } = new List<PetMedicalRecord>();
+
+    public virtual ICollection<PetPhoto> PetPhotos { get; set; } = new List<PetPhoto>();
+
+    public virtual ICollection<PetUserAccess> PetUserAccesses { get; set; } = new List<PetUserAccess>();
+
+    public virtual ICollection<PetWeightLog> PetWeightLogs { get; set; } = new List<PetWeightLog>();
 }

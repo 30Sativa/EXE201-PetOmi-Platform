@@ -38,11 +38,9 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 Species = pet.Species,
                 Breed = pet.Breed,
                 Gender = pet.Gender,
-                IsNeutered = pet.IsNeutered,
                 DateOfBirth = pet.DateOfBirth,
                 IsBirthDateEstimated = pet.IsBirthDateEstimated,
                 AvatarUrl = pet.AvatarUrl,
-                Color = pet.Color,
                 CreatedAt = pet.CreatedAt,
                 UpdatedAt = pet.UpdatedAt
             };

@@ -11,11 +11,9 @@ namespace PetOmiPlatform.Domain.Entities
         public string Species { get; private set; }           // "Dog" hoặc "Cat"
         public string? Breed { get; private set; }
         public string? Gender { get; private set; }           // "Male" / "Female" / "Unknown"
-        public string? IsNeutered { get; private set; }       // "Yes" / "No" / "Unknown"
         public DateOnly? DateOfBirth { get; private set; }
         public bool IsBirthDateEstimated { get; private set; }
         public string? AvatarUrl { get; private set; }
-        public string? Color { get; private set; }
         public bool IsActive { get; private set; }
         public DateTime? DeletedAt { get; private set; }
         public DateTime CreatedAt { get; private set; }
@@ -32,11 +30,9 @@ namespace PetOmiPlatform.Domain.Entities
             string species,
             string? breed,
             string? gender,
-            string? isNeutered,
             DateOnly? dateOfBirth,
             bool isBirthDateEstimated,
-            string? avatarUrl,
-            string? color)
+            string? avatarUrl)
         {
             Id = Guid.NewGuid();
             OwnerUserId = ownerUserId;
@@ -44,11 +40,9 @@ namespace PetOmiPlatform.Domain.Entities
             Species = species;
             Breed = breed;
             Gender = gender;
-            IsNeutered = isNeutered;
             DateOfBirth = dateOfBirth;
             IsBirthDateEstimated = isBirthDateEstimated;
             AvatarUrl = avatarUrl;
-            Color = color;
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
         }
@@ -62,16 +56,14 @@ namespace PetOmiPlatform.Domain.Entities
             string species,
             string? breed,
             string? gender,
-            string? isNeutered,
             DateOnly? dateOfBirth,
             bool isBirthDateEstimated,
-            string? avatarUrl,
-            string? color)
+            string? avatarUrl)
         {
             return new PetDomain(
                 ownerUserId, name, species, breed,
-                gender, isNeutered, dateOfBirth,
-                isBirthDateEstimated, avatarUrl, color);
+                gender, dateOfBirth,
+                isBirthDateEstimated, avatarUrl);
         }
 
         // Khôi phục đối tượng từ dữ liệu DB (dùng trong repository)
@@ -82,11 +74,9 @@ namespace PetOmiPlatform.Domain.Entities
             string species,
             string? breed,
             string? gender,
-            string? isNeutered,
             DateOnly? dateOfBirth,
             bool isBirthDateEstimated,
             string? avatarUrl,
-            string? color,
             bool isActive,
             DateTime? deletedAt,
             DateTime createdAt,
@@ -100,11 +90,9 @@ namespace PetOmiPlatform.Domain.Entities
                 Species = species,
                 Breed = breed,
                 Gender = gender,
-                IsNeutered = isNeutered,
                 DateOfBirth = dateOfBirth,
                 IsBirthDateEstimated = isBirthDateEstimated,
                 AvatarUrl = avatarUrl,
-                Color = color,
                 IsActive = isActive,
                 DeletedAt = deletedAt,
                 CreatedAt = createdAt,
@@ -120,21 +108,17 @@ namespace PetOmiPlatform.Domain.Entities
             string species,
             string? breed,
             string? gender,
-            string? isNeutered,
             DateOnly? dateOfBirth,
             bool isBirthDateEstimated,
-            string? avatarUrl,
-            string? color)
+            string? avatarUrl)
         {
             Name = name;
             Species = species;
             Breed = breed;
             Gender = gender;
-            IsNeutered = isNeutered;
             DateOfBirth = dateOfBirth;
             IsBirthDateEstimated = isBirthDateEstimated;
             AvatarUrl = avatarUrl;
-            Color = color;
             UpdatedAt = DateTime.UtcNow;
         }
 

@@ -17,7 +17,6 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Response
 
         public string? Gender { get; set; }
 
-        public string? IsNeutered { get; set; }
 
         public DateOnly? DateOfBirth { get; set; }
 
@@ -25,7 +24,6 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Response
 
         public string? AvatarUrl { get; set; }
 
-        public string? Color { get; set; }
 
         public DateTime CreatedAt { get; set; }
 

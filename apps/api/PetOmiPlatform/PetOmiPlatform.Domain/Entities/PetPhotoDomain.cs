@@ -1,0 +1,101 @@
+using PetOmiPlatform.Domain.Common;
+using System;
+
+namespace PetOmiPlatform.Domain.Entities
+{
+    public class PetPhotoDomain : BaseEntity
+    {
+        public Guid PetId { get; private set; }
+        public string ImageUrl { get; private set; }
+        public string? Caption { get; private set; }
+        public bool IsAvatar { get; private set; }
+        public DateTime? TakenAt { get; private set; }
+        public DateTime CreatedAt { get; private set; }
+        public DateTime UpdatedAt { get; private set; }
+        public DateTime? DeletedAt { get; private set; }
+        public bool IsActive { get; private set; }
+
+        private PetPhotoDomain() { }
+
+        private PetPhotoDomain(
+            Guid petId,
+            string imageUrl,
+            string? caption,
+            bool isAvatar,
+            DateTime? takenAt)
+        {
+            Id = Guid.NewGuid();
+            PetId = petId;
+            ImageUrl = imageUrl;
+            Caption = caption;
+            IsAvatar = isAvatar;
+            TakenAt = takenAt;
+            IsActive = true;
+            CreatedAt = DateTime.UtcNow;
+        }
+
+        public static PetPhotoDomain Create(
+            Guid petId,
+            string imageUrl,
+            string? caption,
+            bool isAvatar,
+            DateTime? takenAt)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                throw new Domain.Exceptions.DomainException("URL ảnh không được để trống.");
+            return new PetPhotoDomain(petId, imageUrl, caption, isAvatar, takenAt);
+        }
+
+        public static PetPhotoDomain Reconstitute(
+            Guid id,
+            Guid petId,
+            string imageUrl,
+            string? caption,
+            bool isAvatar,
+            DateTime? takenAt,
+            DateTime createdAt,
+            DateTime? deletedAt,
+            bool isActive)
+        {
+            return new PetPhotoDomain
+            {
+                Id = id,
+                PetId = petId,
+                ImageUrl = imageUrl,
+                Caption = caption,
+                IsAvatar = isAvatar,
+                TakenAt = takenAt,
+                CreatedAt = createdAt,
+                DeletedAt = deletedAt,
+                IsActive = isActive
+            };
+        }
+
+        public void SetAsAvatar()
+        {
+            IsAvatar = true;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void RemoveAvatar()
+        {
+            IsAvatar = false;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdateCaption(string? caption)
+        {
+            Caption = caption;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void SoftDelete()
+        {
+            if (!IsActive)
+                throw new Domain.Exceptions.DomainException("Ảnh này đã bị xóa trước đó.");
+            IsActive = false;
+            DeletedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+        }
+    }
+}

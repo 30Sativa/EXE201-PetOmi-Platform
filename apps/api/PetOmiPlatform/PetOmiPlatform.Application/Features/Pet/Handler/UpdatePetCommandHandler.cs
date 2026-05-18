@@ -37,11 +37,9 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 species: command.Request.Species,
                 breed: command.Request.Breed,
                 gender: command.Request.Gender,
-                isNeutered: command.Request.IsNeutered,
                 dateOfBirth: command.Request.DateOfBirth,
                 isBirthDateEstimated: command.Request.IsBirthDateEstimated,
-                avatarUrl: command.Request.AvatarUrl,
-                color: command.Request.Color
+                avatarUrl: command.Request.AvatarUrl
             );
 
             await _petRepository.UpdateAsync(pet);
@@ -57,11 +55,9 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 Species = pet.Species,
                 Breed = pet.Breed,
                 Gender = pet.Gender,
-                IsNeutered = pet.IsNeutered,
                 DateOfBirth = pet.DateOfBirth,
                 IsBirthDateEstimated = pet.IsBirthDateEstimated,
                 AvatarUrl = pet.AvatarUrl,
-                Color = pet.Color,
                 CreatedAt = pet.CreatedAt,
                 UpdatedAt = pet.UpdatedAt
             };

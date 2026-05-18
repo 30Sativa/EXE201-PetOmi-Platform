@@ -23,5 +23,7 @@ public partial class PetPhoto
 
     public bool IsActive { get; set; }
 
+    public DateTime? UpdatedAt { get; set; }
+
     public virtual Pet Pet { get; set; } = null!;
 }

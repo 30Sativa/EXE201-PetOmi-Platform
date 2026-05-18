@@ -91,6 +91,11 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IVetClinicRepository, VetClinicRepository>();
             services.AddScoped<IAuditLogRepository, AuditLogRepository>();
             services.AddScoped<IPetRepository, PetRepository>();
+            services.AddScoped<IPetHealthProfileRepository, PetHealthProfileRepository>();
+            services.AddScoped<IPetWeightLogRepository, PetWeightLogRepository>();
+            services.AddScoped<IPetPhotoRepository, PetPhotoRepository>();
+            services.AddScoped<IPetMedicalRecordRepository, PetMedicalRecordRepository>();
+            services.AddScoped<IPetUserAccessRepository, PetUserAccessRepository>();
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IExternalLoginRepository, ExternalLoginRepository>();

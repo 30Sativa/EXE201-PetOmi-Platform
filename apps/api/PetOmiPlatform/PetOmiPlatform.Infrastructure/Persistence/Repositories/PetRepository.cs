@@ -54,11 +54,9 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             entity.Species = pet.Species;
             entity.Breed = pet.Breed;
             entity.Gender = pet.Gender;
-            entity.IsNeutered = pet.IsNeutered;
             entity.DateOfBirth = pet.DateOfBirth;
             entity.IsBirthDateEstimated = pet.IsBirthDateEstimated;
             entity.AvatarUrl = pet.AvatarUrl;
-            entity.Color = pet.Color;
             entity.IsActive = pet.IsActive;
             entity.DeletedAt = pet.DeletedAt;
             entity.UpdatedAt = pet.UpdatedAt;

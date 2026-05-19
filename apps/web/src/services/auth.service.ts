@@ -12,10 +12,13 @@ import type {
   VerifyEmailResponse,
 } from "@/types"
 
-const useMockAuth = import.meta.env.VITE_USE_MOCK_AUTH === "true"
-
 const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
-  return "data" in response.data ? response.data.data : response.data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = response.data as any
+  if ("data" in data && typeof data.data !== "undefined") {
+    return data.data
+  }
+  return data
 }
 
 export const loginApi = async (

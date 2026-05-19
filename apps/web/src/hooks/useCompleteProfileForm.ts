@@ -54,7 +54,7 @@ export function useCompleteProfileForm(): UseCompleteProfileFormReturn {
     try {
       await completeProfileApi({
         ...data,
-        dateOfBirth: data.dateOfBirth || null,
+        dateOfBirth: data.dateOfBirth || undefined,
       })
 
       setStatus("success")

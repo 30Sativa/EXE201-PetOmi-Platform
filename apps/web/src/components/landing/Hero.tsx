@@ -59,7 +59,7 @@ export default function Hero() {
             </Button>
           </div>
           <div className={`mt-8 grid gap-4 transition-all duration-700 delay-200 ease-out sm:grid-cols-2 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            {highlights.map((item, i) => {
+            {highlights.map((item) => {
               const Icon = item.icon
               return (
                 <div key={item.title} className="rounded-3xl border border-po-border bg-white/80 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md">

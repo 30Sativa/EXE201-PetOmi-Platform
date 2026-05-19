@@ -6,7 +6,7 @@ export const CompleteProfileSchema = z.object({
   avatarUrl: z.string().url("Avatar URL không hợp lệ").optional().or(z.literal("")),
   dateOfBirth: z.string().optional(),
   gender: z.enum(["Male", "Female", "Other"], {
-    errorMap: () => ({ message: "Giới tính phải là Nam, Nữ hoặc Khác" }),
+    message: "Giới tính phải là Nam, Nữ hoặc Khác",
   }),
   address: z.string().max(500, "Địa chỉ tối đa 500 ký tự").optional(),
 })

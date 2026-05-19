@@ -3,6 +3,10 @@ import { Link } from "react-router-dom"
 
 import type { NavLink } from "@/types"
 
+interface NavbarProps {
+  links?: NavLink[]
+}
+
 const defaultLinks: NavLink[] = [
   { label: "Tính năng", href: "#services" },
   { label: "Đặt lịch", href: "#booking" },

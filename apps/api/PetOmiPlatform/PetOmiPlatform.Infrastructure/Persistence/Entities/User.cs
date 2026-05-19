@@ -29,6 +29,8 @@ public partial class User
 
     public bool IsActive { get; set; }
 
+    public bool IsProfileCompleted { get; set; }
+
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual ICollection<Clinic> Clinics { get; set; } = new List<Clinic>();

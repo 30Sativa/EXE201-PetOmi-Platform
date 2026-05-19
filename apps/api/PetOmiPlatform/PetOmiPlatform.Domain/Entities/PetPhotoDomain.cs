@@ -85,7 +85,7 @@ namespace PetOmiPlatform.Domain.Entities
 
         public void UpdateCaption(string? caption)
         {
-            Caption = caption;
+            if (caption != null) Caption = caption;
             UpdatedAt = DateTime.UtcNow;
         }
 

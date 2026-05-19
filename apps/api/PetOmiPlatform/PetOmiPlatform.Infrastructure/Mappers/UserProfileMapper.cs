@@ -21,5 +21,22 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 updatedAt: entity.UpdatedAt
             );
         }
+
+        public static UserProfile ToEntity(this UserProfileDomain domain)
+        {
+            return new UserProfile
+            {
+                ProfileId = domain.Id,
+                UserId = domain.UserId,
+                FullName = domain.FullName,
+                Phone = domain.Phone,
+                AvatarUrl = domain.AvatarUrl,
+                DateOfBirth = domain.DateOfBirth,
+                Gender = domain.Gender,
+                Address = domain.Address,
+                CreatedAt = domain.CreatedAt,
+                UpdatedAt = domain.UpdatedAt
+            };
+        }
     }
 }

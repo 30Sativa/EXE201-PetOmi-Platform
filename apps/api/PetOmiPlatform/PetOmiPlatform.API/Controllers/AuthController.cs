@@ -106,8 +106,8 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("verify-email")]
         public async Task<IActionResult> VerifyEmail([FromQuery] string token)
         {
-            await Mediator.Send(new VerifyEmailCommand(token));
-            return Ok(BaseResponse<object>.Ok(null, "Xác minh email thành công."));
+            var result = await Mediator.Send(new VerifyEmailCommand(token));
+            return Ok(BaseResponse<VerifyEmailResponse>.Ok(result));
         }
 
         /// <summary>

@@ -45,10 +45,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.PetWeightLogs.FindAsync(weightLog.Id);
             if (entity == null) return;
 
-            entity.WeightKg = weightLog.WeightKg;
-            entity.MeasuredAt = weightLog.MeasuredAt;
-            entity.Source = weightLog.Source;
-            entity.Note = weightLog.Note;
+            var updated = weightLog.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
         }
 
         public async Task DeleteAsync(Guid weightLogId)

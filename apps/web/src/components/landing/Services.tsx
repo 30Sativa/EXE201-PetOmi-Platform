@@ -1,6 +1,6 @@
 import { HeartPulse, PawPrint, ShieldPlus, Sparkles } from "lucide-react"
 
-import { useInView } from "../../lib/useInView"
+import { useInView } from "@/hooks"
 
 interface ServiceItem {
   title: string

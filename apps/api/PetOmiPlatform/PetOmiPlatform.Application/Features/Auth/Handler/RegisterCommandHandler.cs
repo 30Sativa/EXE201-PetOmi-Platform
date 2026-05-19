@@ -78,8 +78,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 5. Gửi email
-            var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:3000";
-            var verificationLink = $"{frontendUrl}/verify-email?token={rawToken}";
+            var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
+            var verificationLink = $"{frontendUrl}/verify-email?token={Uri.EscapeDataString(rawToken)}";
             await _emailService.SendEmailVerificationAsync(user.Email.Value, verificationLink);
 
             return new RegisterResponse

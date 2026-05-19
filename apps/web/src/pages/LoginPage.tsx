@@ -1,76 +1,20 @@
-import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff } from "lucide-react"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { useNavigate, Link } from "react-router-dom"
+import { Link } from "react-router-dom"
 
-import { LoginRequestSchema, type LoginRequest } from "../schemas/auth.schema"
-import { loginApi } from "../services/auth.service"
-import { getDeviceInfo } from "../lib/device"
-import { tokenStorage } from "../lib/tokenStorage"
+import { useLoginForm } from "@/hooks"
 
-type LoginPageProps = {
-  onSwitchToRegister?: () => void
-}
-
-const getErrorMessage = (error: unknown) => {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const apiError = error as { response?: { data?: { message?: string } } }
-    return apiError.response?.data?.message ?? "Đăng nhập thất bại. Vui lòng thử lại."
-  }
-
-  if (error instanceof Error) return error.message
-
-  return "Đăng nhập thất bại. Vui lòng thử lại."
-}
-
-export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
-  const [message, setMessage] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const navigate = useNavigate()
-
+export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?: () => void }) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginRequest>({
-    resolver: zodResolver(LoginRequestSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      deviceName: "PetOmi Web",
-      deviceType: "web",
-    },
-  })
-
-  const onSubmit = async (data: LoginRequest) => {
-    try {
-      const deviceInfo = getDeviceInfo()
-
-      const response = await loginApi({
-        ...data,
-        deviceFingerprint: deviceInfo.deviceFingerprint,
-        deviceName: deviceInfo.deviceName,
-        deviceType: deviceInfo.deviceType,
-      })
-
-      if (response.data?.accessToken) {
-        tokenStorage.setAccessToken(response.data.accessToken)
-      }
-      if (response.data?.refreshToken) {
-        tokenStorage.setRefreshToken(response.data.refreshToken)
-      }
-
-      setStatus("success")
-      setMessage("Đăng nhập thành công.")
-
-      navigate("/dashboard")
-    } catch (error) {
-      setStatus("error")
-      setMessage(getErrorMessage(error))
-    }
-  }
+    errors,
+    isSubmitting,
+    status,
+    message,
+    showPassword,
+    onTogglePassword,
+    onSubmit,
+  } = useLoginForm()
 
   return (
     <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
@@ -110,7 +54,7 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
           <button
             type="button"
             className="absolute right-3 top-1/2 -translate-y-1/2 text-po-text-muted transition hover:text-po-text"
-            onClick={() => setShowPassword((prev) => !prev)}
+            onClick={onTogglePassword}
             aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

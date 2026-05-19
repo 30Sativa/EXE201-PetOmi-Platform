@@ -1,57 +1,21 @@
-import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff } from "lucide-react"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 
-import { RegisterRequestSchema, type RegisterRequest } from "../schemas/auth.schema"
-import { registerApi } from "../services/auth.service"
+import { useRegisterForm } from "@/hooks"
 
-type RegisterPageProps = {
-  onSwitchToLogin?: () => void
-}
-
-const getErrorMessage = (error: unknown) => {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const apiError = error as { response?: { data?: { message?: string } } }
-    return apiError.response?.data?.message ?? "Đăng ký thất bại. Vui lòng thử lại."
-  }
-
-  if (error instanceof Error) return error.message
-
-  return "Đăng ký thất bại. Vui lòng thử lại."
-}
-
-export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
-  const [message, setMessage] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-
+export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<RegisterRequest>({
-    resolver: zodResolver(RegisterRequestSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  })
-
-  const onSubmit = async (data: RegisterRequest) => {
-    try {
-      await registerApi({
-        email: data.email,
-        password: data.password,
-      })
-
-      setStatus("success")
-      setMessage("Đăng ký thành công. Hãy kiểm tra email để xác minh tài khoản.")
-    } catch (error) {
-      setStatus("error")
-      setMessage(getErrorMessage(error))
-    }
-  }
+    errors,
+    isSubmitting,
+    status,
+    message,
+    showPassword,
+    showConfirmPassword,
+    onTogglePassword,
+    onToggleConfirmPassword,
+    onSubmit,
+  } = useRegisterForm()
 
   return (
     <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
@@ -86,7 +50,7 @@ export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
           <button
             type="button"
             className="absolute right-3 top-1/2 -translate-y-1/2 text-po-text-muted transition hover:text-po-text"
-            onClick={() => setShowPassword((prev) => !prev)}
+            onClick={onTogglePassword}
             aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
           >
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -94,6 +58,31 @@ export default function RegisterPage({ onSwitchToLogin }: RegisterPageProps) {
         </div>
         <p className="text-sm text-po-text-subtle">Dùng ít nhất 6 ký tự để bảo vệ tài khoản.</p>
         {errors.password?.message ? <p className="text-sm font-semibold text-po-danger">{errors.password.message}</p> : null}
+      </div>
+
+      <div className="grid gap-2">
+        <label htmlFor="register-confirm-password" className="text-sm font-extrabold text-po-text">
+          Xác nhận mật khẩu
+        </label>
+        <div className="relative">
+          <input
+            id="register-confirm-password"
+            type={showConfirmPassword ? "text" : "password"}
+            autoComplete="new-password"
+            placeholder="Nhập lại mật khẩu"
+            className="h-12 w-full rounded-lg border border-po-border bg-white px-4 pr-12 text-[15px] text-po-text transition focus:border-po-primary"
+            {...register("confirmPassword")}
+          />
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-po-text-muted transition hover:text-po-text"
+            onClick={onToggleConfirmPassword}
+            aria-label={showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+          >
+            {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
+        {errors.confirmPassword?.message ? <p className="text-sm font-semibold text-po-danger">{errors.confirmPassword.message}</p> : null}
       </div>
 
       {message ? (

@@ -8,5 +8,6 @@ namespace PetOmiPlatform.Application.Features.Auth.DTOs.Response
     {
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
+        public bool IsProfileCompleted { get; set; }
     }
 }

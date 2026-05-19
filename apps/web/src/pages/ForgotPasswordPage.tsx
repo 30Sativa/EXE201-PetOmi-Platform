@@ -1,48 +1,10 @@
-import { zodResolver } from "@hookform/resolvers/zod"
 import { ArrowLeft } from "lucide-react"
-import { useState } from "react"
-import { useForm } from "react-hook-form"
 import { Link } from "react-router-dom"
 
-import { ForgotPasswordRequestSchema, type ForgotPasswordRequest } from "@/schemas/auth.schema"
-import { forgotPasswordApi } from "@/services/auth.service"
-
-const getErrorMessage = (error: unknown) => {
-  if (typeof error === "object" && error !== null && "response" in error) {
-    const apiError = error as { response?: { data?: { message?: string } } }
-    return apiError.response?.data?.message ?? "Không thể gửi email đặt lại mật khẩu."
-  }
-
-  if (error instanceof Error) return error.message
-
-  return "Không thể gửi email đặt lại mật khẩu."
-}
+import { useForgotPasswordForm } from "@/hooks"
 
 export default function ForgotPasswordPage() {
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
-  const [message, setMessage] = useState("")
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<ForgotPasswordRequest>({
-    resolver: zodResolver(ForgotPasswordRequestSchema),
-    defaultValues: {
-      email: "",
-    },
-  })
-
-  const onSubmit = async (data: ForgotPasswordRequest) => {
-    try {
-      await forgotPasswordApi(data)
-      setStatus("success")
-      setMessage("Email đặt lại mật khẩu đã được gửi. Vui lòng kiểm tra hộp thư.")
-    } catch (error) {
-      setStatus("error")
-      setMessage(getErrorMessage(error))
-    }
-  }
+  const { register, handleSubmit, errors, isSubmitting, status, message, onSubmit } = useForgotPasswordForm()
 
   return (
     <main className="min-h-screen text-po-text">

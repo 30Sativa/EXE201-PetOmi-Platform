@@ -17,6 +17,47 @@ namespace PetOmiPlatform.Domain.Entities
 
         private UserProfileDomain() { }
 
+        public static UserProfileDomain Create(
+            Guid userId,
+            string? fullName,
+            string? phone,
+            string? avatarUrl,
+            DateOnly? dateOfBirth,
+            string? gender,
+            string? address)
+        {
+            return new UserProfileDomain
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                FullName = fullName,
+                Phone = phone,
+                AvatarUrl = avatarUrl,
+                DateOfBirth = dateOfBirth,
+                Gender = gender,
+                Address = address,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
+            };
+        }
+
+        public void Update(
+            string? fullName,
+            string? phone,
+            string? avatarUrl,
+            DateOnly? dateOfBirth,
+            string? gender,
+            string? address)
+        {
+            if (fullName != null) FullName = fullName;
+            if (phone != null) Phone = phone;
+            if (avatarUrl != null) AvatarUrl = avatarUrl;
+            if (dateOfBirth != null) DateOfBirth = dateOfBirth;
+            if (gender != null) Gender = gender;
+            if (address != null) Address = address;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public static UserProfileDomain Reconstitute(
             Guid id,
             Guid userId,

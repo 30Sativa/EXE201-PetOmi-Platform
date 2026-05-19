@@ -126,7 +126,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 AccessToken = accessToken,
                 RefreshToken = refreshTokenRaw,
                 UserId = user.Id,
-                Email = user.Email.Value
+                Email = user.Email.Value,
+                IsProfileCompleted = user.IsProfileCompleted
             };
         }
     }

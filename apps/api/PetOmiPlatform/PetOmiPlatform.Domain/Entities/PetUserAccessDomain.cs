@@ -87,6 +87,15 @@ namespace PetOmiPlatform.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
+        public void UpdateInfo(string? accessRole, DateTime? expiresAt)
+        {
+            if (accessRole != null) ValidateAccessRole(accessRole);
+            if (expiresAt != null) ValidateNotExpired(expiresAt);
+            if (accessRole != null) AccessRole = accessRole;
+            if (expiresAt != null) ExpiresAt = expiresAt;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public bool IsExpired()
         {
             return ExpiresAt.HasValue && ExpiresAt.Value < DateTime.UtcNow;

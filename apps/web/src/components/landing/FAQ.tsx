@@ -1,11 +1,7 @@
 import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
-import { useInView } from "../../lib/useInView"
-
-interface FaqItem {
-  question: string
-  answer: string
-}
+import { useInView } from "@/hooks"
+import type { FaqItem } from "@/types"
 
 const faqItems: FaqItem[] = [
   {

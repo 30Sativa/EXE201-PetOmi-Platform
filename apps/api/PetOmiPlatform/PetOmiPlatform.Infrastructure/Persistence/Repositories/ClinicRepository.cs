@@ -37,16 +37,9 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.Clinics.FindAsync(clinic.Id);
             if (entity == null) return;
 
-            entity.ClinicName = clinic.ClinicName;
-            entity.Address = clinic.Address;
-            entity.Phone = clinic.Phone;
-            entity.Email = clinic.Email;
-            entity.LicenseNumber = clinic.LicenseNumber;
+            var updated = clinic.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
             entity.Status = clinic.Status.ToString();
-            entity.RejectedReason = clinic.RejectedReason;
-            entity.ReviewedByAdminId = clinic.ReviewedByAdminId;
-            entity.CreatedAt = clinic.CreatedAt;
-            entity.UpdatedAt = clinic.UpdatedAt;
         }
     }
 }

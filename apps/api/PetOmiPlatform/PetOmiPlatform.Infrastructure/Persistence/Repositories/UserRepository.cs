@@ -33,7 +33,10 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task<UserDomain?> GetByIdAsync(Guid userId)
         {
-            var entity = await _context.Users.FindAsync(userId);
+            var entity = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == userId);
+
             return entity?.ToDomain();
         }
 
@@ -48,19 +51,9 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.Users.FindAsync(user.Id);
             if (entity == null) return;
 
-            // Update field trực tiếp — EF đang track entity này rồi
-            entity.Email = user.Email.Value;
+            var updated = user.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
             entity.NormalizedEmail = user.Email.NormalizedValue;
-            entity.PasswordHash = user.PasswordHash.Value;
-            entity.EmailVerified = user.EmailVerified;
-            entity.FailedLoginAttempts = user.FailedLoginAttempts;
-            entity.LockoutUntil = user.LockoutUntil;
-            entity.LastLoginAt = user.LastLoginAt;
-            entity.UpdatedAt = user.UpdatedAt;
-            entity.IsActive = user.IsActive;
-            entity.DeletedAt = user.DeletedAt;
-            // Không cần _context.Users.Update() — EF tự detect thay đổi
-
         }
     }
 }

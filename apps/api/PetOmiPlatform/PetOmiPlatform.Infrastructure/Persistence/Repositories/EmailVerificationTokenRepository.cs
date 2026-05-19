@@ -42,9 +42,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         {
             var entity = await _context.EmailVerificationTokens.FindAsync(token.Id);
             if (entity == null) return;
-
             entity.IsUsed = token.IsUsed;
-            // UsedAt không có trong DB → không update
         }
     }
 }

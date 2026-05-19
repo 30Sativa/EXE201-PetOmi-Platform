@@ -56,11 +56,9 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.RefreshTokens.FindAsync(refreshToken.Id);
             if (entity == null) return;
 
-            entity.TokenHash = refreshToken.TokenHash;
-            entity.IsRevoked = refreshToken.IsRevoked;
-            entity.RevokedAt = refreshToken.RevokedAt;
+            var updated = refreshToken.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
             entity.ReplacedByToken = refreshToken.ReplacedByTokenId;
-            entity.LastUsedAt = refreshToken.LastUsedAt;
         }
     }
 }

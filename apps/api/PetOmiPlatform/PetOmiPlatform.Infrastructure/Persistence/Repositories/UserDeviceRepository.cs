@@ -51,15 +51,12 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         {
             var entity = await _context.UserDevices.FindAsync(device.Id);
             if (entity == null) return;
-
             entity.DeviceName = device.DeviceName;
             entity.DeviceType = device.DeviceType;
             entity.DeviceToken = device.DeviceToken;
             entity.UserAgent = device.UserAgent;
             entity.IsBlocked = device.IsBlocked;
             entity.LastLoginAt = device.LastLoginAt;
-            entity.UpdatedAt = DateTime.UtcNow;
-            // DeviceFingerprint không update — định danh device
         }
     }
 }

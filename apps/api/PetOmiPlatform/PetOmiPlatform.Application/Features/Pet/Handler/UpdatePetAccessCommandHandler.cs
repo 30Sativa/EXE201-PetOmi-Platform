@@ -43,32 +43,24 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             if (access.GrantedByUserId != command.UserId && pet.OwnerUserId != command.UserId)
                 throw new ForbiddenException("Chỉ người đã cấp quyền hoặc chủ sở hữu mới có thể cập nhật.");
 
-            var updatedAccess = PetUserAccessDomain.Reconstitute(
-                id: access.Id,
-                petId: access.PetId,
-                userId: access.UserId,
+            access.UpdateInfo(
                 accessRole: command.Request.AccessRole,
-                grantedByUserId: access.GrantedByUserId,
-                expiresAt: command.Request.ExpiresAt,
-                revokedAt: access.IsActive ? null : access.RevokedAt,
-                isActive: access.IsActive,
-                createdAt: access.CreatedAt,
-                updatedAt: DateTime.UtcNow
+                expiresAt: command.Request.ExpiresAt
             );
 
-            await _accessRepository.UpdateAsync(updatedAccess);
+            await _accessRepository.UpdateAsync(access);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new PetUserAccessResponse
             {
-                PetUserAccessId = updatedAccess.Id,
-                PetId = updatedAccess.PetId,
-                UserId = updatedAccess.UserId,
-                AccessRole = updatedAccess.AccessRole,
-                GrantedByUserId = updatedAccess.GrantedByUserId,
-                ExpiresAt = updatedAccess.ExpiresAt,
-                IsExpired = updatedAccess.IsExpired(),
-                CreatedAt = updatedAccess.CreatedAt
+                PetUserAccessId = access.Id,
+                PetId = access.PetId,
+                UserId = access.UserId,
+                AccessRole = access.AccessRole,
+                GrantedByUserId = access.GrantedByUserId,
+                ExpiresAt = access.ExpiresAt,
+                IsExpired = access.IsExpired(),
+                CreatedAt = access.CreatedAt
             };
         }
     }

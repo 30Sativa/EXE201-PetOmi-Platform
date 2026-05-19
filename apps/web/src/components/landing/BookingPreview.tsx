@@ -1,12 +1,8 @@
 import { CalendarDays, Clock, MapPin, ShieldCheck } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { useInView } from "../../lib/useInView"
-
-interface Slot {
-  time: string
-  label: string
-}
+import { useInView } from "@/hooks"
+import type { Slot } from "@/types"
 
 const slots: Slot[] = [
   { time: "09:30", label: "Sáng" },

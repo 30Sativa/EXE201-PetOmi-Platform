@@ -496,6 +496,7 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.IsProfileCompleted).HasDefaultValue(false);
             entity.Property(e => e.LastLoginAt).HasColumnType("datetime");
             entity.Property(e => e.LockoutUntil).HasColumnType("datetime");
             entity.Property(e => e.NormalizedEmail).HasMaxLength(255);

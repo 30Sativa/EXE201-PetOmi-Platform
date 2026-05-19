@@ -1,6 +1,6 @@
 import { BadgeCheck, Lock, UsersRound } from "lucide-react"
 
-import { useInView } from "../../lib/useInView"
+import { useInView } from "@/hooks"
 
 interface AdminHighlight {
   title: string

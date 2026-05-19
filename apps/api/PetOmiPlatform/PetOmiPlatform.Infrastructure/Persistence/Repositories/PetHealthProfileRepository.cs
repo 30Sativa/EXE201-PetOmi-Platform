@@ -34,13 +34,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.PetHealthProfiles.FindAsync(profile.Id);
             if (entity == null) return;
 
-            entity.CurrentWeightKg = profile.CurrentWeightKg;
-            entity.Color = profile.Color;
-            entity.IsNeutered = profile.IsNeutered;
-            entity.Allergies = profile.Allergies;
-            entity.ChronicConditions = profile.ChronicConditions;
-            entity.MicrochipNumber = profile.MicrochipNumber;
-            entity.UpdatedAt = profile.UpdatedAt;
+            var updated = profile.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
         }
     }
 }

@@ -122,10 +122,10 @@ namespace PetOmiPlatform.Domain.Entities
         }
 
         public void UpdateInfo(
-            string recordType,
-            string title,
+            string? recordType,
+            string? title,
             string? description,
-            DateOnly recordDate,
+            DateOnly? recordDate,
             string? vetName,
             string? clinicName,
             string? medicationName,
@@ -134,19 +134,20 @@ namespace PetOmiPlatform.Domain.Entities
             DateOnly? endDate,
             string? attachmentUrl)
         {
-            ValidateRecordType(recordType);
-            ValidateDates(recordDate, startDate, endDate);
-            RecordType = recordType;
-            Title = title;
-            Description = description;
-            RecordDate = recordDate;
-            VetName = vetName;
-            ClinicName = clinicName;
-            MedicationName = medicationName;
-            Dosage = dosage;
-            StartDate = startDate;
-            EndDate = endDate;
-            AttachmentUrl = attachmentUrl;
+            if (recordType != null) ValidateRecordType(recordType);
+            if (recordDate != null && startDate != null && endDate != null)
+                ValidateDates(recordDate.Value, startDate.Value, endDate.Value);
+            if (recordType != null) RecordType = recordType;
+            if (title != null) Title = title;
+            if (description != null) Description = description;
+            if (recordDate != null) RecordDate = recordDate.Value;
+            if (vetName != null) VetName = vetName;
+            if (clinicName != null) ClinicName = clinicName;
+            if (medicationName != null) MedicationName = medicationName;
+            if (dosage != null) Dosage = dosage;
+            if (startDate != null) StartDate = startDate;
+            if (endDate != null) EndDate = endDate;
+            if (attachmentUrl != null) AttachmentUrl = attachmentUrl;
             UpdatedAt = DateTime.UtcNow;
         }
 

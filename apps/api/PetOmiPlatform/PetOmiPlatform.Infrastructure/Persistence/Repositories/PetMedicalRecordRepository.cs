@@ -54,20 +54,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.PetMedicalRecords.FindAsync(medicalRecord.Id);
             if (entity == null) return;
 
-            entity.RecordType = medicalRecord.RecordType;
-            entity.Title = medicalRecord.Title;
-            entity.Description = medicalRecord.Description;
-            entity.RecordDate = medicalRecord.RecordDate;
-            entity.VetName = medicalRecord.VetName;
-            entity.ClinicName = medicalRecord.ClinicName;
-            entity.MedicationName = medicalRecord.MedicationName;
-            entity.Dosage = medicalRecord.Dosage;
-            entity.StartDate = medicalRecord.StartDate;
-            entity.EndDate = medicalRecord.EndDate;
-            entity.AttachmentUrl = medicalRecord.AttachmentUrl;
-            entity.UpdatedAt = medicalRecord.UpdatedAt;
-            entity.DeletedAt = medicalRecord.DeletedAt;
-            entity.IsActive = medicalRecord.IsActive;
+            var updated = medicalRecord.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
         }
 
         public async Task DeleteAsync(Guid medicalRecordId)

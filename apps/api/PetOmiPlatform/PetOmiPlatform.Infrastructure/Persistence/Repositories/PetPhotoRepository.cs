@@ -52,12 +52,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.PetPhotos.FindAsync(photo.Id);
             if (entity == null) return;
 
-            entity.ImageUrl = photo.ImageUrl;
-            entity.Caption = photo.Caption;
-            entity.IsAvatar = photo.IsAvatar;
-            entity.TakenAt = photo.TakenAt;
-            entity.DeletedAt = photo.DeletedAt;
-            entity.IsActive = photo.IsActive;
+            var updated = photo.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
         }
 
         public async Task DeleteAsync(Guid photoId)

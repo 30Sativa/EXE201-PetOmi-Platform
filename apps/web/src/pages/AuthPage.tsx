@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 
+import { useMounted } from "@/hooks"
 import LoginPage from "./LoginPage"
 import RegisterPage from "./RegisterPage"
-
-type AuthMode = "login" | "register"
+import type { AuthMode } from "@/types"
 
 type AuthPageProps = {
   initialMode?: AuthMode
@@ -12,12 +12,8 @@ type AuthPageProps = {
 
 export default function AuthPage({ initialMode = "login" }: AuthPageProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const navigate = useNavigate()
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   useEffect(() => {
     setMode(initialMode)

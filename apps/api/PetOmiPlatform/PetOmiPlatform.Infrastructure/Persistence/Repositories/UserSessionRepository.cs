@@ -61,11 +61,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _dbContext.UserSessions.FindAsync(session.Id);
             if (entity == null) return;
 
-            entity.IsActive = session.IsActive;
-            entity.RefreshTokenId = session.RefreshTokenId;
-            entity.LogoutAt = session.LogoutAt;
-            entity.LastActivityAt = session.LastActivityAt;
-
+            var updated = session.ToEntity();
+            _dbContext.Entry(entity).CurrentValues.SetValues(updated);
         }
     }
 }

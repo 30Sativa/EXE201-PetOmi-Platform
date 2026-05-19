@@ -88,14 +88,21 @@ namespace PetOmiPlatform.Domain.Entities
             string? chronicConditions,
             string? microchipNumber)
         {
-            ValidateIsNeutered(isNeutered);
-            CurrentWeightKg = currentWeightKg;
-            Color = color;
-            IsNeutered = isNeutered;
-            Allergies = allergies;
-            ChronicConditions = chronicConditions;
-            MicrochipNumber = microchipNumber;
+            if (currentWeightKg != null) CurrentWeightKg = currentWeightKg;
+            if (color != null) Color = color;
+            if (isNeutered != null) ValidateAndSetIsNeutered(isNeutered);
+            if (allergies != null) Allergies = allergies;
+            if (chronicConditions != null) ChronicConditions = chronicConditions;
+            if (microchipNumber != null) MicrochipNumber = microchipNumber;
             UpdatedAt = DateTime.UtcNow;
+        }
+
+        private void ValidateAndSetIsNeutered(string? isNeutered)
+        {
+            var validValues = new[] { "Yes", "No", "Unknown" };
+            if (!Array.Exists(validValues, v => v.Equals(isNeutered, StringComparison.OrdinalIgnoreCase)))
+                throw new DomainException("Giá trị IsNeutered không hợp lệ. Chỉ chấp nhận: Yes, No, Unknown.");
+            IsNeutered = isNeutered;
         }
 
         private static void ValidateIsNeutered(string? isNeutered)

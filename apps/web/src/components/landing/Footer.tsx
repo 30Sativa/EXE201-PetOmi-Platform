@@ -1,7 +1,7 @@
 import { ArrowUpRight, PawPrint } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import { useInView } from "../../lib/useInView"
+import { useInView } from "@/hooks"
 
 const footerLinks = [
   {

@@ -1,12 +1,7 @@
 import { Star } from "lucide-react"
 
-import { useInView } from "../../lib/useInView"
-
-interface Testimonial {
-  name: string
-  role: string
-  quote: string
-}
+import { useInView } from "@/hooks"
+import type { Testimonial } from "@/types"
 
 const testimonials: Testimonial[] = [
   {

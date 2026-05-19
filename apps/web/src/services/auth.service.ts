@@ -1,64 +1,62 @@
-import { api } from "../lib/axios"
-import type { ForgotPasswordRequest, LoginRequest, LogoutRequest, RegisterRequest } from "../schemas/auth.schema"
+import { api } from "@/lib/axios"
+import type {
+  ForgotPasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+} from "@/schemas/auth.schema"
+import type {
+  ForgotPasswordResponse,
+  LoginResponse,
+  LogoutResponse,
+  RegisterResponse,
+  VerifyEmailResponse,
+} from "@/types"
 
 const useMockAuth = import.meta.env.VITE_USE_MOCK_AUTH === "true"
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-const mockLogin = async (data: LoginRequest) => {
-  await sleep(700)
-  if (data.email.includes("fail")) {
-    throw new Error("Email hoặc mật khẩu không đúng.")
-  }
-  return { ok: true }
+const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
+  return "data" in response.data ? response.data.data : response.data
 }
 
-const mockRegister = async (data: RegisterRequest) => {
-  await sleep(800)
-  if (data.email.includes("fail")) {
-    throw new Error("Email này đã được sử dụng.")
-  }
-  return { ok: true }
-}
-
-const mockForgotPassword = async (data: ForgotPasswordRequest) => {
-  await sleep(700)
-  if (data.email.includes("fail")) {
-    throw new Error("Email chưa được đăng ký.")
-  }
-  return { ok: true }
-}
-
-export const loginApi = async (data: LoginRequest) => {
-  if (useMockAuth) {
-    return mockLogin(data)
-  }
+export const loginApi = async (
+  data: LoginRequest,
+): Promise<LoginResponse> => {
   const response = await api.post("/auth/login", data)
-  return response.data
+  return unwrapResponse<LoginResponse>(response)
 }
 
-export const registerApi = async (data: RegisterRequest) => {
-  if (useMockAuth) {
-    return mockRegister(data)
-  }
+export const registerApi = async (
+  data: RegisterRequest,
+): Promise<RegisterResponse> => {
   const response = await api.post("/auth/register", data)
-  return response.data
+  return unwrapResponse<RegisterResponse>(response)
 }
 
-export const forgotPasswordApi = async (data: ForgotPasswordRequest) => {
-  if (useMockAuth) {
-    return mockForgotPassword(data)
-  }
+export const forgotPasswordApi = async (
+  data: ForgotPasswordRequest,
+): Promise<ForgotPasswordResponse> => {
   const response = await api.post("/auth/forgot-password", data)
-  return response.data
+  return unwrapResponse<ForgotPasswordResponse>(response)
 }
 
-export const logoutApi = async (refreshToken: string) => {
+export const logoutApi = async (
+  refreshToken: string,
+): Promise<LogoutResponse> => {
   const response = await api.post("/auth/logout", { refreshToken })
-  return response.data
+  return unwrapResponse<LogoutResponse>(response)
 }
 
-export const logoutAllApi = async () => {
+export const logoutAllApi = async (): Promise<LogoutResponse> => {
   const response = await api.post("/auth/logout-all")
-  return response.data
+  return unwrapResponse<LogoutResponse>(response)
+}
+
+export const verifyEmailApi = async (
+  token: string,
+): Promise<VerifyEmailResponse> => {
+  const response = await api.get(
+    `/auth/verify-email?token=${token}`,
+  )
+
+  return unwrapResponse<VerifyEmailResponse>(response)
 }

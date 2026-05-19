@@ -61,11 +61,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var entity = await _context.PetUserAccesses.FindAsync(access.Id);
             if (entity == null) return;
 
-            entity.AccessRole = access.AccessRole;
-            entity.ExpiresAt = access.ExpiresAt;
-            entity.RevokedAt = access.RevokedAt;
-            entity.IsActive = access.IsActive;
-            entity.UpdatedAt = access.UpdatedAt;
+            var updated = access.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
         }
 
         public async Task RevokeAsync(Guid petUserAccessId)

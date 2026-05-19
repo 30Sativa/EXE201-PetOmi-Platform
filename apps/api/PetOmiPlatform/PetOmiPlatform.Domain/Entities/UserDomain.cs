@@ -15,6 +15,7 @@ namespace PetOmiPlatform.Domain.Entities
 
         public bool EmailVerified { get; private set; }
         public int FailedLoginAttempts { get; private set; }
+        public bool IsProfileCompleted { get; private set; }
         public DateTime? LockoutUntil { get; private set; }
 
         public DateTime CreatedAt { get; private set; }
@@ -48,6 +49,7 @@ namespace PetOmiPlatform.Domain.Entities
             string passwordHash,
             bool emailVerified,
             int failedLoginAttempts,
+            bool isProfileCompleted,
             DateTime? lockoutUntil,
             DateTime createdAt,
             DateTime? updatedAt,
@@ -63,6 +65,7 @@ namespace PetOmiPlatform.Domain.Entities
                 EmailVerified = emailVerified,
                 FailedLoginAttempts = failedLoginAttempts,
                 LockoutUntil = lockoutUntil,
+                IsProfileCompleted = isProfileCompleted,
                 CreatedAt = createdAt,
                 UpdatedAt = updatedAt,
                 LastLoginAt = lastLoginAt,
@@ -114,6 +117,11 @@ namespace PetOmiPlatform.Domain.Entities
             UpdatedAt = DateTime.UtcNow;
         }
 
+        public void CompleteProfile()
+        {
+            IsProfileCompleted = true;
+            UpdatedAt = DateTime.UtcNow;
+        }
         public void RecordLoginSuccess()    
         {
             FailedLoginAttempts = 0;

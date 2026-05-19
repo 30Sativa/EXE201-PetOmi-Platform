@@ -5,55 +5,68 @@ import { tokenStorage } from "./tokenStorage"
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:7297/api"
 
 export const api = axios.create({
-    baseURL,
-    withCredentials: true,
+  baseURL,
+  withCredentials: true,
 })
 
 api.interceptors.request.use((config) => {
-    const token = tokenStorage.getAccessToken()
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
+  const token = tokenStorage.getAccessToken()
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
 })
 
 api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-        const originalRequest = error.config
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true
 
-            try {
-                const refreshToken = tokenStorage.getRefreshToken()
-                if (!refreshToken) {
-                    tokenStorage.clearTokens()
-                    window.location.href = "/auth"
-                    return Promise.reject(error)
-                }
+      try {
+        const refreshToken = tokenStorage.getRefreshToken()
 
-                const response = await axios.post(`${baseURL}/auth/refresh-token`, {
-                    refreshToken,
-                })
-
-                const { accessToken, refreshToken: newRefreshToken } = response.data.data ?? {}
-                if (accessToken) {
-                    tokenStorage.setAccessToken(accessToken)
-                }
-                if (newRefreshToken) {
-                    tokenStorage.setRefreshToken(newRefreshToken)
-                }
-
-                originalRequest.headers.Authorization = `Bearer ${accessToken}`
-                return api(originalRequest)
-            } catch {
-                tokenStorage.clearTokens()
-                window.location.href = "/auth"
-                return Promise.reject(error)
-            }
+        if (!refreshToken) {
+          tokenStorage.clearTokens()
+          window.location.href = "/auth"
+          return Promise.reject(error)
         }
 
+        const response = await axios.post(`${baseURL}/auth/refresh-token`, {
+          refreshToken,
+        })
+
+        const data = response.data?.data ?? response.data
+
+        const accessToken = data?.accessToken
+        const newRefreshToken = data?.refreshToken
+
+        if (!accessToken) {
+          tokenStorage.clearTokens()
+          window.location.href = "/auth"
+          return Promise.reject(error)
+        }
+
+        tokenStorage.setAccessToken(accessToken)
+
+        if (newRefreshToken) {
+          tokenStorage.setRefreshToken(newRefreshToken)
+        }
+
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`
+
+        return api(originalRequest)
+      } catch {
+        tokenStorage.clearTokens()
+        window.location.href = "/auth"
         return Promise.reject(error)
-    },
+      }
+    }
+
+    return Promise.reject(error)
+  },
 )

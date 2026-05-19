@@ -9,6 +9,7 @@ namespace PetOmiPlatform.Application.Features.Auth.DTOs.Response
         public string Email { get; set; } = string.Empty;
         public bool EmailVerified { get; set; }
         public bool IsActive { get; set; }
+        public bool IsProfileCompleted { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public UserProfileInfo? Profile { get; set; }

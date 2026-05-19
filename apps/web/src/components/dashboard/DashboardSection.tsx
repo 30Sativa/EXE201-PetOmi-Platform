@@ -1,11 +1,6 @@
 import type { ReactNode } from "react"
 
-interface DashboardSectionProps {
-  title: string
-  subtitle?: string
-  action?: ReactNode
-  children: ReactNode
-}
+import type { DashboardSectionProps } from "@/types"
 
 export default function DashboardSection({ title, subtitle, action, children }: DashboardSectionProps) {
   return (

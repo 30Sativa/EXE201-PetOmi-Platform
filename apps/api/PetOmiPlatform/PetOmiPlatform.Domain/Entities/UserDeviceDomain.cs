@@ -77,7 +77,7 @@ namespace PetOmiPlatform.Domain.Entities
         public void UpdateLastLogin(string? userAgent)
         {
             LastLoginAt = DateTime.UtcNow;
-            UserAgent = userAgent;
+            if (userAgent != null) UserAgent = userAgent;
         }
 
         public void Block()

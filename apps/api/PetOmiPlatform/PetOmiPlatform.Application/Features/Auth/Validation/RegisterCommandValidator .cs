@@ -18,6 +18,10 @@ namespace PetOmiPlatform.Application.Features.Auth.Validation
             RuleFor(x => x.Request.Password)
                 .NotEmpty().WithMessage("Password không được để trống")
                 .MinimumLength(6).WithMessage("Password phải ít nhất 6 ký tự");
+
+            RuleFor(x => x.Request.ConfirmPassword)
+                .NotEmpty().WithMessage("Xác nhận mật khẩu không được để trống")
+                .Equal(x => x.Request.Password).WithMessage("Mật khẩu xác nhận không khớp");
         }
     }
 }

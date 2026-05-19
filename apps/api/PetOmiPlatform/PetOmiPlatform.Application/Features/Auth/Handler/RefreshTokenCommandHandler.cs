@@ -101,7 +101,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             return new RefreshTokenResponse
             {
                 AccessToken = newAccessToken,
-                RefreshToken = newTokenRaw
+                RefreshToken = newTokenRaw,
+                IsProfileCompleted = user.IsProfileCompleted
             };
         }
     }

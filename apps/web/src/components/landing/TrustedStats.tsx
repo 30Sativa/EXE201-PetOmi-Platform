@@ -1,14 +1,14 @@
 import { AlertTriangle, Layers, ShieldCheck, Users } from "lucide-react"
 
-import { useInView } from "../../lib/useInView"
+import { useInView } from "@/hooks"
 
-interface StatItem {
+interface StatItemFull {
   label: string
   value: string
   icon: typeof Users
 }
 
-const stats: StatItem[] = [
+const stats: StatItemFull[] = [
   { label: "Phòng khám được duyệt", value: "100+", icon: Users },
   { label: "Chủ nuôi tin dùng", value: "50K+", icon: ShieldCheck },
   { label: "Lịch hẹn hàng ngày", value: "500+", icon: Layers },

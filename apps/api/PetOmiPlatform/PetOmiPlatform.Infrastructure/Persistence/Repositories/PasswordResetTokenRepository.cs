@@ -31,10 +31,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(PasswordResetTokenDomain token)
         {
-            var entity = await _context.PasswordResetTokens
-                .FindAsync(token.Id);
+            var entity = await _context.PasswordResetTokens.FindAsync(token.Id);
             if (entity == null) return;
-
             entity.IsUsed = token.IsUsed;
             entity.UsedAt = token.UsedAt;
         }

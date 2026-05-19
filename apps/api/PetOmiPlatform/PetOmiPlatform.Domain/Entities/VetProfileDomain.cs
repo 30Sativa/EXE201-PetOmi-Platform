@@ -67,10 +67,8 @@ namespace PetOmiPlatform.Domain.Entities
 
         public void Deactivate()
         {
-            if (IsActive)
-            {
+            if (!IsActive)
                 throw new DomainException("Hồ sơ bác sĩ thú y đã bị vô hiệu hóa trước đó.");
-            }
             IsActive = false;
             UpdatedAt = DateTime.UtcNow;
         }
@@ -78,11 +76,9 @@ namespace PetOmiPlatform.Domain.Entities
         public void UpdateInfo(string? licenseNumber, string? specialization)
         {
             if (!IsActive)
-            {
                 throw new DomainException("Không thể cập nhật hồ sơ bác sĩ thú y đã bị vô hiệu hóa.");
-            }
-            LicenseNumber = licenseNumber;
-            Specialization = specialization;
+            if (licenseNumber != null) LicenseNumber = licenseNumber;
+            if (specialization != null) Specialization = specialization;
             UpdatedAt = DateTime.UtcNow;
         }
     }

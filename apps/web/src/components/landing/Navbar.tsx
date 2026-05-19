@@ -1,14 +1,7 @@
 import { Heart, PawPrint } from "lucide-react"
 import { Link } from "react-router-dom"
 
-interface NavLink {
-  label: string
-  href: string
-}
-
-interface NavbarProps {
-  links?: NavLink[]
-}
+import type { NavLink } from "@/types"
 
 const defaultLinks: NavLink[] = [
   { label: "Tính năng", href: "#services" },

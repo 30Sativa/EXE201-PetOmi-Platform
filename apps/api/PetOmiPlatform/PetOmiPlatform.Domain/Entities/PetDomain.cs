@@ -102,23 +102,23 @@ namespace PetOmiPlatform.Domain.Entities
 
         // === Behavior Methods (Domain Logic) ===
 
-        // Cập nhật thông tin hồ sơ pet
+        // Cập nhật thông tin hồ sơ pet — chỉ ghi đè field được gửi lên (PATCH semantics)
         public void UpdateInfo(
-            string name,
-            string species,
+            string? name,
+            string? species,
             string? breed,
             string? gender,
             DateOnly? dateOfBirth,
-            bool isBirthDateEstimated,
+            bool? isBirthDateEstimated,
             string? avatarUrl)
         {
-            Name = name;
-            Species = species;
-            Breed = breed;
-            Gender = gender;
-            DateOfBirth = dateOfBirth;
-            IsBirthDateEstimated = isBirthDateEstimated;
-            AvatarUrl = avatarUrl;
+            if (name != null) Name = name;
+            if (species != null) Species = species;
+            if (breed != null) Breed = breed;
+            if (gender != null) Gender = gender;
+            if (dateOfBirth != null) DateOfBirth = dateOfBirth;
+            if (isBirthDateEstimated != null) IsBirthDateEstimated = isBirthDateEstimated.Value;
+            if (avatarUrl != null) AvatarUrl = avatarUrl;
             UpdatedAt = DateTime.UtcNow;
         }
 

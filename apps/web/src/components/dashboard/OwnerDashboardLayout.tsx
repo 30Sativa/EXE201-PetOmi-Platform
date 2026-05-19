@@ -1,15 +1,18 @@
-import { Bell, LayoutDashboard, LogOut, PawPrint, Settings, ShieldCheck, Stethoscope } from "lucide-react"
+import { Bell, CalendarCheck, ClipboardList, LayoutDashboard, LogOut, PawPrint, Settings, Star, UserRound } from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
 import { useAuth } from "@/contexts/AuthContext"
 
 const navItems = [
-  { label: "Owner", to: "/dashboard/owner", icon: PawPrint },
-  { label: "Clinic", to: "/dashboard/clinic", icon: Stethoscope },
-  { label: "Admin", to: "/dashboard/admin", icon: ShieldCheck },
+  { label: "Tổng quan", to: "/dashboard/owner", icon: LayoutDashboard, exact: true },
+  { label: "Pets", to: "/dashboard/owner/pets", icon: PawPrint },
+  { label: "Lịch hẹn", to: "/dashboard/owner/appointments", icon: CalendarCheck },
+  { label: "Lịch sử khám", to: "/dashboard/owner/history", icon: ClipboardList },
+  { label: "Đánh giá", to: "/dashboard/owner/reviews", icon: Star },
+  { label: "Hồ sơ", to: "/dashboard/owner/profile", icon: UserRound },
 ]
 
-export default function DashboardLayout() {
+export default function OwnerDashboardLayout() {
   const { logout } = useAuth()
   const navigate = useNavigate()
 
@@ -29,27 +32,29 @@ export default function DashboardLayout() {
             <span className="text-base">PetOmi</span>
           </Link>
 
+          <div className="rounded-2xl border border-po-border bg-po-primary-soft px-3 py-2 text-xs font-semibold text-po-primary">
+            Chủ nuôi (Owner)
+          </div>
+
           <nav className="grid gap-2">
-            {navItems.map((item) => {
-              const Icon = item.icon
-              return (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    [
-                      "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold transition",
-                      isActive
-                        ? "bg-po-primary-soft text-po-primary"
-                        : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text",
-                    ].join(" ")
-                  }
-                >
-                  <Icon className="size-4" />
-                  {item.label} Dashboard
-                </NavLink>
-              )
-            })}
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.exact}
+                className={({ isActive }) =>
+                  [
+                    "flex items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold transition",
+                    isActive
+                      ? "bg-po-primary-soft text-po-primary"
+                      : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text",
+                  ].join(" ")
+                }
+              >
+                <item.icon className="size-4" />
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
 
           <div className="mt-auto grid gap-2 rounded-2xl border border-po-border bg-po-surface-muted p-4 text-sm">
@@ -64,8 +69,8 @@ export default function DashboardLayout() {
         <div className="flex flex-1 flex-col gap-6">
           <header className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] border border-po-border bg-white/90 px-4 py-3 shadow-sm">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Dashboard</p>
-              <h1 className="text-xl font-extrabold text-po-text md:text-2xl">Tổng quan vận hành</h1>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Owner</p>
+              <h1 className="text-xl font-extrabold text-po-text md:text-2xl">Dashboard Chủ nuôi</h1>
             </div>
             <div className="flex items-center gap-2">
               <button className="inline-flex h-10 items-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text-muted transition hover:text-po-text">
@@ -84,26 +89,24 @@ export default function DashboardLayout() {
 
           <div className="flex flex-col gap-4 rounded-[28px] border border-po-border bg-white/90 p-4 shadow-sm md:hidden">
             <nav className="flex flex-wrap gap-2">
-              {navItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={({ isActive }) =>
-                      [
-                        "flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition",
-                        isActive
-                          ? "bg-po-primary-soft text-po-primary"
-                          : "bg-po-surface-muted text-po-text-muted hover:text-po-text",
-                      ].join(" ")
-                    }
-                  >
-                    <Icon className="size-3" />
-                    {item.label}
-                  </NavLink>
-                )
-              })}
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.exact}
+                  className={({ isActive }) =>
+                    [
+                      "flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition",
+                      isActive
+                        ? "bg-po-primary-soft text-po-primary"
+                        : "bg-po-surface-muted text-po-text-muted hover:text-po-text",
+                    ].join(" ")
+                  }
+                >
+                  <item.icon className="size-3" />
+                  {item.label}
+                </NavLink>
+              ))}
             </nav>
           </div>
 

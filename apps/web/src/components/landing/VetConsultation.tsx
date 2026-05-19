@@ -1,6 +1,6 @@
 import { CheckCircle2, Headset, Stethoscope } from "lucide-react"
 
-import { useInView } from "../../lib/useInView"
+import { useInView } from "@/hooks"
 
 const benefits = [
   "Xem thông tin thú cưng và triệu chứng trước khi khám",

@@ -44,22 +44,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             await _context.Pets.AddAsync(pet.ToEntity());
         }
 
-        // Cập nhật thông tin pet — tìm entity theo ID rồi ghi đè từng field
         public async Task UpdateAsync(PetDomain pet)
         {
             var entity = await _context.Pets.FindAsync(pet.Id);
             if (entity == null) return;
 
-            entity.Name = pet.Name;
-            entity.Species = pet.Species;
-            entity.Breed = pet.Breed;
-            entity.Gender = pet.Gender;
-            entity.DateOfBirth = pet.DateOfBirth;
-            entity.IsBirthDateEstimated = pet.IsBirthDateEstimated;
-            entity.AvatarUrl = pet.AvatarUrl;
-            entity.IsActive = pet.IsActive;
-            entity.DeletedAt = pet.DeletedAt;
-            entity.UpdatedAt = pet.UpdatedAt;
+            var updated = pet.ToEntity();
+            _context.Entry(entity).CurrentValues.SetValues(updated);
         }
     }
 }

@@ -4,10 +4,10 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Request
 {
     public class UpdatePetMedicalRecordRequest
     {
-        public string RecordType { get; set; } = null!;
-        public string Title { get; set; } = null!;
+        public string? RecordType { get; set; }
+        public string? Title { get; set; }
         public string? Description { get; set; }
-        public DateOnly RecordDate { get; set; }
+        public DateOnly? RecordDate { get; set; }
         public string? VetName { get; set; }
         public string? ClinicName { get; set; }
         public string? MedicationName { get; set; }

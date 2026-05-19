@@ -2,10 +2,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
-import { Link } from "react-router-dom"
+import { useNavigate, Link } from "react-router-dom"
 
 import { LoginRequestSchema, type LoginRequest } from "../schemas/auth.schema"
 import { loginApi } from "../services/auth.service"
+import { getDeviceInfo } from "../lib/device"
+import { tokenStorage } from "../lib/tokenStorage"
 
 type LoginPageProps = {
   onSwitchToRegister?: () => void
@@ -22,19 +24,11 @@ const getErrorMessage = (error: unknown) => {
   return "Đăng nhập thất bại. Vui lòng thử lại."
 }
 
-const createDeviceFingerprint = () => {
-  const storedFingerprint = localStorage.getItem("petomi-device-fingerprint")
-  if (storedFingerprint) return storedFingerprint
-
-  const fingerprint = crypto.randomUUID()
-  localStorage.setItem("petomi-device-fingerprint", fingerprint)
-  return fingerprint
-}
-
 export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const navigate = useNavigate()
 
   const {
     register,
@@ -52,15 +46,26 @@ export default function LoginPage({ onSwitchToRegister }: LoginPageProps) {
 
   const onSubmit = async (data: LoginRequest) => {
     try {
-      await loginApi({
+      const deviceInfo = getDeviceInfo()
+
+      const response = await loginApi({
         ...data,
-        deviceFingerprint: createDeviceFingerprint(),
-        deviceName: data.deviceName ?? "PetOmi Web",
-        deviceType: data.deviceType ?? "web",
+        deviceFingerprint: deviceInfo.deviceFingerprint,
+        deviceName: deviceInfo.deviceName,
+        deviceType: deviceInfo.deviceType,
       })
+
+      if (response.data?.accessToken) {
+        tokenStorage.setAccessToken(response.data.accessToken)
+      }
+      if (response.data?.refreshToken) {
+        tokenStorage.setRefreshToken(response.data.refreshToken)
+      }
 
       setStatus("success")
       setMessage("Đăng nhập thành công.")
+
+      navigate("/dashboard")
     } catch (error) {
       setStatus("error")
       setMessage(getErrorMessage(error))

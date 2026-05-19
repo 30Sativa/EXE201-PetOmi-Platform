@@ -1,9 +1,10 @@
-﻿using PetOmiPlatform.Domain.Interfaces.Repositories;
+﻿using Microsoft.EntityFrameworkCore;
+using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 using PetOmiPlatform.Infrastructure.Persistence.Entities;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 {
@@ -26,6 +27,15 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             };
 
             await _context.UserRoles.AddAsync(userRole);
+        }
+
+        public async Task<List<string>> GetRolesByUserIdAsync(Guid userId)
+        {
+            return await _context.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .Include(ur => ur.Role)
+                .Select(ur => ur.Role!.RoleName)
+                .ToListAsync();
         }
     }
 }

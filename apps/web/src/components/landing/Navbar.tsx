@@ -13,8 +13,8 @@ interface NavbarProps {
 const defaultLinks: NavLink[] = [
   { label: "Tính năng", href: "#services" },
   { label: "Đặt lịch", href: "#booking" },
-  { label: "Clinic", href: "#veterinary" },
-  { label: "Admin", href: "#admin" },
+  { label: "Bác sĩ", href: "#veterinary" },
+  { label: "Quản trị", href: "#admin" },
   { label: "Câu hỏi", href: "#faq" },
 ]
 

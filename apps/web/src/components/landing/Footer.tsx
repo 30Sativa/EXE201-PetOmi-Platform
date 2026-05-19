@@ -1,56 +1,60 @@
 import { ArrowUpRight, PawPrint } from "lucide-react"
 import { Link } from "react-router-dom"
 
+import { useInView } from "../../lib/useInView"
+
 const footerLinks = [
   {
-    title: "Nền tảng",
+    title: "Chức năng",
     links: [
-      { label: "AI tư vấn", href: "#services" },
+      { label: "Tư vấn AI", href: "#services" },
       { label: "Hồ sơ thú cưng", href: "#services" },
-      { label: "Đặt lịch", href: "#booking" },
+      { label: "Đặt lịch khám", href: "#booking" },
       { label: "Chia sẻ dữ liệu", href: "#services" },
     ],
   },
   {
-    title: "Clinic",
+    title: "Phòng khám",
     links: [
-      { label: "Vet portal", href: "#veterinary" },
-      { label: "Lịch hẹn", href: "#booking" },
-      { label: "Queue", href: "#booking" },
+      { label: "Cổng cho bác sĩ", href: "#veterinary" },
+      { label: "Quản lý lịch hẹn", href: "#booking" },
+      { label: "Hàng đợi", href: "#booking" },
       { label: "Kết quả khám", href: "#veterinary" },
     ],
   },
   {
-    title: "Admin",
+    title: "Quản trị",
     links: [
-      { label: "Duyệt clinic", href: "#admin" },
-      { label: "User management", href: "#admin" },
-      { label: "Audit log", href: "#admin" },
-      { label: "GDPR", href: "#admin" },
+      { label: "Duyệt phòng khám", href: "#admin" },
+      { label: "Quản lý người dùng", href: "#admin" },
+      { label: "Nhật ký hoạt động", href: "#admin" },
+      { label: "Bảo mật dữ liệu", href: "#admin" },
     ],
   },
 ]
 
 export default function Footer() {
+  const { ref, inView } = useInView({ threshold: 0.1 })
+
   return (
-    <footer className="border-t border-po-border bg-white/90">
+    <footer ref={ref as React.RefObject<HTMLElement>} className="border-t border-po-border bg-white/90">
       <div className="mx-auto w-[min(100%-24px,1200px)] py-12">
-        <div className="rounded-[32px] border border-po-border bg-po-surface-muted px-6 py-10 text-center shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Bắt đầu ngay</p>
-          <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Một nền tảng cho Owner, Vet và Admin.</h2>
+        <div className={`rounded-[32px] border border-po-border bg-po-surface-muted px-6 py-10 text-center shadow-sm transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Bắt đầu ngay hôm nay</p>
+          <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Chăm sóc thú cưng tốt hơn, bắt đầu từ hôm nay.</h2>
           <p className="mt-3 text-sm text-po-text-muted">
-            AI tư vấn, đặt lịch, hồ sơ sức khỏe số và luồng duyệt clinic rõ ràng.
+            Miễn phí tư vấn AI, đặt lịch khám và theo dõi sức khỏe thú cưng ngay hôm nay.
           </p>
           <Link
             to="/register"
-            className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:bg-po-primary-hover"
+            className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:bg-po-primary-hover hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0"
           >
-            Bắt đầu miễn phí
+            Dùng thử miễn phí
             <ArrowUpRight className="size-4" />
           </Link>
         </div>
 
-        <div className="mt-12 grid gap-10 md:grid-cols-[1.1fr_1.9fr]">
+        <div className={`mt-12 grid gap-10 transition-all duration-500 delay-150 md:grid-cols-[1.1fr_1.9fr] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <Link to="/" className="flex items-center gap-2 text-sm font-extrabold text-po-text no-underline">
               <span className="grid size-10 place-items-center rounded-2xl bg-po-primary text-white">
@@ -59,7 +63,7 @@ export default function Footer() {
               <span className="text-base">PetOmi</span>
             </Link>
             <p className="mt-4 text-sm leading-6 text-po-text-muted">
-              Nền tảng Pet Advisor AI kết nối chủ nuôi, bác sĩ và admin bằng dữ liệu đồng bộ.
+              Nền tảng chăm sóc thú cưng kết nối chủ nuôi, bác sĩ thú y và quản trị viên — giúp mọi thứ trở nên dễ dàng hơn.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">

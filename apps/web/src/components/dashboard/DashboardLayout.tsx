@@ -1,5 +1,7 @@
-import { Bell, LayoutDashboard, PawPrint, Settings, ShieldCheck, Stethoscope } from "lucide-react"
-import { Link, NavLink, Outlet } from "react-router-dom"
+import { Bell, LayoutDashboard, LogOut, PawPrint, Settings, ShieldCheck, Stethoscope } from "lucide-react"
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
+
+import { useAuth } from "@/contexts/AuthContext"
 
 const navItems = [
   { label: "Owner", to: "/dashboard/owner", icon: PawPrint },
@@ -8,6 +10,14 @@ const navItems = [
 ]
 
 export default function DashboardLayout() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate("/login")
+  }
+
   return (
     <div className="min-h-screen bg-po-bg text-po-text">
       <div className="mx-auto flex w-[min(100%-24px,1280px)] flex-col gap-6 py-6 md:flex-row">
@@ -62,12 +72,13 @@ export default function DashboardLayout() {
                 <Bell className="size-4" />
                 Thông báo
               </button>
-              <Link
-                to="/login"
+              <button
+                onClick={handleLogout}
                 className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
               >
+                <LogOut className="size-4" />
                 Đăng xuất
-              </Link>
+              </button>
             </div>
           </header>
 

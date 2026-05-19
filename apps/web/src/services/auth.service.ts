@@ -1,5 +1,5 @@
 import { api } from "../lib/axios"
-import type { ForgotPasswordRequest, LoginRequest, RegisterRequest } from "../schemas/auth.schema"
+import type { ForgotPasswordRequest, LoginRequest, LogoutRequest, RegisterRequest } from "../schemas/auth.schema"
 
 const useMockAuth = import.meta.env.VITE_USE_MOCK_AUTH === "true"
 
@@ -50,5 +50,15 @@ export const forgotPasswordApi = async (data: ForgotPasswordRequest) => {
     return mockForgotPassword(data)
   }
   const response = await api.post("/auth/forgot-password", data)
+  return response.data
+}
+
+export const logoutApi = async (refreshToken: string) => {
+  const response = await api.post("/auth/logout", { refreshToken })
+  return response.data
+}
+
+export const logoutAllApi = async () => {
+  const response = await api.post("/auth/logout-all")
   return response.data
 }

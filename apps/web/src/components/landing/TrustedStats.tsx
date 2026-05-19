@@ -1,5 +1,7 @@
 import { AlertTriangle, Layers, ShieldCheck, Users } from "lucide-react"
 
+import { useInView } from "../../lib/useInView"
+
 interface StatItem {
   label: string
   value: string
@@ -7,20 +9,26 @@ interface StatItem {
 }
 
 const stats: StatItem[] = [
-  { label: "Tính năng core", value: "103+", icon: Layers },
-  { label: "Vai trò vận hành", value: "3", icon: Users },
-  { label: "Theo dõi lịch hẹn", value: "24/7", icon: ShieldCheck },
-  { label: "Urgency pre-check", value: "2-level", icon: AlertTriangle },
+  { label: "Phòng khám được duyệt", value: "100+", icon: Users },
+  { label: "Chủ nuôi tin dùng", value: "50K+", icon: ShieldCheck },
+  { label: "Lịch hẹn hàng ngày", value: "500+", icon: Layers },
+  { label: "Cảnh báo khẩn", value: "24/7", icon: AlertTriangle },
 ]
 
 export default function TrustedStats() {
+  const { ref, inView } = useInView({ threshold: 0.2 })
+
   return (
-    <section className="py-12">
-      <div className="mx-auto grid w-[min(100%-24px,1100px)] gap-6 rounded-[32px] border border-po-border bg-white/80 p-6 shadow-sm md:grid-cols-4">
-        {stats.map((stat) => {
+    <section ref={ref as React.RefObject<HTMLElement>} className="py-12">
+      <div className={`mx-auto grid w-[min(100%-24px,1100px)] gap-6 rounded-[32px] border border-po-border bg-white/80 p-6 shadow-sm md:grid-cols-4 transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+        {stats.map((stat, i) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="flex items-center gap-4 rounded-2xl bg-po-surface-muted/60 p-4">
+            <div
+              key={stat.label}
+              className="flex items-center gap-4 rounded-2xl bg-po-surface-muted/60 p-4 transition-all duration-500"
+              style={{ transitionDelay: `${i * 80}ms` }}
+            >
               <span className="grid size-12 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
                 <Icon className="size-5" />
               </span>

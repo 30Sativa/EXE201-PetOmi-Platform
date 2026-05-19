@@ -17,6 +17,11 @@ export const ForgotPasswordRequestSchema = z.object({
   email: z.email("Email không hợp lệ"),
 })
 
+export const LogoutRequestSchema = z.object({
+  refreshToken: z.string(),
+})
+
 export type LoginRequest = z.infer<typeof LoginRequestSchema>
 export type RegisterRequest = z.infer<typeof RegisterRequestSchema>
 export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>
+export type LogoutRequest = z.infer<typeof LogoutRequestSchema>

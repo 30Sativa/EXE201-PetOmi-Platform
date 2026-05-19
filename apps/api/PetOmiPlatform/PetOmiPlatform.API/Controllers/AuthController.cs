@@ -11,6 +11,7 @@ using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
+using PetOmiPlatform.Application.Features.Auth.Queries;
 using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
@@ -87,6 +88,18 @@ namespace PetOmiPlatform.API.Controllers
             await Mediator.Send(new LogoutAllCommand(userId));
             return Ok(BaseResponse<object>.Ok(null, "Đăng xuất tất cả thiết bị thành công."));
         }
+        /// <summary>
+        /// Lấy thông tin user hiện tại đang đăng nhập (từ JWT).
+        /// </summary>
+        [HttpGet("me")]
+        [Authorize]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await Mediator.Send(new GetCurrentUserQuery(userId));
+            return Ok(BaseResponse<GetCurrentUserResponse>.Ok(result));
+        }
+
         /// <summary>
         /// Xác minh email bằng token được gửi qua email.
         /// </summary>

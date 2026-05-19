@@ -35,6 +35,9 @@
   --animate-fade-in: po-fade-in 520ms ease both;
   --animate-float: po-float 5.8s ease-in-out infinite;
   --animate-soft-pulse: po-soft-pulse 2.8s ease-in-out infinite;
+  --animate-scale-in: po-scale-in 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-slide-in-left: po-slide-in-left 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-slide-in-right: po-slide-in-right 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
 :root {
@@ -247,6 +250,42 @@ canvas {
   50% {
     opacity: 1;
     transform: scale(1.04);
+  }
+}
+
+@keyframes po-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes po-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes po-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 

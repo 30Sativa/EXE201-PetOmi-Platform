@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -120,6 +120,7 @@ public partial class PetOmniDbContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.LicenseNumber).HasMaxLength(100);
+            entity.Property(e => e.LicenseImageUrl).HasMaxLength(500);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.RejectedReason).HasMaxLength(500);
             entity.Property(e => e.ReviewedByAdminId).HasColumnName("ReviewedByAdminID");

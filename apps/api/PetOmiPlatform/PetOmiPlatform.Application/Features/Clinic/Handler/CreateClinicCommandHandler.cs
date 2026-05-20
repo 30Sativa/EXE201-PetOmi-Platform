@@ -52,7 +52,8 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 address: command.Request.Address,
                 phone: command.Request.Phone,
                 email: command.Request.Email,
-                licenseNumber: command.Request.LicenseNumber
+                licenseNumber: command.Request.LicenseNumber,
+                licenseImageUrl: command.Request.LicenseImageUrl
             );
             await _clinicRepository.AddAsync(clinic);
 
@@ -73,6 +74,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 ClinicId = clinic.Id,
                 ClinicName = clinic.ClinicName,
                 LicenseNumber = clinic.LicenseNumber,
+                LicenseImageUrl = clinic.LicenseImageUrl,
                 Status = clinic.Status.ToString() // enum → string
             };
         }

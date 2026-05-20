@@ -15,14 +15,26 @@ namespace PetOmiPlatform.API.Controllers
     [Authorize]
     public class AdminClinicController : BaseController
     {
-        public AdminClinicController(IMediator mediator) : base(mediator)
+        public AdminClinicController(IMediator mediator) : base(mediator) { }
+
+        /// <summary>
+        /// Admin lấy danh sách phòng khám theo status.
+        /// Mặc định lấy Pending để duyệt. Có thể truyền status=Approved|Rejected.
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> GetClinics(
+            [FromQuery] string status = "Pending",
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
+            var result = await Mediator.Send(new GetClinicsByStatusQuery(status, page, pageSize));
+            return Ok(BaseResponse<PagedData<ClinicListItemResponse>>.Ok(result));
         }
+
         /// <summary>
         /// Admin duyệt phòng khám đang Pending. Clinic chuyển sang Approved và lưu admin đã duyệt.
         /// </summary>
         [HttpPost("{clinicId:guid}/approve")]
-    
         public async Task<IActionResult> ApproveClinic(Guid clinicId)
         {
             var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

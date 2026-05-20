@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Infrastructure.Mappers;
@@ -40,6 +41,40 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var updated = clinic.ToEntity();
             _context.Entry(entity).CurrentValues.SetValues(updated);
             entity.Status = clinic.Status.ToString();
+        }
+
+        public async Task<(IEnumerable<ClinicDomain> Items, int TotalCount)> GetByStatusAsync(
+            string status, int page, int pageSize)
+        {
+            var query = _context.Clinics
+                .Where(c => c.Status == status)
+                .OrderByDescending(c => c.CreatedAt);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => c.ToDomain())
+                .ToListAsync();
+
+            return (items, total);
+        }
+
+        public async Task<ClinicDomain?> GetByOwnerUserIdAsync(Guid userId)
+        {
+            // Tìm clinic mà user này đang là ClinicOwner (active)
+            // VetProfile -> VetClinic -> Clinic, role = ClinicOwner
+            var clinicId = await _context.VetClinics
+                .Where(vc => vc.VetProfile.UserId == userId
+                          && vc.RoleId == ClinicRoleConstants.ClinicOwnerId
+                          && vc.IsActive)
+                .Select(vc => (Guid?)vc.ClinicId)
+                .FirstOrDefaultAsync();
+
+            if (clinicId == null) return null;
+
+            var entity = await _context.Clinics.FindAsync(clinicId.Value);
+            return entity?.ToDomain();
         }
     }
 }

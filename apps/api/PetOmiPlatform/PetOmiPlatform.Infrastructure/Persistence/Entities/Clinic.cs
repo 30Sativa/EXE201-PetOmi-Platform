@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -16,6 +16,8 @@ public partial class Clinic
     public string? Email { get; set; }
 
     public string? LicenseNumber { get; set; }
+
+    public string? LicenseImageUrl { get; set; }  // URL ảnh Giấy phép kinh doanh
 
     public string Status { get; set; } = null!;
 

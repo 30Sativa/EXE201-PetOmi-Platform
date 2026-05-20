@@ -7,5 +7,6 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Request
         public string? Phone { get; set; }
         public string? Email { get; set; }
         public string? LicenseNumber { get; set; }
+        public string? LicenseImageUrl { get; set; }  // URL ảnh GKPD đã upload
     }
 }

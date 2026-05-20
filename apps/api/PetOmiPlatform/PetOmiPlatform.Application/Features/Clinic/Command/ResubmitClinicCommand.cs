@@ -5,12 +5,12 @@ using PetOmiPlatform.Application.Features.Clinic.DTOs.Response;
 
 namespace PetOmiPlatform.Application.Features.Clinic.Command
 {
-    public record CreateClinicCommand(Guid UserId, CreateClinicRequest Request)
-        : IRequest<CreateClinicResponse>, IAuditableCommand
+    /// <summary>ClinicOwner re-apply sau khi bị Reject — reset về Pending.</summary>
+    public record ResubmitClinicCommand(Guid UserId, Guid ClinicId, ResubmitClinicRequest Request)
+        : IRequest<GetMyClinicResponse>, IAuditableCommand
     {
-        // Explicit interface — tránh conflict giữa Guid (positional) và Guid? (interface)
         Guid? IAuditableCommand.UserId => UserId;
-        string IAuditableCommand.Action => "CreateClinic";
+        string IAuditableCommand.Action => "ResubmitClinic";
         string IAuditableCommand.Category => "Clinic";
     }
 }

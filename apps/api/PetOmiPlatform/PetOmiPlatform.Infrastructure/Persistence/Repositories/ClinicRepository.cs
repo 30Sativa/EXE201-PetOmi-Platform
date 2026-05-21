@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Infrastructure.Mappers;
@@ -43,38 +42,34 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             entity.Status = clinic.Status.ToString();
         }
 
-        public async Task<(IEnumerable<ClinicDomain> Items, int TotalCount)> GetByStatusAsync(
-            string status, int page, int pageSize)
+        /// <summary>
+        /// Lấy clinic mà user đang sở hữu (có role ClinicOwner trong VetClinic).
+        /// Join: VetClinic → VetProfile → Users → so sánh UserId.
+        /// </summary>
+        public async Task<ClinicDomain?> GetByOwnerUserIdAsync(Guid userId)
         {
-            var query = _context.Clinics
-                .Where(c => c.Status == status)
-                .OrderByDescending(c => c.CreatedAt);
+            var entity = await _context.Clinics
+                .FirstOrDefaultAsync(c => c.VetClinics.Any(vc =>
+                    vc.IsActive &&
+                    vc.Role.RoleName == "ClinicOwner" &&
+                    vc.VetProfile.UserId == userId));
+            return entity?.ToDomain();
+        }
 
-            var total = await query.CountAsync();
-            var items = await query
+        public async Task<IEnumerable<ClinicDomain>> GetByStatusAsync(string status, int page, int pageSize)
+        {
+            return await _context.Clinics
+                .Where(c => c.Status == status)
+                .OrderByDescending(c => c.CreatedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(c => c.ToDomain())
                 .ToListAsync();
-
-            return (items, total);
         }
 
-        public async Task<ClinicDomain?> GetByOwnerUserIdAsync(Guid userId)
+        public async Task<int> CountByStatusAsync(string status)
         {
-            // Tìm clinic mà user này đang là ClinicOwner (active)
-            // VetProfile -> VetClinic -> Clinic, role = ClinicOwner
-            var clinicId = await _context.VetClinics
-                .Where(vc => vc.VetProfile.UserId == userId
-                          && vc.RoleId == ClinicRoleConstants.ClinicOwnerId
-                          && vc.IsActive)
-                .Select(vc => (Guid?)vc.ClinicId)
-                .FirstOrDefaultAsync();
-
-            if (clinicId == null) return null;
-
-            var entity = await _context.Clinics.FindAsync(clinicId.Value);
-            return entity?.ToDomain();
+            return await _context.Clinics.CountAsync(c => c.Status == status);
         }
     }
 }

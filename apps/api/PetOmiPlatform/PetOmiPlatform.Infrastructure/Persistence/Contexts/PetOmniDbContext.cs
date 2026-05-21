@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -21,6 +21,10 @@ public partial class PetOmniDbContext : DbContext
     public virtual DbSet<Clinic> Clinics { get; set; }
 
     public virtual DbSet<ClinicService> ClinicServices { get; set; }
+
+    public virtual DbSet<DoctorSchedule> DoctorSchedules { get; set; }
+
+    public virtual DbSet<InventoryItem> Inventory { get; set; }
 
     public virtual DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
 
@@ -122,10 +126,6 @@ public partial class PetOmniDbContext : DbContext
                 .HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.LicenseNumber).HasMaxLength(100);
-            entity.Property(e => e.LicenseImageUrl).HasMaxLength(500);
-            entity.Property(e => e.LogoUrl).HasMaxLength(500);
-            entity.Property(e => e.Description).HasMaxLength(1000);
-            entity.Property(e => e.OpeningHours).HasMaxLength(500);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.RejectedReason).HasMaxLength(500);
             entity.Property(e => e.ReviewedByAdminId).HasColumnName("ReviewedByAdminID");

@@ -5,9 +5,8 @@ namespace PetOmiPlatform.Infrastructure.Mappers
 {
     public static class ClinicServiceMapper
     {
-        public static ClinicServiceDomain ToDomain(this ClinicService entity)
-        {
-            return ClinicServiceDomain.Reconstitute(
+        public static ClinicServiceDomain ToDomain(this ClinicService entity) =>
+            ClinicServiceDomain.Reconstitute(
                 id: entity.ServiceId,
                 clinicId: entity.ClinicId,
                 serviceName: entity.ServiceName,
@@ -18,11 +17,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 createdAt: entity.CreatedAt,
                 updatedAt: entity.UpdatedAt
             );
-        }
 
-        public static ClinicService ToEntity(this ClinicServiceDomain domain)
-        {
-            return new ClinicService
+        public static ClinicService ToEntity(this ClinicServiceDomain domain) =>
+            new ClinicService
             {
                 ServiceId = domain.Id,
                 ClinicId = domain.ClinicId,
@@ -34,6 +31,5 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 CreatedAt = domain.CreatedAt,
                 UpdatedAt = domain.UpdatedAt
             };
-        }
     }
 }

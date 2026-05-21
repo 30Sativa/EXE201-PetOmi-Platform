@@ -1,4 +1,4 @@
-﻿using FluentValidation.Results;
+using FluentValidation.Results;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,6 +20,13 @@ namespace PetOmiPlatform.Application.Exceptions
             : base("One or more validation errors occurred.")
         {
             Errors = errors.ToList();
+        }
+
+        // overload cho 1 field cụ thể
+        public ValidationException(string field, string message)
+            : base("One or more validation errors occurred.")
+        {
+            Errors = new List<string> { $"{field}: {message}" };
         }
     }
 }

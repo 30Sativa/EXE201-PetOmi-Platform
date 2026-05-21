@@ -19,8 +19,9 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
         public async Task<PagedData<ClinicListItemResponse>> Handle(
             GetClinicsByStatusQuery request, CancellationToken cancellationToken)
         {
-            var (items, total) = await _clinicRepository.GetByStatusAsync(
+            var items = await _clinicRepository.GetByStatusAsync(
                 request.Status, request.Page, request.PageSize);
+            var total = await _clinicRepository.CountByStatusAsync(request.Status);
 
             var dtos = items.Select(c => new ClinicListItemResponse
             {

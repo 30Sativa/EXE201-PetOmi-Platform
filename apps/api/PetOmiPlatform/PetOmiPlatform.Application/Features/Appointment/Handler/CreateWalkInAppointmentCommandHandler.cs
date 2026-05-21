@@ -1,0 +1,73 @@
+using MediatR;
+using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Appointment.Command;
+using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
+using PetOmiPlatform.Domain.Common.Enums;
+using PetOmiPlatform.Domain.Entities;
+using PetOmiPlatform.Domain.Interfaces.Repositories;
+
+namespace PetOmiPlatform.Application.Features.Appointment.Handler
+{
+    public class CreateWalkInAppointmentCommandHandler
+        : IRequestHandler<CreateWalkInAppointmentCommand, AppointmentResponse>
+    {
+        private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IClinicRepository _clinicRepository;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public CreateWalkInAppointmentCommandHandler(
+            IAppointmentRepository appointmentRepository,
+            IClinicRepository clinicRepository,
+            IUnitOfWork unitOfWork)
+        {
+            _appointmentRepository = appointmentRepository;
+            _clinicRepository = clinicRepository;
+            _unitOfWork = unitOfWork;
+        }
+
+        public async Task<AppointmentResponse> Handle(
+            CreateWalkInAppointmentCommand command, CancellationToken cancellationToken)
+        {
+            var req = command.Request;
+
+            var clinic = await _clinicRepository.GetByIdAsync(req.ClinicId)
+                ?? throw new NotFoundException("Clinic", req.ClinicId);
+            clinic.EnsureApproved();
+
+            if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var apptType))
+                throw new ValidationException("AppointmentType", $"Loại lịch hẹn không hợp lệ: {req.AppointmentType}");
+
+            // Check conflict nếu bác sĩ được chỉ định
+            if (req.VetClinicId.HasValue)
+            {
+                var hasConflict = await _appointmentRepository.HasConflictAsync(
+                    req.VetClinicId.Value,
+                    req.AppointmentDate,
+                    req.StartTime,
+                    req.EndTime);
+
+                if (hasConflict)
+                    throw new ConflictException("Bác sĩ đã có lịch trong khung giờ này.");
+            }
+
+            var appointment = AppointmentDomain.CreateWalkIn(
+                clinicId: req.ClinicId,
+                petId: req.PetId,
+                staffUserId: command.StaffUserId,
+                appointmentDate: req.AppointmentDate,
+                startTime: req.StartTime,
+                endTime: req.EndTime,
+                appointmentType: apptType,
+                vetClinicId: req.VetClinicId,
+                serviceId: req.ServiceId,
+                notes: req.Notes
+            );
+
+            await _appointmentRepository.AddAsync(appointment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return AppointmentHandlerHelper.ToResponse(appointment);
+        }
+    }
+}

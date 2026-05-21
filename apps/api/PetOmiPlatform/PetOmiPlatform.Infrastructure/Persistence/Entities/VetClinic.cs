@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -28,4 +28,6 @@ public partial class VetClinic
     public virtual VetClinicRole Role { get; set; } = null!;
 
     public virtual VetProfile VetProfile { get; set; } = null!;
+
+    public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; } = new List<DoctorSchedule>();
 }

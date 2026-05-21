@@ -15,6 +15,9 @@ namespace PetOmiPlatform.Domain.Entities
         public string? Email { get; private set; }
         public string? LicenseNumber { get; private set; }
         public string? LicenseImageUrl { get; private set; }  // URL ảnh Giấy phép kinh doanh
+        public string? LogoUrl { get; private set; }          // Logo phòng khám
+        public string? Description { get; private set; }      // Mô tả ngắn
+        public string? OpeningHours { get; private set; }     // JSON: {"Mon-Fri":"08:00-17:00",...}
         public ClinicStatus Status { get; private set; }
         public string? RejectedReason { get; private set; }
         public Guid? ReviewedByAdminId { get; private set; }
@@ -46,6 +49,9 @@ namespace PetOmiPlatform.Domain.Entities
         string? email,
         string? licenseNumber,
         string? licenseImageUrl,
+        string? logoUrl,
+        string? description,
+        string? openingHours,
         string status,
         string? rejectedReason,
         Guid? reviewedByAdminId,
@@ -61,6 +67,9 @@ namespace PetOmiPlatform.Domain.Entities
                 Email = email,
                 LicenseNumber = licenseNumber,
                 LicenseImageUrl = licenseImageUrl,
+                LogoUrl = logoUrl,
+                Description = description,
+                OpeningHours = openingHours,
                 Status = Enum.Parse<ClinicStatus>(status),
                 RejectedReason = rejectedReason,
                 ReviewedByAdminId = reviewedByAdminId,
@@ -110,6 +119,25 @@ namespace PetOmiPlatform.Domain.Entities
         {
             if (Status != ClinicStatus.Approved)
                 throw new DomainException("Phòng khám này chưa được duyệt.");
+        }
+
+        /// <summary>
+        /// ClinicOwner cập nhật thông tin phòng khám sau khi được Approved.
+        /// </summary>
+        public void UpdateInfo(string? clinicName, string? address, string? phone,
+            string? email, string? logoUrl, string? description, string? openingHours)
+        {
+            EnsureApproved();
+
+            if (!string.IsNullOrWhiteSpace(clinicName)) ClinicName = clinicName;
+            if (address != null) Address = address;
+            if (phone != null) Phone = phone;
+            if (email != null) Email = email;
+            if (logoUrl != null) LogoUrl = logoUrl;
+            if (description != null) Description = description;
+            if (openingHours != null) OpeningHours = openingHours;
+
+            UpdatedAt = DateTime.UtcNow;
         }
 
         /// <summary>

@@ -19,6 +19,12 @@ public partial class Clinic
 
     public string? LicenseImageUrl { get; set; }  // URL ảnh Giấy phép kinh doanh
 
+    public string? LogoUrl { get; set; }           // Logo phòng khám
+
+    public string? Description { get; set; }       // Mô tả ngắn
+
+    public string? OpeningHours { get; set; }      // JSON: {"Mon-Fri":"08:00-17:00"}
+
     public string Status { get; set; } = null!;
 
     public string? RejectedReason { get; set; }
@@ -30,6 +36,8 @@ public partial class Clinic
     public DateTime? UpdatedAt { get; set; }
 
     public virtual User? ReviewedByAdmin { get; set; }
+
+    public virtual ICollection<ClinicService> ClinicServices { get; set; } = new List<ClinicService>();
 
     public virtual ICollection<UserSession> UserSessions { get; set; } = new List<UserSession>();
 

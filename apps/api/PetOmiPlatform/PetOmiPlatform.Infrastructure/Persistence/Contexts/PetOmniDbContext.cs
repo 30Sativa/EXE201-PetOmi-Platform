@@ -20,6 +20,8 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<Clinic> Clinics { get; set; }
 
+    public virtual DbSet<ClinicService> ClinicServices { get; set; }
+
     public virtual DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
 
     public virtual DbSet<ExternalLogin> ExternalLogins { get; set; }
@@ -121,6 +123,9 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.LicenseNumber).HasMaxLength(100);
             entity.Property(e => e.LicenseImageUrl).HasMaxLength(500);
+            entity.Property(e => e.LogoUrl).HasMaxLength(500);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.OpeningHours).HasMaxLength(500);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.RejectedReason).HasMaxLength(500);
             entity.Property(e => e.ReviewedByAdminId).HasColumnName("ReviewedByAdminID");
@@ -132,6 +137,30 @@ public partial class PetOmniDbContext : DbContext
             entity.HasOne(d => d.ReviewedByAdmin).WithMany(p => p.Clinics)
                 .HasForeignKey(d => d.ReviewedByAdminId)
                 .HasConstraintName("FK__Clinics__Reviewe__5DCAEF64");
+        });
+
+        modelBuilder.Entity<ClinicService>(entity =>
+        {
+            entity.HasKey(e => e.ServiceId).HasName("PK_ClinicServices");
+
+            entity.Property(e => e.ServiceId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ServiceID");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.ServiceName).HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.DurationMins).HasDefaultValue(30);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Clinic).WithMany(p => p.ClinicServices)
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ClinicServices_Clinic");
         });
 
         modelBuilder.Entity<EmailVerificationToken>(entity =>

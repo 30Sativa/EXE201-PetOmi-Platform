@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -15,6 +15,8 @@ public partial class PetOmniDbContext : DbContext
         : base(options)
     {
     }
+
+    public virtual DbSet<Appointment> Appointments { get; set; }
 
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
@@ -78,6 +80,63 @@ public partial class PetOmniDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Appointment>(entity =>
+        {
+            entity.HasKey(e => e.AppointmentId).HasName("PK_Appointments");
+
+            entity.Property(e => e.AppointmentId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("AppointmentID");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.VetClinicId).HasColumnName("VetClinicID");
+            entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.BookedByUserId).HasColumnName("BookedByUserID");
+            entity.Property(e => e.CancelledByUserId).HasColumnName("CancelledByUserID");
+            entity.Property(e => e.AppointmentType).HasMaxLength(50).HasDefaultValue("Checkup");
+            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValue("Pending");
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.CancellationReason).HasMaxLength(300);
+            entity.Property(e => e.IsWalkIn).HasDefaultValue(false);
+            entity.Property(e => e.IsLateCancellation).HasDefaultValue(false);
+            entity.Property(e => e.ConfirmedAt).HasColumnType("datetime");
+            entity.Property(e => e.CancelledAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Clinic).WithMany()
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_Clinic");
+
+            entity.HasOne(d => d.VetClinic).WithMany()
+                .HasForeignKey(d => d.VetClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_VetClinic");
+
+            entity.HasOne(d => d.Service).WithMany()
+                .HasForeignKey(d => d.ServiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_Service");
+
+            entity.HasOne(d => d.Pet).WithMany()
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_Pet");
+
+            entity.HasOne(d => d.BookedByUser).WithMany()
+                .HasForeignKey(d => d.BookedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_BookedBy");
+
+            entity.HasOne(d => d.CancelledByUser).WithMany()
+                .HasForeignKey(d => d.CancelledByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_CancelledBy");
+        });
+
         modelBuilder.Entity<AuditLog>(entity =>
         {
             entity.HasKey(e => e.AuditLogId).HasName("PK__AuditLog__EB5F6CDDF97F5908");

@@ -1,4 +1,4 @@
-﻿using PetOmiPlatform.Domain.Common;
+using PetOmiPlatform.Domain.Common;
 using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Exceptions;
 using System;
@@ -14,6 +14,10 @@ namespace PetOmiPlatform.Domain.Entities
         public string? Phone { get; private set; }
         public string? Email { get; private set; }
         public string? LicenseNumber { get; private set; }
+        public string? LicenseImageUrl { get; private set; }  // URL ảnh Giấy phép kinh doanh
+        public string? LogoUrl { get; private set; }          // Logo phòng khám
+        public string? Description { get; private set; }      // Mô tả ngắn
+        public string? OpeningHours { get; private set; }     // JSON: {"Mon-Fri":"08:00-17:00",...}
         public ClinicStatus Status { get; private set; }
         public string? RejectedReason { get; private set; }
         public Guid? ReviewedByAdminId { get; private set; }
@@ -23,7 +27,7 @@ namespace PetOmiPlatform.Domain.Entities
         // / === Constructors ===
         private ClinicDomain() { }
 
-        private ClinicDomain(string clinicName, string? address, string? phone, string? email, string? licenseNumber)
+        private ClinicDomain(string clinicName, string? address, string? phone, string? email, string? licenseNumber, string? licenseImageUrl)
         {
             Id = Guid.NewGuid();
             ClinicName = clinicName;
@@ -31,6 +35,7 @@ namespace PetOmiPlatform.Domain.Entities
             Phone = phone;
             Email = email;
             LicenseNumber = licenseNumber;
+            LicenseImageUrl = licenseImageUrl;
             Status = ClinicStatus.Pending;
             CreatedAt = DateTime.UtcNow;
         }
@@ -43,6 +48,10 @@ namespace PetOmiPlatform.Domain.Entities
         string? phone,
         string? email,
         string? licenseNumber,
+        string? licenseImageUrl,
+        string? logoUrl,
+        string? description,
+        string? openingHours,
         string status,
         string? rejectedReason,
         Guid? reviewedByAdminId,
@@ -57,6 +66,10 @@ namespace PetOmiPlatform.Domain.Entities
                 Phone = phone,
                 Email = email,
                 LicenseNumber = licenseNumber,
+                LicenseImageUrl = licenseImageUrl,
+                LogoUrl = logoUrl,
+                Description = description,
+                OpeningHours = openingHours,
                 Status = Enum.Parse<ClinicStatus>(status),
                 RejectedReason = rejectedReason,
                 ReviewedByAdminId = reviewedByAdminId,
@@ -67,9 +80,9 @@ namespace PetOmiPlatform.Domain.Entities
 
         // Factory method for creating a new clinic
 
-        public static ClinicDomain Create(string clinicName, string? address, string? phone, string? email, string? licenseNumber)
+        public static ClinicDomain Create(string clinicName, string? address, string? phone, string? email, string? licenseNumber, string? licenseImageUrl)
         {
-            return new ClinicDomain(clinicName, address, phone, email, licenseNumber);
+            return new ClinicDomain(clinicName, address, phone, email, licenseNumber, licenseImageUrl);
         }
 
         // behavior methods for updating clinic status
@@ -105,10 +118,46 @@ namespace PetOmiPlatform.Domain.Entities
         public void EnsureApproved()
         {
             if (Status != ClinicStatus.Approved)
-            {
                 throw new DomainException("Phòng khám này chưa được duyệt.");
-            }
+        }
 
+        /// <summary>
+        /// ClinicOwner cập nhật thông tin phòng khám sau khi được Approved.
+        /// </summary>
+        public void UpdateInfo(string? clinicName, string? address, string? phone,
+            string? email, string? logoUrl, string? description, string? openingHours)
+        {
+            EnsureApproved();
+
+            if (!string.IsNullOrWhiteSpace(clinicName)) ClinicName = clinicName;
+            if (address != null) Address = address;
+            if (phone != null) Phone = phone;
+            if (email != null) Email = email;
+            if (logoUrl != null) LogoUrl = logoUrl;
+            if (description != null) Description = description;
+            if (openingHours != null) OpeningHours = openingHours;
+
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Chủ phòng khám re-apply sau khi bị Reject — reset về Pending, xóa lý do từ chối.
+        /// </summary>
+        public void Resubmit(string? newLicenseNumber, string? newLicenseImageUrl)
+        {
+            if (Status != ClinicStatus.Rejected)
+                throw new DomainException("Chỉ có thể nộp lại phòng khám đã bị từ chối.");
+
+            if (!string.IsNullOrWhiteSpace(newLicenseNumber))
+                LicenseNumber = newLicenseNumber;
+
+            if (!string.IsNullOrWhiteSpace(newLicenseImageUrl))
+                LicenseImageUrl = newLicenseImageUrl;
+
+            Status = ClinicStatus.Pending;
+            RejectedReason = null;
+            ReviewedByAdminId = null;
+            UpdatedAt = DateTime.UtcNow;
         }
     }
 }

@@ -5,12 +5,11 @@ using PetOmiPlatform.Application.Features.Clinic.DTOs.Response;
 
 namespace PetOmiPlatform.Application.Features.Clinic.Command
 {
-    public record CreateClinicCommand(Guid UserId, CreateClinicRequest Request)
-        : IRequest<CreateClinicResponse>, IAuditableCommand
+    public record UpdateClinicInfoCommand(Guid UserId, Guid ClinicId, UpdateClinicInfoRequest Request)
+        : IRequest<GetMyClinicResponse>, IAuditableCommand
     {
-        // Explicit interface — tránh conflict giữa Guid (positional) và Guid? (interface)
         Guid? IAuditableCommand.UserId => UserId;
-        string IAuditableCommand.Action => "CreateClinic";
+        string IAuditableCommand.Action => "UpdateClinicInfo";
         string IAuditableCommand.Category => "Clinic";
     }
 }

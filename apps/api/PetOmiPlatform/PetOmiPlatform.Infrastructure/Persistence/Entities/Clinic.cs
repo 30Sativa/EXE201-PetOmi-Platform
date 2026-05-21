@@ -39,11 +39,8 @@ public partial class Clinic
 
     public virtual ICollection<ClinicService> ClinicServices { get; set; } = new List<ClinicService>();
 
-<<<<<<< Updated upstream
-=======
     public virtual ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
 
->>>>>>> Stashed changes
     public virtual ICollection<UserSession> UserSessions { get; set; } = new List<UserSession>();
 
     public virtual ICollection<VetClinic> VetClinics { get; set; } = new List<VetClinic>();

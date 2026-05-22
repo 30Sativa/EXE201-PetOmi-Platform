@@ -101,6 +101,12 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IPetPhotoRepository, PetPhotoRepository>();
             services.AddScoped<IPetMedicalRecordRepository, PetMedicalRecordRepository>();
             services.AddScoped<IPetUserAccessRepository, PetUserAccessRepository>();
+            
+            // Sprint 5 - Patient Flow
+            services.AddScoped<IMedicalExaminationRepository, MedicalExaminationRepository>();
+            services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+            services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IExternalLoginRepository, ExternalLoginRepository>();

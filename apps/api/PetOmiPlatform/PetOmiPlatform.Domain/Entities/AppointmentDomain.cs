@@ -26,6 +26,8 @@ namespace PetOmiPlatform.Domain.Entities
         public bool IsLateCancellation { get; private set; }
 
         public DateTime? ConfirmedAt { get; private set; }
+        public DateTime? CheckedInAt { get; private set; }
+        public Guid? CheckedInByUserId { get; private set; }
         public DateTime? CancelledAt { get; private set; }
         public Guid? CancelledByUserId { get; private set; }
 
@@ -116,7 +118,8 @@ namespace PetOmiPlatform.Domain.Entities
             AppointmentType appointmentType, AppointmentStatus status,
             string? notes, string? cancellationReason,
             bool isWalkIn, bool isLateCancellation,
-            DateTime? confirmedAt, DateTime? cancelledAt, Guid? cancelledByUserId,
+            DateTime? confirmedAt, DateTime? checkedInAt, Guid? checkedInByUserId,
+            DateTime? cancelledAt, Guid? cancelledByUserId,
             DateTime createdAt, DateTime? updatedAt)
         {
             return new AppointmentDomain
@@ -137,6 +140,8 @@ namespace PetOmiPlatform.Domain.Entities
                 IsWalkIn = isWalkIn,
                 IsLateCancellation = isLateCancellation,
                 ConfirmedAt = confirmedAt,
+                CheckedInAt = checkedInAt,
+                CheckedInByUserId = checkedInByUserId,
                 CancelledAt = cancelledAt,
                 CancelledByUserId = cancelledByUserId,
                 CreatedAt = createdAt,
@@ -154,6 +159,28 @@ namespace PetOmiPlatform.Domain.Entities
 
             Status = AppointmentStatus.Confirmed;
             ConfirmedAt = DateTime.UtcNow;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>Staff check-in khi bệnh nhân đến (Confirmed → CheckedIn)</summary>
+        public void CheckIn(Guid staffUserId)
+        {
+            if (Status != AppointmentStatus.Confirmed)
+                throw new DomainException("Chỉ có thể check-in lịch đã được xác nhận.");
+
+            Status = AppointmentStatus.CheckedIn;
+            CheckedInAt = DateTime.UtcNow;
+            CheckedInByUserId = staffUserId;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>Hoàn thành lịch hẹn (sau khi khám xong)</summary>
+        public void Complete(Guid staffUserId)
+        {
+            if (Status != AppointmentStatus.CheckedIn && Status != AppointmentStatus.Confirmed)
+                throw new DomainException($"Chỉ có thể hoàn thành lịch đã xác nhận hoặc check-in. Trạng thái hiện tại: {Status}");
+
+            Status = AppointmentStatus.Completed;
             UpdatedAt = DateTime.UtcNow;
         }
 

@@ -18,6 +18,14 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<Appointment> Appointments { get; set; }
 
+    public virtual DbSet<MedicalExamination> MedicalExaminations { get; set; }
+
+    public virtual DbSet<Prescription> Prescriptions { get; set; }
+
+    public virtual DbSet<Invoice> Invoices { get; set; }
+
+    public virtual DbSet<InvoiceItem> InvoiceItems { get; set; }
+
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
     public virtual DbSet<Clinic> Clinics { get; set; }
@@ -100,6 +108,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.IsWalkIn).HasDefaultValue(false);
             entity.Property(e => e.IsLateCancellation).HasDefaultValue(false);
             entity.Property(e => e.ConfirmedAt).HasColumnType("datetime");
+            entity.Property(e => e.CheckedInAt).HasColumnType("datetime");
+            entity.Property(e => e.CheckedInByUserId).HasColumnName("CheckedInByUserID");
             entity.Property(e => e.CancelledAt).HasColumnType("datetime");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -135,6 +145,12 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey(d => d.CancelledByUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Appointments_CancelledBy");
+
+            entity.HasOne<User>()
+                .WithMany()
+                .HasForeignKey(d => d.CheckedInByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_CheckedInBy");
         });
 
         modelBuilder.Entity<AuditLog>(entity =>
@@ -810,6 +826,135 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey<VetProfile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__VetProfil__UserI__6477ECF3");
+        });
+
+        modelBuilder.Entity<MedicalExamination>(entity =>
+        {
+            entity.HasKey(e => e.ExaminationId).HasName("PK_MedicalExaminations");
+
+            entity.Property(e => e.ExaminationId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ExaminationID");
+            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.VetClinicId).HasColumnName("VetClinicID");
+            entity.Property(e => e.ChiefComplaint).HasMaxLength(500);
+            entity.Property(e => e.WeightKg).HasColumnType("decimal(5,2)");
+            entity.Property(e => e.TemperatureC).HasColumnType("decimal(4,1)");
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("InProgress");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())").HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.CompletedAt).HasColumnType("datetime");
+
+            entity.HasIndex(e => e.AppointmentId, "IX_MedicalExaminations_AppointmentID").IsUnique();
+
+            entity.HasOne(d => d.Appointment).WithMany()
+                .HasForeignKey(d => d.AppointmentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MedicalExaminations_Appointment");
+
+            entity.HasOne(d => d.Pet).WithMany()
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MedicalExaminations_Pet");
+
+            entity.HasOne(d => d.VetClinic).WithMany()
+                .HasForeignKey(d => d.VetClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MedicalExaminations_VetClinic");
+        });
+
+        modelBuilder.Entity<Prescription>(entity =>
+        {
+            entity.HasKey(e => e.PrescriptionId).HasName("PK_Prescriptions");
+
+            entity.Property(e => e.PrescriptionId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("PrescriptionID");
+            entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
+            entity.Property(e => e.InventoryItemId).HasColumnName("InventoryItemID");
+            entity.Property(e => e.MedicationName).HasMaxLength(200);
+            entity.Property(e => e.Dosage).HasMaxLength(100);
+            entity.Property(e => e.Frequency).HasMaxLength(100);
+            entity.Property(e => e.Instructions).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())").HasColumnType("datetime");
+
+            entity.HasOne(d => d.Examination).WithMany(p => p.Prescriptions)
+                .HasForeignKey(d => d.ExaminationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Prescriptions_Examination");
+
+            entity.HasOne(d => d.InventoryItem).WithMany()
+                .HasForeignKey(d => d.InventoryItemId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Prescriptions_Inventory");
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasKey(e => e.InvoiceId).HasName("PK_Invoices");
+
+            entity.Property(e => e.InvoiceId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("InvoiceID");
+            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
+            entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
+            entity.Property(e => e.FinalAmount).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Unpaid");
+            entity.Property(e => e.PaymentMethod).HasMaxLength(30);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.PaidAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())").HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Appointment).WithMany()
+                .HasForeignKey(d => d.AppointmentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Appointment");
+
+            entity.HasOne(d => d.Examination).WithMany()
+                .HasForeignKey(d => d.ExaminationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Examination");
+
+            entity.HasOne(d => d.Clinic).WithMany()
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Clinic");
+        });
+
+        modelBuilder.Entity<InvoiceItem>(entity =>
+        {
+            entity.HasKey(e => e.InvoiceItemId).HasName("PK_InvoiceItems");
+
+            entity.Property(e => e.InvoiceItemId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("InvoiceItemID");
+            entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
+            entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
+            entity.Property(e => e.InventoryItemId).HasColumnName("InventoryItemID");
+            entity.Property(e => e.ItemType).HasMaxLength(30);
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.InvoiceItems)
+                .HasForeignKey(d => d.InvoiceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_InvoiceItems_Invoice");
+
+            entity.HasOne(d => d.Service).WithMany()
+                .HasForeignKey(d => d.ServiceId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InvoiceItems_Service");
+
+            entity.HasOne(d => d.InventoryItem).WithMany()
+                .HasForeignKey(d => d.InventoryItemId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InvoiceItems_Inventory");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -74,5 +74,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                && vc.ClinicId == clinicId
                 && vc.IsActive);
         }
+
+        public async Task<VetClinicDomain?> GetByUserIdAndClinicIdAsync(Guid userId, Guid clinicId)
+        {
+            var entity = await _context.VetClinics
+                .FirstOrDefaultAsync(vc => vc.VetProfile.UserId == userId && vc.ClinicId == clinicId && vc.IsActive);
+            
+            return entity?.ToDomain();
+        }
     }
 }

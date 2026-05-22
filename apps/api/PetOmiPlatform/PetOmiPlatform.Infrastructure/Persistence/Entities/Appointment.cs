@@ -22,6 +22,8 @@ public partial class Appointment
     public bool IsLateCancellation { get; set; }
 
     public DateTime? ConfirmedAt { get; set; }
+    public DateTime? CheckedInAt { get; set; }
+    public Guid? CheckedInByUserId { get; set; }
     public DateTime? CancelledAt { get; set; }
     public Guid? CancelledByUserId { get; set; }
 

@@ -4,6 +4,7 @@ namespace PetOmiPlatform.Domain.Common.Enums
     {
         Pending,
         Confirmed,
+        CheckedIn,
         Completed,
         Cancelled,
         Rejected,

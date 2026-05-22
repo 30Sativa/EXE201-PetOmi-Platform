@@ -6,6 +6,7 @@ using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Request;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
+using PetOmiPlatform.Application.Features.Appointment.Query;
 using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers

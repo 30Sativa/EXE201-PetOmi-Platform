@@ -1,20 +1,29 @@
+﻿using System;
+using System.Collections.Generic;
+
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
 
 public partial class Prescription
 {
     public Guid PrescriptionId { get; set; }
+
     public Guid ExaminationId { get; set; }
 
-    public string MedicationName { get; set; } = string.Empty;
-    public string Dosage { get; set; } = string.Empty;
-    public string Frequency { get; set; } = string.Empty;
+    public string MedicationName { get; set; } = null!;
+
+    public string Dosage { get; set; } = null!;
+
+    public string Frequency { get; set; } = null!;
+
     public int DurationDays { get; set; }
+
     public string? Instructions { get; set; }
+
     public Guid? InventoryItemId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 
-    // Navigation properties
     public virtual MedicalExamination Examination { get; set; } = null!;
-    public virtual InventoryItem? InventoryItem { get; set; }
+
+    public virtual Inventory? InventoryItem { get; set; }
 }

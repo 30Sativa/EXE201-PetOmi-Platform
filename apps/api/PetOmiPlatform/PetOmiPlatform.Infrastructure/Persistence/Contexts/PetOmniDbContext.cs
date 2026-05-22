@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -18,14 +18,6 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<Appointment> Appointments { get; set; }
 
-    public virtual DbSet<MedicalExamination> MedicalExaminations { get; set; }
-
-    public virtual DbSet<Prescription> Prescriptions { get; set; }
-
-    public virtual DbSet<Invoice> Invoices { get; set; }
-
-    public virtual DbSet<InvoiceItem> InvoiceItems { get; set; }
-
     public virtual DbSet<AuditLog> AuditLogs { get; set; }
 
     public virtual DbSet<Clinic> Clinics { get; set; }
@@ -34,13 +26,19 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<DoctorSchedule> DoctorSchedules { get; set; }
 
-    public virtual DbSet<InventoryItem> Inventory { get; set; }
-
     public virtual DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
 
     public virtual DbSet<ExternalLogin> ExternalLogins { get; set; }
 
+    public virtual DbSet<Inventory> Inventories { get; set; }
+
+    public virtual DbSet<Invoice> Invoices { get; set; }
+
+    public virtual DbSet<InvoiceItem> InvoiceItems { get; set; }
+
     public virtual DbSet<LoginOtptoken> LoginOtptokens { get; set; }
+
+    public virtual DbSet<MedicalExamination> MedicalExaminations { get; set; }
 
     public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
@@ -58,7 +56,13 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<PetWeightLog> PetWeightLogs { get; set; }
 
+    public virtual DbSet<Prescription> Prescriptions { get; set; }
+
     public virtual DbSet<RefreshToken> RefreshTokens { get; set; }
+
+    public virtual DbSet<Reminder> Reminders { get; set; }
+
+    public virtual DbSet<ReminderPreference> ReminderPreferences { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
 
@@ -90,67 +94,74 @@ public partial class PetOmniDbContext : DbContext
     {
         modelBuilder.Entity<Appointment>(entity =>
         {
-            entity.HasKey(e => e.AppointmentId).HasName("PK_Appointments");
+            entity.HasIndex(e => new { e.ClinicId, e.AppointmentDate, e.Status }, "IX_Appointments_Clinic_Date");
+
+            entity.HasIndex(e => new { e.Status, e.CreatedAt }, "IX_Appointments_Pending_CreatedAt").HasFilter("([Status]='Pending')");
+
+            entity.HasIndex(e => new { e.PetId, e.AppointmentDate }, "IX_Appointments_Pet").IsDescending(false, true);
+
+            entity.HasIndex(e => new { e.VetClinicId, e.AppointmentDate }, "IX_Appointments_VetClinic_Date").HasFilter("([VetClinicID] IS NOT NULL)");
 
             entity.Property(e => e.AppointmentId)
                 .HasDefaultValueSql("(newsequentialid())")
                 .HasColumnName("AppointmentID");
-            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
-            entity.Property(e => e.VetClinicId).HasColumnName("VetClinicID");
-            entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
-            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.AppointmentType)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasDefaultValue("Checkup");
             entity.Property(e => e.BookedByUserId).HasColumnName("BookedByUserID");
-            entity.Property(e => e.CancelledByUserId).HasColumnName("CancelledByUserID");
-            entity.Property(e => e.AppointmentType).HasMaxLength(50).HasDefaultValue("Checkup");
-            entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValue("Pending");
-            entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.CancellationReason).HasMaxLength(300);
-            entity.Property(e => e.IsWalkIn).HasDefaultValue(false);
-            entity.Property(e => e.IsLateCancellation).HasDefaultValue(false);
-            entity.Property(e => e.ConfirmedAt).HasColumnType("datetime");
+            entity.Property(e => e.CancelledAt).HasColumnType("datetime");
+            entity.Property(e => e.CancelledByUserId).HasColumnName("CancelledByUserID");
             entity.Property(e => e.CheckedInAt).HasColumnType("datetime");
             entity.Property(e => e.CheckedInByUserId).HasColumnName("CheckedInByUserID");
-            entity.Property(e => e.CancelledAt).HasColumnType("datetime");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.ConfirmedAt).HasColumnType("datetime");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.EndTime).HasPrecision(0);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
+            entity.Property(e => e.StartTime).HasPrecision(0);
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasDefaultValue("Pending");
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.VetClinicId).HasColumnName("VetClinicID");
 
-            entity.HasOne(d => d.Clinic).WithMany()
-                .HasForeignKey(d => d.ClinicId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Appointments_Clinic");
-
-            entity.HasOne(d => d.VetClinic).WithMany()
-                .HasForeignKey(d => d.VetClinicId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Appointments_VetClinic");
-
-            entity.HasOne(d => d.Service).WithMany()
-                .HasForeignKey(d => d.ServiceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Appointments_Service");
-
-            entity.HasOne(d => d.Pet).WithMany()
-                .HasForeignKey(d => d.PetId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Appointments_Pet");
-
-            entity.HasOne(d => d.BookedByUser).WithMany()
+            entity.HasOne(d => d.BookedByUser).WithMany(p => p.AppointmentBookedByUsers)
                 .HasForeignKey(d => d.BookedByUserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Appointments_BookedBy");
 
-            entity.HasOne(d => d.CancelledByUser).WithMany()
+            entity.HasOne(d => d.CancelledByUser).WithMany(p => p.AppointmentCancelledByUsers)
                 .HasForeignKey(d => d.CancelledByUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Appointments_CancelledBy");
 
-            entity.HasOne<User>()
-                .WithMany()
+            entity.HasOne(d => d.CheckedInByUser).WithMany(p => p.AppointmentCheckedInByUsers)
                 .HasForeignKey(d => d.CheckedInByUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Appointments_CheckedInBy");
+
+            entity.HasOne(d => d.Clinic).WithMany(p => p.Appointments)
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_Clinic");
+
+            entity.HasOne(d => d.Pet).WithMany(p => p.Appointments)
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Appointments_Pet");
+
+            entity.HasOne(d => d.Service).WithMany(p => p.Appointments)
+                .HasForeignKey(d => d.ServiceId)
+                .HasConstraintName("FK_Appointments_Service");
+
+            entity.HasOne(d => d.VetClinic).WithMany(p => p.Appointments)
+                .HasForeignKey(d => d.VetClinicId)
+                .HasConstraintName("FK_Appointments_VetClinic");
         });
 
         modelBuilder.Entity<AuditLog>(entity =>
@@ -199,8 +210,12 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(1000);
             entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.LicenseImageUrl).HasMaxLength(500);
             entity.Property(e => e.LicenseNumber).HasMaxLength(100);
+            entity.Property(e => e.LogoUrl).HasMaxLength(500);
+            entity.Property(e => e.OpeningHours).HasMaxLength(500);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.RejectedReason).HasMaxLength(500);
             entity.Property(e => e.ReviewedByAdminId).HasColumnName("ReviewedByAdminID");
@@ -216,26 +231,50 @@ public partial class PetOmniDbContext : DbContext
 
         modelBuilder.Entity<ClinicService>(entity =>
         {
-            entity.HasKey(e => e.ServiceId).HasName("PK_ClinicServices");
+            entity.HasKey(e => e.ServiceId);
+
+            entity.HasIndex(e => e.ClinicId, "IX_ClinicServices_ClinicID");
 
             entity.Property(e => e.ServiceId)
                 .HasDefaultValueSql("(newsequentialid())")
                 .HasColumnName("ServiceID");
             entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
-            entity.Property(e => e.ServiceName).HasMaxLength(200);
-            entity.Property(e => e.Description).HasMaxLength(500);
-            entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
-            entity.Property(e => e.DurationMins).HasDefaultValue(30);
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.DurationMins).HasDefaultValue(30);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Price).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ServiceName).HasMaxLength(200);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Clinic).WithMany(p => p.ClinicServices)
                 .HasForeignKey(d => d.ClinicId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ClinicServices_Clinic");
+        });
+
+        modelBuilder.Entity<DoctorSchedule>(entity =>
+        {
+            entity.HasKey(e => e.ScheduleId);
+
+            entity.HasIndex(e => e.VetClinicId, "IX_DoctorSchedules_VetClinicID");
+
+            entity.Property(e => e.ScheduleId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ScheduleID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.VetClinicId).HasColumnName("VetClinicID");
+
+            entity.HasOne(d => d.VetClinic).WithMany(p => p.DoctorSchedules)
+                .HasForeignKey(d => d.VetClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_DoctorSchedules_VetClinic");
         });
 
         modelBuilder.Entity<EmailVerificationToken>(entity =>
@@ -284,6 +323,106 @@ public partial class PetOmniDbContext : DbContext
                 .HasConstraintName("FK__ExternalL__UserI__5224328E");
         });
 
+        modelBuilder.Entity<Inventory>(entity =>
+        {
+            entity.HasKey(e => e.ItemId);
+
+            entity.ToTable("Inventory");
+
+            entity.HasIndex(e => e.ClinicId, "IX_Inventory_ClinicID");
+
+            entity.Property(e => e.ItemId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ItemID");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.ItemName).HasMaxLength(200);
+            entity.Property(e => e.LowStockThreshold).HasDefaultValue(10);
+            entity.Property(e => e.Unit).HasMaxLength(50);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Clinic).WithMany(p => p.Inventories)
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Inventory_Clinic");
+        });
+
+        modelBuilder.Entity<Invoice>(entity =>
+        {
+            entity.HasIndex(e => e.AppointmentId, "IX_Invoices_AppointmentID_Active")
+                .IsUnique()
+                .HasFilter("([Status] IN ('Unpaid', 'Paid'))");
+
+            entity.HasIndex(e => new { e.ClinicId, e.CreatedAt }, "IX_Invoices_ClinicID").IsDescending(false, true);
+
+            entity.Property(e => e.InvoiceId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("InvoiceID");
+            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
+            entity.Property(e => e.FinalAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.Property(e => e.PaidAt).HasColumnType("datetime");
+            entity.Property(e => e.PaymentMethod).HasMaxLength(30);
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Unpaid");
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Appointment).WithOne(p => p.Invoice)
+                .HasForeignKey<Invoice>(d => d.AppointmentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Appointment");
+
+            entity.HasOne(d => d.Clinic).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Invoices_Clinic");
+
+            entity.HasOne(d => d.Examination).WithMany(p => p.Invoices)
+                .HasForeignKey(d => d.ExaminationId)
+                .HasConstraintName("FK_Invoices_Examination");
+        });
+
+        modelBuilder.Entity<InvoiceItem>(entity =>
+        {
+            entity.HasIndex(e => e.InvoiceId, "IX_InvoiceItems_InvoiceID");
+
+            entity.Property(e => e.InvoiceItemId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("InvoiceItemID");
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.InventoryItemId).HasColumnName("InventoryItemID");
+            entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
+            entity.Property(e => e.ItemType).HasMaxLength(30);
+            entity.Property(e => e.Quantity).HasDefaultValue(1);
+            entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
+            entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+
+            entity.HasOne(d => d.InventoryItem).WithMany(p => p.InvoiceItems)
+                .HasForeignKey(d => d.InventoryItemId)
+                .HasConstraintName("FK_InvoiceItems_Inventory");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.InvoiceItems)
+                .HasForeignKey(d => d.InvoiceId)
+                .HasConstraintName("FK_InvoiceItems_Invoice");
+
+            entity.HasOne(d => d.Service).WithMany(p => p.InvoiceItems)
+                .HasForeignKey(d => d.ServiceId)
+                .HasConstraintName("FK_InvoiceItems_Service");
+        });
+
         modelBuilder.Entity<LoginOtptoken>(entity =>
         {
             entity.HasKey(e => e.LoginOtpid).HasName("PK__LoginOTP__8E5FA00DAF50BECF");
@@ -309,6 +448,47 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__LoginOTPT__UserI__09A971A2");
+        });
+
+        modelBuilder.Entity<MedicalExamination>(entity =>
+        {
+            entity.HasKey(e => e.ExaminationId);
+
+            entity.HasIndex(e => e.AppointmentId, "IX_MedicalExaminations_AppointmentID").IsUnique();
+
+            entity.HasIndex(e => new { e.PetId, e.CreatedAt }, "IX_MedicalExaminations_PetID").IsDescending(false, true);
+
+            entity.Property(e => e.ExaminationId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ExaminationID");
+            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
+            entity.Property(e => e.ChiefComplaint).HasMaxLength(500);
+            entity.Property(e => e.CompletedAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("InProgress");
+            entity.Property(e => e.TemperatureC).HasColumnType("decimal(4, 1)");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.VetClinicId).HasColumnName("VetClinicID");
+            entity.Property(e => e.WeightKg).HasColumnType("decimal(5, 2)");
+
+            entity.HasOne(d => d.Appointment).WithOne(p => p.MedicalExamination)
+                .HasForeignKey<MedicalExamination>(d => d.AppointmentId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MedicalExaminations_Appointment");
+
+            entity.HasOne(d => d.Pet).WithMany(p => p.MedicalExaminations)
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_MedicalExaminations_Pet");
+
+            entity.HasOne(d => d.VetClinic).WithMany(p => p.MedicalExaminations)
+                .HasForeignKey(d => d.VetClinicId)
+                .HasConstraintName("FK_MedicalExaminations_VetClinic");
         });
 
         modelBuilder.Entity<PasswordResetToken>(entity =>
@@ -520,6 +700,32 @@ public partial class PetOmniDbContext : DbContext
                 .HasConstraintName("FK_PetWeightLogs_Pet");
         });
 
+        modelBuilder.Entity<Prescription>(entity =>
+        {
+            entity.HasIndex(e => e.ExaminationId, "IX_Prescriptions_ExaminationID");
+
+            entity.Property(e => e.PrescriptionId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("PrescriptionID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Dosage).HasMaxLength(100);
+            entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
+            entity.Property(e => e.Frequency).HasMaxLength(100);
+            entity.Property(e => e.Instructions).HasMaxLength(500);
+            entity.Property(e => e.InventoryItemId).HasColumnName("InventoryItemID");
+            entity.Property(e => e.MedicationName).HasMaxLength(200);
+
+            entity.HasOne(d => d.Examination).WithMany(p => p.Prescriptions)
+                .HasForeignKey(d => d.ExaminationId)
+                .HasConstraintName("FK_Prescriptions_Examination");
+
+            entity.HasOne(d => d.InventoryItem).WithMany(p => p.Prescriptions)
+                .HasForeignKey(d => d.InventoryItemId)
+                .HasConstraintName("FK_Prescriptions_Inventory");
+        });
+
         modelBuilder.Entity<RefreshToken>(entity =>
         {
             entity.HasKey(e => e.RefreshTokenId).HasName("PK__RefreshT__F5845E59B117F980");
@@ -549,6 +755,66 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__RefreshTo__UserI__17036CC0");
+        });
+
+        modelBuilder.Entity<Reminder>(entity =>
+        {
+            entity.HasKey(e => e.ReminderId).HasName("PK__Reminder__01A830A7DA1A7FDB");
+
+            entity.Property(e => e.ReminderId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ReminderID");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("CreatedByUserID");
+            entity.Property(e => e.EntityId).HasColumnName("EntityID");
+            entity.Property(e => e.EntityType).HasMaxLength(50);
+            entity.Property(e => e.IsEnabled).HasDefaultValue(true);
+            entity.Property(e => e.Message).HasMaxLength(1000);
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.ReminderType).HasMaxLength(50);
+            entity.Property(e => e.RepeatRule).HasMaxLength(1000);
+            entity.Property(e => e.SourceType)
+                .HasMaxLength(30)
+                .HasDefaultValue("SYSTEM");
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.CreatedByUser).WithMany(p => p.ReminderCreatedByUsers)
+                .HasForeignKey(d => d.CreatedByUserId)
+                .HasConstraintName("FK_Reminders_CreatedBy");
+
+            entity.HasOne(d => d.Pet).WithMany(p => p.Reminders)
+                .HasForeignKey(d => d.PetId)
+                .HasConstraintName("FK_Reminders_Pet");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ReminderUsers)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Reminders_User");
+        });
+
+        modelBuilder.Entity<ReminderPreference>(entity =>
+        {
+            entity.HasKey(e => e.PreferenceId).HasName("PK__Reminder__E228490F7F5C045D");
+
+            entity.Property(e => e.PreferenceId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("PreferenceID");
+            entity.Property(e => e.Channel)
+                .HasMaxLength(100)
+                .HasDefaultValue("PushEmail");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.IsEnabled).HasDefaultValue(true);
+            entity.Property(e => e.ReminderType).HasMaxLength(50);
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ReminderPreferences)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ReminderPreferences_User");
         });
 
         modelBuilder.Entity<Role>(entity =>
@@ -601,7 +867,6 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsProfileCompleted).HasDefaultValue(false);
             entity.Property(e => e.LastLoginAt).HasColumnType("datetime");
             entity.Property(e => e.LockoutUntil).HasColumnType("datetime");
             entity.Property(e => e.NormalizedEmail).HasMaxLength(255);
@@ -826,135 +1091,6 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey<VetProfile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__VetProfil__UserI__6477ECF3");
-        });
-
-        modelBuilder.Entity<MedicalExamination>(entity =>
-        {
-            entity.HasKey(e => e.ExaminationId).HasName("PK_MedicalExaminations");
-
-            entity.Property(e => e.ExaminationId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("ExaminationID");
-            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
-            entity.Property(e => e.PetId).HasColumnName("PetID");
-            entity.Property(e => e.VetClinicId).HasColumnName("VetClinicID");
-            entity.Property(e => e.ChiefComplaint).HasMaxLength(500);
-            entity.Property(e => e.WeightKg).HasColumnType("decimal(5,2)");
-            entity.Property(e => e.TemperatureC).HasColumnType("decimal(4,1)");
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("InProgress");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())").HasColumnType("datetime");
-            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
-            entity.Property(e => e.CompletedAt).HasColumnType("datetime");
-
-            entity.HasIndex(e => e.AppointmentId, "IX_MedicalExaminations_AppointmentID").IsUnique();
-
-            entity.HasOne(d => d.Appointment).WithMany()
-                .HasForeignKey(d => d.AppointmentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_MedicalExaminations_Appointment");
-
-            entity.HasOne(d => d.Pet).WithMany()
-                .HasForeignKey(d => d.PetId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_MedicalExaminations_Pet");
-
-            entity.HasOne(d => d.VetClinic).WithMany()
-                .HasForeignKey(d => d.VetClinicId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_MedicalExaminations_VetClinic");
-        });
-
-        modelBuilder.Entity<Prescription>(entity =>
-        {
-            entity.HasKey(e => e.PrescriptionId).HasName("PK_Prescriptions");
-
-            entity.Property(e => e.PrescriptionId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("PrescriptionID");
-            entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
-            entity.Property(e => e.InventoryItemId).HasColumnName("InventoryItemID");
-            entity.Property(e => e.MedicationName).HasMaxLength(200);
-            entity.Property(e => e.Dosage).HasMaxLength(100);
-            entity.Property(e => e.Frequency).HasMaxLength(100);
-            entity.Property(e => e.Instructions).HasMaxLength(500);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())").HasColumnType("datetime");
-
-            entity.HasOne(d => d.Examination).WithMany(p => p.Prescriptions)
-                .HasForeignKey(d => d.ExaminationId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK_Prescriptions_Examination");
-
-            entity.HasOne(d => d.InventoryItem).WithMany()
-                .HasForeignKey(d => d.InventoryItemId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Prescriptions_Inventory");
-        });
-
-        modelBuilder.Entity<Invoice>(entity =>
-        {
-            entity.HasKey(e => e.InvoiceId).HasName("PK_Invoices");
-
-            entity.Property(e => e.InvoiceId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("InvoiceID");
-            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
-            entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
-            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
-            entity.Property(e => e.TotalAmount).HasColumnType("decimal(18,2)");
-            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
-            entity.Property(e => e.FinalAmount).HasColumnType("decimal(18,2)");
-            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Unpaid");
-            entity.Property(e => e.PaymentMethod).HasMaxLength(30);
-            entity.Property(e => e.Notes).HasMaxLength(500);
-            entity.Property(e => e.PaidAt).HasColumnType("datetime");
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())").HasColumnType("datetime");
-            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
-
-            entity.HasOne(d => d.Appointment).WithMany()
-                .HasForeignKey(d => d.AppointmentId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Invoices_Appointment");
-
-            entity.HasOne(d => d.Examination).WithMany()
-                .HasForeignKey(d => d.ExaminationId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Invoices_Examination");
-
-            entity.HasOne(d => d.Clinic).WithMany()
-                .HasForeignKey(d => d.ClinicId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Invoices_Clinic");
-        });
-
-        modelBuilder.Entity<InvoiceItem>(entity =>
-        {
-            entity.HasKey(e => e.InvoiceItemId).HasName("PK_InvoiceItems");
-
-            entity.Property(e => e.InvoiceItemId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("InvoiceItemID");
-            entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
-            entity.Property(e => e.ServiceId).HasColumnName("ServiceID");
-            entity.Property(e => e.InventoryItemId).HasColumnName("InventoryItemID");
-            entity.Property(e => e.ItemType).HasMaxLength(30);
-            entity.Property(e => e.Description).HasMaxLength(300);
-            entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
-            entity.Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
-
-            entity.HasOne(d => d.Invoice).WithMany(p => p.InvoiceItems)
-                .HasForeignKey(d => d.InvoiceId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("FK_InvoiceItems_Invoice");
-
-            entity.HasOne(d => d.Service).WithMany()
-                .HasForeignKey(d => d.ServiceId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_InvoiceItems_Service");
-
-            entity.HasOne(d => d.InventoryItem).WithMany()
-                .HasForeignKey(d => d.InventoryItemId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_InvoiceItems_Inventory");
         });
 
         OnModelCreatingPartial(modelBuilder);

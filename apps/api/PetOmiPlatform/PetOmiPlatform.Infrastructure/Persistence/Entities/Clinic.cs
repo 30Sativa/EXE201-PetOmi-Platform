@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -17,14 +17,6 @@ public partial class Clinic
 
     public string? LicenseNumber { get; set; }
 
-    public string? LicenseImageUrl { get; set; }  // URL ảnh Giấy phép kinh doanh
-
-    public string? LogoUrl { get; set; }           // Logo phòng khám
-
-    public string? Description { get; set; }       // Mô tả ngắn
-
-    public string? OpeningHours { get; set; }      // JSON: {"Mon-Fri":"08:00-17:00"}
-
     public string Status { get; set; } = null!;
 
     public string? RejectedReason { get; set; }
@@ -35,11 +27,23 @@ public partial class Clinic
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual User? ReviewedByAdmin { get; set; }
+    public string? LicenseImageUrl { get; set; }
+
+    public string? LogoUrl { get; set; }
+
+    public string? Description { get; set; }
+
+    public string? OpeningHours { get; set; }
+
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
     public virtual ICollection<ClinicService> ClinicServices { get; set; } = new List<ClinicService>();
 
-    public virtual ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+    public virtual ICollection<Inventory> Inventories { get; set; } = new List<Inventory>();
+
+    public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
+    public virtual User? ReviewedByAdmin { get; set; }
 
     public virtual ICollection<UserSession> UserSessions { get; set; } = new List<UserSession>();
 

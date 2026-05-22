@@ -1,18 +1,11 @@
 using MediatR;
-using PetOmiPlatform.Application.Exceptions;
-using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
 namespace PetOmiPlatform.Application.Features.Appointment.Handler
 {
-    /// <summary>
-    /// Tính slot trống của clinic trong 1 ngày.
-    /// Logic: Lấy tất cả DoctorSchedule của các bác sĩ trong ngày đó (DayOfWeek),
-    /// generate slots theo DurationMins, loại bỏ các slot đã có appointment Pending/Confirmed.
-    /// </summary>
     public class GetAvailableSlotsQueryHandler
-        : IRequestHandler<GetAvailableSlotsQuery, List<AvailableSlotResponse>>
+        : IRequestHandler<Query.GetAvailableSlotsQuery, List<AvailableSlotResponse>>
     {
         private readonly IDoctorScheduleRepository _scheduleRepository;
         private readonly IAppointmentRepository _appointmentRepository;
@@ -29,7 +22,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         }
 
         public async Task<List<AvailableSlotResponse>> Handle(
-            GetAvailableSlotsQuery request, CancellationToken cancellationToken)
+            Query.GetAvailableSlotsQuery request, CancellationToken cancellationToken)
         {
             // 1. Duration của slot
             int durationMins = 30;

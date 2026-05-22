@@ -29,14 +29,10 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
 
             var req = command.Request;
 
-            // Nếu có bác sĩ được assign, check conflict cho slot mới (bỏ qua chính appointment này)
             if (appointment.VetClinicId.HasValue)
             {
                 var hasConflict = await _appointmentRepository.HasConflictAsync(
-                    appointment.VetClinicId.Value,
-                    req.NewDate,
-                    req.NewStartTime,
-                    req.NewEndTime,
+                    appointment.VetClinicId.Value, req.NewDate, req.NewStartTime, req.NewEndTime,
                     excludeId: appointment.Id);
 
                 if (hasConflict)
@@ -48,7 +44,27 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             await _appointmentRepository.UpdateAsync(appointment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return AppointmentHandlerHelper.ToResponse(appointment);
+            return new AppointmentResponse
+            {
+                AppointmentId = appointment.Id,
+                ClinicId = appointment.ClinicId,
+                VetClinicId = appointment.VetClinicId,
+                ServiceId = appointment.ServiceId,
+                PetId = appointment.PetId,
+                BookedByUserId = appointment.BookedByUserId,
+                AppointmentDate = appointment.AppointmentDate,
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
+                AppointmentType = appointment.AppointmentType.ToString(),
+                Status = appointment.Status.ToString(),
+                Notes = appointment.Notes,
+                CancellationReason = appointment.CancellationReason,
+                IsWalkIn = appointment.IsWalkIn,
+                IsLateCancellation = appointment.IsLateCancellation,
+                ConfirmedAt = appointment.ConfirmedAt,
+                CancelledAt = appointment.CancelledAt,
+                CreatedAt = appointment.CreatedAt
+            };
         }
     }
 }

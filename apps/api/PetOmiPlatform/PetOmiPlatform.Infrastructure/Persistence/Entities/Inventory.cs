@@ -1,6 +1,9 @@
+﻿using System;
+using System.Collections.Generic;
+
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
 
-public partial class InventoryItem
+public partial class Inventory
 {
     public Guid ItemId { get; set; }
 
@@ -8,7 +11,7 @@ public partial class InventoryItem
 
     public string ItemName { get; set; } = null!;
 
-    public string? Unit { get; set; }           // "viên", "ml", "lọ"
+    public string? Unit { get; set; }
 
     public int Quantity { get; set; }
 
@@ -25,4 +28,8 @@ public partial class InventoryItem
     public DateTime? UpdatedAt { get; set; }
 
     public virtual Clinic Clinic { get; set; } = null!;
+
+    public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
+
+    public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
 }

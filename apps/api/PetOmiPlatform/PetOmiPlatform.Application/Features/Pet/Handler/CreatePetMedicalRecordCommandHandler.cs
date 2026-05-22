@@ -16,18 +16,24 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
         private readonly IPetRepository _petRepository;
         private readonly IPetMedicalRecordRepository _medicalRecordRepository;
         private readonly IPetUserAccessRepository _accessRepository;
+        private readonly IReminderRepository _reminderRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IReminderAutoCreator _reminderAutoCreator;
 
         public CreatePetMedicalRecordCommandHandler(
             IPetRepository petRepository,
             IPetMedicalRecordRepository medicalRecordRepository,
             IPetUserAccessRepository accessRepository,
-            IUnitOfWork unitOfWork)
+            IReminderRepository reminderRepository,
+            IUnitOfWork unitOfWork,
+            IReminderAutoCreator reminderAutoCreator)
         {
             _petRepository = petRepository;
             _medicalRecordRepository = medicalRecordRepository;
             _accessRepository = accessRepository;
+            _reminderRepository = reminderRepository;
             _unitOfWork = unitOfWork;
+            _reminderAutoCreator = reminderAutoCreator;
         }
 
         public async Task<PetMedicalRecordResponse> Handle(CreatePetMedicalRecordCommand command, CancellationToken cancellationToken)
@@ -54,6 +60,19 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
 
             await _medicalRecordRepository.AddAsync(medicalRecord);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Auto-create reminders based on record type
+            var reminders = await _reminderAutoCreator.CreateRemindersFromMedicalRecordAsync(
+                medicalRecord,
+                pet.OwnerUserId,
+                pet.Name,
+                cancellationToken);
+
+            if (reminders.Count > 0)
+            {
+                await _reminderRepository.AddRangeAsync(reminders);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
 
             return new PetMedicalRecordResponse
             {

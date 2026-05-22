@@ -38,14 +38,10 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var apptType))
                 throw new ValidationException("AppointmentType", $"Loại lịch hẹn không hợp lệ: {req.AppointmentType}");
 
-            // Check conflict nếu bác sĩ được chỉ định
             if (req.VetClinicId.HasValue)
             {
                 var hasConflict = await _appointmentRepository.HasConflictAsync(
-                    req.VetClinicId.Value,
-                    req.AppointmentDate,
-                    req.StartTime,
-                    req.EndTime);
+                    req.VetClinicId.Value, req.AppointmentDate, req.StartTime, req.EndTime);
 
                 if (hasConflict)
                     throw new ConflictException("Bác sĩ đã có lịch trong khung giờ này.");
@@ -61,13 +57,32 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 appointmentType: apptType,
                 vetClinicId: req.VetClinicId,
                 serviceId: req.ServiceId,
-                notes: req.Notes
-            );
+                notes: req.Notes);
 
             await _appointmentRepository.AddAsync(appointment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return AppointmentHandlerHelper.ToResponse(appointment);
+            return new AppointmentResponse
+            {
+                AppointmentId = appointment.Id,
+                ClinicId = appointment.ClinicId,
+                VetClinicId = appointment.VetClinicId,
+                ServiceId = appointment.ServiceId,
+                PetId = appointment.PetId,
+                BookedByUserId = appointment.BookedByUserId,
+                AppointmentDate = appointment.AppointmentDate,
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
+                AppointmentType = appointment.AppointmentType.ToString(),
+                Status = appointment.Status.ToString(),
+                Notes = appointment.Notes,
+                CancellationReason = appointment.CancellationReason,
+                IsWalkIn = appointment.IsWalkIn,
+                IsLateCancellation = appointment.IsLateCancellation,
+                ConfirmedAt = appointment.ConfirmedAt,
+                CancelledAt = appointment.CancelledAt,
+                CreatedAt = appointment.CreatedAt
+            };
         }
     }
 }

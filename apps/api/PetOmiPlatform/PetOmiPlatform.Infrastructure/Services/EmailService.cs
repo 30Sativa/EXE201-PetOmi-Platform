@@ -43,6 +43,19 @@ namespace PetOmiPlatform.Infrastructure.Services
             await SendAsync(toEmail, subject, body);
         }
 
+        public async Task SendReminderEmailAsync(string toEmail, string title, string message, string? reminderType)
+        {
+            var typeLine = string.IsNullOrEmpty(reminderType) ? "" : $" [{reminderType}]";
+            var subject = $"[PetOmi] Nhắc nhở{typeLine}: {title}";
+            var body = $@"
+                <h2>Nhắc nhở từ PetOmi</h2>
+                <h3>{title}{typeLine}</h3>
+                <p>{message}</p>
+                <p style='color:#888;font-size:12px;'>Email này được gửi tự động từ PetOmi Platform.</p>
+            ";
+            await SendAsync(toEmail, subject, body);
+        }
+
         private async Task SendAsync(string toEmail, string subject, string body)
         {
             var fromEmail = _configuration["Resend:FromEmail"];

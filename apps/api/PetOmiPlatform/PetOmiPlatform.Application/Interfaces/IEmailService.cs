@@ -8,5 +8,6 @@ namespace PetOmiPlatform.Application.Interfaces
     {
         Task SendEmailVerificationAsync(string toEmail, string verificationLink);
         Task SendPasswordResetAsync(string toEmail, string resetLink);
+        Task SendReminderEmailAsync(string toEmail, string title, string message, string? reminderType);
     }
 }

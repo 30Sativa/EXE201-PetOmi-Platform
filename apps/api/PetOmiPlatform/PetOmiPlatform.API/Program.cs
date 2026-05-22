@@ -1,8 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi.Models;
+using PetOmiPlatform.API.Common;
 using PetOmiPlatform.API.Common.Authorization;
+using PetOmiPlatform.API.Hubs;
 using PetOmiPlatform.API.Middlewares;
+using PetOmiPlatform.API.Services;
 using PetOmiPlatform.Application;
+using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Infrastructure;
 using System.Reflection;
@@ -16,7 +20,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// CORS — cho phép frontend dev (localhost:5173)
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -70,7 +74,10 @@ builder.Services.AddSwaggerGen(c =>
 // Application layer
 builder.Services.AddApplication();
 
-// Authorization policies — phải trước AddInfrastructure
+// SignalR
+builder.Services.AddSignalR();
+
+// Authorization policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(Policies.OwnerOnly, policy =>
@@ -86,8 +93,11 @@ builder.Services.AddAuthorization(options =>
 // Authorization handler
 builder.Services.AddScoped<IAuthorizationHandler, ActiveRoleHandler>();
 
-// Infrastructure layer — sau cùng
+// Infrastructure layer
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// SignalR broadcaster (API layer)
+builder.Services.AddScoped<INotificationBroadcaster, SignalRNotificationBroadcaster>();
 
 // =======================
 // BUILD APP
@@ -107,7 +117,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors(); // đặt TRƯỚC HttpsRedirection — preflight không được redirect
+app.UseCors();
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -117,5 +127,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/hubs/notifications");
 
 app.Run();

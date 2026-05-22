@@ -5,7 +5,7 @@ namespace PetOmiPlatform.Infrastructure.Mappers
 {
     public static class InventoryMapper
     {
-        public static InventoryItemDomain ToDomain(this InventoryItem entity)
+        public static InventoryItemDomain ToDomain(this Inventory entity)
         {
             return InventoryItemDomain.Reconstitute(
                 id: entity.ItemId,
@@ -22,9 +22,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             );
         }
 
-        public static InventoryItem ToEntity(this InventoryItemDomain domain)
+        public static Inventory ToEntity(this InventoryItemDomain domain)
         {
-            return new InventoryItem
+            return new Inventory
             {
                 ItemId = domain.Id,
                 ClinicId = domain.ClinicId,

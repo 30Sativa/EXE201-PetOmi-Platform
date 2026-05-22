@@ -15,18 +15,27 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IClinicRepository _clinicRepository;
         private readonly IClinicServiceRepository _serviceRepository;
+        private readonly IPetRepository _petRepository;
+        private readonly IReminderRepository _reminderRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IReminderAutoCreator _reminderAutoCreator;
 
         public BookAppointmentCommandHandler(
             IAppointmentRepository appointmentRepository,
             IClinicRepository clinicRepository,
             IClinicServiceRepository serviceRepository,
-            IUnitOfWork unitOfWork)
+            IPetRepository petRepository,
+            IReminderRepository reminderRepository,
+            IUnitOfWork unitOfWork,
+            IReminderAutoCreator reminderAutoCreator)
         {
             _appointmentRepository = appointmentRepository;
             _clinicRepository = clinicRepository;
             _serviceRepository = serviceRepository;
+            _petRepository = petRepository;
+            _reminderRepository = reminderRepository;
             _unitOfWork = unitOfWork;
+            _reminderAutoCreator = reminderAutoCreator;
         }
 
         public async Task<AppointmentResponse> Handle(
@@ -63,14 +72,48 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 endTime: endTime,
                 appointmentType: apptType,
                 serviceId: req.ServiceId,
-                notes: req.Notes
-            );
+                notes: req.Notes);
 
-            // 5. Lưu
+            // 5. Lưu appointment
             await _appointmentRepository.AddAsync(appointment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return AppointmentHandlerHelper.ToResponse(appointment);
+            // 6. Auto-create recheck reminder
+            var pet = await _petRepository.GetByIdAsync(req.PetId);
+            if (pet != null)
+            {
+                var reminders = await _reminderAutoCreator.CreateReminderFromAppointmentAsync(
+                    appointment.Id, req.PetId, command.OwnerUserId,
+                    req.AppointmentDate, pet.Name, cancellationToken);
+
+                if (reminders.Count > 0)
+                {
+                    await _reminderRepository.AddRangeAsync(reminders);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
+                }
+            }
+
+            return new AppointmentResponse
+            {
+                AppointmentId = appointment.Id,
+                ClinicId = appointment.ClinicId,
+                VetClinicId = appointment.VetClinicId,
+                ServiceId = appointment.ServiceId,
+                PetId = appointment.PetId,
+                BookedByUserId = appointment.BookedByUserId,
+                AppointmentDate = appointment.AppointmentDate,
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
+                AppointmentType = appointment.AppointmentType.ToString(),
+                Status = appointment.Status.ToString(),
+                Notes = appointment.Notes,
+                CancellationReason = appointment.CancellationReason,
+                IsWalkIn = appointment.IsWalkIn,
+                IsLateCancellation = appointment.IsLateCancellation,
+                ConfirmedAt = appointment.ConfirmedAt,
+                CancelledAt = appointment.CancelledAt,
+                CreatedAt = appointment.CreatedAt
+            };
         }
     }
 }

@@ -1,11 +1,10 @@
 using PetOmiPlatform.Domain.Entities;
-using PetOmiPlatform.Infrastructure.Persistence.Entities;
 
 namespace PetOmiPlatform.Infrastructure.Mappers
 {
     public static class DoctorScheduleMapper
     {
-        public static DoctorScheduleDomain ToDomain(this DoctorSchedule entity)
+        public static DoctorScheduleDomain ToDomain(this Persistence.Entities.DoctorSchedule entity)
         {
             return DoctorScheduleDomain.Reconstitute(
                 id: entity.ScheduleId,
@@ -19,9 +18,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             );
         }
 
-        public static DoctorSchedule ToEntity(this DoctorScheduleDomain domain)
+        public static Persistence.Entities.DoctorSchedule ToEntity(this DoctorScheduleDomain domain)
         {
-            return new DoctorSchedule
+            return new Persistence.Entities.DoctorSchedule
             {
                 ScheduleId = domain.Id,
                 VetClinicId = domain.VetClinicId,

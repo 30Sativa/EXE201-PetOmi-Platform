@@ -114,6 +114,15 @@ namespace PetOmiPlatform.Infrastructure
             // Services
             services.AddScoped<IEmailService, EmailService>();
 
+            // Reminders
+            services.AddScoped<IReminderRepository, ReminderRepository>();
+            services.AddScoped<IReminderPreferenceRepository, ReminderPreferenceRepository>();
+            services.AddScoped<IReminderAutoCreator, ReminderAutoCreator>();
+            services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
+
+            // Background services
+            services.AddHostedService<BackgroundServices.ReminderProcessorService>();
+
             return services;
         }
     }

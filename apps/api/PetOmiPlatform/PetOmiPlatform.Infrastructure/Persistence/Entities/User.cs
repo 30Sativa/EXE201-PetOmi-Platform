@@ -31,6 +31,12 @@ public partial class User
 
     public bool IsProfileCompleted { get; set; }
 
+    public virtual ICollection<Appointment> AppointmentBookedByUsers { get; set; } = new List<Appointment>();
+
+    public virtual ICollection<Appointment> AppointmentCancelledByUsers { get; set; } = new List<Appointment>();
+
+    public virtual ICollection<Appointment> AppointmentCheckedInByUsers { get; set; } = new List<Appointment>();
+
     public virtual ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 
     public virtual ICollection<Clinic> Clinics { get; set; } = new List<Clinic>();
@@ -50,6 +56,12 @@ public partial class User
     public virtual ICollection<Pet> Pets { get; set; } = new List<Pet>();
 
     public virtual ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+    public virtual ICollection<Reminder> ReminderCreatedByUsers { get; set; } = new List<Reminder>();
+
+    public virtual ICollection<ReminderPreference> ReminderPreferences { get; set; } = new List<ReminderPreference>();
+
+    public virtual ICollection<Reminder> ReminderUsers { get; set; } = new List<Reminder>();
 
     public virtual ICollection<UserDevice> UserDevices { get; set; } = new List<UserDevice>();
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
@@ -23,11 +23,15 @@ public partial class VetClinic
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+
     public virtual Clinic Clinic { get; set; } = null!;
+
+    public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; } = new List<DoctorSchedule>();
+
+    public virtual ICollection<MedicalExamination> MedicalExaminations { get; set; } = new List<MedicalExamination>();
 
     public virtual VetClinicRole Role { get; set; } = null!;
 
     public virtual VetProfile VetProfile { get; set; } = null!;
-
-    public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; } = new List<DoctorSchedule>();
 }

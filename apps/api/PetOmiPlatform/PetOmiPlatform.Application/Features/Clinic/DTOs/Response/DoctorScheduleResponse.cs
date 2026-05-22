@@ -1,3 +1,5 @@
+using PetOmiPlatform.Domain.Entities;
+
 namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
 {
     public class DoctorScheduleResponse
@@ -9,5 +11,20 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }
         public bool IsActive { get; set; }
+
+        private static readonly string[] DayNames =
+            { "Chủ nhật", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7" };
+
+        public static DoctorScheduleResponse FromDomain(DoctorScheduleDomain schedule)
+            => new()
+            {
+                ScheduleId = schedule.Id,
+                VetClinicId = schedule.VetClinicId,
+                DayOfWeek = schedule.DayOfWeek,
+                DayName = DayNames[schedule.DayOfWeek],
+                StartTime = schedule.StartTime,
+                EndTime = schedule.EndTime,
+                IsActive = schedule.IsActive
+            };
     }
 }

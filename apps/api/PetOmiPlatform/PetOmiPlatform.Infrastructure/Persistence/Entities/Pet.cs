@@ -31,6 +31,10 @@ public partial class Pet
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+
+    public virtual ICollection<MedicalExamination> MedicalExaminations { get; set; } = new List<MedicalExamination>();
+
     public virtual User OwnerUser { get; set; } = null!;
 
     public virtual PetHealthProfile? PetHealthProfile { get; set; }
@@ -42,4 +46,6 @@ public partial class Pet
     public virtual ICollection<PetUserAccess> PetUserAccesses { get; set; } = new List<PetUserAccess>();
 
     public virtual ICollection<PetWeightLog> PetWeightLogs { get; set; } = new List<PetWeightLog>();
+
+    public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
 }

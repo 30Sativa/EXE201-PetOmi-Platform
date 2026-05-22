@@ -13,24 +13,24 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         public InventoryRepository(PetOmniDbContext context) => _context = context;
 
         public async Task AddAsync(InventoryItemDomain item)
-            => await _context.Inventory.AddAsync(item.ToEntity());
+            => await _context.Inventories.AddAsync(item.ToEntity());
 
         public async Task<InventoryItemDomain?> GetByIdAsync(Guid itemId)
         {
-            var entity = await _context.Inventory.FindAsync(itemId);
+            var entity = await _context.Inventories.FindAsync(itemId);
             return entity?.ToDomain();
         }
 
         public async Task<IEnumerable<InventoryItemDomain>> GetByClinicIdAsync(Guid clinicId, bool activeOnly = true)
         {
-            var query = _context.Inventory.Where(i => i.ClinicId == clinicId);
+            var query = _context.Inventories.Where(i => i.ClinicId == clinicId);
             if (activeOnly) query = query.Where(i => i.IsActive);
             return await query.OrderBy(i => i.ItemName).Select(i => i.ToDomain()).ToListAsync();
         }
 
         public async Task<IEnumerable<InventoryItemDomain>> GetLowStockItemsAsync(Guid clinicId)
         {
-            return await _context.Inventory
+            return await _context.Inventories
                 .Where(i => i.ClinicId == clinicId && i.IsActive && i.Quantity <= i.LowStockThreshold)
                 .OrderBy(i => i.Quantity)
                 .Select(i => i.ToDomain())
@@ -39,7 +39,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(InventoryItemDomain item)
         {
-            var entity = await _context.Inventory.FindAsync(item.Id);
+            var entity = await _context.Inventories.FindAsync(item.Id);
             if (entity == null) return;
             _context.Entry(entity).CurrentValues.SetValues(item.ToEntity());
         }

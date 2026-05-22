@@ -1,3 +1,6 @@
+﻿using System;
+using System.Collections.Generic;
+
 namespace PetOmiPlatform.Infrastructure.Persistence.Entities;
 
 public partial class ClinicService
@@ -12,7 +15,7 @@ public partial class ClinicService
 
     public decimal Price { get; set; }
 
-    public int DurationMins { get; set; }   // Dùng để tính available slots
+    public int DurationMins { get; set; }
 
     public bool IsActive { get; set; }
 
@@ -20,5 +23,9 @@ public partial class ClinicService
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
+
     public virtual Clinic Clinic { get; set; } = null!;
+
+    public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 }

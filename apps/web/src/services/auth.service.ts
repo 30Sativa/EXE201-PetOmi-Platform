@@ -3,12 +3,21 @@ import type {
   ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
+  RefreshTokenRequest,
+  ResetPasswordRequest,
+  ToggleRoleRequest,
 } from "@/schemas/auth.schema"
 import type {
+  ActiveRoleResponse,
   ForgotPasswordResponse,
+  GetCurrentUserResponse,
+  GetSessionsResponse,
   LoginResponse,
   LogoutResponse,
+  RefreshTokenResponse,
   RegisterResponse,
+  ResendVerificationResponse,
+  ToggleRoleResponse,
   VerifyEmailResponse,
 } from "@/types"
 
@@ -62,4 +71,68 @@ export const verifyEmailApi = async (
   )
 
   return unwrapResponse<VerifyEmailResponse>(response)
+}
+
+export const refreshTokenApi = async (
+  data: RefreshTokenRequest,
+): Promise<RefreshTokenResponse> => {
+  const response = await api.post("/auth/refresh-token", data)
+  return unwrapResponse<RefreshTokenResponse>(response)
+}
+
+export const getMeApi = async (): Promise<GetCurrentUserResponse> => {
+  const response = await api.get("/auth/me")
+  return unwrapResponse<GetCurrentUserResponse>(response)
+}
+
+export const resetPasswordApi = async (
+  data: ResetPasswordRequest,
+): Promise<{ message: string }> => {
+  const response = await api.post("/auth/reset-password", data)
+  return unwrapResponse<{ message: string }>(response)
+}
+
+export const toggleRoleApi = async (
+  data: ToggleRoleRequest,
+): Promise<ToggleRoleResponse> => {
+  const response = await api.post("/auth/toggle-role", data)
+  return unwrapResponse<ToggleRoleResponse>(response)
+}
+
+export const googleLoginApi = async (): Promise<void> => {
+  window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google/login`
+}
+
+export const googleCallbackApi = async (): Promise<LoginResponse> => {
+  const response = await api.get("/auth/google/callback")
+  return unwrapResponse<LoginResponse>(response)
+}
+
+export const getActiveRoleApi = async (): Promise<ActiveRoleResponse> => {
+  const response = await api.get("/auth/active-role")
+  return unwrapResponse<ActiveRoleResponse>(response)
+}
+
+export const getSessionsApi = async (): Promise<GetSessionsResponse> => {
+  const response = await api.get("/auth/sessions")
+  return unwrapResponse<GetSessionsResponse>(response)
+}
+
+export const deleteSessionApi = async (
+  sessionId: string,
+): Promise<{ message: string }> => {
+  const response = await api.delete(`/auth/sessions/${sessionId}`)
+  return unwrapResponse<{ message: string }>(response)
+}
+
+export const deleteAllSessionsApi = async (): Promise<{ message: string }> => {
+  const response = await api.delete("/auth/sessions")
+  return unwrapResponse<{ message: string }>(response)
+}
+
+export const resendVerificationApi = async (
+  email: string,
+): Promise<ResendVerificationResponse> => {
+  const response = await api.post("/auth/resend-verification", { email })
+  return unwrapResponse<ResendVerificationResponse>(response)
 }

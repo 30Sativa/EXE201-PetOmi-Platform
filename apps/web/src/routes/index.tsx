@@ -12,8 +12,10 @@ import AuthPage from "@/pages/AuthPage"
 import CompleteProfilePage from "@/pages/CompleteProfilePage"
 import ErrorPage from "@/pages/ErrorPage"
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage"
+import GoogleCallbackPage from "@/pages/GoogleCallbackPage"
 import LandingPage from "@/pages/LandingPage"
 import NotFoundPage from "@/pages/NotFoundPage"
+import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import VerifyEmailPage from "@/pages/VerifyEmailPage"
 
 import AdminDashboardPage from "@/pages/dashboard/AdminDashboardPage"
@@ -63,6 +65,16 @@ const router = createBrowserRouter([
       {
         path: "verify-email",
         element: <VerifyEmailPage />,
+      },
+
+      {
+        path: "auth/callback",
+        element: <GoogleCallbackPage />,
+      },
+
+      {
+        path: "reset-password",
+        element: <ResetPasswordPage />,
       },
 
       {

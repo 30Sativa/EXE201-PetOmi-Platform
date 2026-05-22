@@ -8,6 +8,7 @@ import {
 } from "react"
 
 import { tokenStorage, decodeAccessToken } from "@/lib/tokenStorage"
+import { AUTH_EVENTS } from "@/lib/axios"
 
 import { logoutApi } from "@/services/auth.service"
 
@@ -50,6 +51,34 @@ export function AuthProvider({
     }
 
     setIsLoading(false)
+  }, [])
+
+  useEffect(() => {
+    const handleTokenRefreshed = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              id: detail.userId || prev.id,
+              email: detail.email || prev.email,
+            }
+          : null
+      )
+    }
+
+    const handleLogout = () => {
+      setUser(null)
+      setIsAuthenticated(false)
+    }
+
+    window.addEventListener(AUTH_EVENTS.TOKEN_REFRESHED, handleTokenRefreshed)
+    window.addEventListener(AUTH_EVENTS.LOGOUT, handleLogout)
+
+    return () => {
+      window.removeEventListener(AUTH_EVENTS.TOKEN_REFRESHED, handleTokenRefreshed)
+      window.removeEventListener(AUTH_EVENTS.LOGOUT, handleLogout)
+    }
   }, [])
 
   const setAuthFromTokens = useCallback(

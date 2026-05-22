@@ -2,7 +2,7 @@
 export interface StatCardProps {
   label: string
   value: string
-  icon: string
+  icon: React.ComponentType<{ className?: string }>
   hint?: string
 }
 

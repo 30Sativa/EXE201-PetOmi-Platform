@@ -15,7 +15,7 @@ import type {
 const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = response.data as any
-  if ("data" in data && typeof data.data !== "undefined") {
+  if ("data" in data && data.data != null) {
     return data.data
   }
   return data

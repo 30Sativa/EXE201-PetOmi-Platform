@@ -18,7 +18,15 @@ import VerifyEmailPage from "@/pages/VerifyEmailPage"
 
 import AdminDashboardPage from "@/pages/dashboard/AdminDashboardPage"
 import ClinicDashboardPage from "@/pages/dashboard/ClinicDashboardPage"
-import OwnerDashboardPage from "@/pages/dashboard/OwnerDashboardPage"
+import OwnerDashboardPage from "@/pages/dashboard/owner/OwnerDashboardPage"
+import OwnerAppointmentsPage from "@/pages/dashboard/owner/OwnerAppointmentsPage"
+import OwnerHistoryPage from "@/pages/dashboard/owner/OwnerHistoryPage"
+import OwnerNotificationsPage from "@/pages/dashboard/owner/OwnerNotificationsPage"
+import OwnerPetSharingPage from "@/pages/dashboard/owner/OwnerPetSharingPage"
+import OwnerPetsPage from "@/pages/dashboard/owner/OwnerPetsPage"
+import OwnerProfilePage from "@/pages/dashboard/owner/OwnerProfilePage"
+import OwnerRemindersPage from "@/pages/dashboard/owner/OwnerRemindersPage"
+import OwnerReviewsPage from "@/pages/dashboard/owner/OwnerReviewsPage"
 
 const router = createBrowserRouter([
   {
@@ -83,6 +91,38 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <OwnerDashboardPage />,
+          },
+          {
+            path: "pets",
+            element: <OwnerPetsPage />,
+          },
+          {
+            path: "appointments",
+            element: <OwnerAppointmentsPage />,
+          },
+          {
+            path: "history",
+            element: <OwnerHistoryPage />,
+          },
+          {
+            path: "reviews",
+            element: <OwnerReviewsPage />,
+          },
+          {
+            path: "reminders",
+            element: <OwnerRemindersPage />,
+          },
+          {
+            path: "sharing",
+            element: <OwnerPetSharingPage />,
+          },
+          {
+            path: "notifications",
+            element: <OwnerNotificationsPage />,
+          },
+          {
+            path: "profile",
+            element: <OwnerProfilePage />,
           },
         ],
       },

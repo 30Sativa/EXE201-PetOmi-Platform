@@ -33,6 +33,7 @@ export interface LoginResponse {
   accessToken: string
   refreshToken: string
   email: string
+  userId: string
   isProfileCompleted: boolean
   expiresIn?: number
 }

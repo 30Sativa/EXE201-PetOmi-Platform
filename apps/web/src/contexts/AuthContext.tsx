@@ -7,7 +7,7 @@ import {
   useState,
 } from "react"
 
-import { tokenStorage } from "@/lib/tokenStorage"
+import { tokenStorage, decodeAccessToken } from "@/lib/tokenStorage"
 
 import { logoutApi } from "@/services/auth.service"
 
@@ -38,10 +38,11 @@ export function AuthProvider({
     if (token) {
       setIsAuthenticated(true)
 
+      const payload = decodeAccessToken()
       setUser({
-        id: "",
-        email: "",
-        role: "",
+        id: (payload?.sub as string) ?? (payload?.nameidentifier as string) ?? "",
+        email: (payload?.email as string) ?? (payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as string) ?? "",
+        role: (payload?.role as string) ?? (payload?.activeRole as string) ?? "",
       })
     } else {
       setIsAuthenticated(false)
@@ -55,17 +56,18 @@ export function AuthProvider({
     (
       accessToken: string,
       refreshToken: string,
+      userId?: string,
+      email?: string,
     ) => {
       tokenStorage.setAccessToken(accessToken)
-
       tokenStorage.setRefreshToken(refreshToken)
-
       setIsAuthenticated(true)
 
+      const payload = decodeAccessToken()
       setUser({
-        id: "",
-        email: "",
-        role: "",
+        id: userId ?? (payload?.sub as string) ?? (payload?.nameidentifier as string) ?? "",
+        email: email ?? (payload?.email as string) ?? (payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as string) ?? "",
+        role: (payload?.role as string) ?? (payload?.activeRole as string) ?? "",
       })
     },
     [],

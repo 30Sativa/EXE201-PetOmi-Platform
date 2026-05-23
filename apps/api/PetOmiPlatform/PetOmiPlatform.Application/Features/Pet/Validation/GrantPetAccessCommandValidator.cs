@@ -9,8 +9,9 @@ namespace PetOmiPlatform.Application.Features.Pet.Validation
 
         public GrantPetAccessCommandValidator()
         {
-            RuleFor(x => x.UserId)
-                .NotEmpty().WithMessage("UserId không được để trống.");
+            RuleFor(x => x.UserEmail)
+                .NotEmpty().WithMessage("Email người được mời không được để trống.")
+                .EmailAddress().WithMessage("Email không hợp lệ.");
 
             RuleFor(x => x.AccessRole)
                 .NotEmpty().WithMessage("Vai trò truy cập không được để trống.")

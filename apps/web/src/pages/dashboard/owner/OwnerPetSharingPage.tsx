@@ -321,12 +321,12 @@ function InviteModal({
   const queryClient = useQueryClient()
   const pet = pets.find((p) => p.petId === petId)
 
-  const [userId, setUserId] = useState("")
+  const [email, setEmail] = useState("")
   const [role, setRole] = useState("Viewer")
   const [expiry, setExpiry] = useState("")
 
   const mutation = useMutation({
-    mutationFn: (data: { userId: string; accessRole: string; expiresAt?: string }) =>
+    mutationFn: (data: { userEmail: string; accessRole: string; expiresAt?: string }) =>
       sharePetAccessApi(petId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-access", petId] })
@@ -336,9 +336,9 @@ function InviteModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userId.trim()) return
+    if (!email.trim()) return
     mutation.mutate({
-      userId: userId.trim(),
+      userEmail: email.trim(),
       accessRole: role,
       expiresAt: expiry || undefined,
     })
@@ -375,13 +375,13 @@ function InviteModal({
         <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
           <div className="grid gap-1.5">
             <label className="text-sm font-semibold text-po-text">
-              User ID người được mời <span className="text-po-danger">*</span>
+              Email người được mời <span className="text-po-danger">*</span>
             </label>
             <input
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="Nhập User ID (GUID)"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="VD: nguyenvana@gmail.com"
               required
               disabled={mutation.isPending}
               className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm text-po-text placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
@@ -428,7 +428,7 @@ function InviteModal({
 
           {mutation.error && (
             <div className="rounded-xl border border-po-danger/30 bg-po-danger/10 px-4 py-3 text-sm text-po-danger">
-              Đã xảy ra lỗi. Vui lòng kiểm tra lại User ID.
+              Đã xảy ra lỗi. Vui lòng kiểm tra lại email.
             </div>
           )}
 
@@ -443,7 +443,7 @@ function InviteModal({
             </button>
             <button
               type="submit"
-              disabled={mutation.isPending || !userId.trim()}
+              disabled={mutation.isPending || !email.trim()}
               className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
             >
           {mutation.isPending ? "Đang xử lý..." : "Mời chia sẻ"}

@@ -38,19 +38,20 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
 
             pet.EnsureOwner(command.UserId);
 
-            var targetUser = await _userRepository.GetByIdAsync(command.Request.UserId)
+            var normalizedEmail = command.Request.UserEmail.Trim().ToUpperInvariant();
+            var targetUser = await _userRepository.GetByNormalizedEmail(normalizedEmail)
                 ?? throw new NotFoundException("Người dùng được cấp quyền không tồn tại.");
 
-            if (command.Request.UserId == command.UserId)
+            if (targetUser.Id == command.UserId)
                 throw new DomainException("Không thể tự cấp quyền cho chính mình.");
 
-            var existingAccess = await _accessRepository.GetByPetAndUserAsync(command.PetId, command.Request.UserId);
+            var existingAccess = await _accessRepository.GetByPetAndUserAsync(command.PetId, targetUser.Id);
             if (existingAccess != null)
                 throw new DomainException("Người dùng đã có quyền truy cập. Vui lòng sử dụng endpoint cập nhật.");
 
             var access = PetUserAccessDomain.Create(
                 petId: command.PetId,
-                userId: command.Request.UserId,
+                userId: targetUser.Id,
                 accessRole: command.Request.AccessRole,
                 grantedByUserId: command.UserId,
                 expiresAt: command.Request.ExpiresAt

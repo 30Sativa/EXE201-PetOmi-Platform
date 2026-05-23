@@ -178,7 +178,7 @@ export interface PetUserAccessResponse {
 }
 
 export interface GrantPetAccessRequest {
-  userId: string
+  userEmail: string
   accessRole: string  // "Viewer" | "Editor"
   expiresAt?: string  // DateTime ISO
 }

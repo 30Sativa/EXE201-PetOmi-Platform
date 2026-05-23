@@ -1,7 +1,9 @@
 using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Features.MedicalExamination.Command;
 using PetOmiPlatform.Application.Features.MedicalExamination.DTOs.Response;
+using PetOmiPlatform.Application.Features.MedicalExamination.Mappers;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Application.Interfaces;
 
@@ -11,15 +13,18 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
     {
         private readonly IMedicalExaminationRepository _examinationRepository;
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public UpdateExaminationCommandHandler(
             IMedicalExaminationRepository examinationRepository,
             IAppointmentRepository appointmentRepository,
+            IVetClinicRepository vetClinicRepository,
             IUnitOfWork unitOfWork)
         {
             _examinationRepository = examinationRepository;
             _appointmentRepository = appointmentRepository;
+            _vetClinicRepository = vetClinicRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -32,6 +37,9 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
             var appointment = await _appointmentRepository.GetByIdAsync(exam.AppointmentId);
             if (appointment == null || appointment.ClinicId != request.ClinicId)
                 throw new ForbiddenException("Không có quyền cập nhật phiếu khám này.");
+
+            var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.VetUserId, request.ClinicId);
+            ClinicRoleGuard.RequireMedicalWriter(staff);
 
             exam.Update(
                 chiefComplaint: request.Payload.ChiefComplaint,
@@ -47,24 +55,7 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
             await _examinationRepository.UpdateAsync(exam);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ExaminationResponse
-            {
-                Id = exam.Id,
-                AppointmentId = exam.AppointmentId,
-                PetId = exam.PetId,
-                VetClinicId = exam.VetClinicId,
-                ChiefComplaint = exam.ChiefComplaint,
-                WeightKg = exam.WeightKg,
-                TemperatureC = exam.TemperatureC,
-                HeartRate = exam.HeartRate,
-                RespiratoryRate = exam.RespiratoryRate,
-                ExaminationNotes = exam.ExaminationNotes,
-                Diagnosis = exam.Diagnosis,
-                TreatmentPlan = exam.TreatmentPlan,
-                Status = exam.Status.ToString(),
-                CreatedAt = exam.CreatedAt,
-                CompletedAt = exam.CompletedAt
-            };
+            return exam.ToResponse();
         }
     }
 }

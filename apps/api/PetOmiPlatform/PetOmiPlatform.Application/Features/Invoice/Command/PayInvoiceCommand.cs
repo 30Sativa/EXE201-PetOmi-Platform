@@ -6,11 +6,12 @@ namespace PetOmiPlatform.Application.Features.Invoice.Command
 {
     public record PayInvoiceCommand(
         Guid ClinicId,
+        Guid StaffUserId,
         Guid InvoiceId,
         PayInvoiceRequest Payload
     ) : IRequest<bool>, IAuditableCommand
     {
-        public Guid? UserId => null;
+        public Guid? UserId => StaffUserId;
         public string Action => "PayInvoice";
         public string Category => "Invoice";
     }

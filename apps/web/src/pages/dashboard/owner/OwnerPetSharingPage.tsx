@@ -1,90 +1,55 @@
 import { useState } from "react"
-import { Link2, Plus, Trash2, UserPlus } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
+import { Link2, Plus, Trash2, UserPlus, X } from "lucide-react"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import Avatar from "@/components/ui/Avatar"
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
-import Avatar from "@/components/ui/Avatar"
-import { getPetsApi } from "@/services/pets.service"
+import {
+  getPetsApi,
+  getPetAccessApi,
+  revokePetAccessApi,
+  sharePetAccessApi,
+  updatePetAccessApi,
+} from "@/services/pets.service"
+import type {
+  PetResponse,
+  PetUserAccessResponse,
+} from "@/types"
 import { cn } from "@/lib/utils"
 
-// Mock shared access data — backend chưa expose public API for this
-const mockSharedAccess = [
-  {
-    petId: "pet-1",
-    petName: "Mochi",
-    petSpecies: "Dog",
-    shares: [
-      {
-        accessId: "a1",
-        email: "family@petomi.vn",
-        role: "Viewer",
-        isExpired: false,
-        expiresAt: "2026-12-31",
-      },
-      {
-        accessId: "a2",
-        email: "vet@petomi.vn",
-        role: "Editor",
-        isExpired: false,
-        expiresAt: null,
-      },
-    ],
-  },
-  {
-    petId: "pet-2",
-    petName: "Bim",
-    petSpecies: "Cat",
-    shares: [
-      {
-        accessId: "a3",
-        email: "friend@petomi.vn",
-        role: "Viewer",
-        isExpired: false,
-        expiresAt: "2026-06-30",
-      },
-    ],
-  },
-]
+const speciesEmoji: Record<string, string> = {
+  Dog: "🐶",
+  Cat: "🐱",
+  default: "🐾",
+}
+
+const getSpeciesEmoji = (species: string) =>
+  speciesEmoji[species] ?? speciesEmoji.default
 
 export default function OwnerPetSharingPage() {
+  const queryClient = useQueryClient()
   const [expandedPet, setExpandedPet] = useState<string | null>(null)
+  const [revoking, setRevoking] = useState<PetUserAccessResponse | null>(null)
+  const [invitingPetId, setInvitingPetId] = useState<string | null>(null)
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: _pets, isLoading } = useQuery({
+  const { data: pets, isLoading: loadingPets } = useQuery({
     queryKey: ["owner-pets"],
     queryFn: getPetsApi,
   })
 
-  const getSpeciesEmoji = (species: string) => {
-    const map: Record<string, string> = {
-      Dog: "🐶",
-      Cat: "🐱",
-      Bird: "🐦",
-      Fish: "🐟",
-      default: "🐾",
-    }
-    return map[species] ?? map.default
-  }
+  const revokeMutation = useMutation({
+    mutationFn: ({ petId, accessId }: { petId: string; accessId: string }) =>
+      revokePetAccessApi(petId, accessId),
+    onSuccess: (_, { petId }) => {
+      queryClient.invalidateQueries({ queryKey: ["pet-access", petId] })
+      setRevoking(null)
+    },
+  })
 
-  const formatExpiry = (dateStr: string | null) => {
-    if (!dateStr) return "Không hết hạn"
-    try {
-      return new Date(dateStr).toLocaleDateString("vi-VN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      })
-    } catch {
-      return dateStr
-    }
-  }
-
-  const totalShares = mockSharedAccess.reduce(
-    (sum, p) => sum + p.shares.length,
-    0,
-  )
+  const totalShares = (pets ?? []).reduce((sum, pet) => sum, 0)
 
   return (
     <div className="grid gap-6">
@@ -96,29 +61,32 @@ export default function OwnerPetSharingPage() {
             Chia sẻ quyền truy cập hồ sơ thú cưng với thành viên gia đình hoặc bác sĩ thú y.
           </p>
         </div>
-        <button className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
-          <UserPlus className="size-4" />
-          Mời người dùng
-        </button>
       </div>
 
       {/* Summary */}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-[24px] border border-po-border bg-po-surface-muted p-4">
-          <p className="text-sm font-semibold text-po-text-muted">Thú cưng được chia sẻ</p>
+          <p className="text-sm font-semibold text-po-text-muted">Thú cưng</p>
           <p className="mt-2 text-2xl font-extrabold text-po-text">
-            {mockSharedAccess.length}
+            {(pets ?? []).length}
           </p>
-        </div>
-        <div className="rounded-[24px] border border-po-border bg-po-surface-muted p-4">
-          <p className="text-sm font-semibold text-po-text-muted">Người được chia sẻ</p>
-          <p className="mt-2 text-2xl font-extrabold text-po-text">{totalShares}</p>
         </div>
         <div className="rounded-[24px] border border-po-border bg-po-surface-muted p-4">
           <p className="text-sm font-semibold text-po-text-muted">Quyền hạn</p>
-          <p className="mt-2 text-sm font-semibold text-po-text">
+          <p className="mt-2 text-sm font-bold text-po-text">
             Viewer · Editor
           </p>
+        </div>
+        <div className="rounded-[24px] border border-po-border bg-po-surface-muted p-4">
+          <p className="text-sm font-semibold text-po-text-muted">Mời người dùng</p>
+          <button
+            onClick={() => pets && pets.length > 0 && setInvitingPetId(pets[0].petId)}
+            disabled={!pets || pets.length === 0}
+            className="mt-2 inline-flex h-9 items-center gap-2 rounded-full bg-po-primary px-4 text-xs font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+          >
+            <UserPlus className="size-3" />
+            Mời
+          </button>
         </div>
       </div>
 
@@ -127,103 +95,31 @@ export default function OwnerPetSharingPage() {
         title="Quản lý chia sẻ"
         subtitle="Chọn thú cưng để xem và quản lý quyền truy cập."
       >
-        {isLoading ? (
+        {loadingPets ? (
           <div className="flex justify-center py-12">
             <LoadingSpinner />
           </div>
-        ) : mockSharedAccess.length === 0 ? (
+        ) : !pets || pets.length === 0 ? (
           <EmptyState
             icon={Link2}
-            title="Chưa có ai được chia sẻ quyền truy cập"
-            description="Mời thành viên gia đình hoặc bác sĩ thú y để cùng theo dõi hồ sơ thú cưng."
-            action={
-              <button className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
-                <UserPlus className="size-4" />
-                Mời người dùng
-              </button>
-            }
+            title="Chưa có thú cưng nào"
+            description="Hãy thêm thú cưng trước để có thể chia sẻ quyền truy cập."
           />
         ) : (
           <div className="grid gap-3">
-            {mockSharedAccess.map((pet) => (
-              <div
+            {pets.map((pet) => (
+              <PetAccessCard
                 key={pet.petId}
-                className="overflow-hidden rounded-2xl border border-po-border bg-white transition"
-              >
-                {/* Pet Header */}
-                <div
-                  onClick={() =>
-                    setExpandedPet(expandedPet === pet.petId ? null : pet.petId)
-                  }
-                  className="flex cursor-pointer items-center justify-between gap-3 px-4 py-4 transition hover:bg-po-surface-muted"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{getSpeciesEmoji(pet.petSpecies)}</span>
-                    <div>
-                      <p className="font-bold text-po-text">{pet.petName}</p>
-                      <p className="text-xs text-po-text-muted">
-                        {pet.shares.length} người được chia sẻ
-                      </p>
-                    </div>
-                  </div>
-                  <button className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border px-3 text-xs font-semibold text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text">
-                    <Plus
-                      className={cn(
-                        "size-3 transition",
-                        expandedPet === pet.petId && "rotate-45",
-                      )}
-                    />
-                    Chia sẻ
-                  </button>
-                </div>
-
-                {/* Access List */}
-                {expandedPet === pet.petId && (
-                  <div className="border-t border-po-border bg-po-surface-muted px-4 py-3">
-                    {pet.shares.map((share) => (
-                      <div
-                        key={share.accessId}
-                        className="flex items-center justify-between gap-3 py-2"
-                      >
-                        <div className="flex items-center gap-3">
-                          <Avatar
-                            src={null}
-                            alt={share.email}
-                            fallback={share.email.slice(0, 2).toUpperCase()}
-                            size="sm"
-                          />
-                          <div>
-                            <p className="text-sm font-semibold text-po-text">
-                              {share.email}
-                            </p>
-                            <p className="text-xs text-po-text-muted">
-                              {share.role} · Hết hạn: {formatExpiry(share.expiresAt)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {share.isExpired ? (
-                            <span className="rounded-full bg-po-danger-soft px-2.5 py-0.5 text-xs font-semibold text-po-danger">
-                              Đã hết hạn
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-po-success-soft px-2.5 py-0.5 text-xs font-semibold text-po-success">
-                              Hoạt động
-                            </span>
-                          )}
-                          <button className="grid size-8 place-items-center rounded-full text-po-danger transition hover:bg-po-danger-soft">
-                            <Trash2 className="size-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    <button className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-po-border py-2 text-xs font-semibold text-po-text-muted transition hover:border-po-primary hover:text-po-primary">
-                      <Plus className="size-3" />
-                      Thêm người dùng
-                    </button>
-                  </div>
-                )}
-              </div>
+                pet={pet}
+                isExpanded={expandedPet === pet.petId}
+                onToggle={() =>
+                  setExpandedPet(
+                    expandedPet === pet.petId ? null : pet.petId,
+                  )
+                }
+                onInvite={() => setInvitingPetId(pet.petId)}
+                onRevoke={(access) => setRevoking(access)}
+              />
             ))}
           </div>
         )}
@@ -246,6 +142,314 @@ export default function OwnerPetSharingPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Invite Modal */}
+      {invitingPetId && (
+        <InviteModal
+          petId={invitingPetId}
+          pets={pets ?? []}
+          onClose={() => setInvitingPetId(null)}
+        />
+      )}
+
+      {/* Revoke Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(revoking)}
+        onClose={() => setRevoking(null)}
+        onConfirm={() => {
+          if (revoking) {
+            revokeMutation.mutate({ petId: revoking.petId, accessId: revoking.petUserAccessId })
+          }
+        }}
+        title="Thu hồi quyền truy cập?"
+        description="Người dùng sẽ không còn có thể truy cập vào hồ sơ của thú cưng này."
+        confirmLabel="Thu hồi"
+        variant="danger"
+        isLoading={revokeMutation.isPending}
+      />
+    </div>
+  )
+}
+
+// ==================== PET ACCESS CARD ====================
+
+function PetAccessCard({
+  pet,
+  isExpanded,
+  onToggle,
+  onInvite,
+  onRevoke,
+}: {
+  pet: PetResponse
+  isExpanded: boolean
+  onToggle: () => void
+  onInvite: () => void
+  onRevoke: (access: PetUserAccessResponse) => void
+}) {
+  const { data: accessList, isLoading } = useQuery({
+    queryKey: ["pet-access", pet.petId],
+    queryFn: () => getPetAccessApi(pet.petId),
+    enabled: isExpanded,
+  })
+
+  const formatExpiry = (dateStr: string | null) => {
+    if (!dateStr) return "Không hết hạn"
+    try {
+      return new Date(dateStr).toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      })
+    } catch {
+      return dateStr
+    }
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-po-border bg-white transition">
+      {/* Pet Header */}
+      <div
+        onClick={onToggle}
+        className="flex cursor-pointer items-center justify-between gap-3 px-4 py-4 transition hover:bg-po-surface-muted"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">{getSpeciesEmoji(pet.species)}</span>
+          <div>
+            <p className="font-bold text-po-text">{pet.name}</p>
+            <p className="text-xs text-po-text-muted">
+              {(accessList ?? []).length} người được chia sẻ
+            </p>
+          </div>
+        </div>
+        <button className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border px-3 text-xs font-semibold text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text">
+          <Plus
+            className={cn("size-3 transition", isExpanded && "rotate-45")}
+          />
+          Chia sẻ
+        </button>
+      </div>
+
+      {/* Access List */}
+      {isExpanded && (
+        <div className="border-t border-po-border bg-po-surface-muted px-4 py-3">
+          {isLoading ? (
+            <div className="flex justify-center py-6">
+              <LoadingSpinner />
+            </div>
+          ) : !accessList || accessList.length === 0 ? (
+            <div className="py-3 text-center">
+              <p className="text-sm text-po-text-muted">
+                Chưa có ai được chia sẻ quyền truy cập.
+              </p>
+              <button
+                onClick={onInvite}
+                className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full bg-po-primary px-4 text-xs font-semibold text-white transition hover:bg-po-primary-hover"
+              >
+                <UserPlus className="size-3" />
+                Mời người dùng
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              {accessList.map((access) => (
+                <div
+                  key={access.petUserAccessId}
+                  className="flex items-center justify-between gap-3 py-2"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar
+                      fallback={access.userId.slice(0, 2).toUpperCase()}
+                      size="sm"
+                    />
+                    <div>
+                      <p className="text-sm font-semibold text-po-text">
+                        {access.userId}
+                      </p>
+                      <p className="text-xs text-po-text-muted">
+                        {access.accessRole} · Hết hạn: {formatExpiry(access.expiresAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {access.isExpired ? (
+                      <span className="rounded-full bg-po-danger-soft px-2.5 py-0.5 text-xs font-semibold text-po-danger">
+                        Đã hết hạn
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-po-success-soft px-2.5 py-0.5 text-xs font-semibold text-po-success">
+                        Hoạt động
+                      </span>
+                    )}
+                    {!access.isExpired && (
+                      <button
+                        onClick={() => onRevoke(access)}
+                        className="grid size-8 place-items-center rounded-full text-po-danger transition hover:bg-po-danger-soft"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              <button
+                onClick={onInvite}
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-po-border py-2 text-xs font-semibold text-po-text-muted transition hover:border-po-primary hover:text-po-primary"
+              >
+                <Plus className="size-3" />
+                Thêm người dùng
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ==================== INVITE MODAL ====================
+
+function InviteModal({
+  petId,
+  pets,
+  onClose,
+}: {
+  petId: string
+  pets: PetResponse[]
+  onClose: () => void
+}) {
+  const queryClient = useQueryClient()
+  const pet = pets.find((p) => p.petId === petId)
+
+  const [userId, setUserId] = useState("")
+  const [role, setRole] = useState("Viewer")
+  const [expiry, setExpiry] = useState("")
+
+  const mutation = useMutation({
+    mutationFn: (data: { userId: string; accessRole: string; expiresAt?: string }) =>
+      sharePetAccessApi(petId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pet-access", petId] })
+      onClose()
+    },
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!userId.trim()) return
+    mutation.mutate({
+      userId: userId.trim(),
+      accessRole: role,
+      expiresAt: expiry || undefined,
+    })
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+      style={{ animation: "po-dialog-in 200ms cubic-bezier(0.2,0.8,0.2,1) both" }}
+    >
+      <div className="w-[min(480px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20"
+        style={{ animation: "po-dialog-content-in 300ms cubic-bezier(0.2,0.8,0.2,1) both" }}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-extrabold text-po-text">
+              Mời người dùng
+            </h3>
+            <p className="mt-1 text-sm text-po-text-muted">
+              Chia sẻ quyền truy cập {pet?.name ?? "thú cưng"} với người khác.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            disabled={mutation.isPending}
+            className="shrink-0 rounded-full p-1 text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text disabled:opacity-40"
+            aria-label="Đóng"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
+          <div className="grid gap-1.5">
+            <label className="text-sm font-semibold text-po-text">
+              User ID người được mời <span className="text-po-danger">*</span>
+            </label>
+            <input
+              type="text"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              placeholder="Nhập User ID (GUID)"
+              required
+              disabled={mutation.isPending}
+              className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm text-po-text placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
+            />
+          </div>
+
+          <div className="grid gap-1.5">
+            <label className="text-sm font-semibold text-po-text">Quyền hạn</label>
+            <div className="flex gap-2">
+              {["Viewer", "Editor"].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRole(r)}
+                  disabled={mutation.isPending}
+                  className={cn(
+                    "flex flex-1 items-center justify-center rounded-xl border py-2.5 text-sm font-semibold transition",
+                    role === r
+                      ? "border-po-primary bg-po-primary/10 text-po-primary"
+                      : "border-po-border bg-white text-po-text-muted hover:border-po-border-strong",
+                    mutation.isPending && "opacity-60",
+                  )}
+                >
+                  {r === "Viewer" ? "👁 Viewer" : "✏️ Editor"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <label htmlFor="invite-expiry" className="text-sm font-semibold text-po-text">
+              Ngày hết hạn (tùy chọn)
+            </label>
+            <input
+              id="invite-expiry"
+              type="date"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              disabled={mutation.isPending}
+              className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm text-po-text focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
+            />
+          </div>
+
+          {mutation.error && (
+            <div className="rounded-xl border border-po-danger/30 bg-po-danger/10 px-4 py-3 text-sm text-po-danger">
+              Đã xảy ra lỗi. Vui lòng kiểm tra lại User ID.
+            </div>
+          )}
+
+          <div className="mt-2 flex flex-wrap justify-end gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={mutation.isPending}
+              className="inline-flex h-11 items-center rounded-full border border-po-border bg-white px-6 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted disabled:opacity-60"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={mutation.isPending || !userId.trim()}
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+            >
+          {mutation.isPending ? "Đang xử lý..." : "Mời chia sẻ"}
+          </button>
+        </div>
+        </form>
       </div>
     </div>
   )

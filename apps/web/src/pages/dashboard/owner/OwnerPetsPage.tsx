@@ -1,12 +1,17 @@
 import { useState } from "react"
-import { Plus, PawPrint, Search } from "lucide-react"
+import { Plus, PawPrint, Search, Trash2 } from "lucide-react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import Avatar from "@/components/ui/Avatar"
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
+import PetModal from "@/components/dashboard/owner/PetModal"
 import { useQuery } from "@tanstack/react-query"
-import { getPetsApi } from "@/services/pets.service"
+import { getPetsApi, deletePetApi } from "@/services/pets.service"
 import { cn } from "@/lib/utils"
 import type { PetResponse } from "@/types"
 
@@ -40,19 +45,36 @@ const formatAge = (dob: string | null) => {
 }
 
 export default function OwnerPetsPage() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState("")
   const [selectedSpecies, setSelectedSpecies] = useState<string>("all")
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingPet, setEditingPet] = useState<PetResponse | null>(null)
+  const [deletingPet, setDeletingPet] = useState<PetResponse | null>(null)
+
+  const queryClient = useQueryClient()
 
   const { data: pets, isLoading, error } = useQuery({
     queryKey: ["owner-pets"],
     queryFn: getPetsApi,
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (petId: string) => deletePetApi(petId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["owner-pets"] })
+      setDeletingPet(null)
+    },
+  })
+
   const speciesOptions = [
     { value: "all", label: "Tất cả" },
     ...[
       ...new Set((pets ?? []).map((p) => p.species)),
-    ].map((s) => ({ value: s, label: s })),
+    ].map((s) => ({
+      value: s,
+      label: s === "Dog" ? "🐶 Chó" : s === "Cat" ? "🐱 Mèo" : s,
+    })),
   ]
 
   const filtered = (pets ?? []).filter((pet) => {
@@ -66,6 +88,22 @@ export default function OwnerPetsPage() {
     return matchSearch && matchSpecies
   })
 
+  const handleAddPet = () => {
+    setEditingPet(null)
+    setIsModalOpen(true)
+  }
+
+  const handleEditPet = (pet: PetResponse) => {
+    setEditingPet(pet)
+    setIsModalOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deletingPet) {
+      deleteMutation.mutate(deletingPet.petId)
+    }
+  }
+
   return (
     <div className="grid gap-6">
       {/* Header */}
@@ -76,7 +114,10 @@ export default function OwnerPetsPage() {
             Thêm, chỉnh sửa và theo dõi hồ sơ sức khỏe của thú cưng.
           </p>
         </div>
-        <button className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
+        <button
+          onClick={handleAddPet}
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
+        >
           <Plus className="size-4" />
           Thêm thú cưng
         </button>
@@ -135,7 +176,10 @@ export default function OwnerPetsPage() {
             }
             action={
               !search ? (
-                <button className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
+                <button
+                  onClick={handleAddPet}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
+                >
                   <Plus className="size-4" />
                   Thêm thú cưng
                 </button>
@@ -145,22 +189,61 @@ export default function OwnerPetsPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((pet) => (
-              <PetCard key={pet.petId} pet={pet} />
+              <PetCard
+                key={pet.petId}
+                pet={pet}
+                onEdit={handleEditPet}
+                onDelete={setDeletingPet}
+                onView={() => navigate(`/dashboard/owner/pets/${pet.petId}`)}
+              />
             ))}
           </div>
         )}
       </DashboardSection>
+
+      {/* Pet Create/Edit Modal */}
+      <PetModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        pet={editingPet}
+        onSuccess={(msg) => toast.success(msg)}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmDialog
+        isOpen={Boolean(deletingPet)}
+        onClose={() => setDeletingPet(null)}
+        onConfirm={handleDeleteConfirm}
+        title={`Xóa ${deletingPet?.name ?? "thú cưng"}?`}
+        description="Hồ sơ thú cưng sẽ bị xóa mềm và có thể khôi phục sau. Các lịch hẹn liên quan sẽ được giữ lại."
+        confirmLabel="Xóa"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   )
 }
 
-function PetCard({ pet }: { pet: PetResponse }) {
+function PetCard({
+  pet,
+  onEdit,
+  onDelete,
+  onView,
+}: {
+  pet: PetResponse
+  onEdit: (pet: PetResponse) => void
+  onDelete: (pet: PetResponse) => void
+  onView: () => void
+}) {
   const age = formatAge(pet.dateOfBirth)
 
   return (
     <div className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-po-border bg-white transition hover:border-po-border-strong hover:shadow-md">
       {/* Avatar / Hero */}
-      <div className="relative h-32 bg-gradient-to-br from-po-primary-soft to-po-surface-muted">
+      <div
+        className="relative h-32 bg-gradient-to-br from-po-primary-soft to-po-surface-muted"
+        onClick={onView}
+      >
         {pet.avatarUrl ? (
           <img
             src={pet.avatarUrl}
@@ -172,18 +255,35 @@ function PetCard({ pet }: { pet: PetResponse }) {
             <span className="text-6xl">{getSpeciesEmoji(pet.species)}</span>
           </div>
         )}
-        {/* Edit button overlay */}
-        <div className="absolute right-3 top-3 opacity-0 transition group-hover:opacity-100">
-          <button className="grid size-8 place-items-center rounded-full bg-white/90 text-po-text shadow-sm backdrop-blur-sm hover:bg-white">
+        {/* Action buttons overlay */}
+        <div className="absolute right-3 top-3 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit(pet)
+            }}
+            className="grid size-8 place-items-center rounded-full bg-white/90 text-po-text shadow-sm backdrop-blur-sm hover:bg-white"
+            aria-label="Sửa thú cưng"
+          >
             <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
             </svg>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(pet)
+            }}
+            className="grid size-8 place-items-center rounded-full bg-white/90 text-po-danger shadow-sm backdrop-blur-sm hover:bg-po-danger/10"
+            aria-label="Xóa thú cưng"
+          >
+            <Trash2 className="size-3.5" />
           </button>
         </div>
       </div>
 
       {/* Info */}
-      <div className="p-4">
+      <div className="p-4" onClick={onView}>
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="text-base font-bold text-po-text">{pet.name}</p>
@@ -198,7 +298,7 @@ function PetCard({ pet }: { pet: PetResponse }) {
         <div className="mt-3 flex flex-wrap gap-2">
           {pet.gender && (
             <span className="rounded-full bg-po-surface-muted px-2.5 py-0.5 text-xs font-medium text-po-text-muted">
-              {pet.gender}
+              {pet.gender === "Male" ? "Đực" : pet.gender === "Female" ? "Cái" : pet.gender}
             </span>
           )}
           {age && (
@@ -209,6 +309,11 @@ function PetCard({ pet }: { pet: PetResponse }) {
           {pet.isBirthDateEstimated && (
             <span className="rounded-full bg-po-warning-soft px-2.5 py-0.5 text-xs font-medium text-po-warning">
               Tuổi ước lượng
+            </span>
+          )}
+          {pet.isNeutered && (
+            <span className="rounded-full bg-po-success-soft px-2.5 py-0.5 text-xs font-medium text-po-success">
+              {pet.isNeutered === "Yes" ? "Đã triệt sản" : "Chưa triệt sản"}
             </span>
           )}
         </div>

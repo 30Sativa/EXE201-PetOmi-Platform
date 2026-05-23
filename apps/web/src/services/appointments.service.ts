@@ -25,8 +25,11 @@ export const getOwnerAppointmentsApi = async (params?: {
   status?: string
 }): Promise<AppointmentListItemResponse[]> => {
   const response = await api.get("/appointments/owner", { params })
-  const result = unwrapResponse<AppointmentListItemResponse[]>(response)
-  return Array.isArray(result) ? result : []
+  // Backend returns BaseResponse<PagedData<AppointmentListItemResponse>>
+  // with PascalCase Items/Meta from C# JSON serialization
+  const paged = unwrapResponse<{ Items?: AppointmentListItemResponse[]; items?: AppointmentListItemResponse[] }>(response)
+  const items = paged?.Items ?? paged?.items
+  return Array.isArray(items) ? items : []
 }
 
 export const getAvailableSlotsApi = async (params: {

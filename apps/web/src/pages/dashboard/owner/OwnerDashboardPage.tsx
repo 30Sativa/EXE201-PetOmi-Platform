@@ -190,7 +190,7 @@ export default function OwnerDashboardPage() {
             {pets.slice(0, 6).map((pet) => (
               <div
                 key={pet.petId}
-                onClick={() => navigate("/dashboard/owner/pets")}
+                onClick={() => navigate(`/dashboard/owner/pets/${pet.petId}`)}
                 className="flex cursor-pointer items-center gap-3 rounded-2xl border border-po-border bg-po-surface-muted p-4 transition hover:border-po-border-strong hover:shadow-sm"
               >
                 <Avatar

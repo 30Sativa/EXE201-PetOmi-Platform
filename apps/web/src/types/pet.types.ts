@@ -1,4 +1,4 @@
-// Pet related types matching backend DTOs
+// ==================== PET ====================
 
 export interface PetResponse {
   petId: string
@@ -7,58 +7,183 @@ export interface PetResponse {
   species: string
   breed: string | null
   gender: string | null
-  dateOfBirth: string | null
+  isNeutered: string | null   // "Yes" | "No" | "Unknown"
+  dateOfBirth: string | null  // DateOnly ISO string: "2023-01-15"
   isBirthDateEstimated: boolean
   avatarUrl: string | null
+  color: string | null
   createdAt: string
   updatedAt: string | null
 }
 
-export interface PetHealthProfileResponse {
-  petId: string
-  allergies: string[]
-  preExistingConditions: string[]
-  currentMedications: string[]
-  lastVetVisit: string | null
-  notes: string | null
+export interface CreatePetRequest {
+  name: string
+  species: string  // "Dog" | "Cat"
+  breed?: string
+  gender?: string  // "Male" | "Female" | "Unknown"
+  isNeutered?: string  // "Yes" | "No" | "Unknown"
+  dateOfBirth?: string  // DateOnly ISO: "2023-01-15"
+  isBirthDateEstimated: boolean
+  avatarUrl?: string
+  color?: string
 }
+
+export interface UpdatePetRequest {
+  name?: string
+  species?: string
+  breed?: string | null
+  gender?: string | null
+  isNeutered?: string | null
+  dateOfBirth?: string | null
+  isBirthDateEstimated?: boolean
+  avatarUrl?: string | null
+  color?: string | null
+}
+
+// ==================== HEALTH PROFILE ====================
+
+export interface PetHealthProfileResponse {
+  petHealthProfileId: string
+  petId: string
+  currentWeightKg: number | null
+  color: string | null
+  isNeutered: string | null
+  allergies: string | null
+  chronicConditions: string | null
+  microchipNumber: string | null
+  createdAt: string
+  updatedAt: string | null
+}
+
+export interface CreatePetHealthProfileRequest {
+  currentWeightKg?: number
+  color?: string
+  isNeutered?: string
+  allergies?: string
+  chronicConditions?: string
+  microchipNumber?: string
+}
+
+export interface UpdatePetHealthProfileRequest {
+  currentWeightKg?: number | null
+  color?: string | null
+  isNeutered?: string | null
+  allergies?: string | null
+  chronicConditions?: string | null
+  microchipNumber?: string | null
+}
+
+// ==================== WEIGHT LOGS ====================
 
 export interface PetWeightLogResponse {
   weightLogId: string
   petId: string
   weightKg: number
-  recordedAt: string
-  notes: string | null
+  measuredAt: string  // DateTime ISO
+  source: string | null
+  note: string | null
+  createdAt: string
 }
+
+export interface CreatePetWeightLogRequest {
+  weightKg: number
+  measuredAt: string  // DateTime ISO
+  source?: string
+  note?: string
+}
+
+// ==================== MEDICAL RECORDS ====================
 
 export interface PetMedicalRecordResponse {
   medicalRecordId: string
   petId: string
-  clinicId: string
-  diagnosis: string
-  treatment: string
-  prescribedMedications: string[]
-  vetNotes: string | null
-  nextFollowUpDate: string | null
-  recordDate: string
+  recordType: string
+  title: string
+  description: string | null
+  recordDate: string  // DateOnly ISO
+  vetName: string | null
+  clinicName: string | null
+  medicationName: string | null
+  dosage: string | null
+  startDate: string | null
+  endDate: string | null
+  attachmentUrl: string | null
+  createdAt: string
+  updatedAt: string | null
 }
+
+export interface CreatePetMedicalRecordRequest {
+  recordType: string
+  title: string
+  description?: string
+  recordDate: string  // DateOnly ISO
+  vetName?: string
+  clinicName?: string
+  medicationName?: string
+  dosage?: string
+  startDate?: string
+  endDate?: string
+  attachmentUrl?: string
+}
+
+export interface UpdatePetMedicalRecordRequest {
+  recordType?: string
+  title?: string
+  description?: string | null
+  recordDate?: string
+  vetName?: string | null
+  clinicName?: string | null
+  medicationName?: string | null
+  dosage?: string | null
+  startDate?: string | null
+  endDate?: string | null
+  attachmentUrl?: string | null
+}
+
+// ==================== PHOTOS ====================
 
 export interface PetPhotoResponse {
   photoId: string
   petId: string
-  photoUrl: string
+  imageUrl: string
   caption: string | null
-  isPrimary: boolean
-  uploadedAt: string
+  isAvatar: boolean
+  takenAt: string | null
+  createdAt: string
 }
+
+export interface CreatePetPhotoRequest {
+  imageUrl: string
+  caption?: string
+  isAvatar: boolean
+  takenAt?: string
+}
+
+export interface UpdatePetPhotoRequest {
+  caption?: string | null
+  setAsAvatar?: boolean | null
+}
+
+// ==================== USER ACCESS / SHARING ====================
 
 export interface PetUserAccessResponse {
   petUserAccessId: string
   petId: string
   userId: string
-  accessRole: string
+  accessRole: string  // "Viewer" | "Editor"
   grantedByUserId: string | null
   expiresAt: string | null
   isExpired: boolean
   createdAt: string
+}
+
+export interface GrantPetAccessRequest {
+  userId: string
+  accessRole: string  // "Viewer" | "Editor"
+  expiresAt?: string  // DateTime ISO
+}
+
+export interface UpdatePetAccessRequest {
+  accessRole: string
+  expiresAt?: string | null
 }

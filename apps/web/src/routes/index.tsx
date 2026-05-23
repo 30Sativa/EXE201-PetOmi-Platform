@@ -25,6 +25,7 @@ import OwnerAppointmentsPage from "@/pages/dashboard/owner/OwnerAppointmentsPage
 import OwnerHistoryPage from "@/pages/dashboard/owner/OwnerHistoryPage"
 import OwnerNotificationsPage from "@/pages/dashboard/owner/OwnerNotificationsPage"
 import OwnerPetSharingPage from "@/pages/dashboard/owner/OwnerPetSharingPage"
+import OwnerPetDetailPage from "@/pages/dashboard/owner/OwnerPetDetailPage"
 import OwnerPetsPage from "@/pages/dashboard/owner/OwnerPetsPage"
 import OwnerProfilePage from "@/pages/dashboard/owner/OwnerProfilePage"
 import OwnerRemindersPage from "@/pages/dashboard/owner/OwnerRemindersPage"
@@ -107,6 +108,10 @@ const router = createBrowserRouter([
           {
             path: "pets",
             element: <OwnerPetsPage />,
+          },
+          {
+            path: "pets/:petId",
+            element: <OwnerPetDetailPage />,
           },
           {
             path: "appointments",

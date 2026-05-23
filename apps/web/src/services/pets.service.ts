@@ -1,8 +1,22 @@
 import { api } from "@/lib/axios"
 import type {
+  CreatePetHealthProfileRequest,
+  CreatePetMedicalRecordRequest,
+  CreatePetPhotoRequest,
+  CreatePetRequest,
+  CreatePetWeightLogRequest,
+  GrantPetAccessRequest,
+  PetHealthProfileResponse,
+  PetMedicalRecordResponse,
   PetPhotoResponse,
   PetResponse,
   PetUserAccessResponse,
+  PetWeightLogResponse,
+  UpdatePetAccessRequest,
+  UpdatePetHealthProfileRequest,
+  UpdatePetMedicalRecordRequest,
+  UpdatePetPhotoRequest,
+  UpdatePetRequest,
 } from "@/types"
 
 const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
@@ -28,21 +42,17 @@ export const getPetByIdApi = async (petId: string): Promise<PetResponse> => {
 }
 
 export const createPetApi = async (
-  data: FormData,
+  data: CreatePetRequest,
 ): Promise<PetResponse> => {
-  const response = await api.post("/pets", data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  })
+  const response = await api.post("/pets", data)
   return unwrapResponse<PetResponse>(response)
 }
 
 export const updatePetApi = async (
   petId: string,
-  data: FormData,
+  data: UpdatePetRequest,
 ): Promise<PetResponse> => {
-  const response = await api.put(`/pets/${petId}`, data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  })
+  const response = await api.put(`/pets/${petId}`, data)
   return unwrapResponse<PetResponse>(response)
 }
 
@@ -54,59 +64,90 @@ export const deletePetApi = async (petId: string): Promise<void> => {
 
 export const getPetHealthProfileApi = async (
   petId: string,
-): Promise<Record<string, unknown>> => {
+): Promise<PetHealthProfileResponse> => {
   const response = await api.get(`/pets/${petId}/health-profile`)
-  return unwrapResponse<Record<string, unknown>>(response)
+  return unwrapResponse<PetHealthProfileResponse>(response)
 }
 
 export const createPetHealthProfileApi = async (
   petId: string,
-  data: Record<string, unknown>,
-): Promise<Record<string, unknown>> => {
+  data: CreatePetHealthProfileRequest,
+): Promise<PetHealthProfileResponse> => {
   const response = await api.post(`/pets/${petId}/health-profile`, data)
-  return unwrapResponse<Record<string, unknown>>(response)
+  return unwrapResponse<PetHealthProfileResponse>(response)
 }
 
 export const updatePetHealthProfileApi = async (
   petId: string,
-  data: Record<string, unknown>,
-): Promise<Record<string, unknown>> => {
+  data: UpdatePetHealthProfileRequest,
+): Promise<PetHealthProfileResponse> => {
   const response = await api.put(`/pets/${petId}/health-profile`, data)
-  return unwrapResponse<Record<string, unknown>>(response)
+  return unwrapResponse<PetHealthProfileResponse>(response)
 }
 
 // ==================== PET WEIGHT LOGS ====================
 
 export const getPetWeightLogsApi = async (
   petId: string,
-): Promise<Record<string, unknown>[]> => {
+): Promise<PetWeightLogResponse[]> => {
   const response = await api.get(`/pets/${petId}/weight-logs`)
-  return unwrapResponse<Record<string, unknown>[]>(response)
+  const result = unwrapResponse<PetWeightLogResponse[]>(response)
+  return Array.isArray(result) ? result : []
 }
 
 export const createPetWeightLogApi = async (
   petId: string,
-  data: Record<string, unknown>,
-): Promise<Record<string, unknown>> => {
+  data: CreatePetWeightLogRequest,
+): Promise<PetWeightLogResponse> => {
   const response = await api.post(`/pets/${petId}/weight-logs`, data)
-  return unwrapResponse<Record<string, unknown>>(response)
+  return unwrapResponse<PetWeightLogResponse>(response)
+}
+
+export const deletePetWeightLogApi = async (
+  petId: string,
+  weightLogId: string,
+): Promise<void> => {
+  await api.delete(`/pets/${petId}/weight-logs/${weightLogId}`)
 }
 
 // ==================== PET MEDICAL RECORDS ====================
 
 export const getPetMedicalRecordsApi = async (
   petId: string,
-): Promise<Record<string, unknown>[]> => {
-  const response = await api.get(`/pets/${petId}/medical-records`)
-  return unwrapResponse<Record<string, unknown>[]>(response)
+  recordType?: string,
+): Promise<PetMedicalRecordResponse[]> => {
+  const response = await api.get(`/pets/${petId}/medical-records`, {
+    params: recordType ? { recordType } : undefined,
+  })
+  const result = unwrapResponse<PetMedicalRecordResponse[]>(response)
+  return Array.isArray(result) ? result : []
 }
 
 export const createPetMedicalRecordApi = async (
   petId: string,
-  data: Record<string, unknown>,
-): Promise<Record<string, unknown>> => {
+  data: CreatePetMedicalRecordRequest,
+): Promise<PetMedicalRecordResponse> => {
   const response = await api.post(`/pets/${petId}/medical-records`, data)
-  return unwrapResponse<Record<string, unknown>>(response)
+  return unwrapResponse<PetMedicalRecordResponse>(response)
+}
+
+export const updatePetMedicalRecordApi = async (
+  petId: string,
+  medicalRecordId: string,
+  data: UpdatePetMedicalRecordRequest,
+): Promise<PetMedicalRecordResponse> => {
+  const response = await api.put(
+    `/pets/${petId}/medical-records/${medicalRecordId}`,
+    data,
+  )
+  return unwrapResponse<PetMedicalRecordResponse>(response)
+}
+
+export const deletePetMedicalRecordApi = async (
+  petId: string,
+  medicalRecordId: string,
+): Promise<void> => {
+  await api.delete(`/pets/${petId}/medical-records/${medicalRecordId}`)
 }
 
 // ==================== PET PHOTOS ====================
@@ -115,7 +156,32 @@ export const getPetPhotosApi = async (
   petId: string,
 ): Promise<PetPhotoResponse[]> => {
   const response = await api.get(`/pets/${petId}/photos`)
-  return unwrapResponse<PetPhotoResponse[]>(response)
+  const result = unwrapResponse<PetPhotoResponse[]>(response)
+  return Array.isArray(result) ? result : []
+}
+
+export const createPetPhotoApi = async (
+  petId: string,
+  data: CreatePetPhotoRequest,
+): Promise<PetPhotoResponse> => {
+  const response = await api.post(`/pets/${petId}/photos`, data)
+  return unwrapResponse<PetPhotoResponse>(response)
+}
+
+export const updatePetPhotoApi = async (
+  petId: string,
+  photoId: string,
+  data: UpdatePetPhotoRequest,
+): Promise<PetPhotoResponse> => {
+  const response = await api.put(`/pets/${petId}/photos/${photoId}`, data)
+  return unwrapResponse<PetPhotoResponse>(response)
+}
+
+export const deletePetPhotoApi = async (
+  petId: string,
+  photoId: string,
+): Promise<void> => {
+  await api.delete(`/pets/${petId}/photos/${photoId}`)
 }
 
 // ==================== PET ACCESS (SHARING) ====================
@@ -124,20 +190,30 @@ export const getPetAccessApi = async (
   petId: string,
 ): Promise<PetUserAccessResponse[]> => {
   const response = await api.get(`/pets/${petId}/access`)
-  return unwrapResponse<PetUserAccessResponse[]>(response)
+  const result = unwrapResponse<PetUserAccessResponse[]>(response)
+  return Array.isArray(result) ? result : []
 }
 
 export const sharePetAccessApi = async (
   petId: string,
-  data: Record<string, unknown>,
+  data: GrantPetAccessRequest,
 ): Promise<PetUserAccessResponse> => {
   const response = await api.post(`/pets/${petId}/access`, data)
   return unwrapResponse<PetUserAccessResponse>(response)
 }
 
+export const updatePetAccessApi = async (
+  petId: string,
+  accessId: string,
+  data: UpdatePetAccessRequest,
+): Promise<PetUserAccessResponse> => {
+  const response = await api.put(`/pets/${petId}/access/${accessId}`, data)
+  return unwrapResponse<PetUserAccessResponse>(response)
+}
+
 export const revokePetAccessApi = async (
   petId: string,
-  userId: string,
+  accessId: string,
 ): Promise<void> => {
-  await api.delete(`/pets/${petId}/access/${userId}`)
+  await api.delete(`/pets/${petId}/access/${accessId}`)
 }

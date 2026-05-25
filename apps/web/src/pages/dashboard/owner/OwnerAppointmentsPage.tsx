@@ -10,7 +10,6 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getOwnerAppointmentsApi, cancelAppointmentApi } from "@/services/appointments.service"
 import { getPetsApi } from "@/services/pets.service"
-import { cn } from "@/lib/utils"
 import type { AppointmentListItemResponse } from "@/types"
 
 type StatusFilter = "all" | "upcoming" | "pending" | "confirmed" | "completed" | "cancelled"
@@ -198,18 +197,7 @@ export default function OwnerAppointmentsPage() {
         confirmLabel="Hủy lịch hẹn"
         variant="danger"
         isLoading={cancelMutation.isPending}
-      >
-        <div className="mt-4">
-          <label className="text-sm font-semibold text-po-text">Lý do hủy (tùy chọn)</label>
-          <textarea
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-            placeholder="Ví dụ: Thú cưng đã khỏi, lịch trình thay đổi..."
-            className="mt-2 w-full rounded-xl border border-po-border bg-white px-3 py-2 text-sm"
-            rows={3}
-          />
-        </div>
-      </ConfirmDialog>
+      />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ClipboardList, type LucideIcon } from "lucide-react"
+import { ClipboardList } from "lucide-react"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
@@ -9,7 +9,6 @@ import TabFilter from "@/components/ui/TabFilter"
 import { useQuery } from "@tanstack/react-query"
 import { getOwnerAppointmentsApi } from "@/services/appointments.service"
 import { getPetsApi } from "@/services/pets.service"
-import type { AppointmentListItemResponse } from "@/types"
 
 type StatusFilter = "all" | "completed" | "cancelled"
 
@@ -30,8 +29,6 @@ const formatDate = (dateStr: string) => {
     return dateStr
   }
 }
-
-const formatTime = (timeStr: string) => timeStr.slice(0, 5)
 
 // Mock medical records — backend chưa expose API riêng cho owner
 const mockMedicalRecords = [

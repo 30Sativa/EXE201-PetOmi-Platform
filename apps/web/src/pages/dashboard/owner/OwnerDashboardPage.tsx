@@ -18,7 +18,6 @@ import { useQuery } from "@tanstack/react-query"
 import { getPetsApi } from "@/services/pets.service"
 import { getOwnerAppointmentsApi } from "@/services/appointments.service"
 import { getRemindersApi } from "@/services/reminders.service"
-import { cn } from "@/lib/utils"
 import type { AppointmentListItemResponse } from "@/types"
 
 const formatDate = (dateStr: string) => {
@@ -38,6 +37,16 @@ const formatTime = (timeStr: string) => {
   return timeStr.slice(0, 5)
 }
 
+const getStatusLabel = (status: string) => {
+  const map: Record<string, string> = {
+    pending: "Chờ xác nhận",
+    confirmed: "Đã xác nhận",
+    completed: "Hoàn thành",
+    cancelled: "Đã hủy",
+  }
+  return map[status.toLowerCase()] ?? status
+}
+
 export default function OwnerDashboardPage() {
   const navigate = useNavigate()
 
@@ -51,7 +60,7 @@ export default function OwnerDashboardPage() {
     queryFn: () => getOwnerAppointmentsApi(),
   })
 
-  const { data: reminders, isLoading: loadingReminders } = useQuery({
+  const { data: reminders } = useQuery({
     queryKey: ["owner-reminders"],
     queryFn: getRemindersApi,
   })
@@ -79,18 +88,6 @@ export default function OwnerDashboardPage() {
     const pet = Array.isArray(pets) ? pets.find((p) => p.petId === petId) : undefined
     return pet?.name ?? "Không rõ"
   }
-
-  const getStatusLabel = (status: string) => {
-    const map: Record<string, string> = {
-      pending: "Chờ xác nhận",
-      confirmed: "Đã xác nhận",
-      completed: "Hoàn thành",
-      cancelled: "Đã hủy",
-    }
-    return map[status.toLowerCase()] ?? status
-  }
-
-  const isLoading = loadingPets || loadingAppts || loadingReminders
 
   return (
     <div className="grid gap-6">
@@ -187,7 +184,7 @@ export default function OwnerDashboardPage() {
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {pets.slice(0, 6).map((pet) => (
+            {(pets ?? []).slice(0, 6).map((pet) => (
               <div
                 key={pet.petId}
                 onClick={() => navigate(`/dashboard/owner/pets/${pet.petId}`)}

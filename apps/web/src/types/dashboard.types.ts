@@ -11,4 +11,5 @@ export interface DashboardSectionProps {
   subtitle?: string
   action?: React.ReactNode
   children: React.ReactNode
+  className?: string
 }

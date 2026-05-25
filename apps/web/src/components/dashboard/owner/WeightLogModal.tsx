@@ -1,5 +1,5 @@
 import { X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createPetWeightLogApi } from "@/services/pets.service"
 import type { CreatePetWeightLogRequest } from "@/types"

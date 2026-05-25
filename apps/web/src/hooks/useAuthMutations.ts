@@ -15,8 +15,6 @@ export function useDeleteSession() {
 }
 
 export function useDeleteAllSessions() {
-  const queryClient = useQueryClient()
-
   return useMutation<{ message: string }, Error>({
     mutationFn: deleteAllSessionsApi,
     onSuccess: () => {

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { useAuth } from "@/contexts/AuthContext"
-import { tokenStorage } from "@/lib/tokenStorage"
 
 export function useGoogleLogin() {
   const navigate = useNavigate()
@@ -36,7 +35,6 @@ export function useGoogleLogin() {
 
   const login = useCallback(() => {
     const googleAuthUrl = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:7297/api"}/auth/google/login`
-    const callbackUrl = `${window.location.origin}/auth/callback`
 
     const width = 500
     const height = 600

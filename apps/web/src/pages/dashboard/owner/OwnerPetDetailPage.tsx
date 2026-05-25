@@ -10,7 +10,6 @@ import {
   Plus,
   Scale,
   Trash2,
-  UserRound,
   Weight,
 } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -245,7 +244,7 @@ export default function OwnerPetDetailPage() {
 
       {/* Hero */}
       <div className="flex items-center gap-4 rounded-[24px] border border-po-border bg-white p-5">
-        <Avatar src={pet.avatarUrl} alt={pet.name} size="2xl" />
+        <Avatar src={pet.avatarUrl} alt={pet.name} size="xl" />
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-extrabold text-po-text">{pet.name}</h2>
@@ -312,14 +311,12 @@ export default function OwnerPetDetailPage() {
           {activeTab === "weight" && (
             <WeightTab
               logs={weightLogs}
-              petId={petId!}
               onAdd={() => setIsWeightModalOpen(true)}
             />
           )}
           {activeTab === "medical" && (
             <MedicalTab
               records={medicalRecords}
-              petId={petId!}
               onAdd={() => setIsMedicalModalOpen(true)}
               onEdit={(record) => {
                 setEditingMedicalRecord(record)
@@ -336,7 +333,6 @@ export default function OwnerPetDetailPage() {
           {activeTab === "sharing" && (
             <SharingTab
               accessList={accessList}
-              petId={petId!}
               petName={pet.name}
             />
           )}
@@ -533,11 +529,9 @@ function HealthTab({
 
 function WeightTab({
   logs,
-  petId,
   onAdd,
 }: {
   logs?: PetWeightLogResponse[] | null
-  petId: string
   onAdd: () => void
 }) {
   const latestWeight = logs && logs.length > 0 ? logs[0].weightKg : null
@@ -634,12 +628,10 @@ function WeightTab({
 
 function MedicalTab({
   records,
-  petId,
   onAdd,
   onEdit,
 }: {
   records?: PetMedicalRecordResponse[] | null
-  petId: string
   onAdd: () => void
   onEdit: (record: PetMedicalRecordResponse) => void
 }) {
@@ -792,11 +784,9 @@ function PhotosTab({
 
 function SharingTab({
   accessList,
-  petId,
   petName,
 }: {
   accessList?: PetUserAccessResponse[] | null
-  petId: string
   petName: string
 }) {
   const activeCount = (accessList ?? []).filter((a) => !a.isExpired).length
@@ -817,7 +807,7 @@ function SharingTab({
 
       {/* Access List */}
       <DashboardSection title={`Quản lý chia sẻ ${petName}`}>
-        {(accessList ?? []).length === 0 ? (
+        {accessList && accessList.length > 0 ? (
           <EmptyState
             icon={Link2}
             title="Chưa có ai được chia sẻ quyền truy cập"
@@ -825,13 +815,13 @@ function SharingTab({
           />
         ) : (
           <div className="grid gap-3">
-            {accessList.map((access) => (
+            {accessList!.map((access) => (
               <div
                 key={access.petUserAccessId}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-po-border bg-white px-4 py-3"
               >
                 <div className="flex items-center gap-3">
-                  <Avatar fallback={access.userId.slice(0, 2).toUpperCase()} size="sm" />
+                  <Avatar fallback={access.userId.slice(0, 2).toUpperCase()} size="sm" alt={access.userId} />
                   <div>
                     <p className="font-bold text-po-text">{access.userId}</p>
                     <div className="flex flex-wrap items-center gap-2">

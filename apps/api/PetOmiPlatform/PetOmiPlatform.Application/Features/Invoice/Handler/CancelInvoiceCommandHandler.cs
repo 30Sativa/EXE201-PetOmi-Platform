@@ -1,5 +1,6 @@
 using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Features.Invoice.Command;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Application.Interfaces;
@@ -9,13 +10,16 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
     public class CancelInvoiceCommandHandler : IRequestHandler<CancelInvoiceCommand, bool>
     {
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CancelInvoiceCommandHandler(
             IInvoiceRepository invoiceRepository,
+            IVetClinicRepository vetClinicRepository,
             IUnitOfWork unitOfWork)
         {
             _invoiceRepository = invoiceRepository;
+            _vetClinicRepository = vetClinicRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -27,6 +31,9 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
 
             if (invoice.ClinicId != request.ClinicId)
                 throw new ForbiddenException("Không có quyền hủy hóa đơn này.");
+
+            var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
+            ClinicRoleGuard.RequireInvoiceWriter(staff);
 
             invoice.Cancel();
 

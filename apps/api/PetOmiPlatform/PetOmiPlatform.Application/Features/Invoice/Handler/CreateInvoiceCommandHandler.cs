@@ -1,7 +1,9 @@
 using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Features.Invoice.Command;
 using PetOmiPlatform.Application.Features.Invoice.DTOs.Response;
+using PetOmiPlatform.Application.Features.Invoice.Mappers;
 using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
@@ -13,15 +15,18 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
     {
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateInvoiceCommandHandler(
             IAppointmentRepository appointmentRepository,
             IInvoiceRepository invoiceRepository,
+            IVetClinicRepository vetClinicRepository,
             IUnitOfWork unitOfWork)
         {
             _appointmentRepository = appointmentRepository;
             _invoiceRepository = invoiceRepository;
+            _vetClinicRepository = vetClinicRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -33,6 +38,9 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
 
             if (appointment.ClinicId != request.ClinicId)
                 throw new ForbiddenException("Không có quyền tạo hóa đơn cho lịch hẹn này.");
+
+            var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
+            ClinicRoleGuard.RequireInvoiceWriter(staff);
 
             var hasActiveInvoice = await _invoiceRepository.HasActiveInvoiceAsync(request.Payload.AppointmentId);
             if (hasActiveInvoice)
@@ -61,30 +69,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             await _invoiceRepository.AddItemsAsync(items);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new InvoiceResponse
-            {
-                Id = invoice.Id,
-                AppointmentId = invoice.AppointmentId,
-                ExaminationId = invoice.ExaminationId,
-                ClinicId = invoice.ClinicId,
-                TotalAmount = invoice.TotalAmount,
-                DiscountAmount = invoice.DiscountAmount,
-                FinalAmount = invoice.FinalAmount,
-                Status = invoice.Status.ToString(),
-                Notes = invoice.Notes,
-                CreatedAt = invoice.CreatedAt,
-                Items = items.Select(i => new InvoiceItemResponse
-                {
-                    Id = i.Id,
-                    ItemType = i.ItemType.ToString(),
-                    Description = i.Description,
-                    Quantity = i.Quantity,
-                    UnitPrice = i.UnitPrice,
-                    TotalPrice = i.TotalPrice,
-                    ServiceId = i.ServiceId,
-                    InventoryItemId = i.InventoryItemId
-                }).ToList()
-            };
+            return invoice.ToResponse(items);
         }
     }
 }

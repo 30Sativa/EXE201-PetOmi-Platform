@@ -20,6 +20,7 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Request
         public bool IsBirthDateEstimated { get; set; }      // true = ngày sinh là ước tính
 
         public string? AvatarUrl { get; set; }              // URL ảnh đại diện
+        public string? AvatarCloudinaryPublicId { get; set; } // PublicId trên Cloudinary
 
         public string? Color { get; set; }                  // Màu lông / đặc điểm nhận dạng
     }

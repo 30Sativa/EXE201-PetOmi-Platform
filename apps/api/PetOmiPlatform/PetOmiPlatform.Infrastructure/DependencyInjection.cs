@@ -41,6 +41,10 @@ namespace PetOmiPlatform.Infrastructure
             services.Configure<JwtSettings>(
                 configuration.GetSection("JwtSettings"));
 
+            // Cloudinary Settings
+            services.Configure<CloudinarySettings>(
+                configuration.GetSection("Cloudinary"));
+
             // Jwt
             var jwtSection = configuration.GetSection("JwtSettings");
             services.Configure<JwtSettings>(jwtSection);
@@ -113,6 +117,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
             // Services
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IPetAccessService, PetAccessService>();
 
             // Reminders
             services.AddScoped<IReminderRepository, ReminderRepository>();

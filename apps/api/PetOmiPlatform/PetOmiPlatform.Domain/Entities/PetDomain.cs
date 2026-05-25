@@ -14,6 +14,7 @@ namespace PetOmiPlatform.Domain.Entities
         public DateOnly? DateOfBirth { get; private set; }
         public bool IsBirthDateEstimated { get; private set; }
         public string? AvatarUrl { get; private set; }
+        public string? AvatarCloudinaryPublicId { get; private set; }
         public bool IsActive { get; private set; }
         public DateTime? DeletedAt { get; private set; }
         public DateTime CreatedAt { get; private set; }
@@ -32,7 +33,8 @@ namespace PetOmiPlatform.Domain.Entities
             string? gender,
             DateOnly? dateOfBirth,
             bool isBirthDateEstimated,
-            string? avatarUrl)
+            string? avatarUrl,
+            string? avatarCloudinaryPublicId)
         {
             Id = Guid.NewGuid();
             OwnerUserId = ownerUserId;
@@ -43,6 +45,7 @@ namespace PetOmiPlatform.Domain.Entities
             DateOfBirth = dateOfBirth;
             IsBirthDateEstimated = isBirthDateEstimated;
             AvatarUrl = avatarUrl;
+            AvatarCloudinaryPublicId = avatarCloudinaryPublicId;
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
         }
@@ -58,12 +61,13 @@ namespace PetOmiPlatform.Domain.Entities
             string? gender,
             DateOnly? dateOfBirth,
             bool isBirthDateEstimated,
-            string? avatarUrl)
+            string? avatarUrl,
+            string? avatarCloudinaryPublicId = null)
         {
             return new PetDomain(
                 ownerUserId, name, species, breed,
                 gender, dateOfBirth,
-                isBirthDateEstimated, avatarUrl);
+                isBirthDateEstimated, avatarUrl, avatarCloudinaryPublicId);
         }
 
         // Khôi phục đối tượng từ dữ liệu DB (dùng trong repository)
@@ -77,6 +81,7 @@ namespace PetOmiPlatform.Domain.Entities
             DateOnly? dateOfBirth,
             bool isBirthDateEstimated,
             string? avatarUrl,
+            string? avatarCloudinaryPublicId,
             bool isActive,
             DateTime? deletedAt,
             DateTime createdAt,
@@ -93,6 +98,7 @@ namespace PetOmiPlatform.Domain.Entities
                 DateOfBirth = dateOfBirth,
                 IsBirthDateEstimated = isBirthDateEstimated,
                 AvatarUrl = avatarUrl,
+                AvatarCloudinaryPublicId = avatarCloudinaryPublicId,
                 IsActive = isActive,
                 DeletedAt = deletedAt,
                 CreatedAt = createdAt,
@@ -110,7 +116,8 @@ namespace PetOmiPlatform.Domain.Entities
             string? gender,
             DateOnly? dateOfBirth,
             bool? isBirthDateEstimated,
-            string? avatarUrl)
+            string? avatarUrl,
+            string? avatarCloudinaryPublicId)
         {
             if (name != null) Name = name;
             if (species != null) Species = species;
@@ -119,6 +126,7 @@ namespace PetOmiPlatform.Domain.Entities
             if (dateOfBirth != null) DateOfBirth = dateOfBirth;
             if (isBirthDateEstimated != null) IsBirthDateEstimated = isBirthDateEstimated.Value;
             if (avatarUrl != null) AvatarUrl = avatarUrl;
+            if (avatarCloudinaryPublicId != null) AvatarCloudinaryPublicId = avatarCloudinaryPublicId;
             UpdatedAt = DateTime.UtcNow;
         }
 

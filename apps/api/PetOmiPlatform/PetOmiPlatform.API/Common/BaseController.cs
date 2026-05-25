@@ -8,12 +8,9 @@ namespace PetOmiPlatform.API.Common
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class BaseController : ControllerBase
+    public class BaseController(IMediator mediator) : ControllerBase
     {
-        protected readonly IMediator Mediator;
-
-        protected BaseController(IMediator mediator)
-            => Mediator = mediator;
+        protected IMediator Mediator => mediator;
 
         protected Guid CurrentUserId
             => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);

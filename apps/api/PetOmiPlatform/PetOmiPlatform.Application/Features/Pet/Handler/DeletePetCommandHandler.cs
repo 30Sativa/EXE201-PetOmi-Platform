@@ -12,30 +12,27 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     {
         private readonly IPetRepository _petRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPetAccessService _accessService;
 
         public DeletePetCommandHandler(
             IPetRepository petRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPetAccessService accessService)
         {
             _petRepository = petRepository;
             _unitOfWork = unitOfWork;
+            _accessService = accessService;
         }
 
         public async Task Handle(DeletePetCommand command, CancellationToken cancellationToken)
         {
-            // 1. Tìm pet — không tìm thấy hoặc đã xóa thì báo lỗi
             var pet = await _petRepository.GetByIdAsync(command.PetId)
                 ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
-            // 2. Kiểm tra quyền sở hữu
-            pet.EnsureOwner(command.UserId);
+            await _accessService.EnsureOwnerAsync(pet, command.UserId, cancellationToken);
 
-            // 3. Domain tự xử lý logic xóa mềm — set IsActive=false, DeletedAt=now
             pet.SoftDelete();
-
             await _petRepository.UpdateAsync(pet);
-
-            // 4. Lưu DB
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }

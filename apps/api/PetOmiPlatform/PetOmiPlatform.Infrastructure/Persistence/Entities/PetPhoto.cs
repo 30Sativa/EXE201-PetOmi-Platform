@@ -11,6 +11,8 @@ public partial class PetPhoto
 
     public string ImageUrl { get; set; } = null!;
 
+    public string? CloudinaryPublicId { get; set; }
+
     public string? Caption { get; set; }
 
     public bool IsAvatar { get; set; }

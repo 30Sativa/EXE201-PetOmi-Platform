@@ -8,5 +8,6 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Request
         public string? Email { get; set; }
         public string? LicenseNumber { get; set; }
         public string? LicenseImageUrl { get; set; }  // URL ảnh GKPD đã upload
+        public string? LicenseCloudinaryPublicId { get; set; } // PublicId ảnh GKPD trên Cloudinary
     }
 }

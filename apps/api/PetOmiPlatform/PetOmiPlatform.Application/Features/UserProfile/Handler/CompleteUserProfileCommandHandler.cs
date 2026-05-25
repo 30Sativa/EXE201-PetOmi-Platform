@@ -42,6 +42,7 @@ namespace PetOmiPlatform.Application.Features.UserProfile.Handler
                     fullName: request.Request.FullName,
                     phone: request.Request.Phone,
                     avatarUrl: request.Request.AvatarUrl,
+                    avatarCloudinaryPublicId: request.Request.AvatarCloudinaryPublicId,
                     dateOfBirth: request.Request.DateOfBirth,
                     gender: request.Request.Gender,
                     address: request.Request.Address
@@ -55,6 +56,7 @@ namespace PetOmiPlatform.Application.Features.UserProfile.Handler
                     fullName: request.Request.FullName,
                     phone: request.Request.Phone,
                     avatarUrl: request.Request.AvatarUrl,
+                    avatarCloudinaryPublicId: request.Request.AvatarCloudinaryPublicId,
                     dateOfBirth: request.Request.DateOfBirth,
                     gender: request.Request.Gender,
                     address: request.Request.Address

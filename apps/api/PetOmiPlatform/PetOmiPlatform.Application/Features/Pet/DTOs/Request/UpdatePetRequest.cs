@@ -12,6 +12,7 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Request
         public DateOnly? DateOfBirth { get; set; }
         public bool? IsBirthDateEstimated { get; set; }
         public string? AvatarUrl { get; set; }
+        public string? AvatarCloudinaryPublicId { get; set; }
         public string? Color { get; set; }
     }
 }

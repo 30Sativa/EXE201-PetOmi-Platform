@@ -5,6 +5,7 @@ using PetOmiPlatform.API.Common.Authorization;
 using PetOmiPlatform.API.Hubs;
 using PetOmiPlatform.API.Middlewares;
 using PetOmiPlatform.API.Services;
+using PetOmiPlatform.API.Swagger;
 using PetOmiPlatform.Application;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Common.Constants;
@@ -69,6 +70,8 @@ builder.Services.AddSwaggerGen(c =>
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
         c.IncludeXmlComments(xmlPath);
+
+    c.OperationFilter<FileUploadOperationFilter>();
 });
 
 // Application layer

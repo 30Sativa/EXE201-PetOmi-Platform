@@ -3,7 +3,6 @@ using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Pet.Command;
 using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
-using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System;
 using System.Threading;
@@ -16,15 +15,18 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
         private readonly IPetRepository _petRepository;
         private readonly IPetUserAccessRepository _accessRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPetAccessService _accessService;
 
         public UpdatePetAccessCommandHandler(
             IPetRepository petRepository,
             IPetUserAccessRepository accessRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPetAccessService accessService)
         {
             _petRepository = petRepository;
             _accessRepository = accessRepository;
             _unitOfWork = unitOfWork;
+            _accessService = accessService;
         }
 
         public async Task<PetUserAccessResponse> Handle(UpdatePetAccessCommand command, CancellationToken cancellationToken)
@@ -32,7 +34,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             var pet = await _petRepository.GetByIdAsync(command.PetId)
                 ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
-            pet.EnsureOwner(command.UserId);
+            await _accessService.EnsureOwnerAsync(pet, command.UserId, cancellationToken);
 
             var access = await _accessRepository.GetByIdAsync(command.AccessId)
                 ?? throw new NotFoundException("Không tìm thấy quyền truy cập.");

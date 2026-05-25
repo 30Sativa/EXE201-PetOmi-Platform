@@ -23,6 +23,8 @@ public partial class Pet
 
     public string? AvatarUrl { get; set; }
 
+    public string? AvatarCloudinaryPublicId { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTime? DeletedAt { get; set; }

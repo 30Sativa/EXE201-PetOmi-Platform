@@ -213,8 +213,10 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.Description).HasMaxLength(1000);
             entity.Property(e => e.Email).HasMaxLength(255);
             entity.Property(e => e.LicenseImageUrl).HasMaxLength(500);
+            entity.Property(e => e.LicenseCloudinaryPublicId).HasMaxLength(500);
             entity.Property(e => e.LicenseNumber).HasMaxLength(100);
             entity.Property(e => e.LogoUrl).HasMaxLength(500);
+            entity.Property(e => e.LogoCloudinaryPublicId).HasMaxLength(500);
             entity.Property(e => e.Longitude).HasColumnType("float");
             entity.Property(e => e.Latitude).HasColumnType("float");
             entity.Property(e => e.AppointmentBufferMins).HasDefaultValue(0);
@@ -543,6 +545,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(500)
                 .HasColumnName("AvatarURL");
+            entity.Property(e => e.AvatarCloudinaryPublicId)
+                .HasMaxLength(500);
             entity.Property(e => e.Breed).HasMaxLength(100);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -596,6 +600,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.AttachmentUrl)
                 .HasMaxLength(500)
                 .HasColumnName("AttachmentURL");
+            entity.Property(e => e.AttachmentCloudinaryPublicId)
+                .HasMaxLength(500);
             entity.Property(e => e.ClinicName).HasMaxLength(200);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -631,6 +637,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.ImageUrl)
                 .HasMaxLength(500)
                 .HasColumnName("ImageURL");
+            entity.Property(e => e.CloudinaryPublicId)
+                .HasMaxLength(500);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.PetId).HasColumnName("PetID");
             entity.Property(e => e.TakenAt).HasColumnType("datetime");
@@ -919,6 +927,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(500)
                 .HasColumnName("AvatarURL");
+            entity.Property(e => e.AvatarCloudinaryPublicId)
+                .HasMaxLength(500);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");

@@ -29,7 +29,11 @@ public partial class Clinic
 
     public string? LicenseImageUrl { get; set; }
 
+    public string? LicenseCloudinaryPublicId { get; set; }
+
     public string? LogoUrl { get; set; }
+
+    public string? LogoCloudinaryPublicId { get; set; }
 
     public string? Description { get; set; }
 

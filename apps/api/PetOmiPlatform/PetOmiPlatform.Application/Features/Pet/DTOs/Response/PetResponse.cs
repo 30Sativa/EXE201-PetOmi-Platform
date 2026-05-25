@@ -23,6 +23,7 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Response
         public bool IsBirthDateEstimated { get; set; }
 
         public string? AvatarUrl { get; set; }
+        public string? AvatarCloudinaryPublicId { get; set; }
 
 
         public DateTime CreatedAt { get; set; }

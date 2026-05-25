@@ -9,6 +9,9 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
         public string? Email { get; set; }
         public string? LicenseNumber { get; set; }
         public string? LicenseImageUrl { get; set; }
+        public string? LicenseCloudinaryPublicId { get; set; }
+        public string? LogoUrl { get; set; }
+        public string? LogoCloudinaryPublicId { get; set; }
         public string Status { get; set; } = null!;          // Pending | Approved | Rejected
         public string? RejectedReason { get; set; }          // Lý do từ chối (nếu Rejected)
         public DateTime CreatedAt { get; set; }

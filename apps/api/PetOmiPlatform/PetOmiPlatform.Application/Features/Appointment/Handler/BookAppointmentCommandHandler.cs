@@ -15,6 +15,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IClinicRepository _clinicRepository;
         private readonly IClinicServiceRepository _serviceRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
         private readonly IPetRepository _petRepository;
         private readonly IReminderRepository _reminderRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -24,6 +25,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             IAppointmentRepository appointmentRepository,
             IClinicRepository clinicRepository,
             IClinicServiceRepository serviceRepository,
+            IVetClinicRepository vetClinicRepository,
             IPetRepository petRepository,
             IReminderRepository reminderRepository,
             IUnitOfWork unitOfWork,
@@ -32,6 +34,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             _appointmentRepository = appointmentRepository;
             _clinicRepository = clinicRepository;
             _serviceRepository = serviceRepository;
+            _vetClinicRepository = vetClinicRepository;
             _petRepository = petRepository;
             _reminderRepository = reminderRepository;
             _unitOfWork = unitOfWork;
@@ -43,12 +46,13 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         {
             var req = command.Request;
 
-            // 1. Validate clinic exists & approved
+            if (!req.VetClinicId.HasValue)
+                throw new ValidationException("VetClinicId", "Vui lòng chọn bác sĩ để đặt lịch.");
+
             var clinic = await _clinicRepository.GetByIdAsync(req.ClinicId)
                 ?? throw new NotFoundException("Clinic", req.ClinicId);
             clinic.EnsureApproved();
 
-            // 2. Tính EndTime dựa trên DurationMins của service (hoặc 30 phút mặc định)
             int durationMins = 30;
             if (req.ServiceId.HasValue)
             {
@@ -56,13 +60,24 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     ?? throw new NotFoundException("ClinicService", req.ServiceId.Value);
                 durationMins = service.DurationMins;
             }
-            var endTime = req.StartTime.AddMinutes(durationMins);
+            int bufferMins = clinic.AppointmentBufferMins;
+            int totalSlotMins = durationMins + bufferMins;
+            var endTime = req.StartTime.AddMinutes(totalSlotMins);
 
-            // 3. Parse appointment type
             if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var apptType))
                 throw new ValidationException("AppointmentType", $"Loại lịch hẹn không hợp lệ: {req.AppointmentType}");
 
-            // 4. Tạo domain (validate ngày không phải quá khứ)
+            var vetClinic = await _vetClinicRepository.GetByVetClinicIdAsync(req.VetClinicId.Value)
+                ?? throw new NotFoundException("Không tìm thấy bác sĩ.");
+
+            var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
+
+            bool hasConflict = await _appointmentRepository.HasDoctorConflictAcrossClinicsAsync(
+                allVetClinicIds, req.AppointmentDate, req.StartTime, endTime);
+
+            if (hasConflict)
+                throw new ConflictException("Bác sĩ đã có lịch hẹn trong khung giờ này tại một phòng khám khác.");
+
             var appointment = AppointmentDomain.Book(
                 clinicId: req.ClinicId,
                 petId: req.PetId,
@@ -74,11 +89,11 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 serviceId: req.ServiceId,
                 notes: req.Notes);
 
-            // 5. Lưu appointment
+            appointment.AssignDoctor(req.VetClinicId.Value);
+
             await _appointmentRepository.AddAsync(appointment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // 6. Auto-create recheck reminder
             var pet = await _petRepository.GetByIdAsync(req.PetId);
             if (pet != null)
             {

@@ -29,11 +29,21 @@ public partial class Clinic
 
     public string? LicenseImageUrl { get; set; }
 
+    public string? LicenseCloudinaryPublicId { get; set; }
+
     public string? LogoUrl { get; set; }
+
+    public string? LogoCloudinaryPublicId { get; set; }
 
     public string? Description { get; set; }
 
     public string? OpeningHours { get; set; }
+
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public int AppointmentBufferMins { get; set; } = 0;
 
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 

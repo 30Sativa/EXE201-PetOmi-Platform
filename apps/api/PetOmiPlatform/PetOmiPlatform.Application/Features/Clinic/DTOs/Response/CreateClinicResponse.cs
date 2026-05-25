@@ -10,6 +10,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
         public string? Email { get; set; }
         public string? LicenseNumber { get; set; }
         public string? LicenseImageUrl { get; set; }
+        public string? LicenseCloudinaryPublicId { get; set; }
         public string Status { get; set; } = null!;
     }
 }

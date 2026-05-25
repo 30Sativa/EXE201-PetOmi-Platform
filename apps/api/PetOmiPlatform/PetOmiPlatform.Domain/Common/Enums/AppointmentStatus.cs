@@ -8,6 +8,7 @@ namespace PetOmiPlatform.Domain.Common.Enums
         Completed,
         Cancelled,
         Rejected,
-        Expired
+        Expired,
+        NoShow
     }
 }

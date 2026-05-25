@@ -15,14 +15,19 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 email: entity.Email,
                 licenseNumber: entity.LicenseNumber,
                 licenseImageUrl: entity.LicenseImageUrl,
+                licenseCloudinaryPublicId: entity.LicenseCloudinaryPublicId,
                 logoUrl: entity.LogoUrl,
+                logoCloudinaryPublicId: entity.LogoCloudinaryPublicId,
                 description: entity.Description,
                 openingHours: entity.OpeningHours,
                 status: entity.Status,
                 rejectedReason: entity.RejectedReason,
                 reviewedByAdminId: entity.ReviewedByAdminId,
                 createdAt: entity.CreatedAt,
-                updatedAt: entity.UpdatedAt
+                updatedAt: entity.UpdatedAt,
+                latitude: entity.Latitude,
+                longitude: entity.Longitude,
+                appointmentBufferMins: entity.AppointmentBufferMins
             );
         }
 
@@ -37,9 +42,14 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 Email = domain.Email,
                 LicenseNumber = domain.LicenseNumber,
                 LicenseImageUrl = domain.LicenseImageUrl,
+                LicenseCloudinaryPublicId = domain.LicenseCloudinaryPublicId,
                 LogoUrl = domain.LogoUrl,
+                LogoCloudinaryPublicId = domain.LogoCloudinaryPublicId,
                 Description = domain.Description,
                 OpeningHours = domain.OpeningHours,
+                Latitude = domain.Latitude,
+                Longitude = domain.Longitude,
+                AppointmentBufferMins = domain.AppointmentBufferMins,
                 Status = domain.Status.ToString(),
                 RejectedReason = domain.RejectedReason,
                 ReviewedByAdminId = domain.ReviewedByAdminId,

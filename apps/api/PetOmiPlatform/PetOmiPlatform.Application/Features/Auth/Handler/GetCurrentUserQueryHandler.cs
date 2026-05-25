@@ -54,6 +54,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                         FullName = profile.FullName,
                         Phone = profile.Phone,
                         AvatarUrl = profile.AvatarUrl,
+                        AvatarCloudinaryPublicId = profile.AvatarCloudinaryPublicId,
                         DateOfBirth = profile.DateOfBirth,
                         Gender = profile.Gender,
                         Address = profile.Address

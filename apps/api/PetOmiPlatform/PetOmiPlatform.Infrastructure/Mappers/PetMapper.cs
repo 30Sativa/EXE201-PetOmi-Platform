@@ -18,6 +18,7 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 dateOfBirth: entity.DateOfBirth,
                 isBirthDateEstimated: entity.IsBirthDateEstimated,
                 avatarUrl: entity.AvatarUrl,
+                avatarCloudinaryPublicId: entity.AvatarCloudinaryPublicId,
                 isActive: entity.IsActive,
                 deletedAt: entity.DeletedAt,
                 createdAt: entity.CreatedAt,
@@ -25,7 +26,6 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             );
         }
 
-        // Chuyển từ Domain object → EF entity (dùng khi ghi vào DB)
         public static Pet ToEntity(this PetDomain domain)
         {
             return new Pet
@@ -39,6 +39,7 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 DateOfBirth = domain.DateOfBirth,
                 IsBirthDateEstimated = domain.IsBirthDateEstimated,
                 AvatarUrl = domain.AvatarUrl,
+                AvatarCloudinaryPublicId = domain.AvatarCloudinaryPublicId,
                 IsActive = domain.IsActive,
                 DeletedAt = domain.DeletedAt,
                 CreatedAt = domain.CreatedAt,

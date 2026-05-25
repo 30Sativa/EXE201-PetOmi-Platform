@@ -79,8 +79,48 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         {
             var entity = await _context.VetClinics
                 .FirstOrDefaultAsync(vc => vc.VetProfile.UserId == userId && vc.ClinicId == clinicId && vc.IsActive);
-            
+
             return entity?.ToDomain();
+        }
+
+        public async Task<VetClinicDomain?> GetByVetClinicIdAsync(Guid vetClinicId)
+        {
+            var entity = await _context.VetClinics
+                .FirstOrDefaultAsync(vc => vc.VetClinicId == vetClinicId);
+            return entity?.ToDomain();
+        }
+
+        public async Task<List<Guid>> GetAllVetClinicIdsAsync(Guid vetProfileId)
+        {
+            return await _context.VetClinics
+                .Where(vc => vc.VetProfileId == vetProfileId && vc.IsActive)
+                .Select(vc => vc.VetClinicId)
+                .ToListAsync();
+        }
+
+        public async Task<List<ClinicDoctorDto>> GetClinicDoctorsAsync(Guid clinicId)
+        {
+            return await _context.VetClinics
+                .Where(vc => vc.ClinicId == clinicId && vc.IsActive)
+                .Include(vc => vc.VetProfile)
+                    .ThenInclude(vp => vp.User!)
+                        .ThenInclude(u => u.UserProfile)
+                .Include(vc => vc.Role)
+                .Where(vc => vc.VetProfile.IsActive)
+                .Select(vc => new ClinicDoctorDto
+                {
+                    VetClinicId = vc.VetClinicId,
+                    VetProfileId = vc.VetProfile.VetProfileId,
+                    UserId = vc.VetProfile.UserId,
+                    FullName = vc.VetProfile.User != null && vc.VetProfile.User.UserProfile != null
+                        ? vc.VetProfile.User.UserProfile.FullName
+                        : (vc.VetProfile.User != null ? vc.VetProfile.User.Email : "Unknown"),
+                    AvatarUrl = vc.VetProfile.User != null && vc.VetProfile.User.UserProfile != null
+                        ? vc.VetProfile.User.UserProfile.AvatarUrl : null,
+                    Specialization = vc.VetProfile.Specialization,
+                    RoleName = vc.Role.RoleName
+                })
+                .ToListAsync();
         }
     }
 }

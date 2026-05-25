@@ -110,6 +110,42 @@ namespace PetOmiPlatform.Domain.Entities
             };
         }
 
+        // --- Factory: Emergency appointment (staff tạo, bypass slot check nếu cần) ---
+        public static AppointmentDomain CreateEmergency(
+            Guid clinicId,
+            Guid petId,
+            Guid staffUserId,
+            DateOnly appointmentDate,
+            TimeOnly startTime,
+            TimeOnly endTime,
+            Guid? vetClinicId = null,
+            Guid? serviceId = null,
+            string? notes = null)
+        {
+            if (endTime <= startTime)
+                throw new DomainException("Giờ kết thúc phải sau giờ bắt đầu.");
+
+            return new AppointmentDomain
+            {
+                Id = Guid.NewGuid(),
+                ClinicId = clinicId,
+                VetClinicId = vetClinicId,
+                ServiceId = serviceId,
+                PetId = petId,
+                BookedByUserId = staffUserId,
+                AppointmentDate = appointmentDate,
+                StartTime = startTime,
+                EndTime = endTime,
+                AppointmentType = AppointmentType.Emergency,
+                Status = AppointmentStatus.Confirmed,
+                Notes = notes,
+                IsWalkIn = false,
+                IsLateCancellation = false,
+                ConfirmedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+
         // --- Reconstitute (EF rehydration) ---
         public static AppointmentDomain Reconstitute(
             Guid id, Guid clinicId, Guid? vetClinicId, Guid? serviceId,
@@ -279,5 +315,15 @@ namespace PetOmiPlatform.Domain.Entities
         public bool IsExpiredByTimeout(int timeoutMinutes = 30)
             => Status == AppointmentStatus.Pending &&
                DateTime.UtcNow - CreatedAt > TimeSpan.FromMinutes(timeoutMinutes);
+
+        /// <summary>Staff đánh dấu chủ pet không đến (Confirmed → NoShow)</summary>
+        public void MarkNoShow()
+        {
+            if (Status != AppointmentStatus.Confirmed && Status != AppointmentStatus.CheckedIn)
+                throw new DomainException($"Chỉ có thể đánh dấu NoShow khi lịch đã được xác nhận. Trạng thái hiện tại: {Status}");
+
+            Status = AppointmentStatus.NoShow;
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

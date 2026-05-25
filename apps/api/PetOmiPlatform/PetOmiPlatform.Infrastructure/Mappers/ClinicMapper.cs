@@ -22,7 +22,10 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 rejectedReason: entity.RejectedReason,
                 reviewedByAdminId: entity.ReviewedByAdminId,
                 createdAt: entity.CreatedAt,
-                updatedAt: entity.UpdatedAt
+                updatedAt: entity.UpdatedAt,
+                latitude: entity.Latitude,
+                longitude: entity.Longitude,
+                appointmentBufferMins: entity.AppointmentBufferMins
             );
         }
 
@@ -40,6 +43,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 LogoUrl = domain.LogoUrl,
                 Description = domain.Description,
                 OpeningHours = domain.OpeningHours,
+                Latitude = domain.Latitude,
+                Longitude = domain.Longitude,
+                AppointmentBufferMins = domain.AppointmentBufferMins,
                 Status = domain.Status.ToString(),
                 RejectedReason = domain.RejectedReason,
                 ReviewedByAdminId = domain.ReviewedByAdminId,

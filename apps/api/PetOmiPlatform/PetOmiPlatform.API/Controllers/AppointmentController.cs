@@ -82,5 +82,23 @@ namespace PetOmiPlatform.API.Controllers
                 new CompleteAppointmentCommand(appointmentId, CurrentUserId));
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
+
+        /// <summary>Staff đánh dấu owner không đến (Confirmed → NoShow).</summary>
+        [HttpPost("{appointmentId:guid}/no-show")]
+        public async Task<IActionResult> MarkNoShow(Guid appointmentId)
+        {
+            var result = await Mediator.Send(
+                new MarkNoShowCommand(appointmentId, CurrentUserId));
+            return Ok(BaseResponse<AppointmentResponse>.Ok(result));
+        }
+
+        /// <summary>Staff tạo emergency appointment (bypass slot check).</summary>
+        [HttpPost("emergency")]
+        public async Task<IActionResult> CreateEmergency([FromBody] CreateEmergencyRequest request)
+        {
+            var result = await Mediator.Send(
+                new CreateEmergencyAppointmentCommand(CurrentUserId, request));
+            return Ok(BaseResponse<AppointmentResponse>.Ok(result));
+        }
     }
 }

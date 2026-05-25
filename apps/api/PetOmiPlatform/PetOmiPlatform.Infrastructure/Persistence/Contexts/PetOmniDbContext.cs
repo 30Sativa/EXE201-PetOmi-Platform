@@ -215,6 +215,9 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.LicenseImageUrl).HasMaxLength(500);
             entity.Property(e => e.LicenseNumber).HasMaxLength(100);
             entity.Property(e => e.LogoUrl).HasMaxLength(500);
+            entity.Property(e => e.Longitude).HasColumnType("float");
+            entity.Property(e => e.Latitude).HasColumnType("float");
+            entity.Property(e => e.AppointmentBufferMins).HasDefaultValue(0);
             entity.Property(e => e.OpeningHours).HasMaxLength(500);
             entity.Property(e => e.Phone).HasMaxLength(20);
             entity.Property(e => e.RejectedReason).HasMaxLength(500);

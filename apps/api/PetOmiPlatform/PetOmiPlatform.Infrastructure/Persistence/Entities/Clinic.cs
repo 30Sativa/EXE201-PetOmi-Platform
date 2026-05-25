@@ -35,6 +35,12 @@ public partial class Clinic
 
     public string? OpeningHours { get; set; }
 
+    public double? Latitude { get; set; }
+
+    public double? Longitude { get; set; }
+
+    public int AppointmentBufferMins { get; set; } = 0;
+
     public virtual ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
 
     public virtual ICollection<ClinicService> ClinicServices { get; set; } = new List<ClinicService>();

@@ -40,11 +40,20 @@ namespace PetOmiPlatform.API.Controllers
         public async Task<IActionResult> GetAvailableSlots(
             [FromQuery] Guid clinicId,
             [FromQuery] DateOnly date,
-            [FromQuery] Guid? serviceId)
+            [FromQuery] Guid? serviceId,
+            [FromQuery] Guid? vetClinicId = null)
         {
             var result = await Mediator.Send(
-                new GetAvailableSlotsQuery(clinicId, date, serviceId));
+                new GetAvailableSlotsQuery(clinicId, date, serviceId, vetClinicId));
             return Ok(BaseResponse<List<AvailableSlotResponse>>.Ok(result));
+        }
+
+        /// <summary>lay danh sach bac si active tai clinic (de owner chon bac si khi dat lich).</summary>
+        [HttpGet("doctors")]
+        public async Task<IActionResult> GetClinicDoctors([FromQuery] Guid clinicId)
+        {
+            var result = await Mediator.Send(new GetClinicDoctorsQuery(clinicId));
+            return Ok(BaseResponse<List<ClinicDoctorResponse>>.Ok(result));
         }
 
         /// <summary>Owner đặt lịch hẹn tại clinic.</summary>

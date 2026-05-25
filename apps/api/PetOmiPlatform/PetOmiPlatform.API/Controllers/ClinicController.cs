@@ -86,6 +86,17 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         /// <summary>
+        /// ClinicOwner cập nhật tọa độ GPS (lat/lng) và buffer time cho appointment.
+        /// </summary>
+        [HttpPatch("{clinicId:guid}/location")]
+        public async Task<IActionResult> UpdateLocation(Guid clinicId, [FromBody] UpdateClinicLocationRequest request)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await Mediator.Send(new UpdateClinicLocationCommand(userId, clinicId, request));
+            return Ok(BaseResponse<ClinicLocationResponse>.Ok(result, "Cập nhật vị trí phòng khám thành công."));
+        }
+
+        /// <summary>
         /// Lấy public profile của phòng khám kèm danh sách dịch vụ đang hoạt động.
         /// Không yêu cầu đăng nhập — Owner app dùng để hiển thị cho người dùng.
         /// </summary>

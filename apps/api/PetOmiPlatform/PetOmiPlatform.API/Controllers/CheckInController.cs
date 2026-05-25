@@ -5,7 +5,6 @@ using PetOmiPlatform.Application.Features.Appointment.CheckIn.Command;
 using PetOmiPlatform.Application.Features.Appointment.CheckIn.DTOs.Response;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.Application.Common.Models;
-using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -15,8 +14,6 @@ namespace PetOmiPlatform.API.Controllers
     public class CheckInController : BaseController
     {
         public CheckInController(IMediator mediator) : base(mediator) { }
-
-        private Guid CurrentUserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         [HttpPost("{id:guid}/checkin")]
         public async Task<IActionResult> CheckIn(Guid id, [FromQuery] Guid clinicId)

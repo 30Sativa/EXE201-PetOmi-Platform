@@ -9,7 +9,6 @@ using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Features.Pet.Query;
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace PetOmiPlatform.API.Controllers
@@ -27,8 +26,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAccessiblePets()
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetAccessiblePetsQuery(userId));
+            var result = await Mediator.Send(new GetAccessiblePetsQuery(CurrentUserId));
             return Ok(BaseResponse<List<PetResponse>>.Ok(result));
         }
 
@@ -38,8 +36,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("{petId:guid}")]
         public async Task<IActionResult> GetPetById(Guid petId)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetPetByIdQuery(userId, petId));
+            var result = await Mediator.Send(new GetPetByIdQuery(CurrentUserId, petId));
             return Ok(BaseResponse<PetResponse>.Ok(result));
         }
 
@@ -50,8 +47,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePet([FromBody] CreatePetRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CreatePetCommand(userId, request));
+            var result = await Mediator.Send(new CreatePetCommand(CurrentUserId, request));
             return Ok(BaseResponse<PetResponse>.Ok(result, "Tạo hồ sơ thú cưng thành công."));
         }
 
@@ -61,8 +57,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPut("{petId:guid}")]
         public async Task<IActionResult> UpdatePet(Guid petId, [FromBody] UpdatePetRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new UpdatePetCommand(userId, petId, request));
+            var result = await Mediator.Send(new UpdatePetCommand(CurrentUserId, petId, request));
             return Ok(BaseResponse<PetResponse>.Ok(result, "Cập nhật thông tin thú cưng thành công."));
         }
 
@@ -72,8 +67,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpDelete("{petId:guid}")]
         public async Task<IActionResult> DeletePet(Guid petId)
         {
-            var userId = GetCurrentUserId();
-            await Mediator.Send(new DeletePetCommand(userId, petId));
+            await Mediator.Send(new DeletePetCommand(CurrentUserId, petId));
             return Ok(BaseResponse<object>.Ok(null, "Xóa hồ sơ thú cưng thành công."));
         }
 
@@ -85,8 +79,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("{petId:guid}/health-profile")]
         public async Task<IActionResult> GetPetHealthProfile(Guid petId)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetPetHealthProfileQuery(userId, petId));
+            var result = await Mediator.Send(new GetPetHealthProfileQuery(CurrentUserId, petId));
             return Ok(BaseResponse<PetHealthProfileResponse>.Ok(result));
         }
 
@@ -96,8 +89,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost("{petId:guid}/health-profile")]
         public async Task<IActionResult> CreatePetHealthProfile(Guid petId, [FromBody] CreatePetHealthProfileRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CreatePetHealthProfileCommand(userId, petId, request));
+            var result = await Mediator.Send(new CreatePetHealthProfileCommand(CurrentUserId, petId, request));
             return Ok(BaseResponse<PetHealthProfileResponse>.Ok(result, "Tạo hồ sơ sức khỏe thành công."));
         }
 
@@ -107,8 +99,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPut("{petId:guid}/health-profile")]
         public async Task<IActionResult> UpdatePetHealthProfile(Guid petId, [FromBody] UpdatePetHealthProfileRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new UpdatePetHealthProfileCommand(userId, petId, request));
+            var result = await Mediator.Send(new UpdatePetHealthProfileCommand(CurrentUserId, petId, request));
             return Ok(BaseResponse<PetHealthProfileResponse>.Ok(result, "Cập nhật hồ sơ sức khỏe thành công."));
         }
 
@@ -120,8 +111,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("{petId:guid}/weight-logs")]
         public async Task<IActionResult> GetPetWeightLogs(Guid petId)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetPetWeightLogsQuery(userId, petId));
+            var result = await Mediator.Send(new GetPetWeightLogsQuery(CurrentUserId, petId));
             return Ok(BaseResponse<List<PetWeightLogResponse>>.Ok(result));
         }
 
@@ -131,8 +121,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost("{petId:guid}/weight-logs")]
         public async Task<IActionResult> CreatePetWeightLog(Guid petId, [FromBody] CreatePetWeightLogRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CreatePetWeightLogCommand(userId, petId, request));
+            var result = await Mediator.Send(new CreatePetWeightLogCommand(CurrentUserId, petId, request));
             return Ok(BaseResponse<PetWeightLogResponse>.Ok(result, "Ghi nhận cân nặng thành công."));
         }
 
@@ -142,8 +131,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpDelete("{petId:guid}/weight-logs/{weightLogId:guid}")]
         public async Task<IActionResult> DeletePetWeightLog(Guid petId, Guid weightLogId)
         {
-            var userId = GetCurrentUserId();
-            await Mediator.Send(new DeletePetWeightLogCommand(userId, petId, weightLogId));
+            await Mediator.Send(new DeletePetWeightLogCommand(CurrentUserId, petId, weightLogId));
             return Ok(BaseResponse<object>.Ok(null, "Xóa bản ghi cân nặng thành công."));
         }
 
@@ -155,8 +143,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("{petId:guid}/photos")]
         public async Task<IActionResult> GetPetPhotos(Guid petId)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetPetPhotosQuery(userId, petId));
+            var result = await Mediator.Send(new GetPetPhotosQuery(CurrentUserId, petId));
             return Ok(BaseResponse<List<PetPhotoResponse>>.Ok(result));
         }
 
@@ -166,8 +153,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost("{petId:guid}/photos")]
         public async Task<IActionResult> CreatePetPhoto(Guid petId, [FromBody] CreatePetPhotoRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CreatePetPhotoCommand(userId, petId, request));
+            var result = await Mediator.Send(new CreatePetPhotoCommand(CurrentUserId, petId, request));
             return Ok(BaseResponse<PetPhotoResponse>.Ok(result, "Thêm ảnh thành công."));
         }
 
@@ -177,8 +163,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPut("{petId:guid}/photos/{photoId:guid}")]
         public async Task<IActionResult> UpdatePetPhoto(Guid petId, Guid photoId, [FromBody] UpdatePetPhotoRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new UpdatePetPhotoCommand(userId, petId, photoId, request));
+            var result = await Mediator.Send(new UpdatePetPhotoCommand(CurrentUserId, petId, photoId, request));
             return Ok(BaseResponse<PetPhotoResponse>.Ok(result, "Cập nhật ảnh thành công."));
         }
 
@@ -188,8 +173,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpDelete("{petId:guid}/photos/{photoId:guid}")]
         public async Task<IActionResult> DeletePetPhoto(Guid petId, Guid photoId)
         {
-            var userId = GetCurrentUserId();
-            await Mediator.Send(new DeletePetPhotoCommand(userId, petId, photoId));
+            await Mediator.Send(new DeletePetPhotoCommand(CurrentUserId, petId, photoId));
             return Ok(BaseResponse<object>.Ok(null, "Xóa ảnh thành công."));
         }
 
@@ -201,8 +185,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("{petId:guid}/medical-records")]
         public async Task<IActionResult> GetPetMedicalRecords(Guid petId, [FromQuery] string? recordType = null)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetPetMedicalRecordsQuery(userId, petId, recordType));
+            var result = await Mediator.Send(new GetPetMedicalRecordsQuery(CurrentUserId, petId, recordType));
             return Ok(BaseResponse<List<PetMedicalRecordResponse>>.Ok(result));
         }
 
@@ -212,8 +195,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost("{petId:guid}/medical-records")]
         public async Task<IActionResult> CreatePetMedicalRecord(Guid petId, [FromBody] CreatePetMedicalRecordRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CreatePetMedicalRecordCommand(userId, petId, request));
+            var result = await Mediator.Send(new CreatePetMedicalRecordCommand(CurrentUserId, petId, request));
             return Ok(BaseResponse<PetMedicalRecordResponse>.Ok(result, "Thêm hồ sơ y tế thành công."));
         }
 
@@ -223,8 +205,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPut("{petId:guid}/medical-records/{medicalRecordId:guid}")]
         public async Task<IActionResult> UpdatePetMedicalRecord(Guid petId, Guid medicalRecordId, [FromBody] UpdatePetMedicalRecordRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new UpdatePetMedicalRecordCommand(userId, petId, medicalRecordId, request));
+            var result = await Mediator.Send(new UpdatePetMedicalRecordCommand(CurrentUserId, petId, medicalRecordId, request));
             return Ok(BaseResponse<PetMedicalRecordResponse>.Ok(result, "Cập nhật hồ sơ y tế thành công."));
         }
 
@@ -234,8 +215,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpDelete("{petId:guid}/medical-records/{medicalRecordId:guid}")]
         public async Task<IActionResult> DeletePetMedicalRecord(Guid petId, Guid medicalRecordId)
         {
-            var userId = GetCurrentUserId();
-            await Mediator.Send(new DeletePetMedicalRecordCommand(userId, petId, medicalRecordId));
+            await Mediator.Send(new DeletePetMedicalRecordCommand(CurrentUserId, petId, medicalRecordId));
             return Ok(BaseResponse<object>.Ok(null, "Xóa hồ sơ y tế thành công."));
         }
 
@@ -247,8 +227,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("{petId:guid}/access")]
         public async Task<IActionResult> GetPetAccessList(Guid petId)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetPetAccessListQuery(userId, petId));
+            var result = await Mediator.Send(new GetPetAccessListQuery(CurrentUserId, petId));
             return Ok(BaseResponse<List<PetUserAccessResponse>>.Ok(result));
         }
 
@@ -258,8 +237,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost("{petId:guid}/access")]
         public async Task<IActionResult> GrantPetAccess(Guid petId, [FromBody] GrantPetAccessRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GrantPetAccessCommand(userId, petId, request));
+            var result = await Mediator.Send(new GrantPetAccessCommand(CurrentUserId, petId, request));
             return Ok(BaseResponse<PetUserAccessResponse>.Ok(result, "Chia sẻ quyền truy cập thành công."));
         }
 
@@ -269,8 +247,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPut("{petId:guid}/access/{accessId:guid}")]
         public async Task<IActionResult> UpdatePetAccess(Guid petId, Guid accessId, [FromBody] UpdatePetAccessRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new UpdatePetAccessCommand(userId, petId, accessId, request));
+            var result = await Mediator.Send(new UpdatePetAccessCommand(CurrentUserId, petId, accessId, request));
             return Ok(BaseResponse<PetUserAccessResponse>.Ok(result, "Cập nhật quyền truy cập thành công."));
         }
 
@@ -280,14 +257,8 @@ namespace PetOmiPlatform.API.Controllers
         [HttpDelete("{petId:guid}/access/{accessId:guid}")]
         public async Task<IActionResult> RevokePetAccess(Guid petId, Guid accessId)
         {
-            var userId = GetCurrentUserId();
-            await Mediator.Send(new RevokePetAccessCommand(userId, petId, accessId));
+            await Mediator.Send(new RevokePetAccessCommand(CurrentUserId, petId, accessId));
             return Ok(BaseResponse<object>.Ok(null, "Thu hồi quyền truy cập thành công."));
-        }
-
-        private Guid GetCurrentUserId()
-        {
-            return Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         }
     }
 }

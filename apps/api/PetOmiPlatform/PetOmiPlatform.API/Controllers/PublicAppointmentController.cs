@@ -7,7 +7,6 @@ using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Request;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
 using PetOmiPlatform.Application.Features.Appointment.Query;
-using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -24,9 +23,6 @@ namespace PetOmiPlatform.API.Controllers
     public class PublicAppointmentController : BaseController
     {
         public PublicAppointmentController(IMediator mediator) : base(mediator) { }
-
-        private Guid CurrentUserId =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         /// <summary>Owner xem danh sách lịch hẹn của mình (phân trang).</summary>
         [HttpGet]

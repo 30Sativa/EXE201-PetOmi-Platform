@@ -9,7 +9,6 @@ using PetOmiPlatform.Application.Features.ReminderPreference.DTOs.Response;
 using PetOmiPlatform.Application.Features.ReminderPreference.Query;
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace PetOmiPlatform.API.Controllers
@@ -23,17 +22,13 @@ namespace PetOmiPlatform.API.Controllers
         {
         }
 
-        private Guid GetCurrentUserId()
-            => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
         /// <summary>
         /// Lấy danh sách cấu hình reminder preference của user hiện tại.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetMyPreferences()
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetUserPreferencesQuery(userId));
+            var result = await Mediator.Send(new GetUserPreferencesQuery(CurrentUserId));
             return Ok(BaseResponse<List<ReminderPreferenceResponse>>.Ok(result));
         }
 
@@ -43,8 +38,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPut]
         public async Task<IActionResult> UpsertPreference([FromBody] UpdateReminderPreferenceRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new UpsertReminderPreferenceCommand(userId, request));
+            var result = await Mediator.Send(new UpsertReminderPreferenceCommand(CurrentUserId, request));
             return Ok(BaseResponse<ReminderPreferenceResponse>.Ok(result));
         }
     }

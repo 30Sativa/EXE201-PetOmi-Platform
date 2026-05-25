@@ -8,7 +8,6 @@ using PetOmiPlatform.Application.Features.UserProfile.DTOs.Request;
 using PetOmiPlatform.Application.Features.UserProfile.DTOs.Response;
 using PetOmiPlatform.Application.Features.UserProfile.Query;
 using System;
-using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -25,8 +24,7 @@ namespace PetOmiPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> GetMyProfile()
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetUserProfileQuery(userId));
+            var result = await Mediator.Send(new GetUserProfileQuery(CurrentUserId));
             return Ok(BaseResponse<UserProfileResponse>.Ok(result));
         }
 
@@ -38,8 +36,7 @@ namespace PetOmiPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CompleteProfile([FromBody] CreateUserProfileRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CompleteUserProfileCommand(userId, request));
+            var result = await Mediator.Send(new CompleteUserProfileCommand(CurrentUserId, request));
             return Ok(BaseResponse<CompleteProfileResponse>.Ok(result));
         }
 
@@ -50,8 +47,7 @@ namespace PetOmiPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> CreateProfile([FromBody] CreateUserProfileRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CreateUserProfileCommand(userId, request));
+            var result = await Mediator.Send(new CreateUserProfileCommand(CurrentUserId, request));
             return Ok(BaseResponse<UserProfileResponse>.Ok(result));
         }
 
@@ -62,14 +58,8 @@ namespace PetOmiPlatform.API.Controllers
         [Authorize]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateUserProfileRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new UpdateUserProfileCommand(userId, request));
+            var result = await Mediator.Send(new UpdateUserProfileCommand(CurrentUserId, request));
             return Ok(BaseResponse<UserProfileResponse>.Ok(result));
-        }
-
-        private Guid GetCurrentUserId()
-        {
-            return Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         }
     }
 }

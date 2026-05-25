@@ -7,7 +7,8 @@ import {
   useState,
 } from "react"
 
-import { tokenStorage } from "@/lib/tokenStorage"
+import { tokenStorage, decodeAccessToken } from "@/lib/tokenStorage"
+import { AUTH_EVENTS } from "@/lib/axios"
 
 import { logoutApi } from "@/services/auth.service"
 
@@ -38,10 +39,11 @@ export function AuthProvider({
     if (token) {
       setIsAuthenticated(true)
 
+      const payload = decodeAccessToken()
       setUser({
-        id: "",
-        email: "",
-        role: "",
+        id: (payload?.sub as string) ?? (payload?.nameidentifier as string) ?? "",
+        email: (payload?.email as string) ?? (payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as string) ?? "",
+        role: (payload?.role as string) ?? (payload?.activeRole as string) ?? "",
       })
     } else {
       setIsAuthenticated(false)
@@ -51,21 +53,50 @@ export function AuthProvider({
     setIsLoading(false)
   }, [])
 
+  useEffect(() => {
+    const handleTokenRefreshed = (e: Event) => {
+      const detail = (e as CustomEvent).detail
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              id: detail.userId || prev.id,
+              email: detail.email || prev.email,
+            }
+          : null
+      )
+    }
+
+    const handleLogout = () => {
+      setUser(null)
+      setIsAuthenticated(false)
+    }
+
+    window.addEventListener(AUTH_EVENTS.TOKEN_REFRESHED, handleTokenRefreshed)
+    window.addEventListener(AUTH_EVENTS.LOGOUT, handleLogout)
+
+    return () => {
+      window.removeEventListener(AUTH_EVENTS.TOKEN_REFRESHED, handleTokenRefreshed)
+      window.removeEventListener(AUTH_EVENTS.LOGOUT, handleLogout)
+    }
+  }, [])
+
   const setAuthFromTokens = useCallback(
     (
       accessToken: string,
       refreshToken: string,
+      userId?: string,
+      email?: string,
     ) => {
       tokenStorage.setAccessToken(accessToken)
-
       tokenStorage.setRefreshToken(refreshToken)
-
       setIsAuthenticated(true)
 
+      const payload = decodeAccessToken()
       setUser({
-        id: "",
-        email: "",
-        role: "",
+        id: userId ?? (payload?.sub as string) ?? (payload?.nameidentifier as string) ?? "",
+        email: email ?? (payload?.email as string) ?? (payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as string) ?? "",
+        role: (payload?.role as string) ?? (payload?.activeRole as string) ?? "",
       })
     },
     [],

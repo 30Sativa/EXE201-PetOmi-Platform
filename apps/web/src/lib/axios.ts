@@ -2,6 +2,11 @@ import axios from "axios"
 
 import { tokenStorage } from "./tokenStorage"
 
+export const AUTH_EVENTS = {
+  TOKEN_REFRESHED: "auth:tokenRefreshed",
+  LOGOUT: "auth:logout",
+} as const
+
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:7297/api"
 
 export const api = axios.create({
@@ -32,6 +37,7 @@ api.interceptors.response.use(
 
         if (!refreshToken) {
           tokenStorage.clearTokens()
+          window.dispatchEvent(new CustomEvent(AUTH_EVENTS.LOGOUT))
           window.location.href = "/auth"
           return Promise.reject(error)
         }
@@ -47,6 +53,7 @@ api.interceptors.response.use(
 
         if (!accessToken) {
           tokenStorage.clearTokens()
+          window.dispatchEvent(new CustomEvent(AUTH_EVENTS.LOGOUT))
           window.location.href = "/auth"
           return Promise.reject(error)
         }
@@ -59,9 +66,38 @@ api.interceptors.response.use(
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
 
+        const refreshedPayload = (() => {
+          try {
+            const base64Url = accessToken.split(".")[1]
+            if (!base64Url) return null
+            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
+            const jsonPayload = decodeURIComponent(
+              atob(base64)
+                .split("")
+                .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+                .join("")
+            )
+            return JSON.parse(jsonPayload)
+          } catch {
+            return null
+          }
+        })()
+
+        window.dispatchEvent(
+          new CustomEvent(AUTH_EVENTS.TOKEN_REFRESHED, {
+            detail: {
+              accessToken,
+              refreshToken: newRefreshToken,
+              userId: refreshedPayload?.sub ?? refreshedPayload?.nameidentifier ?? "",
+              email: refreshedPayload?.email ?? "",
+            },
+          })
+        )
+
         return api(originalRequest)
       } catch {
         tokenStorage.clearTokens()
+        window.dispatchEvent(new CustomEvent(AUTH_EVENTS.LOGOUT))
         window.location.href = "/auth"
         return Promise.reject(error)
       }

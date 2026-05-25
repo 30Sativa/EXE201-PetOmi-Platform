@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom"
 import { useForm, type UseFormHandleSubmit, type UseFormRegister } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 
+import { useAuth } from "@/contexts/AuthContext"
 import { loginApi } from "@/services/auth.service"
 import { getDeviceInfo } from "@/lib/device"
-import { tokenStorage } from "@/lib/tokenStorage"
 import { getErrorMessage } from "@/lib/utils"
 import { LoginRequestSchema } from "@/schemas/auth.schema"
 import type { LoginRequest } from "@/schemas/auth.schema"
@@ -29,6 +29,7 @@ export function useLoginForm(): UseLoginFormReturn {
   const [message, setMessage] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
+  const { setAuthFromTokens } = useAuth()
 
   const {
     register,
@@ -54,11 +55,13 @@ export function useLoginForm(): UseLoginFormReturn {
         deviceType: deviceInfo.deviceType,
       })
 
-      if (response.accessToken) {
-        tokenStorage.setAccessToken(response.accessToken)
-      }
-      if (response.refreshToken) {
-        tokenStorage.setRefreshToken(response.refreshToken)
+      if (response.accessToken && response.refreshToken) {
+        setAuthFromTokens(
+          response.accessToken,
+          response.refreshToken,
+          response.userId,
+          response.email,
+        )
       }
 
       setStatus("success")

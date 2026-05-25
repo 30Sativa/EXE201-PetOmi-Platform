@@ -1,7 +1,9 @@
 using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Features.MedicalExamination.Command;
 using PetOmiPlatform.Application.Features.MedicalExamination.DTOs.Response;
+using PetOmiPlatform.Application.Features.MedicalExamination.Mappers;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
@@ -42,8 +44,7 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
 
             // Lấy vetClinicId của bác sĩ
             var vetClinic = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.VetUserId, request.ClinicId);
-            if (vetClinic == null)
-                throw new ForbiddenException("Tài khoản chưa được phân quyền bác sĩ tại phòng khám này.");
+            vetClinic = ClinicRoleGuard.RequireMedicalWriter(vetClinic);
 
             var exam = MedicalExaminationDomain.Create(
                 appointmentId: appointment.Id,
@@ -62,23 +63,7 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
             await _examinationRepository.AddAsync(exam);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return new ExaminationResponse
-            {
-                Id = exam.Id,
-                AppointmentId = exam.AppointmentId,
-                PetId = exam.PetId,
-                VetClinicId = exam.VetClinicId,
-                ChiefComplaint = exam.ChiefComplaint,
-                WeightKg = exam.WeightKg,
-                TemperatureC = exam.TemperatureC,
-                HeartRate = exam.HeartRate,
-                RespiratoryRate = exam.RespiratoryRate,
-                ExaminationNotes = exam.ExaminationNotes,
-                Diagnosis = exam.Diagnosis,
-                TreatmentPlan = exam.TreatmentPlan,
-                Status = exam.Status.ToString(),
-                CreatedAt = exam.CreatedAt
-            };
+            return exam.ToResponse();
         }
     }
 }

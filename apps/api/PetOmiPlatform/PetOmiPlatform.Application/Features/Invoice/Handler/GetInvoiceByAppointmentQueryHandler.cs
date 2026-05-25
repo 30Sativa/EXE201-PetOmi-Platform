@@ -1,6 +1,8 @@
 using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Features.Invoice.DTOs.Response;
+using PetOmiPlatform.Application.Features.Invoice.Mappers;
 using PetOmiPlatform.Application.Features.Invoice.Query;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
@@ -9,10 +11,14 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
     public class GetInvoiceByAppointmentQueryHandler : IRequestHandler<GetInvoiceByAppointmentQuery, InvoiceResponse?>
     {
         private readonly IInvoiceRepository _invoiceRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
 
-        public GetInvoiceByAppointmentQueryHandler(IInvoiceRepository invoiceRepository)
+        public GetInvoiceByAppointmentQueryHandler(
+            IInvoiceRepository invoiceRepository,
+            IVetClinicRepository vetClinicRepository)
         {
             _invoiceRepository = invoiceRepository;
+            _vetClinicRepository = vetClinicRepository;
         }
 
         public async Task<InvoiceResponse?> Handle(GetInvoiceByAppointmentQuery request, CancellationToken cancellationToken)
@@ -24,34 +30,12 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             if (invoice.ClinicId != request.ClinicId)
                 throw new ForbiddenException("Không có quyền xem hóa đơn này.");
 
+            var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
+            ClinicRoleGuard.RequireInvoiceViewer(staff);
+
             var items = await _invoiceRepository.GetItemsByInvoiceIdAsync(invoice.Id);
 
-            return new InvoiceResponse
-            {
-                Id = invoice.Id,
-                AppointmentId = invoice.AppointmentId,
-                ExaminationId = invoice.ExaminationId,
-                ClinicId = invoice.ClinicId,
-                TotalAmount = invoice.TotalAmount,
-                DiscountAmount = invoice.DiscountAmount,
-                FinalAmount = invoice.FinalAmount,
-                Status = invoice.Status.ToString(),
-                PaymentMethod = invoice.PaymentMethod?.ToString(),
-                Notes = invoice.Notes,
-                PaidAt = invoice.PaidAt,
-                CreatedAt = invoice.CreatedAt,
-                Items = items.Select(i => new InvoiceItemResponse
-                {
-                    Id = i.Id,
-                    ItemType = i.ItemType.ToString(),
-                    Description = i.Description,
-                    Quantity = i.Quantity,
-                    UnitPrice = i.UnitPrice,
-                    TotalPrice = i.TotalPrice,
-                    ServiceId = i.ServiceId,
-                    InventoryItemId = i.InventoryItemId
-                }).ToList()
-            };
+            return invoice.ToResponse(items);
         }
     }
 }

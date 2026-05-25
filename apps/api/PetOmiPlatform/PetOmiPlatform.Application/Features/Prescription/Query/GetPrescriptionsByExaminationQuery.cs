@@ -5,6 +5,7 @@ namespace PetOmiPlatform.Application.Features.Prescription.Query
 {
     public record GetPrescriptionsByExaminationQuery(
         Guid ClinicId,
+        Guid StaffUserId,
         Guid ExaminationId
     ) : IRequest<IEnumerable<PrescriptionItemResponse>>;
 }

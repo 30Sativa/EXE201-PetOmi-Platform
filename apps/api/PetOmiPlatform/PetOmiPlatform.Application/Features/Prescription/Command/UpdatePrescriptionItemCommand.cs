@@ -7,11 +7,12 @@ namespace PetOmiPlatform.Application.Features.Prescription.Command
 {
     public record UpdatePrescriptionItemCommand(
         Guid ClinicId,
+        Guid StaffUserId,
         Guid PrescriptionId,
         UpdatePrescriptionItemRequest Payload
     ) : IRequest<PrescriptionItemResponse>, IAuditableCommand
     {
-        public Guid? UserId => null;
+        public Guid? UserId => StaffUserId;
         public string Action => "UpdatePrescriptionItem";
         public string Category => "Prescription";
     }

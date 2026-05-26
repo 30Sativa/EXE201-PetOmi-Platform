@@ -37,5 +37,43 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
             return entity?.ToDomain();
         }
+
+        public async Task UpsertActiveSePayAccountAsync(
+            Guid clinicId,
+            string bankCode,
+            string accountNumber,
+            string? bankName,
+            string? accountName)
+        {
+            var providerName = PaymentProvider.SePay.ToString();
+            var existing = await _context.ClinicPaymentAccounts
+                .Where(x => x.ClinicId == clinicId && x.Provider == providerName && x.IsActive)
+                .OrderByDescending(x => x.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (existing == null)
+            {
+                await _context.ClinicPaymentAccounts.AddAsync(new Persistence.Entities.ClinicPaymentAccount
+                {
+                    ClinicPaymentAccountId = Guid.NewGuid(),
+                    ClinicId = clinicId,
+                    Provider = providerName,
+                    BankCode = bankCode,
+                    BankName = bankName,
+                    AccountNumber = accountNumber,
+                    AccountName = accountName,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+                return;
+            }
+
+            existing.BankCode = bankCode;
+            existing.BankName = bankName;
+            existing.AccountNumber = accountNumber;
+            existing.AccountName = accountName;
+            existing.IsActive = true;
+            existing.UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

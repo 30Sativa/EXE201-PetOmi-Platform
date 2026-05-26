@@ -105,5 +105,10 @@ namespace PetOmiPlatform.Domain.Entities
             InvoiceId = invoiceId;
             IsMatched = true;
         }
+
+        public void LinkInvoice(Guid invoiceId)
+        {
+            InvoiceId = invoiceId;
+        }
     }
 }

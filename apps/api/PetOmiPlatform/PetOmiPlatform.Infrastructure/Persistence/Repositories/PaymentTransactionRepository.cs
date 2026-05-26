@@ -39,5 +39,25 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             entity.InvoiceId = invoiceId;
             entity.IsMatched = true;
         }
+
+        public async Task<IReadOnlyList<PaymentTransactionDomain>> GetRecentByClinicIdAsync(
+            Guid clinicId,
+            int limit,
+            bool includeMatched)
+        {
+            var query = _context.PaymentTransactions
+                .Where(x => x.ClinicId == clinicId);
+
+            if (!includeMatched)
+            {
+                query = query.Where(x => !x.IsMatched);
+            }
+
+            return await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(limit)
+                .Select(x => x.ToDomain())
+                .ToListAsync();
+        }
     }
 }

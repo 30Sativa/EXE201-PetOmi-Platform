@@ -8,5 +8,9 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<bool> ExistsByProviderTransactionIdAsync(PaymentProvider provider, string providerTransactionId);
         Task AddAsync(PaymentTransactionDomain transaction);
         Task MarkMatchedAsync(Guid transactionId, Guid invoiceId);
+        Task<IReadOnlyList<PaymentTransactionDomain>> GetRecentByClinicIdAsync(
+            Guid clinicId,
+            int limit,
+            bool includeMatched);
     }
 }

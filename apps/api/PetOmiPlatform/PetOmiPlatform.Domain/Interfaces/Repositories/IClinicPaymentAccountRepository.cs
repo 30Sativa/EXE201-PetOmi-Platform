@@ -7,5 +7,11 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
     {
         Task<ClinicPaymentAccountDomain?> GetActiveByClinicIdAndProviderAsync(Guid clinicId, PaymentProvider provider);
         Task<ClinicPaymentAccountDomain?> GetActiveByProviderAndAccountNumberAsync(PaymentProvider provider, string accountNumber);
+        Task UpsertActiveSePayAccountAsync(
+            Guid clinicId,
+            string bankCode,
+            string accountNumber,
+            string? bankName,
+            string? accountName);
     }
 }

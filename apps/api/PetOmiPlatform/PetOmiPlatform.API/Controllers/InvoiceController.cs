@@ -54,6 +54,17 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<SePayPaymentRequestResponse>.Ok(result, "Tao payment request SePay thanh cong."));
         }
 
+        [HttpGet("sepay/reconciliation")]
+        public async Task<IActionResult> GetSePayReconciliation(
+            [FromQuery] Guid clinicId,
+            [FromQuery] int limit = 50,
+            [FromQuery] bool includeMatched = false)
+        {
+            var query = new GetSePayReconciliationQuery(clinicId, CurrentUserId, limit, includeMatched);
+            var result = await Mediator.Send(query);
+            return Ok(BaseResponse<IReadOnlyList<SePayReconciliationItemResponse>>.Ok(result));
+        }
+
         [HttpPost("{id:guid}/cancel")]
         public async Task<IActionResult> CancelInvoice(Guid id, [FromQuery] Guid clinicId)
         {

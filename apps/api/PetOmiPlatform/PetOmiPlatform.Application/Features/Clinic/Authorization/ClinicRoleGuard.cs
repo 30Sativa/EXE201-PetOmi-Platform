@@ -57,5 +57,17 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
         {
             return RequireActiveStaff(staff);
         }
+
+        public static VetClinicDomain RequireClinicOwner(VetClinicDomain? staff)
+        {
+            staff = RequireActiveStaff(staff);
+
+            if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId)
+            {
+                throw new ForbiddenException("Chi ClinicOwner moi co quyen cau hinh tai khoan thanh toan.");
+            }
+
+            return staff;
+        }
     }
 }

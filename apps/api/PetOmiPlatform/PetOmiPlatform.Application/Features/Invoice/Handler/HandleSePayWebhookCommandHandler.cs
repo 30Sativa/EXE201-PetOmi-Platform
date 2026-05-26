@@ -65,15 +65,19 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 rawPayload: request.RawPayload);
 
             if (invoice != null &&
-                invoice.ClinicId == clinicPaymentAccount.ClinicId &&
-                request.Payload.TransferType == "in")
+                invoice.ClinicId == clinicPaymentAccount.ClinicId)
             {
-                invoice.MarkPaidBySePay(request.Payload.TransferAmount, DateTime.UtcNow);
-                await _invoiceRepository.UpdateAsync(invoice);
+                paymentTransaction.LinkInvoice(invoice.Id);
 
-                if (invoice.Status == InvoiceStatus.Paid)
+                if (request.Payload.TransferType == "in")
                 {
-                    paymentTransaction.MarkMatched(invoice.Id);
+                    invoice.MarkPaidBySePay(request.Payload.TransferAmount, DateTime.UtcNow);
+                    await _invoiceRepository.UpdateAsync(invoice);
+
+                    if (invoice.Status == InvoiceStatus.Paid)
+                    {
+                        paymentTransaction.MarkMatched(invoice.Id);
+                    }
                 }
             }
 

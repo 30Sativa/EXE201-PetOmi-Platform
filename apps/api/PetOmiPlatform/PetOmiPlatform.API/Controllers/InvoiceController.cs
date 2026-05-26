@@ -43,6 +43,17 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<bool>.Ok(result, "Thanh toan hoa don thanh cong."));
         }
 
+        [HttpPost("{id:guid}/sepay/payment-request")]
+        public async Task<IActionResult> RequestSePayPayment(
+            Guid id,
+            [FromBody] RequestSePayPaymentRequest request,
+            [FromQuery] Guid clinicId)
+        {
+            var command = new RequestSePayPaymentCommand(clinicId, CurrentUserId, id, request);
+            var result = await Mediator.Send(command);
+            return Ok(BaseResponse<SePayPaymentRequestResponse>.Ok(result, "Tao payment request SePay thanh cong."));
+        }
+
         [HttpPost("{id:guid}/cancel")]
         public async Task<IActionResult> CancelInvoice(Guid id, [FromQuery] Guid clinicId)
         {

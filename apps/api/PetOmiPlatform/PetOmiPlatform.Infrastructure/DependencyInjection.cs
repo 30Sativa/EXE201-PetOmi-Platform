@@ -45,6 +45,10 @@ namespace PetOmiPlatform.Infrastructure
             services.Configure<CloudinarySettings>(
                 configuration.GetSection("Cloudinary"));
 
+            // SePay settings
+            services.Configure<SePaySettings>(
+                configuration.GetSection("SePay"));
+
             // Jwt
             var jwtSection = configuration.GetSection("JwtSettings");
             services.Configure<JwtSettings>(jwtSection);
@@ -106,10 +110,13 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IPetMedicalRecordRepository, PetMedicalRecordRepository>();
             services.AddScoped<IPetUserAccessRepository, PetUserAccessRepository>();
             
-            // Sprint 5 - Patient Flow
+            // Sprint 5 - Clinic Visit Flow
             services.AddScoped<IMedicalExaminationRepository, MedicalExaminationRepository>();
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IClinicPaymentAccountRepository, ClinicPaymentAccountRepository>();
+            services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
+            services.AddScoped<ISePayService, SePayService>();
             
             services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();

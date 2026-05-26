@@ -18,10 +18,18 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public Guid AppointmentId { get; set; }
         public Guid? ExaminationId { get; set; }
         public Guid ClinicId { get; set; }
+        public string InvoiceCode { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public decimal DiscountAmount { get; set; }
         public decimal FinalAmount { get; set; }
         public string Status { get; set; } = string.Empty;
+        public string PaymentProvider { get; set; } = string.Empty;
+        public string? PaymentReference { get; set; }
+        public string? QrCodeUrl { get; set; }
+        public string? BankAccountNo { get; set; }
+        public string? BankCode { get; set; }
+        public decimal? PaidAmount { get; set; }
+        public DateTime? PaymentWebhookAt { get; set; }
         public string? PaymentMethod { get; set; }
         public string? Notes { get; set; }
         public DateTime? PaidAt { get; set; }

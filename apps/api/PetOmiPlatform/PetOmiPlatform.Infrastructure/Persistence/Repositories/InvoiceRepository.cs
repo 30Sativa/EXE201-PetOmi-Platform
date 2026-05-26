@@ -32,11 +32,26 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entity?.ToDomain();
         }
 
+        public async Task<InvoiceDomain?> GetByInvoiceCodeAsync(string invoiceCode)
+        {
+            var entity = await _context.Invoices.FirstOrDefaultAsync(i => i.InvoiceCode == invoiceCode);
+            return entity?.ToDomain();
+        }
+
         public async Task<InvoiceDomain?> GetByAppointmentIdAsync(Guid appointmentId)
         {
             var entity = await _context.Invoices
                 .Where(i => i.AppointmentId == appointmentId && i.Status != "Cancelled")
                 .FirstOrDefaultAsync();
+            return entity?.ToDomain();
+        }
+
+        public async Task<InvoiceDomain?> GetByPaymentReferenceAsync(string paymentReference)
+        {
+            var entity = await _context.Invoices
+                .Where(i => i.PaymentReference == paymentReference && i.Status != "Cancelled")
+                .FirstOrDefaultAsync();
+
             return entity?.ToDomain();
         }
 

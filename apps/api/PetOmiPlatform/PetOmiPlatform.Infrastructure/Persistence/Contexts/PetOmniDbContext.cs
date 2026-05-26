@@ -22,6 +22,8 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<Clinic> Clinics { get; set; }
 
+    public virtual DbSet<ClinicPaymentAccount> ClinicPaymentAccounts { get; set; }
+
     public virtual DbSet<ClinicService> ClinicServices { get; set; }
 
     public virtual DbSet<DoctorSchedule> DoctorSchedules { get; set; }
@@ -41,6 +43,8 @@ public partial class PetOmniDbContext : DbContext
     public virtual DbSet<MedicalExamination> MedicalExaminations { get; set; }
 
     public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
+    public virtual DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
     public virtual DbSet<Permission> Permissions { get; set; }
 
@@ -234,6 +238,31 @@ public partial class PetOmniDbContext : DbContext
                 .HasConstraintName("FK__Clinics__Reviewe__5DCAEF64");
         });
 
+        modelBuilder.Entity<ClinicPaymentAccount>(entity =>
+        {
+            entity.HasIndex(e => new { e.ClinicId, e.Provider, e.IsActive }, "IX_ClinicPaymentAccounts_ClinicProvider");
+
+            entity.Property(e => e.ClinicPaymentAccountId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ClinicPaymentAccountID");
+            entity.Property(e => e.AccountName).HasMaxLength(200);
+            entity.Property(e => e.AccountNumber).HasMaxLength(50);
+            entity.Property(e => e.BankCode).HasMaxLength(30);
+            entity.Property(e => e.BankName).HasMaxLength(100);
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Provider).HasMaxLength(20);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Clinic).WithMany(p => p.ClinicPaymentAccounts)
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ClinicPaymentAccounts_Clinic");
+        });
+
         modelBuilder.Entity<ClinicService>(entity =>
         {
             entity.HasKey(e => e.ServiceId);
@@ -363,11 +392,14 @@ public partial class PetOmniDbContext : DbContext
                 .HasFilter("([Status] IN ('Unpaid', 'Paid'))");
 
             entity.HasIndex(e => new { e.ClinicId, e.CreatedAt }, "IX_Invoices_ClinicID").IsDescending(false, true);
+            entity.HasIndex(e => e.InvoiceCode, "UQ_Invoices_InvoiceCode").IsUnique();
 
             entity.Property(e => e.InvoiceId)
                 .HasDefaultValueSql("(newsequentialid())")
                 .HasColumnName("InvoiceID");
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
+            entity.Property(e => e.BankAccountNo).HasMaxLength(50);
+            entity.Property(e => e.BankCode).HasMaxLength(30);
             entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -375,9 +407,17 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
             entity.Property(e => e.FinalAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.InvoiceCode).HasMaxLength(30);
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
+            entity.Property(e => e.PaidAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.PaymentProvider)
+                .HasMaxLength(20)
+                .HasDefaultValue("Manual");
+            entity.Property(e => e.PaymentReference).HasMaxLength(100);
+            entity.Property(e => e.PaymentWebhookAt).HasColumnType("datetime");
             entity.Property(e => e.PaymentMethod).HasMaxLength(30);
+            entity.Property(e => e.QrCodeUrl).HasMaxLength(1000);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Unpaid");
@@ -520,6 +560,46 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__PasswordR__UserI__02FC7413");
+        });
+
+        modelBuilder.Entity<PaymentTransaction>(entity =>
+        {
+            entity.HasIndex(e => new { e.Provider, e.ProviderTransactionId }, "UQ_PaymentTransactions_ProviderTransaction")
+                .IsUnique();
+
+            entity.HasIndex(e => new { e.ClinicId, e.IsMatched, e.CreatedAt }, "IX_PaymentTransactions_Reconcile")
+                .IsDescending(false, false, true);
+
+            entity.HasIndex(e => new { e.InvoiceId, e.CreatedAt }, "IX_PaymentTransactions_Invoice")
+                .IsDescending(false, true);
+
+            entity.Property(e => e.PaymentTransactionId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("PaymentTransactionID");
+            entity.Property(e => e.AccountNumber).HasMaxLength(50);
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Gateway).HasMaxLength(100);
+            entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
+            entity.Property(e => e.IsMatched).HasDefaultValue(false);
+            entity.Property(e => e.Provider).HasMaxLength(20);
+            entity.Property(e => e.ProviderTransactionId).HasMaxLength(100);
+            entity.Property(e => e.ReferenceCode).HasMaxLength(100);
+            entity.Property(e => e.TransferAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.TransactionDate).HasColumnType("datetime");
+            entity.Property(e => e.TransferContent).HasMaxLength(500);
+            entity.Property(e => e.TransferType).HasMaxLength(10);
+
+            entity.HasOne(d => d.Clinic).WithMany(p => p.PaymentTransactions)
+                .HasForeignKey(d => d.ClinicId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PaymentTransactions_Clinic");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.PaymentTransactions)
+                .HasForeignKey(d => d.InvoiceId)
+                .HasConstraintName("FK_PaymentTransactions_Invoice");
         });
 
         modelBuilder.Entity<Permission>(entity =>

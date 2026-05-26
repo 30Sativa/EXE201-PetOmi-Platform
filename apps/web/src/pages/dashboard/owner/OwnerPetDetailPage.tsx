@@ -505,37 +505,123 @@ function OverviewTab({
   weightLogs?: PetWeightLogResponse[] | null
 }) {
   const latestWeight = weightLogs?.[0]?.weightKg
+  const healthUpdatedAt = healthProfile?.updatedAt
+    ? formatDate(healthProfile.updatedAt)
+    : "Chưa cập nhật"
+  const healthStatus = healthProfile ? "Đã có hồ sơ" : "Chưa có hồ sơ"
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <DashboardSection title="Thông tin cơ bản">
-        <div className="grid gap-3">
-          <InfoRow label="Loài" value={pet.species} />
-          <InfoRow label="Giống" value={pet.breed ?? "—"} />
-          <InfoRow label="Giới tính" value={formatGender(pet.gender)} />
-          <InfoRow label="Ngày sinh" value={formatDate(pet.dateOfBirth)} />
-          {pet.isBirthDateEstimated && (
-            <InfoRow label="Ghi chú" value="Ngày sinh ước lượng" />
-          )}
-          <InfoRow label="Màu lông" value={healthProfile?.color ?? "—"} />
-          <InfoRow label="Triệt sản" value={formatIsNeutered(healthProfile?.isNeutered)} />
-          <InfoRow label="Ngày tạo" value={formatDate(pet.createdAt)} />
-        </div>
-      </DashboardSection>
+    <div className="grid gap-4">
+      <div className="grid gap-3 md:grid-cols-3">
+        <OverviewMetric
+          icon={Activity}
+          label="Tuổi"
+          value={formatAge(pet.dateOfBirth) ?? "Chưa có ngày sinh"}
+          note={pet.isBirthDateEstimated ? "Ngày sinh ước lượng" : formatDate(pet.dateOfBirth)}
+        />
+        <OverviewMetric
+          icon={Weight}
+          label="Cân nặng"
+          value={latestWeight ? `${latestWeight} kg` : "Chưa ghi nhận"}
+          note={`${weightLogs?.length ?? 0} lần theo dõi`}
+        />
+        <OverviewMetric
+          icon={Heart}
+          label="Sức khỏe"
+          value={healthStatus}
+          note={healthUpdatedAt}
+        />
+      </div>
 
-      <DashboardSection title="Hồ sơ sức khỏe">
-        {healthProfile ? (
-          <div className="grid gap-3">
-            <InfoRow label="Cân nặng hiện tại" value={latestWeight ? `${latestWeight} kg` : "—"} />
-            <InfoRow label="Dị ứng" value={healthProfile.allergies ?? "—"} />
-            <InfoRow label="Bệnh mãn tính" value={healthProfile.chronicConditions ?? "—"} />
-            <InfoRow label="Số microchip" value={healthProfile.microchipNumber ?? "—"} />
-            <InfoRow label="Cập nhật lần cuối" value={formatDate(healthProfile.updatedAt)} />
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <DashboardSection
+          title="Hồ sơ thú cưng"
+          subtitle="Các thông tin nhận diện và chăm sóc thường dùng."
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <OverviewField label="Loài" value={pet.species} />
+            <OverviewField label="Giống" value={pet.breed ?? "—"} />
+            <OverviewField label="Giới tính" value={formatGender(pet.gender)} />
+            <OverviewField label="Ngày sinh" value={formatDate(pet.dateOfBirth)} />
+            <OverviewField label="Màu lông" value={healthProfile?.color ?? "—"} />
+            <OverviewField label="Triệt sản" value={formatIsNeutered(healthProfile?.isNeutered)} />
+            <OverviewField label="Ngày tạo hồ sơ" value={formatDate(pet.createdAt)} />
+            {pet.isBirthDateEstimated && (
+              <OverviewField label="Ghi chú" value="Ngày sinh ước lượng" tone="warning" />
+            )}
           </div>
-        ) : (
-          <p className="text-sm text-po-text-muted">Chưa có hồ sơ sức khỏe.</p>
-        )}
-      </DashboardSection>
+        </DashboardSection>
+
+        <DashboardSection
+          title="Theo dõi sức khỏe"
+          subtitle="Những dữ liệu cần nhìn nhanh trước khi chăm sóc."
+        >
+          {healthProfile ? (
+            <div className="grid gap-3">
+              <OverviewField label="Dị ứng" value={healthProfile.allergies ?? "Chưa có thông tin"} />
+              <OverviewField label="Bệnh mãn tính" value={healthProfile.chronicConditions ?? "Chưa có thông tin"} />
+              <OverviewField label="Số microchip" value={healthProfile.microchipNumber ?? "Chưa gắn"} />
+              <OverviewField label="Cập nhật lần cuối" value={healthUpdatedAt} />
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-po-border bg-po-surface-muted p-4">
+              <p className="text-sm font-semibold text-po-text">Chưa có hồ sơ sức khỏe</p>
+              <p className="mt-1 text-sm text-po-text-muted">
+                Tạo hồ sơ sức khỏe để lưu cân nặng, dị ứng, bệnh mãn tính và microchip.
+              </p>
+            </div>
+          )}
+        </DashboardSection>
+      </div>
+    </div>
+  )
+}
+
+function OverviewMetric({
+  icon: Icon,
+  label,
+  value,
+  note,
+}: {
+  icon: typeof Activity
+  label: string
+  value: string
+  note: string
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-po-border bg-white p-4">
+      <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-po-text-subtle">{label}</p>
+        <p className="mt-1 text-lg font-extrabold text-po-text">{value}</p>
+        <p className="mt-0.5 text-xs text-po-text-muted">{note}</p>
+      </div>
+    </div>
+  )
+}
+
+function OverviewField({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string
+  value: string
+  tone?: "default" | "warning"
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border p-3",
+        tone === "warning"
+          ? "border-po-warning/30 bg-po-warning-soft"
+          : "border-po-border bg-po-surface-muted/60",
+      )}
+    >
+      <p className="text-xs font-semibold text-po-text-subtle">{label}</p>
+      <p className="mt-1 break-words text-sm font-bold text-po-text">{value}</p>
     </div>
   )
 }
@@ -902,7 +988,11 @@ function SharingTab({
 
       {/* Access List */}
       <DashboardSection title={`Quản lý chia sẻ ${petName}`}>
+<<<<<<< Updated upstream
         {!accessList || accessList.length === 0 ? (
+=======
+        {(accessList ?? []).length === 0 ? (
+>>>>>>> Stashed changes
           <EmptyState
             icon={Link2}
             title="Chưa có ai được chia sẻ quyền truy cập"
@@ -910,13 +1000,25 @@ function SharingTab({
           />
         ) : (
           <div className="grid gap-3">
+<<<<<<< Updated upstream
             {accessList!.map((access) => (
+=======
+            {(accessList ?? []).map((access) => (
+>>>>>>> Stashed changes
               <div
                 key={access.petUserAccessId}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-po-border bg-white px-4 py-3"
               >
                 <div className="flex items-center gap-3">
+<<<<<<< Updated upstream
                   <Avatar fallback={access.userId.slice(0, 2).toUpperCase()} size="sm" alt={access.userId} />
+=======
+                  <Avatar
+                    fallback={access.userId.slice(0, 2).toUpperCase()}
+                    alt={access.userId}
+                    size="sm"
+                  />
+>>>>>>> Stashed changes
                   <div>
                     <p className="font-bold text-po-text">{access.userId}</p>
                     <div className="flex flex-wrap items-center gap-2">
@@ -1108,13 +1210,3 @@ function RemindersTab({
   )
 }
 
-// ==================== HELPERS ====================
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between border-b border-po-border/60 pb-2 last:border-0 last:pb-0">
-      <p className="text-sm text-po-text-muted">{label}</p>
-      <p className="text-sm font-semibold text-po-text">{value}</p>
-    </div>
-  )
-}

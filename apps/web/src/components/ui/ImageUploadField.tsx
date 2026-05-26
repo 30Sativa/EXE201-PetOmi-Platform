@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Camera, Upload, X } from "lucide-react"
 import { uploadImageApi, type CloudinaryUploadResult, type ImageType } from "@/services/upload.service"
 
@@ -12,6 +12,10 @@ interface ImageUploadFieldProps {
   accept?: string
   maxSizeMb?: number
   previewClassName?: string
+  buttonOnly?: boolean
+  buttonLabel?: string
+  buttonClassName?: string
+  showHelpText?: boolean
 }
 
 const DEFAULT_MAX_SIZE_MB = 5
@@ -26,11 +30,19 @@ export default function ImageUploadField({
   accept = "image/jpeg,image/png,image/webp",
   maxSizeMb = DEFAULT_MAX_SIZE_MB,
   previewClassName,
+  buttonOnly = false,
+  buttonLabel,
+  buttonClassName,
+  showHelpText = true,
 }: ImageUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(value ?? null)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setPreview(value ?? null)
+  }, [value])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -72,6 +84,62 @@ export default function ImageUploadField({
 
   const handleReplaceClick = () => {
     inputRef.current?.click()
+  }
+
+  if (buttonOnly) {
+    return (
+      <div className="grid gap-1.5">
+        {label && (
+          <span className="text-sm font-semibold text-po-text">{label}</span>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleReplaceClick}
+            disabled={disabled || isUploading}
+            className={buttonClassName ?? "inline-flex h-10 items-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text transition hover:bg-po-surface-muted disabled:opacity-60"}
+          >
+            {isUploading ? (
+              <>
+                <Upload className="size-4 animate-pulse" />
+                Đang upload...
+              </>
+            ) : (
+              <>
+                <Camera className="size-4" />
+                {buttonLabel ?? (preview ? "Thay ảnh" : "Tải ảnh lên")}
+              </>
+            )}
+          </button>
+          {preview && !disabled && (
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={isUploading}
+              className="inline-flex h-10 items-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-danger transition hover:bg-po-danger-soft disabled:opacity-60"
+            >
+              <X className="size-4" />
+              Xóa
+            </button>
+          )}
+        </div>
+        {error && (
+          <p className="text-xs text-po-danger">{error}</p>
+        )}
+        {showHelpText && (
+          <p className="text-xs text-po-text-subtle">
+            JPG, PNG, WEBP, tối đa {maxSizeMb}MB
+          </p>
+        )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept={accept}
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </div>
+    )
   }
 
   if (preview) {

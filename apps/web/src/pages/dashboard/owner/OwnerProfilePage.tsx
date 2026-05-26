@@ -92,31 +92,42 @@ export default function OwnerProfilePage() {
         </p>
       </div>
 
-      {/* Avatar */}
-      <DashboardSection title="Ảnh đại diện">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-          <Avatar
-            src={avatarUrl || profile?.avatarUrl}
-            alt={profile?.fullName ?? "User"}
-            size="xl"
-          />
-          <div>
+      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+        {/* Avatar */}
+        <DashboardSection
+          title="Ảnh đại diện"
+          subtitle="Ảnh này sẽ hiển thị trên hồ sơ và các hoạt động của bạn."
+        >
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Avatar
+              src={avatarUrl || profile?.avatarUrl}
+              alt={profile?.fullName ?? "User"}
+              size="xl"
+              className="size-24 border-4 border-white shadow-sm"
+            />
             <ImageUploadField
               value={avatarUrl}
               onChange={setAvatarUrl}
               imageType="user_avatar"
+              buttonOnly
+              buttonClassName="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
             />
+            <p className="text-xs text-po-text-subtle">
+              Nên dùng ảnh vuông, rõ mặt hoặc logo cá nhân.
+            </p>
           </div>
-        </div>
-      </DashboardSection>
+        </DashboardSection>
 
-      {/* Profile Form */}
-      <DashboardSection title="Thông tin cá nhân">
-        <form
-          className="grid gap-4 md:grid-cols-2"
-          onSubmit={handleSubmit(onSubmit)}
-          noValidate
+        {/* Profile Form */}
+        <DashboardSection
+          title="Thông tin cá nhân"
+          subtitle="Thông tin liên hệ được dùng khi đặt lịch và nhận hỗ trợ."
         >
+          <form
+            className="grid gap-4 md:grid-cols-2"
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
           <div className="grid gap-2">
             <label
               className="text-sm font-semibold text-po-text"
@@ -210,8 +221,9 @@ export default function OwnerProfilePage() {
               </span>
             )}
           </div>
-        </form>
-      </DashboardSection>
+          </form>
+        </DashboardSection>
+      </div>
 
       {/* Account Info */}
       <DashboardSection title="Thông tin tài khoản">

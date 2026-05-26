@@ -7,7 +7,6 @@ import {
   LogOut,
   MessageSquare,
   PawPrint,
-  Settings,
   UserRound,
 } from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
@@ -41,20 +40,21 @@ export default function OwnerDashboardLayout() {
         {/* Desktop Sidebar */}
         <aside className="hidden w-64 flex-shrink-0 flex-col gap-4 rounded-[28px] border border-po-border bg-white/90 p-4 shadow-sm md:flex">
           <Link
-            to="/"
-            className="flex items-center gap-2 text-sm font-extrabold text-po-text no-underline"
+            to="/dashboard/owner"
+            className="flex items-center gap-3 rounded-2xl px-2 py-1.5 text-sm font-extrabold text-po-text no-underline transition hover:bg-po-surface-muted"
           >
-            <span className="grid size-10 place-items-center rounded-2xl bg-po-primary text-white">
-              <LayoutDashboard className="size-5" />
+            <span className="grid size-11 place-items-center rounded-2xl bg-po-primary text-white shadow-sm shadow-orange-200">
+              <PawPrint className="size-5" />
             </span>
-            <span className="text-base">PetOmi</span>
+            <span>
+              <span className="block text-base leading-tight">PetOmi</span>
+              <span className="block text-xs font-semibold text-po-text-subtle">
+                Chăm sóc thú cưng
+              </span>
+            </span>
           </Link>
 
-          <div className="rounded-2xl border border-po-border bg-po-primary-soft px-3 py-2 text-xs font-semibold text-po-primary">
-            Chủ nuôi (Owner)
-          </div>
-
-          <nav className="grid gap-1">
+          <nav className="mt-2 grid gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -74,16 +74,6 @@ export default function OwnerDashboardLayout() {
               </NavLink>
             ))}
           </nav>
-
-          <div className="mt-auto grid gap-2 rounded-2xl border border-po-border bg-po-surface-muted p-4 text-sm">
-            <div className="flex items-center gap-2 font-semibold text-po-text">
-              <Settings className="size-4" />
-              Thiết lập nhanh
-            </div>
-            <p className="text-xs text-po-text-muted">
-              Cập nhật hồ sơ, thông báo và quyền truy cập.
-            </p>
-          </div>
         </aside>
 
         {/* Main Content */}
@@ -91,11 +81,11 @@ export default function OwnerDashboardLayout() {
           {/* Header */}
           <header className="flex flex-wrap items-center justify-between gap-4 rounded-[28px] border border-po-border bg-white/90 px-4 py-3 shadow-sm">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">
-                Owner
+              <p className="text-xs font-semibold text-po-primary">
+                PetOmi của bạn
               </p>
               <h1 className="text-xl font-extrabold text-po-text md:text-2xl">
-                Dashboard Chủ nuôi
+                Quản lý thú cưng
               </h1>
             </div>
             <div className="flex items-center gap-2">

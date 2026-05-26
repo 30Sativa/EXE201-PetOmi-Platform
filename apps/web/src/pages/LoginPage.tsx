@@ -3,6 +3,9 @@ import { Link } from "react-router-dom"
 
 import { useLoginForm, useGoogleLogin } from "@/hooks"
 
+const fieldClass =
+  "h-12 w-full rounded-2xl border border-po-border bg-po-surface-muted/55 px-4 text-[15px] text-po-text transition placeholder:text-po-text-subtle focus:border-po-primary focus:bg-white focus:shadow-[var(--po-focus-ring)]"
+
 export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?: () => void }) {
   const {
     register,
@@ -19,9 +22,9 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
   const { login: googleLogin } = useGoogleLogin()
 
   return (
-    <form className="grid gap-4" onSubmit={handleSubmit(onSubmit)}>
+    <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
       <div className="grid gap-2">
-        <label htmlFor="login-email" className="text-sm font-extrabold text-po-text">
+        <label htmlFor="login-email" className="text-sm font-semibold text-po-text">
           Email
         </label>
         <input
@@ -29,7 +32,7 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
           type="email"
           autoComplete="email"
           placeholder="owner@petomi.vn"
-          className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary"
+          className={fieldClass}
           {...register("email")}
         />
         {errors.email?.message ? <p className="text-sm font-semibold text-po-danger">{errors.email.message}</p> : null}
@@ -37,10 +40,10 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
 
       <div className="grid gap-2">
         <div className="flex items-center justify-between gap-3">
-          <label htmlFor="login-password" className="text-sm font-extrabold text-po-text">
+          <label htmlFor="login-password" className="text-sm font-semibold text-po-text">
             Mật khẩu
           </label>
-          <Link to="/forgot-password" className="text-sm font-bold text-po-primary no-underline transition hover:text-po-primary-hover">
+          <Link to="/forgot-password" className="text-sm font-semibold text-po-primary no-underline transition hover:text-po-primary-hover">
             Quên mật khẩu?
           </Link>
         </div>
@@ -50,12 +53,12 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
             type={showPassword ? "text" : "password"}
             autoComplete="current-password"
             placeholder="Nhập mật khẩu"
-            className="h-12 w-full rounded-lg border border-po-border bg-white px-4 pr-12 text-[15px] text-po-text transition focus:border-po-primary"
+            className={`${fieldClass} pr-12`}
             {...register("password")}
           />
           <button
             type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-po-text-muted transition hover:text-po-text"
+            className="absolute right-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-xl text-po-text-muted transition hover:bg-white hover:text-po-text"
             onClick={onTogglePassword}
             aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
           >
@@ -66,13 +69,13 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
       </div>
 
       {message ? (
-        <p className={`rounded-lg px-3 py-2 text-sm font-bold ${status === "success" ? "bg-po-success-soft text-po-success" : "bg-po-danger-soft text-po-danger"}`}>
+        <p className={`rounded-2xl px-4 py-3 text-sm font-semibold ${status === "success" ? "bg-po-success-soft text-po-success" : "bg-po-danger-soft text-po-danger"}`}>
           {message}
         </p>
       ) : null}
 
       <button
-        className="h-12 w-full rounded-lg bg-po-primary text-[15px] font-extrabold text-white shadow-lg shadow-teal-900/10 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0 disabled:translate-y-0 disabled:opacity-60"
+        className="h-12 w-full rounded-full bg-po-primary text-[15px] font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0 disabled:translate-y-0 disabled:opacity-60"
         type="submit"
         disabled={isSubmitting}
       >
@@ -88,7 +91,7 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
       <button
         type="button"
         onClick={googleLogin}
-        className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-po-border bg-white text-sm font-semibold text-po-text transition hover:bg-po-surface-muted"
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-po-border bg-white text-sm font-semibold text-po-text transition hover:-translate-y-0.5 hover:bg-po-surface-muted hover:shadow-md active:translate-y-0"
       >
         <svg className="size-5" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -101,7 +104,7 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
 
       <p className="text-center text-sm text-po-text-muted">
         Chưa có tài khoản?{" "}
-        <button type="button" onClick={onSwitchToRegister} className="font-extrabold text-po-primary hover:text-po-primary-hover">
+        <button type="button" onClick={onSwitchToRegister} className="font-semibold text-po-primary transition hover:text-po-primary-hover">
           Đăng ký ngay
         </button>
       </p>

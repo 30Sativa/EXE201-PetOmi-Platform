@@ -19,18 +19,18 @@ export default function StatCard({
   return (
     <div
       className={cn(
-        "rounded-[24px] border border-po-border bg-po-surface-muted p-4",
+        "rounded-[26px] bg-white/85 p-5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md",
         className,
       )}
     >
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-po-text-muted">{label}</p>
-        <span className="grid size-9 place-items-center rounded-2xl bg-white text-po-primary">
+      <div className="flex items-start justify-between gap-4">
+        <p className="max-w-[11rem] text-sm font-semibold leading-5 text-po-text-muted">{label}</p>
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
           <Icon className="size-4" />
         </span>
       </div>
-      <p className="mt-3 text-2xl font-extrabold text-po-text">{value}</p>
-      {hint ? <p className="mt-1 text-xs text-po-text-subtle">{hint}</p> : null}
+      <p className="mt-4 text-3xl font-extrabold leading-none text-po-text tabular-nums">{value}</p>
+      {hint ? <p className="mt-2 text-xs font-medium leading-5 text-po-text-subtle">{hint}</p> : null}
     </div>
   )
 }

@@ -68,6 +68,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             entity.ReviewedAt = DateTime.UtcNow;
         }
 
+        public async Task<int> CountUnresolvedByClinicIdAsync(Guid clinicId)
+        {
+            return await _context.PaymentTransactions
+                .Where(x => x.ClinicId == clinicId && !x.IsMatched)
+                .CountAsync();
+        }
+
         public async Task<IReadOnlyList<PaymentTransactionDomain>> GetRecentByClinicIdAsync(
             Guid clinicId,
             int limit,

@@ -71,6 +71,15 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IReadOnlyList<InvoiceAgingItemResponse>>.Ok(result));
         }
 
+        /// <summary>Tong quan billing cho dashboard FE: so hoa don no, tong tien no, va giao dich SePay chua doi soat.</summary>
+        [HttpGet("billing-summary")]
+        public async Task<IActionResult> GetBillingSummary([FromQuery] Guid clinicId)
+        {
+            var query = new GetBillingDashboardSummaryQuery(clinicId, CurrentUserId);
+            var result = await Mediator.Send(query);
+            return Ok(BaseResponse<BillingDashboardSummaryResponse>.Ok(result));
+        }
+
         /// <summary>Thu tien thu cong cho hoa don (tien mat/chuyen khoan thu cong).</summary>
         [HttpPost("{id:guid}/pay")]
         public async Task<IActionResult> PayInvoice(Guid id, [FromBody] PayInvoiceRequest request, [FromQuery] Guid clinicId)

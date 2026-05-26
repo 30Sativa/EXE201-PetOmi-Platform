@@ -74,6 +74,18 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<(int UnpaidCount, decimal UnpaidAmount)> GetUnpaidSummaryByClinicIdAsync(Guid clinicId)
+        {
+            var query = _context.Invoices.Where(i =>
+                i.ClinicId == clinicId &&
+                i.Status == "Unpaid");
+
+            var count = await query.CountAsync();
+            var amount = await query.SumAsync(i => (decimal?)i.FinalAmount) ?? 0m;
+
+            return (count, amount);
+        }
+
         public async Task<bool> HasActiveInvoiceAsync(Guid appointmentId)
         {
             return await _context.Invoices

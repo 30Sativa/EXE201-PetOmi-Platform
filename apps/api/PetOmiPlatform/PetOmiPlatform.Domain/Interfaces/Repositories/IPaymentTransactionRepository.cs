@@ -10,6 +10,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task AddAsync(PaymentTransactionDomain transaction);
         Task MarkMatchedAsync(Guid transactionId, Guid invoiceId, Guid? reviewedByUserId = null, string? reviewNote = null);
         Task MarkDismissedAsync(Guid transactionId, Guid reviewedByUserId, string reviewNote);
+        Task<int> CountUnresolvedByClinicIdAsync(Guid clinicId);
         Task<IReadOnlyList<PaymentTransactionDomain>> GetRecentByClinicIdAsync(
             Guid clinicId,
             int limit,

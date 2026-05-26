@@ -988,11 +988,14 @@ function SharingTab({
 
       {/* Access List */}
       <DashboardSection title={`Quản lý chia sẻ ${petName}`}>
-<<<<<<< Updated upstream
+
+
         {!accessList || accessList.length === 0 ? (
-=======
+
         {(accessList ?? []).length === 0 ? (
->>>>>>> Stashed changes
+
+        {accessList && accessList.length > 0 ? (
+
           <EmptyState
             icon={Link2}
             title="Chưa có ai được chia sẻ quyền truy cập"
@@ -1000,25 +1003,29 @@ function SharingTab({
           />
         ) : (
           <div className="grid gap-3">
-<<<<<<< Updated upstream
+
             {accessList!.map((access) => (
-=======
+
             {(accessList ?? []).map((access) => (
->>>>>>> Stashed changes
+
+            {accessList!.map((access) => (
+
               <div
                 key={access.petUserAccessId}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-po-border bg-white px-4 py-3"
               >
                 <div className="flex items-center gap-3">
-<<<<<<< Updated upstream
+
                   <Avatar fallback={access.userId.slice(0, 2).toUpperCase()} size="sm" alt={access.userId} />
-=======
+
                   <Avatar
                     fallback={access.userId.slice(0, 2).toUpperCase()}
                     alt={access.userId}
                     size="sm"
                   />
->>>>>>> Stashed changes
+
+                  <Avatar fallback={access.userId.slice(0, 2).toUpperCase()} size="sm" alt={access.userId} />
+
                   <div>
                     <p className="font-bold text-po-text">{access.userId}</p>
                     <div className="flex flex-wrap items-center gap-2">

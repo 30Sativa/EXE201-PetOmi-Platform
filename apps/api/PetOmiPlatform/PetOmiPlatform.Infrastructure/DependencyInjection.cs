@@ -117,6 +117,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddHttpClient<IGoogleAuthService, GoogleAuthService>();
             // Services
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IPetAccessService, PetAccessService>();
 
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<IPetAccessService, PetAccessService>();

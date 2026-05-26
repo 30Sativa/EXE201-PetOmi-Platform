@@ -25,6 +25,14 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<InvoiceResponse>.Ok(result, "Tao hoa don thanh cong."));
         }
 
+        [HttpPost("auto-compose")]
+        public async Task<IActionResult> AutoComposeInvoice([FromBody] AutoComposeInvoiceRequest request, [FromQuery] Guid clinicId)
+        {
+            var command = new AutoComposeInvoiceCommand(clinicId, CurrentUserId, request);
+            var result = await Mediator.Send(command);
+            return Ok(BaseResponse<InvoiceResponse>.Ok(result, "Tao hoa don tu dong thanh cong."));
+        }
+
         [HttpGet("by-appointment/{appointmentId:guid}")]
         public async Task<IActionResult> GetByAppointmentId(Guid appointmentId, [FromQuery] Guid clinicId)
         {
@@ -63,6 +71,37 @@ namespace PetOmiPlatform.API.Controllers
             var query = new GetSePayReconciliationQuery(clinicId, CurrentUserId, limit, includeMatched);
             var result = await Mediator.Send(query);
             return Ok(BaseResponse<IReadOnlyList<SePayReconciliationItemResponse>>.Ok(result));
+        }
+
+        [HttpPost("sepay/reconciliation/{paymentTransactionId:guid}/manual-match")]
+        public async Task<IActionResult> ManualMatchSePayTransaction(
+            Guid paymentTransactionId,
+            [FromBody] ManualMatchSePayTransactionRequest request,
+            [FromQuery] Guid clinicId)
+        {
+            var command = new ManualMatchSePayTransactionCommand(
+                clinicId,
+                CurrentUserId,
+                paymentTransactionId,
+                request.InvoiceId,
+                request.ReviewNote);
+            var result = await Mediator.Send(command);
+            return Ok(BaseResponse<bool>.Ok(result, "Manual match giao dich SePay thanh cong."));
+        }
+
+        [HttpPost("sepay/reconciliation/{paymentTransactionId:guid}/dismiss")]
+        public async Task<IActionResult> DismissSePayTransaction(
+            Guid paymentTransactionId,
+            [FromBody] DismissSePayTransactionRequest request,
+            [FromQuery] Guid clinicId)
+        {
+            var command = new DismissSePayTransactionCommand(
+                clinicId,
+                CurrentUserId,
+                paymentTransactionId,
+                request.ReviewNote);
+            var result = await Mediator.Send(command);
+            return Ok(BaseResponse<bool>.Ok(result, "Da danh dau giao dich SePay la da xu ly thu cong."));
         }
 
         [HttpPost("{id:guid}/cancel")]

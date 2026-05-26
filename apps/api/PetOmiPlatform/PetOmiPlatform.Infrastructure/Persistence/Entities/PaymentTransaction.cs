@@ -30,6 +30,12 @@ public partial class PaymentTransaction
 
     public bool IsMatched { get; set; }
 
+    public string? ReviewNote { get; set; }
+
+    public Guid? ReviewedByUserId { get; set; }
+
+    public DateTime? ReviewedAt { get; set; }
+
     public string? RawPayload { get; set; }
 
     public DateTime CreatedAt { get; set; }

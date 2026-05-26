@@ -587,6 +587,9 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.Provider).HasMaxLength(20);
             entity.Property(e => e.ProviderTransactionId).HasMaxLength(100);
             entity.Property(e => e.ReferenceCode).HasMaxLength(100);
+            entity.Property(e => e.ReviewNote).HasMaxLength(500);
+            entity.Property(e => e.ReviewedAt).HasColumnType("datetime");
+            entity.Property(e => e.ReviewedByUserId).HasColumnName("ReviewedByUserID");
             entity.Property(e => e.TransferAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.TransactionDate).HasColumnType("datetime");
             entity.Property(e => e.TransferContent).HasMaxLength(500);

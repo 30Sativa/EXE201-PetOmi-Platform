@@ -21,6 +21,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 accountNumber: entity.AccountNumber,
                 transactionDate: entity.TransactionDate,
                 isMatched: entity.IsMatched,
+                reviewNote: entity.ReviewNote,
+                reviewedByUserId: entity.ReviewedByUserId,
+                reviewedAt: entity.ReviewedAt,
                 rawPayload: entity.RawPayload,
                 createdAt: entity.CreatedAt
             );
@@ -41,6 +44,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 AccountNumber = domain.AccountNumber,
                 TransactionDate = domain.TransactionDate,
                 IsMatched = domain.IsMatched,
+                ReviewNote = domain.ReviewNote,
+                ReviewedByUserId = domain.ReviewedByUserId,
+                ReviewedAt = domain.ReviewedAt,
                 RawPayload = domain.RawPayload,
                 CreatedAt = domain.CreatedAt
             };

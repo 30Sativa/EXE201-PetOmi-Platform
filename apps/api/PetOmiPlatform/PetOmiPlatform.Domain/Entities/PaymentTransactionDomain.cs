@@ -18,6 +18,9 @@ namespace PetOmiPlatform.Domain.Entities
         public string? AccountNumber { get; private set; }
         public DateTime? TransactionDate { get; private set; }
         public bool IsMatched { get; private set; }
+        public string? ReviewNote { get; private set; }
+        public Guid? ReviewedByUserId { get; private set; }
+        public DateTime? ReviewedAt { get; private set; }
         public string? RawPayload { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
@@ -77,6 +80,9 @@ namespace PetOmiPlatform.Domain.Entities
             string? accountNumber,
             DateTime? transactionDate,
             bool isMatched,
+            string? reviewNote,
+            Guid? reviewedByUserId,
+            DateTime? reviewedAt,
             string? rawPayload,
             DateTime createdAt)
         {
@@ -95,6 +101,9 @@ namespace PetOmiPlatform.Domain.Entities
                 AccountNumber = accountNumber,
                 TransactionDate = transactionDate,
                 IsMatched = isMatched,
+                ReviewNote = reviewNote,
+                ReviewedByUserId = reviewedByUserId,
+                ReviewedAt = reviewedAt,
                 RawPayload = rawPayload,
                 CreatedAt = createdAt
             };

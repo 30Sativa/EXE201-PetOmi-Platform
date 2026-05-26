@@ -23,12 +23,18 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 x.Provider == providerName && x.ProviderTransactionId == providerTransactionId);
         }
 
+        public async Task<PaymentTransactionDomain?> GetByIdAsync(Guid paymentTransactionId)
+        {
+            var entity = await _context.PaymentTransactions.FindAsync(paymentTransactionId);
+            return entity?.ToDomain();
+        }
+
         public async Task AddAsync(PaymentTransactionDomain transaction)
         {
             await _context.PaymentTransactions.AddAsync(transaction.ToEntity());
         }
 
-        public async Task MarkMatchedAsync(Guid transactionId, Guid invoiceId)
+        public async Task MarkMatchedAsync(Guid transactionId, Guid invoiceId, Guid? reviewedByUserId = null, string? reviewNote = null)
         {
             var entity = await _context.PaymentTransactions.FindAsync(transactionId);
             if (entity == null)
@@ -38,6 +44,28 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
             entity.InvoiceId = invoiceId;
             entity.IsMatched = true;
+
+            if (reviewedByUserId.HasValue || !string.IsNullOrWhiteSpace(reviewNote))
+            {
+                entity.ReviewedByUserId = reviewedByUserId;
+                entity.ReviewNote = NormalizeReviewNote(reviewNote);
+                entity.ReviewedAt = DateTime.UtcNow;
+            }
+        }
+
+        public async Task MarkDismissedAsync(Guid transactionId, Guid reviewedByUserId, string reviewNote)
+        {
+            var entity = await _context.PaymentTransactions.FindAsync(transactionId);
+            if (entity == null)
+            {
+                return;
+            }
+
+            entity.InvoiceId = null;
+            entity.IsMatched = true;
+            entity.ReviewedByUserId = reviewedByUserId;
+            entity.ReviewNote = NormalizeReviewNote(reviewNote);
+            entity.ReviewedAt = DateTime.UtcNow;
         }
 
         public async Task<IReadOnlyList<PaymentTransactionDomain>> GetRecentByClinicIdAsync(
@@ -58,6 +86,12 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .Take(limit)
                 .Select(x => x.ToDomain())
                 .ToListAsync();
+        }
+
+        private static string? NormalizeReviewNote(string? reviewNote)
+        {
+            var normalized = reviewNote?.Trim();
+            return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
         }
     }
 }

@@ -80,15 +80,23 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 Status = ResolveStatus(transaction, invoice),
                 InvoiceId = invoice?.Id,
                 InvoiceCode = invoice?.InvoiceCode,
-                InvoiceFinalAmount = invoice?.FinalAmount
+                InvoiceFinalAmount = invoice?.FinalAmount,
+                ReviewNote = transaction.ReviewNote,
+                ReviewedByUserId = transaction.ReviewedByUserId,
+                ReviewedAt = transaction.ReviewedAt
             };
         }
 
         private static string ResolveStatus(PaymentTransactionDomain transaction, InvoiceDomain? invoice)
         {
-            if (transaction.IsMatched)
+            if (transaction.IsMatched && invoice != null)
             {
                 return "Matched";
+            }
+
+            if (transaction.IsMatched && invoice == null)
+            {
+                return "Dismissed";
             }
 
             if (invoice == null)

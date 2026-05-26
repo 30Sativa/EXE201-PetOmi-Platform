@@ -13,5 +13,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public Guid? InvoiceId { get; set; }
         public string? InvoiceCode { get; set; }
         public decimal? InvoiceFinalAmount { get; set; }
+        public string? ReviewNote { get; set; }
+        public Guid? ReviewedByUserId { get; set; }
+        public DateTime? ReviewedAt { get; set; }
     }
 }

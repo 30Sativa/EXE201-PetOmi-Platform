@@ -76,14 +76,18 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         /// <summary>Lay danh sach giao dich SePay can doi soat cua clinic.</summary>
-        /// <remarks>Mac dinh chi lay giao dich chua matched. Dat includeMatched=true de xem lich su da xu ly.</remarks>
+        /// <remarks>
+        /// Mac dinh chi lay giao dich chua matched. Dat includeMatched=true de xem lich su da xu ly.
+        /// alertAfterMinutes dung de danh dau giao dich chua doi soat qua nguong can staff uu tien xu ly.
+        /// </remarks>
         [HttpGet("sepay/reconciliation")]
         public async Task<IActionResult> GetSePayReconciliation(
             [FromQuery] Guid clinicId,
             [FromQuery] int limit = 50,
-            [FromQuery] bool includeMatched = false)
+            [FromQuery] bool includeMatched = false,
+            [FromQuery] int alertAfterMinutes = 30)
         {
-            var query = new GetSePayReconciliationQuery(clinicId, CurrentUserId, limit, includeMatched);
+            var query = new GetSePayReconciliationQuery(clinicId, CurrentUserId, limit, includeMatched, alertAfterMinutes);
             var result = await Mediator.Send(query);
             return Ok(BaseResponse<IReadOnlyList<SePayReconciliationItemResponse>>.Ok(result));
         }

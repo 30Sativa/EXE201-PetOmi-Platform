@@ -1,6 +1,7 @@
 using MediatR;
 using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Features.Invoice.DTOs.Response;
+using PetOmiPlatform.Application.Features.Invoice.Mappers;
 using PetOmiPlatform.Application.Features.Invoice.Query;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
@@ -34,7 +35,9 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 request.IncludeMatched);
 
             var invoiceMap = await BuildInvoiceMapAsync(transactions);
-            return transactions.Select(tx => ToResponse(tx, invoiceMap)).ToList();
+            return transactions
+                .Select(tx => tx.ToReconciliationItemResponse(invoiceMap, request.AlertAfterMinutes, DateTime.UtcNow))
+                .ToList();
         }
 
         private async Task<Dictionary<Guid, InvoiceDomain>> BuildInvoiceMapAsync(IReadOnlyList<PaymentTransactionDomain> transactions)
@@ -56,65 +59,6 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             }
 
             return result;
-        }
-
-        private static SePayReconciliationItemResponse ToResponse(
-            PaymentTransactionDomain transaction,
-            IReadOnlyDictionary<Guid, InvoiceDomain> invoiceMap)
-        {
-            InvoiceDomain? invoice = null;
-            if (transaction.InvoiceId.HasValue)
-            {
-                invoiceMap.TryGetValue(transaction.InvoiceId.Value, out invoice);
-            }
-
-            return new SePayReconciliationItemResponse
-            {
-                PaymentTransactionId = transaction.Id,
-                ProviderTransactionId = transaction.ProviderTransactionId,
-                TransferType = transaction.TransferType,
-                TransferAmount = transaction.TransferAmount,
-                TransactionDate = transaction.TransactionDate,
-                ReferenceCode = transaction.ReferenceCode,
-                TransferContent = transaction.TransferContent,
-                Status = ResolveStatus(transaction, invoice),
-                InvoiceId = invoice?.Id,
-                InvoiceCode = invoice?.InvoiceCode,
-                InvoiceFinalAmount = invoice?.FinalAmount,
-                ReviewNote = transaction.ReviewNote,
-                ReviewedByUserId = transaction.ReviewedByUserId,
-                ReviewedAt = transaction.ReviewedAt
-            };
-        }
-
-        private static string ResolveStatus(PaymentTransactionDomain transaction, InvoiceDomain? invoice)
-        {
-            if (transaction.IsMatched && invoice != null)
-            {
-                return "Matched";
-            }
-
-            if (transaction.IsMatched && invoice == null)
-            {
-                return "Dismissed";
-            }
-
-            if (invoice == null)
-            {
-                return "Unmapped";
-            }
-
-            if (transaction.TransferType != "in")
-            {
-                return "DirectionMismatch";
-            }
-
-            if (transaction.TransferAmount < invoice.FinalAmount)
-            {
-                return "AmountMismatch";
-            }
-
-            return "PendingReview";
         }
     }
 }

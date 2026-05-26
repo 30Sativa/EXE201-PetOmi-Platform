@@ -13,6 +13,10 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
             RuleFor(x => x.Limit)
                 .InclusiveBetween(1, 200)
                 .WithMessage("Limit phai trong khoang 1-200.");
+
+            RuleFor(x => x.AlertAfterMinutes)
+                .InclusiveBetween(1, 1440)
+                .WithMessage("AlertAfterMinutes phai trong khoang 1-1440 phut.");
         }
     }
 }

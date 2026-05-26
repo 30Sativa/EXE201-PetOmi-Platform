@@ -7,6 +7,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Query
         Guid ClinicId,
         Guid StaffUserId,
         int Limit = 50,
-        bool IncludeMatched = false
+        bool IncludeMatched = false,
+        int AlertAfterMinutes = 30
     ) : IRequest<IReadOnlyList<SePayReconciliationItemResponse>>;
 }

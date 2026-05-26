@@ -16,5 +16,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public string? ReviewNote { get; set; }
         public Guid? ReviewedByUserId { get; set; }
         public DateTime? ReviewedAt { get; set; }
+        public int PendingMinutes { get; set; }
+        public int AlertAfterMinutes { get; set; }
+        public bool NeedsAttention { get; set; }
     }
 }

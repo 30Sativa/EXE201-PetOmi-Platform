@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace PetOmiPlatform.Application.Feature.Auth.DTOs.Request
+namespace PetOmiPlatform.Application.Features.Auth.DTOs.Request
 {
     public class RegisterRequest
     {

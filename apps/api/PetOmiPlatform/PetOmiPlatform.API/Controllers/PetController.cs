@@ -177,6 +177,16 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<object>.Ok(null, "Xóa ảnh thành công."));
         }
 
+        /// <summary>
+        /// Đặt ảnh trong gallery làm ảnh đại diện cho thú cưng.
+        /// </summary>
+        [HttpPatch("{petId:guid}/avatar")]
+        public async Task<IActionResult> SetPetAvatar(Guid petId, [FromBody] SetPetAvatarRequest request)
+        {
+            var result = await Mediator.Send(new SetPetAvatarCommand(CurrentUserId, petId, request));
+            return Ok(BaseResponse<PetPhotoResponse>.Ok(result, "Đặt ảnh đại diện thành công."));
+        }
+
         // ==================== Medical Records ====================
 
         /// <summary>

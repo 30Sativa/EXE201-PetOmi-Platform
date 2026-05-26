@@ -1,7 +1,10 @@
 import { useCompleteProfileForm } from "@/hooks"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import { useState } from "react"
 
 export default function CompleteProfilePage() {
   const { register, handleSubmit, errors, isSubmitting, status, message, onSubmit } = useCompleteProfileForm()
+  const [avatarUrl, setAvatarUrl] = useState("")
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
@@ -13,7 +16,7 @@ export default function CompleteProfilePage() {
           </p>
         </div>
 
-        <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
+        <form className="grid gap-5" onSubmit={handleSubmit((data) => onSubmit(data, avatarUrl))}>
           <div className="grid gap-2">
             <label htmlFor="fullName" className="text-sm font-extrabold text-po-text">
               Họ tên <span className="text-po-danger">*</span>
@@ -96,24 +99,12 @@ export default function CompleteProfilePage() {
             )}
           </div>
 
-          <div className="grid gap-2">
-            <label htmlFor="avatarUrl" className="text-sm font-extrabold text-po-text">
-              Avatar URL
-            </label>
-            <input
-              id="avatarUrl"
-              type="url"
-              placeholder="https://example.com/avatar.jpg"
-              className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary"
-              {...register("avatarUrl")}
-            />
-            {errors.avatarUrl?.message && (
-              <p className="text-sm font-semibold text-po-danger">{errors.avatarUrl.message}</p>
-            )}
-            <p className="text-xs text-po-text-subtle">
-              Nhập link ảnh đại diện (sẽ hỗ trợ upload sau).
-            </p>
-          </div>
+          <ImageUploadField
+            label="Avatar URL"
+            value={avatarUrl}
+            onChange={setAvatarUrl}
+            imageType="user_avatar"
+          />
 
           {message && (
             <p

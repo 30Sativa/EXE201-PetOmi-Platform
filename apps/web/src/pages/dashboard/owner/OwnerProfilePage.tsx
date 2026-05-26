@@ -1,12 +1,11 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { Camera } from "lucide-react"
-
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import Avatar from "@/components/ui/Avatar"
+import ImageUploadField from "@/components/ui/ImageUploadField"
 import { getProfileApi, updateProfileApi } from "@/services/profile.service"
 import { OwnerProfileSchema, type OwnerProfileForm } from "@/schemas/dashboard.schema"
 import { getErrorMessage } from "@/lib/utils"
@@ -15,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext"
 export default function OwnerProfilePage() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState("")
   const queryClient = useQueryClient()
   const { user } = useAuth()
 
@@ -23,11 +23,16 @@ export default function OwnerProfilePage() {
     queryFn: getProfileApi,
   })
 
+  useEffect(() => {
+    if (profile?.avatarUrl) {
+      setAvatarUrl(profile.avatarUrl)
+    }
+  }, [profile?.avatarUrl])
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<OwnerProfileForm>({
     resolver: zodResolver(OwnerProfileSchema),
     values: profile
@@ -44,8 +49,8 @@ export default function OwnerProfilePage() {
     mutationFn: updateProfileApi,
     onSuccess: () => {
       setStatus("success")
+      setErrorMessage("")
       queryClient.invalidateQueries({ queryKey: ["profile"] })
-      reset()
     },
     onError: (err) => {
       setStatus("error")
@@ -61,10 +66,11 @@ export default function OwnerProfilePage() {
         fullName: data.fullName,
         phone: data.phone,
         address: data.city,
+        avatarUrl: avatarUrl || undefined,
       })
-      setStatus("success")
     } catch {
       setStatus("error")
+      setErrorMessage("Đã xảy ra lỗi. Vui lòng thử lại.")
     }
   }
 
@@ -86,33 +92,42 @@ export default function OwnerProfilePage() {
         </p>
       </div>
 
-      {/* Avatar */}
-      <DashboardSection title="Ảnh đại diện">
-        <div className="flex items-center gap-4">
-          <Avatar
-            src={profile?.avatarUrl}
-            alt={profile?.fullName ?? "User"}
-            size="xl"
-          />
-          <div>
-            <button className="inline-flex h-10 items-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text transition hover:bg-po-surface-muted">
-              <Camera className="size-4" />
-              Đổi ảnh
-            </button>
-            <p className="mt-2 text-xs text-po-text-subtle">
-              JPG, PNG, tối đa 5MB
+      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+        {/* Avatar */}
+        <DashboardSection
+          title="Ảnh đại diện"
+          subtitle="Ảnh này sẽ hiển thị trên hồ sơ và các hoạt động của bạn."
+        >
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Avatar
+              src={avatarUrl || profile?.avatarUrl}
+              alt={profile?.fullName ?? "User"}
+              size="xl"
+              className="size-24 border-4 border-white shadow-sm"
+            />
+            <ImageUploadField
+              value={avatarUrl}
+              onChange={setAvatarUrl}
+              imageType="user_avatar"
+              buttonOnly
+              buttonClassName="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+            />
+            <p className="text-xs text-po-text-subtle">
+              Nên dùng ảnh vuông, rõ mặt hoặc logo cá nhân.
             </p>
           </div>
-        </div>
-      </DashboardSection>
+        </DashboardSection>
 
-      {/* Profile Form */}
-      <DashboardSection title="Thông tin cá nhân">
-        <form
-          className="grid gap-4 md:grid-cols-2"
-          onSubmit={handleSubmit(onSubmit)}
-          noValidate
+        {/* Profile Form */}
+        <DashboardSection
+          title="Thông tin cá nhân"
+          subtitle="Thông tin liên hệ được dùng khi đặt lịch và nhận hỗ trợ."
         >
+          <form
+            className="grid gap-4 md:grid-cols-2"
+            onSubmit={handleSubmit(onSubmit)}
+            noValidate
+          >
           <div className="grid gap-2">
             <label
               className="text-sm font-semibold text-po-text"
@@ -206,8 +221,9 @@ export default function OwnerProfilePage() {
               </span>
             )}
           </div>
-        </form>
-      </DashboardSection>
+          </form>
+        </DashboardSection>
+      </div>
 
       {/* Account Info */}
       <DashboardSection title="Thông tin tài khoản">

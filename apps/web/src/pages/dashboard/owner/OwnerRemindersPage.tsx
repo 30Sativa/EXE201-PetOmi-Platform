@@ -1,8 +1,10 @@
+import { Bell, BellOff, Plus, Settings, X } from "lucide-react"
 import { useState } from "react"
-import { Bell, BellOff, Plus, X } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import CreateReminderModal from "@/components/dashboard/owner/CreateReminderModal"
+import OwnerReminderPreferencesPage from "@/pages/dashboard/owner/OwnerReminderPreferencesPage"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge, { reminderStatusVariant } from "@/components/ui/StatusBadge"
@@ -50,6 +52,8 @@ const getReminderTypeLabel = (type: string) => {
 export default function OwnerRemindersPage() {
   const [filter, setFilter] = useState<FilterTab>("all")
   const [dismissTarget, setDismissTarget] = useState<ReminderResponse | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showPreferences, setShowPreferences] = useState(false)
   const queryClient = useQueryClient()
 
   const { data: reminders, isLoading, error } = useQuery({
@@ -79,7 +83,7 @@ export default function OwnerRemindersPage() {
 
   const filtered = (reminders ?? []).filter((r) => {
     if (filter === "all") return true
-    if (filter === "active") return r.status.toLowerCase() === "active" || r.status.toLowerCase() === "pending"
+    if (filter === "active") return r.status.toLowerCase() === "pending"
     if (filter === "dismissed") return r.status.toLowerCase() === "dismissed"
     return true
   })
@@ -90,7 +94,7 @@ export default function OwnerRemindersPage() {
   }
 
   const activeCount = (reminders ?? []).filter(
-    (r) => r.status.toLowerCase() === "active" || r.status.toLowerCase() === "pending",
+    (r) => r.status.toLowerCase() === "pending",
   ).length
 
   return (
@@ -103,10 +107,22 @@ export default function OwnerRemindersPage() {
             Quản lý các nhắc nhở về lịch hẹn, tiêm phòng và tái khám.
           </p>
         </div>
-        <button className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
-          <Plus className="size-4" />
-          Tạo nhắc nhở
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setShowPreferences(true)}
+            className="inline-flex size-11 items-center justify-center rounded-full border border-po-border bg-white text-po-text-muted transition hover:border-po-primary hover:text-po-primary"
+            title="Cài đặt nhắc nhở"
+            aria-label="Cài đặt nhắc nhở"
+          >
+            <Settings className="size-4" />
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
+            <Plus className="size-4" />
+            Tạo nhắc nhở
+          </button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -161,7 +177,9 @@ export default function OwnerRemindersPage() {
             description="Nhắc nhở sẽ được tạo tự động khi bạn đặt lịch hẹn hoặc tiêm phòng."
             action={
               filter === "all" ? (
-                <button className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
                   <Plus className="size-4" />
                   Tạo nhắc nhở
                 </button>
@@ -197,6 +215,62 @@ export default function OwnerRemindersPage() {
         variant="warning"
         isLoading={dismissMutation.isPending}
       />
+
+      {/* Create Reminder Modal */}
+      <CreateReminderModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+      />
+
+      <ReminderPreferencesModal
+        isOpen={showPreferences}
+        onClose={() => setShowPreferences(false)}
+      />
+    </div>
+  )
+}
+
+function ReminderPreferencesModal({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean
+  onClose: () => void
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-3 animate-dialog-in sm:p-4"
+      onClick={onClose}
+    >
+      <aside
+        className="flex max-h-[min(760px,calc(100dvh-32px))] w-full max-w-[680px] flex-col overflow-hidden rounded-[28px] border border-po-border bg-white shadow-2xl shadow-black/20 animate-dialog-content-in"
+        onClick={(e) => e.stopPropagation()}
+        aria-label="Cài đặt nhắc nhở"
+        aria-modal="true"
+        role="dialog"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-po-border px-5 py-4">
+          <div>
+            <h3 className="text-lg font-extrabold text-po-text">Cài đặt nhắc nhở</h3>
+            <p className="mt-1 text-sm text-po-text-muted">
+              Cấu hình thời điểm nhận thông báo cho từng loại nhắc nhở.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="grid size-9 shrink-0 place-items-center rounded-full text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text"
+            aria-label="Đóng cài đặt nhắc nhở"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          <OwnerReminderPreferencesPage embedded />
+        </div>
+      </aside>
     </div>
   )
 }

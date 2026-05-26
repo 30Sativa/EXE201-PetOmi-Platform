@@ -4,6 +4,7 @@ using PetOmiPlatform.Application.Features.Pet.Command;
 using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,20 +14,20 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     {
         private readonly IPetRepository _petRepository;
         private readonly IPetPhotoRepository _photoRepository;
-        private readonly ICloudinaryService _cloudinaryService;
+        private readonly IPetAvatarService _avatarService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPetAccessService _accessService;
 
         public CreatePetPhotoCommandHandler(
             IPetRepository petRepository,
             IPetPhotoRepository photoRepository,
-            ICloudinaryService cloudinaryService,
+            IPetAvatarService avatarService,
             IUnitOfWork unitOfWork,
             IPetAccessService accessService)
         {
             _petRepository = petRepository;
             _photoRepository = photoRepository;
-            _cloudinaryService = cloudinaryService;
+            _avatarService = avatarService;
             _unitOfWork = unitOfWork;
             _accessService = accessService;
         }
@@ -38,8 +39,6 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
 
             await _accessService.EnsureCanWriteAsync(pet, command.UserId, cancellationToken);
 
-            var oldPublicIdsToDelete = await HandleAvatarReplacement(command.PetId, command.Request.IsAvatar, cancellationToken);
-
             var photo = Domain.Entities.PetPhotoDomain.Create(
                 petId: command.PetId,
                 imageUrl: command.Request.ImageUrl,
@@ -50,15 +49,17 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             );
 
             await _photoRepository.AddAsync(photo);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            if (oldPublicIdsToDelete.Count > 0)
+            if (command.Request.IsAvatar)
             {
-                foreach (var publicId in oldPublicIdsToDelete)
-                {
-                    await _cloudinaryService.DeleteAsync(publicId, cancellationToken);
-                }
+                await _avatarService.ReplaceAvatarAsync(
+                    command.PetId,
+                    command.Request.ImageUrl,
+                    command.Request.CloudinaryPublicId,
+                    cancellationToken);
             }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return new PetPhotoResponse
             {
@@ -71,22 +72,6 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 TakenAt = photo.TakenAt,
                 CreatedAt = photo.CreatedAt
             };
-        }
-
-        private async Task<List<string>> HandleAvatarReplacement(Guid petId, bool isAvatar, CancellationToken cancellationToken)
-        {
-            if (!isAvatar) return new List<string>();
-
-            var currentAvatar = await _photoRepository.GetAvatarAsync(petId);
-            if (currentAvatar == null) return new List<string>();
-
-            currentAvatar.RemoveAvatar();
-            await _photoRepository.UpdateAsync(currentAvatar);
-
-            var ids = new List<string>();
-            if (!string.IsNullOrWhiteSpace(currentAvatar.CloudinaryPublicId))
-                ids.Add(currentAvatar.CloudinaryPublicId);
-            return ids;
         }
     }
 }

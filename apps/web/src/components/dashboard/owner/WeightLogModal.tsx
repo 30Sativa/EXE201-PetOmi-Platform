@@ -1,6 +1,7 @@
 import { X } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { createPetWeightLogApi } from "@/services/pets.service"
 import type { CreatePetWeightLogRequest } from "@/types"
 
@@ -8,12 +9,14 @@ interface WeightLogModalProps {
   isOpen: boolean
   onClose: () => void
   petId: string
+  initialWeightKg?: number | null
 }
 
 export default function WeightLogModal({
   isOpen,
   onClose,
   petId,
+  initialWeightKg,
 }: WeightLogModalProps) {
   const queryClient = useQueryClient()
 
@@ -24,16 +27,25 @@ export default function WeightLogModal({
   const [source, setSource] = useState("")
   const [note, setNote] = useState("")
 
+  useEffect(() => {
+    if (isOpen) {
+      setWeightKg(initialWeightKg ? String(initialWeightKg) : "")
+      setMeasuredAt(new Date().toISOString().slice(0, 16))
+      setSource("")
+      setNote("")
+    }
+  }, [isOpen, initialWeightKg])
+
   const mutation = useMutation({
     mutationFn: (data: CreatePetWeightLogRequest) =>
       createPetWeightLogApi(petId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-weight", petId] })
-      setWeightKg("")
-      setMeasuredAt(new Date().toISOString().slice(0, 16))
-      setSource("")
-      setNote("")
+      toast.success("Ghi nhận cân nặng thành công!")
       onClose()
+    },
+    onError: () => {
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
     },
   })
 
@@ -63,13 +75,10 @@ export default function WeightLogModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in"
       onClick={handleBackdropClick}
-      style={{ animation: "po-dialog-in 200ms cubic-bezier(0.2,0.8,0.2,1) both" }}
     >
-      <div className="w-[min(480px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20"
-        style={{ animation: "po-dialog-content-in 300ms cubic-bezier(0.2,0.8,0.2,1) both" }}
-      >
+      <div className="m-auto w-[min(480px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>

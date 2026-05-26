@@ -130,6 +130,10 @@ const router = createBrowserRouter([
             element: <OwnerRemindersPage />,
           },
           {
+            path: "reminder-preferences",
+            element: <Navigate to="/dashboard/owner/reminders" replace />,
+          },
+          {
             path: "sharing",
             element: <OwnerPetSharingPage />,
           },

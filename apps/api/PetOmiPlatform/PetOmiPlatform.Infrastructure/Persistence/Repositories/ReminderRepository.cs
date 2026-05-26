@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Infrastructure.Mappers;
@@ -37,8 +38,10 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task<List<ReminderDomain>> GetPendingRemindersAsync(DateTime now, int take = 100)
         {
+            var pendingStatus = ReminderStatus.Pending.ToString();
+
             var entities = await _context.Reminders
-                .Where(r => r.Status == "Pending" && r.IsEnabled && r.RemindAt <= now && r.DismissedAt == null)
+                .Where(r => r.Status == pendingStatus && r.IsEnabled && r.RemindAt <= now && r.DismissedAt == null)
                 .OrderBy(r => r.RemindAt)
                 .Take(take)
                 .ToListAsync();

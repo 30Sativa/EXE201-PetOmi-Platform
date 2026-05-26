@@ -120,6 +120,17 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<IPetAccessService, PetAccessService>();
 
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IPetAccessService, PetAccessService>();
+
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IPetAccessService, PetAccessService>();
+            services.AddScoped<IPetAvatarService, PetAvatarService>();
+
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
+            services.AddScoped<IPetAccessService, PetAccessService>();
+
+
             // Reminders
             services.AddScoped<IReminderRepository, ReminderRepository>();
             services.AddScoped<IReminderPreferenceRepository, ReminderPreferenceRepository>();

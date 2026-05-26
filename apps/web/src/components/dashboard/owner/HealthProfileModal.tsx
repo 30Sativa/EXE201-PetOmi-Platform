@@ -1,6 +1,7 @@
 import { X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import {
   createPetHealthProfileApi,
   updatePetHealthProfileApi,
@@ -16,6 +17,9 @@ interface HealthProfileModalProps {
   onClose: () => void
   petId: string
   existingProfile?: PetHealthProfileResponse | null
+  initialWeightKg?: number | null
+  initialColor?: string | null
+  initialIsNeutered?: string | null
 }
 
 export default function HealthProfileModal({
@@ -23,6 +27,9 @@ export default function HealthProfileModal({
   onClose,
   petId,
   existingProfile,
+  initialWeightKg,
+  initialColor,
+  initialIsNeutered,
 }: HealthProfileModalProps) {
   const queryClient = useQueryClient()
   const isEdit = Boolean(existingProfile)
@@ -42,14 +49,26 @@ export default function HealthProfileModal({
       setAllergies(existingProfile.allergies ?? "")
       setChronicConditions(existingProfile.chronicConditions ?? "")
       setMicrochip(existingProfile.microchipNumber ?? "")
+    } else if (isOpen) {
+      setWeightKg(initialWeightKg ? String(initialWeightKg) : "")
+      setColor(initialColor ?? "")
+      setIsNeutered(initialIsNeutered ?? "")
+      setAllergies("")
+      setChronicConditions("")
+      setMicrochip("")
     }
-  }, [existingProfile, isOpen])
+  }, [existingProfile, isOpen, initialWeightKg, initialColor, initialIsNeutered])
 
   const createMutation = useMutation({
     mutationFn: (data: CreatePetHealthProfileRequest) =>
       createPetHealthProfileApi(petId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-health", petId] })
+      toast.success(isEdit ? "Cập nhật hồ sơ sức khỏe thành công!" : "Tạo hồ sơ sức khỏe thành công!")
+      onClose()
+    },
+    onError: () => {
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
       onClose()
     },
   })
@@ -59,6 +78,11 @@ export default function HealthProfileModal({
       updatePetHealthProfileApi(petId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-health", petId] })
+      toast.success("Cập nhật hồ sơ sức khỏe thành công!")
+      onClose()
+    },
+    onError: () => {
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
       onClose()
     },
   })
@@ -101,13 +125,10 @@ export default function HealthProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in"
       onClick={handleBackdropClick}
-      style={{ animation: "po-dialog-in 200ms cubic-bezier(0.2,0.8,0.2,1) both" }}
     >
-      <div className="w-[min(540px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20"
-        style={{ animation: "po-dialog-content-in 300ms cubic-bezier(0.2,0.8,0.2,1) both" }}
-      >
+      <div className="m-auto w-[min(540px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>

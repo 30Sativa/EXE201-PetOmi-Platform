@@ -1,8 +1,10 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import {
   Activity,
   ArrowLeft,
+  Bell,
   Camera,
   Heart,
   Link2,
@@ -17,6 +19,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Avatar from "@/components/ui/Avatar"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import CreateReminderModal from "@/components/dashboard/owner/CreateReminderModal"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import PetModal from "@/components/dashboard/owner/PetModal"
@@ -34,7 +37,13 @@ import {
   getPetPhotosApi,
   getPetWeightLogsApi,
   revokePetAccessApi,
+  setPetAvatarApi,
 } from "@/services/pets.service"
+import {
+  getRemindersApi,
+  toggleReminderApi,
+  dismissReminderApi,
+} from "@/services/reminders.service"
 import type {
   PetHealthProfileResponse,
   PetMedicalRecordResponse,
@@ -42,6 +51,7 @@ import type {
   PetResponse,
   PetUserAccessResponse,
   PetWeightLogResponse,
+  ReminderResponse,
 } from "@/types"
 import { cn } from "@/lib/utils"
 
@@ -73,6 +83,11 @@ const formatAge = (dob: string | null) => {
   }
 }
 
+const formatGender = (v: string | null) => {
+  if (!v) return "—"
+  return v === "Male" ? "Đực" : v === "Female" ? "Cái" : v === "Other" ? "Khác" : v
+}
+
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return "—"
   try {
@@ -84,6 +99,11 @@ const formatDate = (dateStr: string | null) => {
   } catch {
     return dateStr
   }
+}
+
+const formatIsNeutered = (v: string | null | undefined) => {
+  if (!v) return "—"
+  return v === "Yes" ? "Đã triệt sản" : v === "No" ? "Chưa triệt sản" : v === "Unknown" ? "Không rõ" : v
 }
 
 const MEDICAL_RECORD_TYPES = [
@@ -98,7 +118,7 @@ const MEDICAL_RECORD_TYPES = [
   { value: "Grooming", label: "Vệ sinh" },
 ]
 
-type TabValue = "overview" | "health" | "weight" | "medical" | "photos" | "sharing"
+type TabValue = "overview" | "health" | "weight" | "medical" | "photos" | "sharing" | "reminders"
 
 // ==================== PAGE ====================
 
@@ -116,6 +136,8 @@ export default function OwnerPetDetailPage() {
   const [isMedicalModalOpen, setIsMedicalModalOpen] = useState(false)
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
   const [editingMedicalRecord, setEditingMedicalRecord] = useState<PetMedicalRecordResponse | null>(null)
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false)
+  const [dismissingReminder, setDismissingReminder] = useState<ReminderResponse | null>(null)
 
   // ==================== QUERIES ====================
 
@@ -128,13 +150,13 @@ export default function OwnerPetDetailPage() {
   const { data: healthProfile, isLoading: loadingHealth } = useQuery({
     queryKey: ["pet-health", petId],
     queryFn: () => getPetHealthProfileApi(petId!),
-    enabled: Boolean(petId) && activeTab === "health",
+    enabled: Boolean(petId),
   })
 
   const { data: weightLogs, isLoading: loadingWeight } = useQuery({
     queryKey: ["pet-weight", petId],
     queryFn: () => getPetWeightLogsApi(petId!),
-    enabled: Boolean(petId) && activeTab === "weight",
+    enabled: Boolean(petId),
   })
 
   const { data: medicalRecords, isLoading: loadingMedical } = useQuery({
@@ -155,6 +177,32 @@ export default function OwnerPetDetailPage() {
     enabled: Boolean(petId) && activeTab === "sharing",
   })
 
+  const { data: petReminders, isLoading: loadingReminders } = useQuery({
+    queryKey: ["pet-reminders", petId],
+    queryFn: async () => {
+      const all = await getRemindersApi()
+      return all.filter((r) => r.petId === petId)
+    },
+    enabled: Boolean(petId) && activeTab === "reminders",
+  })
+
+  const toggleReminderMutation = useMutation({
+    mutationFn: (id: string) => toggleReminderApi(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pet-reminders", petId] })
+      queryClient.invalidateQueries({ queryKey: ["owner-reminders"] })
+    },
+  })
+
+  const dismissReminderMutation = useMutation({
+    mutationFn: (id: string) => dismissReminderApi(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pet-reminders", petId] })
+      queryClient.invalidateQueries({ queryKey: ["owner-reminders"] })
+      setDismissingReminder(null)
+    },
+  })
+
   // ==================== MUTATIONS ====================
 
   const deleteMutation = useMutation({
@@ -173,13 +221,27 @@ export default function OwnerPetDetailPage() {
     },
   })
 
+  const setAvatarMutation = useMutation({
+    mutationFn: (photoId: string) => setPetAvatarApi(petId!, { photoId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pet-photos", petId] })
+      queryClient.invalidateQueries({ queryKey: ["pet", petId] })
+      queryClient.invalidateQueries({ queryKey: ["owner-pets"] })
+      toast.success("Đặt ảnh đại diện thành công!")
+    },
+    onError: () => {
+      toast.error("Đặt ảnh đại diện thất bại. Vui lòng thử lại.")
+    },
+  })
+
   const isLoading =
     loadingPet ||
     loadingHealth ||
     loadingWeight ||
     loadingMedical ||
     loadingPhotos ||
-    loadingAccess
+    loadingAccess ||
+    loadingReminders
 
   const TABS = [
     { value: "overview" as const, label: "Tổng quan" },
@@ -188,6 +250,7 @@ export default function OwnerPetDetailPage() {
     { value: "medical" as const, label: "Hồ sơ y tế" },
     { value: "photos" as const, label: "Ảnh" },
     { value: "sharing" as const, label: "Chia sẻ" },
+    { value: "reminders" as const, label: "Nhắc nhở" },
   ]
 
   if (loadingPet) {
@@ -257,7 +320,7 @@ export default function OwnerPetDetailPage() {
           <div className="mt-2 flex flex-wrap gap-2">
             {pet.gender && (
               <span className="rounded-full bg-po-surface-muted px-2.5 py-0.5 text-xs font-medium text-po-text-muted">
-                {pet.gender === "Male" ? "Đực" : pet.gender === "Female" ? "Cái" : pet.gender}
+                {formatGender(pet.gender)}
               </span>
             )}
             {formatAge(pet.dateOfBirth) && (
@@ -299,11 +362,12 @@ export default function OwnerPetDetailPage() {
       ) : (
         <>
           {activeTab === "overview" && (
-            <OverviewTab pet={pet} healthProfile={healthProfile} />
+            <OverviewTab pet={pet} healthProfile={healthProfile} weightLogs={weightLogs} />
           )}
           {activeTab === "health" && (
             <HealthTab
               profile={healthProfile}
+              weightLogs={weightLogs}
               onEdit={() => setIsHealthModalOpen(true)}
               onCreate={() => setIsHealthModalOpen(true)}
             />
@@ -328,12 +392,25 @@ export default function OwnerPetDetailPage() {
             <PhotosTab
               photos={photos}
               onAdd={() => setIsPhotoModalOpen(true)}
+              onSetAvatar={(photoId) => setAvatarMutation.mutate(photoId)}
+              isSettingAvatar={setAvatarMutation.isPending}
             />
           )}
           {activeTab === "sharing" && (
             <SharingTab
               accessList={accessList}
               petName={pet.name}
+              onRevoke={(access) => setRevokingAccess(access)}
+            />
+          )}
+          {activeTab === "reminders" && (
+            <RemindersTab
+              reminders={petReminders}
+              onAdd={() => setIsReminderModalOpen(true)}
+              onToggle={(id) => toggleReminderMutation.mutate(id)}
+              onDismiss={(r) => setDismissingReminder(r)}
+              isToggling={toggleReminderMutation.isPending}
+              isDismissing={dismissReminderMutation.isPending}
             />
           )}
         </>
@@ -352,6 +429,9 @@ export default function OwnerPetDetailPage() {
         onClose={() => setIsHealthModalOpen(false)}
         petId={petId!}
         existingProfile={healthProfile}
+        initialWeightKg={weightLogs?.[0]?.weightKg}
+        initialColor={healthProfile?.color ?? undefined}
+        initialIsNeutered={healthProfile?.isNeutered ?? undefined}
       />
 
       {/* Weight Log Modal */}
@@ -359,6 +439,7 @@ export default function OwnerPetDetailPage() {
         isOpen={isWeightModalOpen}
         onClose={() => setIsWeightModalOpen(false)}
         petId={petId!}
+        initialWeightKg={weightLogs?.[0]?.weightKg}
       />
 
       {/* Medical Record Modal */}
@@ -377,6 +458,27 @@ export default function OwnerPetDetailPage() {
         isOpen={isPhotoModalOpen}
         onClose={() => setIsPhotoModalOpen(false)}
         petId={petId!}
+      />
+
+      {/* Create Reminder Modal */}
+      <CreateReminderModal
+        isOpen={isReminderModalOpen}
+        onClose={() => setIsReminderModalOpen(false)}
+        defaultPetId={petId}
+      />
+
+      {/* Dismiss Reminder Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(dismissingReminder)}
+        onClose={() => setDismissingReminder(null)}
+        onConfirm={() => {
+          if (dismissingReminder) dismissReminderMutation.mutate(dismissingReminder.reminderId)
+        }}
+        title="Bỏ qua nhắc nhở"
+        description={`Bạn có chắc muốn bỏ qua nhắc nhở "${dismissingReminder?.title}"?`}
+        confirmLabel="Bỏ qua"
+        variant="warning"
+        isLoading={dismissReminderMutation.isPending}
       />
 
       {/* Delete Dialog */}
@@ -413,40 +515,130 @@ export default function OwnerPetDetailPage() {
 function OverviewTab({
   pet,
   healthProfile,
+  weightLogs,
 }: {
   pet: PetResponse
   healthProfile?: PetHealthProfileResponse | null
+  weightLogs?: PetWeightLogResponse[] | null
+}) {
+  const latestWeight = weightLogs?.[0]?.weightKg
+  const healthUpdatedAt = healthProfile?.updatedAt
+    ? formatDate(healthProfile.updatedAt)
+    : "Chưa cập nhật"
+  const healthStatus = healthProfile ? "Đã có hồ sơ" : "Chưa có hồ sơ"
+
+  return (
+    <div className="grid gap-4">
+      <div className="grid gap-3 md:grid-cols-3">
+        <OverviewMetric
+          icon={Activity}
+          label="Tuổi"
+          value={formatAge(pet.dateOfBirth) ?? "Chưa có ngày sinh"}
+          note={pet.isBirthDateEstimated ? "Ngày sinh ước lượng" : formatDate(pet.dateOfBirth)}
+        />
+        <OverviewMetric
+          icon={Weight}
+          label="Cân nặng"
+          value={latestWeight ? `${latestWeight} kg` : "Chưa ghi nhận"}
+          note={`${weightLogs?.length ?? 0} lần theo dõi`}
+        />
+        <OverviewMetric
+          icon={Heart}
+          label="Sức khỏe"
+          value={healthStatus}
+          note={healthUpdatedAt}
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <DashboardSection
+          title="Hồ sơ thú cưng"
+          subtitle="Các thông tin nhận diện và chăm sóc thường dùng."
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <OverviewField label="Loài" value={pet.species} />
+            <OverviewField label="Giống" value={pet.breed ?? "—"} />
+            <OverviewField label="Giới tính" value={formatGender(pet.gender)} />
+            <OverviewField label="Ngày sinh" value={formatDate(pet.dateOfBirth)} />
+            <OverviewField label="Màu lông" value={healthProfile?.color ?? "—"} />
+            <OverviewField label="Triệt sản" value={formatIsNeutered(healthProfile?.isNeutered)} />
+            <OverviewField label="Ngày tạo hồ sơ" value={formatDate(pet.createdAt)} />
+            {pet.isBirthDateEstimated && (
+              <OverviewField label="Ghi chú" value="Ngày sinh ước lượng" tone="warning" />
+            )}
+          </div>
+        </DashboardSection>
+
+        <DashboardSection
+          title="Theo dõi sức khỏe"
+          subtitle="Những dữ liệu cần nhìn nhanh trước khi chăm sóc."
+        >
+          {healthProfile ? (
+            <div className="grid gap-3">
+              <OverviewField label="Dị ứng" value={healthProfile.allergies ?? "Chưa có thông tin"} />
+              <OverviewField label="Bệnh mãn tính" value={healthProfile.chronicConditions ?? "Chưa có thông tin"} />
+              <OverviewField label="Số microchip" value={healthProfile.microchipNumber ?? "Chưa gắn"} />
+              <OverviewField label="Cập nhật lần cuối" value={healthUpdatedAt} />
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-po-border bg-po-surface-muted p-4">
+              <p className="text-sm font-semibold text-po-text">Chưa có hồ sơ sức khỏe</p>
+              <p className="mt-1 text-sm text-po-text-muted">
+                Tạo hồ sơ sức khỏe để lưu cân nặng, dị ứng, bệnh mãn tính và microchip.
+              </p>
+            </div>
+          )}
+        </DashboardSection>
+      </div>
+    </div>
+  )
+}
+
+function OverviewMetric({
+  icon: Icon,
+  label,
+  value,
+  note,
+}: {
+  icon: typeof Activity
+  label: string
+  value: string
+  note: string
 }) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      <DashboardSection title="Thông tin cơ bản">
-        <div className="grid gap-3">
-          <InfoRow label="Loài" value={pet.species} />
-          <InfoRow label="Giống" value={pet.breed ?? "—"} />
-          <InfoRow label="Giới tính" value={pet.gender ?? "—"} />
-          <InfoRow label="Ngày sinh" value={formatDate(pet.dateOfBirth)} />
-          {pet.isBirthDateEstimated && (
-            <InfoRow label="Ghi chú" value="Ngày sinh ước lượng" />
-          )}
-          <InfoRow label="Màu lông" value={pet.color ?? "—"} />
-          <InfoRow label="Triệt sản" value={pet.isNeutered ?? "—"} />
-          <InfoRow label="Ngày tạo" value={formatDate(pet.createdAt)} />
-        </div>
-      </DashboardSection>
+    <div className="flex items-start gap-3 rounded-2xl border border-po-border bg-white p-4">
+      <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs font-semibold uppercase tracking-wide text-po-text-subtle">{label}</p>
+        <p className="mt-1 text-lg font-extrabold text-po-text">{value}</p>
+        <p className="mt-0.5 text-xs text-po-text-muted">{note}</p>
+      </div>
+    </div>
+  )
+}
 
-      <DashboardSection title="Hồ sơ sức khỏe">
-        {healthProfile ? (
-          <div className="grid gap-3">
-            <InfoRow label="Cân nặng hiện tại" value={healthProfile.currentWeightKg ? `${healthProfile.currentWeightKg} kg` : "—"} />
-            <InfoRow label="Dị ứng" value={healthProfile.allergies ?? "—"} />
-            <InfoRow label="Bệnh mãn tính" value={healthProfile.chronicConditions ?? "—"} />
-            <InfoRow label="Số microchip" value={healthProfile.microchipNumber ?? "—"} />
-            <InfoRow label="Cập nhật lần cuối" value={formatDate(healthProfile.updatedAt)} />
-          </div>
-        ) : (
-          <p className="text-sm text-po-text-muted">Chưa có hồ sơ sức khỏe.</p>
-        )}
-      </DashboardSection>
+function OverviewField({
+  label,
+  value,
+  tone = "default",
+}: {
+  label: string
+  value: string
+  tone?: "default" | "warning"
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border p-3",
+        tone === "warning"
+          ? "border-po-warning/30 bg-po-warning-soft"
+          : "border-po-border bg-po-surface-muted/60",
+      )}
+    >
+      <p className="text-xs font-semibold text-po-text-subtle">{label}</p>
+      <p className="mt-1 break-words text-sm font-bold text-po-text">{value}</p>
     </div>
   )
 }
@@ -455,13 +647,17 @@ function OverviewTab({
 
 function HealthTab({
   profile,
+  weightLogs,
   onEdit,
   onCreate,
 }: {
   profile?: PetHealthProfileResponse | null
+  weightLogs?: PetWeightLogResponse[] | null
   onEdit: () => void
   onCreate: () => void
 }) {
+  const latestWeight = weightLogs?.[0]?.weightKg
+
   return (
       <DashboardSection
         title="Hồ sơ sức khỏe"
@@ -490,7 +686,7 @@ function HealthTab({
           <div className="grid gap-1.5">
             <p className="text-xs font-semibold text-po-text-muted">Cân nặng hiện tại</p>
             <p className="text-lg font-extrabold text-po-text">
-              {profile.currentWeightKg ? `${profile.currentWeightKg} kg` : "—"}
+              {latestWeight ? `${latestWeight} kg` : "—"}
             </p>
           </div>
           <div className="grid gap-1.5">
@@ -499,7 +695,7 @@ function HealthTab({
           </div>
           <div className="grid gap-1.5">
             <p className="text-xs font-semibold text-po-text-muted">Triệt sản</p>
-            <p className="text-lg font-extrabold text-po-text">{profile.isNeutered ?? "—"}</p>
+            <p className="text-lg font-extrabold text-po-text">{formatIsNeutered(profile.isNeutered)}</p>
           </div>
           <div className="grid gap-1.5">
             <p className="text-xs font-semibold text-po-text-muted">Số microchip</p>
@@ -725,9 +921,13 @@ function MedicalTab({
 function PhotosTab({
   photos,
   onAdd,
+  onSetAvatar,
+  isSettingAvatar,
 }: {
   photos?: PetPhotoResponse[] | null
   onAdd: () => void
+  onSetAvatar: (photoId: string) => void
+  isSettingAvatar: boolean
 }) {
   return (
     <DashboardSection
@@ -772,6 +972,18 @@ function PhotosTab({
                   <p className="text-xs font-medium text-white">{photo.caption}</p>
                 </div>
               )}
+              {!photo.isAvatar && (
+                <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={() => onSetAvatar(photo.photoId)}
+                    disabled={isSettingAvatar}
+                    className="rounded-full bg-white/90 p-1.5 text-po-primary shadow transition hover:bg-white hover:text-po-primary-hover disabled:opacity-50"
+                    title="Đặt làm ảnh đại diện"
+                  >
+                    <Camera className="size-4" />
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -785,9 +997,11 @@ function PhotosTab({
 function SharingTab({
   accessList,
   petName,
+  onRevoke,
 }: {
   accessList?: PetUserAccessResponse[] | null
   petName: string
+  onRevoke: (access: PetUserAccessResponse) => void
 }) {
   const activeCount = (accessList ?? []).filter((a) => !a.isExpired).length
 
@@ -807,7 +1021,7 @@ function SharingTab({
 
       {/* Access List */}
       <DashboardSection title={`Quản lý chia sẻ ${petName}`}>
-        {accessList && accessList.length > 0 ? (
+        {!accessList || accessList.length === 0 ? (
           <EmptyState
             icon={Link2}
             title="Chưa có ai được chia sẻ quyền truy cập"
@@ -815,7 +1029,7 @@ function SharingTab({
           />
         ) : (
           <div className="grid gap-3">
-            {accessList!.map((access) => (
+            {accessList.map((access) => (
               <div
                 key={access.petUserAccessId}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-po-border bg-white px-4 py-3"
@@ -847,7 +1061,7 @@ function SharingTab({
                 </div>
                 {!access.isExpired && (
                   <button
-                    onClick={() => {/* TODO: revoke */}}
+                    onClick={() => onRevoke(access)}
                     className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-danger/30 px-3 text-xs font-semibold text-po-danger transition hover:bg-po-danger/10"
                   >
                     <Trash2 className="size-3" />
@@ -863,13 +1077,153 @@ function SharingTab({
   )
 }
 
-// ==================== HELPERS ====================
+// ==================== REMINDERS TAB ====================
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function RemindersTab({
+  reminders,
+  onAdd,
+  onToggle,
+  onDismiss,
+  isToggling,
+  isDismissing,
+}: {
+  reminders?: ReminderResponse[] | null
+  onAdd: () => void
+  onToggle: (id: string) => void
+  onDismiss: (r: ReminderResponse) => void
+  isToggling: boolean
+  isDismissing: boolean
+}) {
+  const activeReminders = (reminders ?? []).filter(
+    (r) => r.status.toLowerCase() === "pending",
+  )
+  const dismissedReminders = (reminders ?? []).filter(
+    (r) => r.status.toLowerCase() === "dismissed",
+  )
+
+  const formatDateTime = (dateStr: string) => {
+    try {
+      return new Date(dateStr).toLocaleString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    } catch {
+      return dateStr
+    }
+  }
+
+  const getReminderTypeLabel = (type: string) => {
+    const map: Record<string, string> = {
+      Vaccine: "Tiêm phòng",
+      Medication: "Thuốc",
+      FollowUp: "Tái khám",
+      Deworming: "Tẩy giun",
+      Grooming: "Vệ sinh",
+      WeightTracking: "Cân nặng",
+      Custom: "Tùy chỉnh",
+    }
+    return map[type] ?? type
+  }
+
+  const renderReminderCard = (r: ReminderResponse) => {
+    const isDismissed = r.status.toLowerCase() === "dismissed"
+    return (
+      <div
+        key={r.reminderId}
+        className={cn(
+          "flex flex-wrap items-start justify-between gap-3 rounded-2xl border px-4 py-3 transition",
+          isDismissed
+            ? "border-po-border bg-po-surface-muted opacity-60"
+            : "border-po-border bg-white",
+        )}
+      >
+        <div className="flex items-start gap-3 min-w-0 flex-1">
+          <div className={cn(
+            "grid size-8 shrink-0 place-items-center rounded-full text-xs",
+            isDismissed
+              ? "bg-po-border text-po-text-subtle"
+              : "bg-po-primary-soft text-po-primary",
+          )}>
+            <Bell className="size-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-po-text">{r.title}</p>
+            <p className="mt-0.5 text-xs text-po-text-muted">
+              {getReminderTypeLabel(r.reminderType)}
+            </p>
+            <p className="mt-1 text-xs text-po-text-subtle">
+              {formatDateTime(r.remindAt)}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {!isDismissed && (
+            <>
+              <button
+                onClick={() => onToggle(r.reminderId)}
+                disabled={isToggling}
+                className={cn(
+                  "grid size-7 place-items-center rounded-full border text-xs transition",
+                  r.isEnabled
+                    ? "border-po-success text-po-success hover:bg-po-success-soft"
+                    : "border-po-border text-po-text-subtle hover:bg-po-surface-muted",
+                  isToggling && "opacity-50",
+                )}
+              >
+                {r.isEnabled ? "🔔" : "🔕"}
+              </button>
+              <button
+                onClick={() => onDismiss(r)}
+                disabled={isDismissing}
+                className="grid size-7 place-items-center rounded-full border border-po-border text-po-text-subtle transition hover:border-po-danger hover:bg-po-danger-soft hover:text-po-danger"
+              >
+                ✕
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex items-center justify-between border-b border-po-border/60 pb-2 last:border-0 last:pb-0">
-      <p className="text-sm text-po-text-muted">{label}</p>
-      <p className="text-sm font-semibold text-po-text">{value}</p>
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-3 text-sm text-po-text-muted">
+          <span className="rounded-full bg-po-success-soft px-3 py-1 text-xs font-semibold text-po-success">
+            {activeReminders.length} đang hoạt động
+          </span>
+          {dismissedReminders.length > 0 && (
+            <span className="rounded-full bg-po-surface-muted px-3 py-1 text-xs font-semibold text-po-text-muted">
+              {dismissedReminders.length} đã bỏ qua
+            </span>
+          )}
+        </div>
+        <button
+          onClick={onAdd}
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-po-primary px-4 text-xs font-semibold text-white transition hover:bg-po-primary-hover"
+        >
+          <Plus className="size-3" />
+          Tạo nhắc nhở
+        </button>
+      </div>
+
+      <DashboardSection title="Nhắc nhở của thú cưng">
+        {!reminders || reminders.length === 0 ? (
+          <EmptyState
+            icon={Bell}
+            title="Chưa có nhắc nhở nào"
+            description="Tạo nhắc nhở để không bỏ lỡ lịch tiêm phòng, uống thuốc hay tái khám."
+          />
+        ) : (
+          <div className="grid gap-2">
+            {reminders.map(renderReminderCard)}
+          </div>
+        )}
+      </DashboardSection>
     </div>
   )
 }
+

@@ -1,6 +1,7 @@
 import { X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import {
   createPetMedicalRecordApi,
   updatePetMedicalRecordApi,
@@ -83,7 +84,11 @@ export default function MedicalRecordModal({
       createPetMedicalRecordApi(petId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-medical", petId] })
+      toast.success("Thêm hồ sơ y tế thành công!")
       onClose()
+    },
+    onError: () => {
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
     },
   })
 
@@ -92,7 +97,11 @@ export default function MedicalRecordModal({
       updatePetMedicalRecordApi(petId, editingRecord!.medicalRecordId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-medical", petId] })
+      toast.success("Cập nhật hồ sơ y tế thành công!")
       onClose()
+    },
+    onError: () => {
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
     },
   })
 
@@ -136,13 +145,10 @@ export default function MedicalRecordModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in"
       onClick={handleBackdropClick}
-      style={{ animation: "po-dialog-in 200ms cubic-bezier(0.2,0.8,0.2,1) both" }}
     >
-      <div className="w-[min(580px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20"
-        style={{ animation: "po-dialog-content-in 300ms cubic-bezier(0.2,0.8,0.2,1) both" }}
-      >
+      <div className="m-auto w-[min(580px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>

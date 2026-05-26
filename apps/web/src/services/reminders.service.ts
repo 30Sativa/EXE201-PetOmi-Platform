@@ -1,5 +1,5 @@
 import { api } from "@/lib/axios"
-import type { ReminderResponse } from "@/types"
+import type { CreateReminderRequest, ReminderResponse } from "@/types"
 
 const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,7 +17,7 @@ export const getRemindersApi = async (): Promise<ReminderResponse[]> => {
 }
 
 export const createReminderApi = async (
-  data: Record<string, unknown>,
+  data: CreateReminderRequest,
 ): Promise<ReminderResponse> => {
   const response = await api.post("/reminders", data)
   return unwrapResponse<ReminderResponse>(response)

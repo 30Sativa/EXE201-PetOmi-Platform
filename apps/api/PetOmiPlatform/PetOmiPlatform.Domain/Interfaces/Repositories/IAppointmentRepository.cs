@@ -26,6 +26,16 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<int> CountByOwnerAsync(Guid ownerUserId);
 
         /// <summary>
+        /// Lấy lịch hẹn theo PetId (dùng cho Activity Feed).
+        /// </summary>
+        Task<IEnumerable<AppointmentDomain>> GetByPetIdAsync(Guid petId, int page, int pageSize);
+
+        /// <summary>
+        /// Đếm tổng lịch hẹn theo PetId (dùng cho Activity Feed pagination).
+        /// </summary>
+        Task<int> CountByPetIdAsync(Guid petId);
+
+        /// <summary>
         /// Kiểm tra bác sĩ có bị double booking không.
         /// Nếu excludeId != null → bỏ qua appointment đó (dùng khi reschedule).
         /// </summary>

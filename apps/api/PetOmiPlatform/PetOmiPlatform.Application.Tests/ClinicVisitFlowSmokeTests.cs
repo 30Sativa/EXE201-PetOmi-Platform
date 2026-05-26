@@ -179,6 +179,9 @@ public class ClinicVisitFlowSmokeTests
         public Task<bool> IsClinicOwnerAsync(Guid userId, Guid clinicId) => Task.FromResult(false);
         public Task<bool> ExistsAsync(Guid vetProfileId, Guid clinicId) => Task.FromResult(false);
         public Task<bool> IsClinicApprovedAsync(Guid clinicId) => Task.FromResult(true);
+        public Task<VetClinicDomain?> GetByVetClinicIdAsync(Guid vetClinicId) => Task.FromResult<VetClinicDomain?>(null);
+        public Task<List<Guid>> GetAllVetClinicIdsAsync(Guid vetProfileId) => Task.FromResult(new List<Guid>());
+        public Task<List<ClinicDoctorDto>> GetClinicDoctorsAsync(Guid clinicId) => Task.FromResult(new List<ClinicDoctorDto>());
 
         public Task<VetClinicDomain?> GetByUserIdAndClinicIdAsync(Guid userId, Guid clinicId)
         {
@@ -225,6 +228,12 @@ public class ClinicVisitFlowSmokeTests
             TimeOnly startTime,
             TimeOnly endTime,
             Guid? excludeId = null) => Task.FromResult(false);
+
+        public Task<bool> HasDoctorConflictAcrossClinicsAsync(
+            List<Guid> allVetClinicIds,
+            DateOnly date,
+            TimeOnly startTime,
+            TimeOnly endTime) => Task.FromResult(false);
 
         public Task<IEnumerable<AppointmentDomain>> GetPendingExpiredAsync(int timeoutMinutes = 30)
             => Task.FromResult(Enumerable.Empty<AppointmentDomain>());
@@ -329,6 +338,16 @@ public class ClinicVisitFlowSmokeTests
         public Task<InvoiceDomain?> GetByAppointmentIdAsync(Guid appointmentId)
         {
             return Task.FromResult(_invoices.Values.FirstOrDefault(i => i.AppointmentId == appointmentId));
+        }
+
+        public Task<InvoiceDomain?> GetByInvoiceCodeAsync(string invoiceCode)
+        {
+            return Task.FromResult(_invoices.Values.FirstOrDefault(i => i.InvoiceCode == invoiceCode));
+        }
+
+        public Task<InvoiceDomain?> GetByPaymentReferenceAsync(string paymentReference)
+        {
+            return Task.FromResult(_invoices.Values.FirstOrDefault(i => i.PaymentReference == paymentReference));
         }
 
         public Task<IEnumerable<InvoiceItemDomain>> GetItemsByInvoiceIdAsync(Guid invoiceId)

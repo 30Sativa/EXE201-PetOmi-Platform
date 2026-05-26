@@ -23,36 +23,65 @@ const testimonials: Testimonial[] = [
 
 export default function Testimonials() {
   const { ref, inView } = useInView({ threshold: 0.1 })
+  const featured = testimonials[0]
+  const supporting = testimonials.slice(1)
 
   return (
-    <section ref={ref as React.RefObject<HTMLElement>} id="testimonials" className="py-16">
-      <div className="mx-auto w-[min(100%-24px,1200px)]">
-        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+    <section ref={ref as React.RefObject<HTMLElement>} id="testimonials" className="py-20 md:py-24">
+      <div className="mx-auto w-[calc(100%_-_24px)] max-w-[1200px]">
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
           <div className={`transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Cảm nhận thực tế</p>
-            <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Những người đã dùng PetOmi nói gì.</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">Cảm nhận thực tế</p>
+            <h2 className="mt-3 max-w-2xl text-4xl font-extrabold leading-tight text-po-text md:text-5xl">
+              Bình tĩnh hơn trong những ngày thú cưng có vấn đề.
+            </h2>
           </div>
-          <div className={`flex items-center gap-1 text-sm text-po-text-muted transition-all duration-500 delay-100 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <div className={`flex items-center gap-1 text-sm text-po-text-muted transition-all duration-500 delay-100 md:justify-end ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             {[0, 1, 2, 3, 4].map((index) => (
               <Star key={index} className="size-4 fill-orange-300 text-orange-300" />
             ))}
             <span>4.9 điểm trung bình</span>
           </div>
         </div>
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
-          {testimonials.map((testimonial, i) => (
-            <article
-              key={testimonial.name}
-              className={`rounded-[28px] border border-po-border bg-white p-5 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-              style={{ transitionDelay: `${i * 100}ms` }}
-            >
-              <p className="text-sm leading-6 text-po-text-muted">"{testimonial.quote}"</p>
-              <div className="mt-4">
-                <p className="text-sm font-semibold text-po-text">{testimonial.name}</p>
-                <p className="text-xs text-po-text-muted">{testimonial.role}</p>
+
+        <div className="mt-10 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+          <article
+            className={`rounded-[30px] bg-white p-7 shadow-sm transition-all duration-500 md:p-9 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+          >
+            <p className="max-w-3xl text-2xl font-semibold leading-snug text-po-text md:text-3xl">
+              “{featured.quote}”
+            </p>
+            <div className="mt-8 flex items-center gap-4">
+              <span className="grid size-12 place-items-center rounded-2xl bg-po-primary-soft text-sm font-extrabold text-po-primary">
+                NL
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-po-text">{featured.name}</p>
+                <p className="text-xs text-po-text-muted">{featured.role}</p>
               </div>
-            </article>
-          ))}
+            </div>
+          </article>
+
+          <div className="grid gap-5">
+            {supporting.map((testimonial, i) => (
+              <article
+                key={testimonial.name}
+                className={`rounded-[24px] border border-po-border bg-po-surface-muted/75 p-5 transition-all duration-500 hover:bg-white hover:shadow-md ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+                style={{ transitionDelay: `${(i + 1) * 100}ms` }}
+              >
+                <p className="text-sm leading-6 text-po-text-muted">“{testimonial.quote}”</p>
+                <div className="mt-5 flex items-center gap-3">
+                  <span className="grid size-10 place-items-center rounded-xl bg-white text-xs font-extrabold text-po-primary">
+                    {testimonial.name.includes("Hải") ? "HM" : "AK"}
+                  </span>
+                  <div>
+                    <p className="text-sm font-semibold text-po-text">{testimonial.name}</p>
+                    <p className="text-xs text-po-text-muted">{testimonial.role}</p>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </div>
     </section>

@@ -151,7 +151,7 @@
 html {
   min-width: 320px;
   min-height: 100%;
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -191,7 +191,6 @@ img,
 svg,
 video,
 canvas {
-  display: block;
   max-width: 100%;
 }
 

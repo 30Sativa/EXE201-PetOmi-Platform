@@ -26,18 +26,23 @@ export default function FAQ() {
   const { ref, inView } = useInView({ threshold: 0.1 })
 
   return (
-    <section ref={ref as React.RefObject<HTMLElement>} id="faq" className="py-16">
-      <div className="mx-auto w-[min(100%-24px,1100px)]">
-        <div className={`mb-8 transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">Câu hỏi thường gặp</p>
-          <h2 className="mt-3 text-3xl font-extrabold text-po-text md:text-4xl">Những câu hỏi thường gặp về PetOmi.</h2>
+    <section ref={ref as React.RefObject<HTMLElement>} id="faq" className="bg-white/60 py-20 md:py-24">
+      <div className="mx-auto grid w-[calc(100%_-_24px)] max-w-[1100px] gap-8 md:grid-cols-[0.8fr_1.2fr] md:items-start">
+        <div className={`transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">Câu hỏi thường gặp</p>
+          <h2 className="mt-3 text-4xl font-extrabold leading-tight text-po-text md:text-5xl">
+            Rõ ràng trước khi bắt đầu.
+          </h2>
+          <p className="mt-4 text-sm leading-6 text-po-text-muted">
+            Một vài điều chủ nuôi và phòng khám thường hỏi trước khi dùng PetOmi.
+          </p>
         </div>
         <Accordion className={`grid gap-4 transition-all duration-500 delay-100 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           {faqItems.map((item, i) => (
             <AccordionItem
               key={item.question}
               value={item.question}
-              className={`rounded-xl border border-po-border bg-white px-4 transition-all duration-500 hover:shadow-sm ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+              className={`rounded-2xl border border-po-border bg-white px-5 transition-all duration-500 hover:shadow-sm ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
               style={{ transitionDelay: `${i * 60}ms` }}
             >
               <AccordionHeader>

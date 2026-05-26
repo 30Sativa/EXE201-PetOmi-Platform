@@ -1,16 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace PetOmiPlatform.Application.Interfaces
 {
     public interface IPetAvatarService
     {
-        Task<List<string>> SetAvatarAsync(
+        Task ReplaceAvatarAsync(
             Guid petId,
-            string imageUrl,
-            string? cloudinaryPublicId,
+            string? newAvatarUrl,
+            string? newCloudinaryPublicId,
             CancellationToken cancellationToken = default);
     }
 }

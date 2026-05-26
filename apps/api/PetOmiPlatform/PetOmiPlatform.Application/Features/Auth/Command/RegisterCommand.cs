@@ -1,7 +1,8 @@
 using MediatR;
 using PetOmiPlatform.Application.Common.Interfaces;
-using PetOmiPlatform.Application.Feature.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
+using PetOmiPlatform.Application.Features.Auth.DTOs.Request;
+using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using System;
 using System.Collections.Generic;
 using System.Text;

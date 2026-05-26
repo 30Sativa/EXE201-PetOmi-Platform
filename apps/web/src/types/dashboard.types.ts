@@ -10,7 +10,6 @@ export interface DashboardSectionProps {
   title: string
   subtitle?: string
   action?: React.ReactNode
-  className?: string
   children: React.ReactNode
   className?: string
 }

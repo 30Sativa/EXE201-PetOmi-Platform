@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using PetOmiPlatform.Application.Exceptions;
-using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
+using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Entities;
@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using PetOmiPlatform.Domain.Common.Constants;
+using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
 namespace PetOmiPlatform.Application.Features.Auth.Handler
 {
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>

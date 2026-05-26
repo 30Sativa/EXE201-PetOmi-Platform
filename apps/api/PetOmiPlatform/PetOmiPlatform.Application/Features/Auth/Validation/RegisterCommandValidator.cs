@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using PetOmiPlatform.Application.Feature.Auth.DTOs.Request;
+using PetOmiPlatform.Application.Features.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using System;
 using System.Collections.Generic;

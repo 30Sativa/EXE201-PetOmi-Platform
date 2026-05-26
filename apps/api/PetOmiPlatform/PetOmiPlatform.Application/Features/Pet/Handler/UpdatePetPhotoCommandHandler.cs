@@ -14,54 +14,23 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     {
         private readonly IPetRepository _petRepository;
         private readonly IPetPhotoRepository _photoRepository;
-
-
         private readonly IPetUserAccessRepository _accessRepository;
-
         private readonly IPetAvatarService _avatarService;
-
-
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPetAccessService _accessService;
 
         public UpdatePetPhotoCommandHandler(
             IPetRepository petRepository,
             IPetPhotoRepository photoRepository,
-
-
-
             IPetUserAccessRepository accessRepository,
-            IUnitOfWork unitOfWork)
+            IPetAvatarService avatarService,
+            IUnitOfWork unitOfWork,
+            IPetAccessService accessService)
         {
             _petRepository = petRepository;
             _photoRepository = photoRepository;
             _accessRepository = accessRepository;
-
-            IPetAvatarService avatarService,
-
-            IUnitOfWork unitOfWork,
-            IPetAccessService accessService)
-        {
-            _petRepository = petRepository;
-            _photoRepository = photoRepository;
-
-
             _avatarService = avatarService;
-
-
-            IUnitOfWork unitOfWork,
-            IPetAccessService accessService)
-        {
-            _petRepository = petRepository;
-            _photoRepository = photoRepository;
-
-
-            IUnitOfWork unitOfWork,
-            IPetAccessService accessService)
-        {
-            _petRepository = petRepository;
-            _photoRepository = photoRepository;
-
             _unitOfWork = unitOfWork;
             _accessService = accessService;
         }

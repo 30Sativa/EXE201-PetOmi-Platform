@@ -71,7 +71,7 @@ export default function OwnerDashboardPage() {
   const totalPets = Array.isArray(pets) ? pets.length : 0
   const activeReminders = Array.isArray(reminders)
     ? reminders.filter(
-        (r) => r.status.toLowerCase() === "active" || r.status.toLowerCase() === "pending",
+        (r) => r.status.toLowerCase() === "pending",
       ).length
     : 0
 

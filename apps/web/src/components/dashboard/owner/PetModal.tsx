@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { X } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createPetApi, updatePetApi } from "@/services/pets.service"
+import ImageUploadField from "@/components/ui/ImageUploadField"
 import type {
   CreatePetRequest,
   PetResponse,
@@ -223,14 +224,11 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
   return (
     <dialog
       ref={dialogRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in"
       onClick={handleBackdropClick}
       onCancel={(e) => { e.preventDefault(); handleClose() }}
-      style={{ animation: "po-dialog-in 200ms cubic-bezier(0.2,0.8,0.2,1) both" }}
     >
-      <div className="w-[min(540px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20"
-        style={{ animation: "po-dialog-content-in 300ms cubic-bezier(0.2,0.8,0.2,1) both" }}
-      >
+      <div className="m-auto w-[min(540px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -427,33 +425,15 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
           </div>
         </div>
 
-        {/* Avatar URL */}
-        <div className="grid gap-1.5">
-          <label htmlFor="pet-avatar" className="text-sm font-semibold text-po-text">
-            Ảnh đại diện
-          </label>
-          <input
-            id="pet-avatar"
-            type="url"
-            value={form.avatarUrl}
-            onChange={(e) => setField("avatarUrl", e.target.value)}
-            placeholder="https://example.com/avatar.jpg"
-            disabled={isLoading}
-            className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm text-po-text placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
-          />
-          {form.avatarUrl && (
-            <div className="overflow-hidden rounded-xl border border-po-border">
-              <img
-                src={form.avatarUrl}
-                alt="Avatar preview"
-                className="h-24 w-full object-cover"
-                onError={(e) => {
-                  ;(e.target as HTMLImageElement).style.display = "none"
-                }}
-              />
-            </div>
-          )}
-        </div>
+        {/* Avatar */}
+        <ImageUploadField
+          label="Ảnh đại diện"
+          value={form.avatarUrl}
+          onChange={(url) => setField("avatarUrl", url)}
+          imageType="pet_avatar"
+          resourceId={pet?.petId}
+          disabled={isLoading}
+        />
 
         {/* Actions */}
         <div className="mt-2 flex flex-wrap justify-end gap-3">

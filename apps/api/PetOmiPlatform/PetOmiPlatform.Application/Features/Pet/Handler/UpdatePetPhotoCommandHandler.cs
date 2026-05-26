@@ -15,18 +15,32 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     {
         private readonly IPetRepository _petRepository;
         private readonly IPetPhotoRepository _photoRepository;
+<<<<<<< Updated upstream
         private readonly IPetUserAccessRepository _accessRepository;
+=======
+        private readonly IPetAvatarService _avatarService;
+>>>>>>> Stashed changes
         private readonly IUnitOfWork _unitOfWork;
 
         public UpdatePetPhotoCommandHandler(
             IPetRepository petRepository,
             IPetPhotoRepository photoRepository,
+<<<<<<< Updated upstream
             IPetUserAccessRepository accessRepository,
             IUnitOfWork unitOfWork)
         {
             _petRepository = petRepository;
             _photoRepository = photoRepository;
             _accessRepository = accessRepository;
+=======
+            IPetAvatarService avatarService,
+            IUnitOfWork unitOfWork,
+            IPetAccessService accessService)
+        {
+            _petRepository = petRepository;
+            _photoRepository = photoRepository;
+            _avatarService = avatarService;
+>>>>>>> Stashed changes
             _unitOfWork = unitOfWork;
         }
 
@@ -48,12 +62,11 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
 
             if (command.Request.SetAsAvatar == true)
             {
-                var currentAvatar = await _photoRepository.GetAvatarAsync(command.PetId);
-                if (currentAvatar != null && currentAvatar.Id != photo.Id)
-                {
-                    currentAvatar.RemoveAvatar();
-                    await _photoRepository.UpdateAsync(currentAvatar);
-                }
+                await _avatarService.SetAvatarAsync(
+                    command.PetId,
+                    photo.ImageUrl,
+                    photo.CloudinaryPublicId,
+                    cancellationToken);
                 photo.SetAsAvatar();
             }
 
@@ -65,6 +78,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 PhotoId = photo.Id,
                 PetId = photo.PetId,
                 ImageUrl = photo.ImageUrl,
+                CloudinaryPublicId = photo.CloudinaryPublicId,
                 Caption = photo.Caption,
                 IsAvatar = photo.IsAvatar,
                 TakenAt = photo.TakenAt,

@@ -31,6 +31,8 @@
   --color-po-danger: var(--po-color-danger);
   --color-po-danger-soft: var(--po-color-danger-soft);
 
+  --animate-dialog-in: dialog-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-dialog-content-in: dialog-content-in 300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-fade-up: po-fade-up 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-fade-in: po-fade-in 520ms ease both;
   --animate-float: po-float 5.8s ease-in-out infinite;
@@ -390,7 +392,7 @@ canvas {
 
 /* ==================== DIALOG ANIMATIONS ==================== */
 
-@keyframes po-dialog-in {
+@keyframes dialog-in {
   from {
     opacity: 0;
   }
@@ -399,7 +401,7 @@ canvas {
   }
 }
 
-@keyframes po-dialog-content-in {
+@keyframes dialog-content-in {
   from {
     opacity: 0;
     transform: scale(0.92) translateY(-12px);
@@ -408,4 +410,15 @@ canvas {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+/* Ensure dialog container is full viewport and content scrolls */
+dialog.fixed.inset-0.z-50.flex.items-center.justify-center {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  margin: 0;
+  border: 0;
+  overflow-y: auto;
+  max-height: none;
 }

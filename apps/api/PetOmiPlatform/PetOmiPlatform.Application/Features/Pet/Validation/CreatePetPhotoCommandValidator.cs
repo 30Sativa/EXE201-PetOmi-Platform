@@ -14,6 +14,22 @@ namespace PetOmiPlatform.Application.Features.Pet.Validation
             RuleFor(x => x.Caption)
                 .MaximumLength(255).When(x => !string.IsNullOrEmpty(x.Caption))
                 .WithMessage("Caption tối đa 255 ký tự.");
+
+            RuleFor(x => x.TakenAt)
+                .Must(BeAValidDate).When(x => x.TakenAt.HasValue)
+                .WithMessage("Ngày chụp không hợp lệ.")
+                .Must(BeNotInFuture).When(x => x.TakenAt.HasValue)
+                .WithMessage("Ngày chụp không được là ngày trong tương lai.");
+        }
+
+        private static bool BeAValidDate(DateTime? date)
+        {
+            return date.HasValue && date.Value != default;
+        }
+
+        private static bool BeNotInFuture(DateTime? date)
+        {
+            return date.HasValue && date.Value.Date <= DateTime.UtcNow.Date;
         }
     }
 }

@@ -1,7 +1,9 @@
 import { X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 import { createPetPhotoApi } from "@/services/pets.service"
+import ImageUploadField from "@/components/ui/ImageUploadField"
 import type { CreatePetPhotoRequest } from "@/types"
 
 interface PhotoModalProps {
@@ -27,11 +29,17 @@ export default function PhotoModal({
       createPetPhotoApi(petId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-photos", petId] })
+      queryClient.invalidateQueries({ queryKey: ["pet", petId] })
+      queryClient.invalidateQueries({ queryKey: ["owner-pets"] })
+      toast.success("Thêm ảnh thành công!")
       setImageUrl("")
       setCaption("")
       setIsAvatar(false)
       setTakenAt("")
       onClose()
+    },
+    onError: () => {
+      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
     },
   })
 
@@ -59,13 +67,10 @@ export default function PhotoModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in"
       onClick={handleBackdropClick}
-      style={{ animation: "po-dialog-in 200ms cubic-bezier(0.2,0.8,0.2,1) both" }}
     >
-      <div className="w-[min(480px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20"
-        style={{ animation: "po-dialog-content-in 300ms cubic-bezier(0.2,0.8,0.2,1) both" }}
-      >
+      <div className="m-auto w-[min(480px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -86,33 +91,14 @@ export default function PhotoModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="mt-5 grid gap-4">
-        <div className="grid gap-1.5">
-          <label className="text-sm font-semibold text-po-text">
-            URL ảnh <span className="text-po-danger">*</span>
-          </label>
-          <input
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-            required
-            disabled={mutation.isPending}
-            className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
-          />
-        </div>
-
-        {imageUrl && (
-          <div className="overflow-hidden rounded-xl border border-po-border">
-            <img
-              src={imageUrl}
-              alt="Preview"
-              className="h-48 w-full object-cover"
-              onError={(e) => {
-                ;(e.target as HTMLImageElement).style.display = "none"
-              }}
-            />
-          </div>
-        )}
+        <ImageUploadField
+          label="Ảnh"
+          value={imageUrl}
+          onChange={setImageUrl}
+          imageType="pet_photo"
+          resourceId={petId}
+          disabled={mutation.isPending}
+        />
 
         <div className="grid gap-1.5">
           <label className="text-sm font-semibold text-po-text">Mô tả</label>
@@ -150,12 +136,6 @@ export default function PhotoModal({
             Đặt làm ảnh đại diện
           </span>
         </label>
-
-        {mutation.error && (
-          <div className="rounded-xl border border-po-danger/30 bg-po-danger/10 px-4 py-3 text-sm text-po-danger">
-            Đã xảy ra lỗi khi tải ảnh. Vui lòng kiểm tra lại URL.
-          </div>
-        )}
 
         <div className="mt-2 flex flex-wrap justify-end gap-3">
           <button

@@ -19,7 +19,7 @@ export interface UseCompleteProfileFormReturn {
   isSubmitting: boolean
   status: FormStatus
   message: string
-  onSubmit: (data: CompleteProfileForm) => Promise<void>
+  onSubmit: (data: CompleteProfileForm, avatarUrl?: string) => Promise<void>
 }
 
 export function useCompleteProfileForm(): UseCompleteProfileFormReturn {
@@ -49,12 +49,13 @@ export function useCompleteProfileForm(): UseCompleteProfileFormReturn {
     }
   }, [navigate])
 
-  const onSubmit = async (data: CompleteProfileForm) => {
+  const onSubmit = async (data: CompleteProfileForm, avatarUrl?: string) => {
     setStatus("idle")
     try {
       await completeProfileApi({
         ...data,
         dateOfBirth: data.dateOfBirth || undefined,
+        avatarUrl: avatarUrl || undefined,
       })
 
       setStatus("success")

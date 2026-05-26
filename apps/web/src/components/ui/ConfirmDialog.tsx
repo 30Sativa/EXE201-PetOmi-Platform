@@ -53,13 +53,10 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in"
       onClick={handleBackdropClick}
-      style={{ animation: "po-dialog-in 200ms cubic-bezier(0.2,0.8,0.2,1) both" }}
     >
-      <div className="w-[min(420px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20"
-        style={{ animation: "po-dialog-content-in 300ms cubic-bezier(0.2,0.8,0.2,1) both" }}
-      >
+      <div className="m-auto w-[min(420px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-extrabold text-po-text">{title}</h3>

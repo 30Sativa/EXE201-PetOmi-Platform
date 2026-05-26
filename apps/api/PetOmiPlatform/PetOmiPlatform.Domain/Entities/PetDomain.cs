@@ -146,5 +146,13 @@ namespace PetOmiPlatform.Domain.Entities
             if (!IsActive)
                 throw new DomainException("Hồ sơ thú cưng này đã bị xóa.");
         }
+
+        // Cập nhật ảnh đại diện
+        public void SetAvatar(string? avatarUrl, string? avatarCloudinaryPublicId)
+        {
+            AvatarUrl = avatarUrl;
+            AvatarCloudinaryPublicId = avatarCloudinaryPublicId;
+            UpdatedAt = DateTime.UtcNow;
+        }
     }
 }

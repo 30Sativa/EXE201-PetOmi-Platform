@@ -54,6 +54,23 @@ namespace PetOmiPlatform.API.Controllers
                 : NotFound(BaseResponse<InvoiceResponse?>.Fail("Khong tim thay hoa don.", 404));
         }
 
+        /// <summary>Danh sach hoa don chua thanh toan theo tuoi no (aging) de thu ngan uu tien thu no.</summary>
+        /// <remarks>
+        /// Tra ve cac hoa don status Unpaid, sap xep theo PendingDays giam dan.
+        /// Dung minAgeDays de loc hoa don no tu N ngay tro len.
+        /// </remarks>
+        [HttpGet("unpaid-aging")]
+        public async Task<IActionResult> GetUnpaidAgingInvoices(
+            [FromQuery] Guid clinicId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50,
+            [FromQuery] int minAgeDays = 0)
+        {
+            var query = new GetInvoiceAgingQuery(clinicId, CurrentUserId, page, pageSize, minAgeDays);
+            var result = await Mediator.Send(query);
+            return Ok(BaseResponse<IReadOnlyList<InvoiceAgingItemResponse>>.Ok(result));
+        }
+
         /// <summary>Thu tien thu cong cho hoa don (tien mat/chuyen khoan thu cong).</summary>
         [HttpPost("{id:guid}/pay")]
         public async Task<IActionResult> PayInvoice(Guid id, [FromBody] PayInvoiceRequest request, [FromQuery] Guid clinicId)

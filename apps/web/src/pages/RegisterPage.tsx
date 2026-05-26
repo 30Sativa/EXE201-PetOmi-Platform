@@ -1,5 +1,6 @@
 import { Eye, EyeOff } from "lucide-react"
 
+import FormStatusMessage from "@/components/ui/FormStatusMessage"
 import { useRegisterForm } from "@/hooks"
 
 const fieldClass =
@@ -89,9 +90,11 @@ export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin?: ()
       </div>
 
       {message ? (
-        <p className={`rounded-2xl px-4 py-3 text-sm font-semibold ${status === "success" ? "bg-po-success-soft text-po-success" : "bg-po-danger-soft text-po-danger"}`}>
-          {message}
-        </p>
+        <FormStatusMessage
+          status={status === "success" ? "success" : "error"}
+          title={status === "success" ? "Đăng ký thành công" : "Chưa thể tạo tài khoản"}
+          message={message}
+        />
       ) : null}
 
       <button

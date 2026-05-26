@@ -28,13 +28,29 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             ClinicRoleGuard.RequireInvoiceViewer(staff);
 
             var (unpaidCount, unpaidAmount) = await _invoiceRepository.GetUnpaidSummaryByClinicIdAsync(request.ClinicId);
+            var agingBuckets = await _invoiceRepository.GetUnpaidAgingBucketSummaryByClinicIdAsync(request.ClinicId);
             var pendingReconciliationCount = await _paymentTransactionRepository.CountUnresolvedByClinicIdAsync(request.ClinicId);
 
             return new BillingDashboardSummaryResponse
             {
                 UnpaidInvoiceCount = unpaidCount,
                 TotalUnpaidAmount = unpaidAmount,
-                PendingReconciliationCount = pendingReconciliationCount
+                PendingReconciliationCount = pendingReconciliationCount,
+                Aging0To7Days = new BillingAgingBucketResponse
+                {
+                    Count = agingBuckets.Count0To7Days,
+                    Amount = agingBuckets.Amount0To7Days
+                },
+                Aging8To30Days = new BillingAgingBucketResponse
+                {
+                    Count = agingBuckets.Count8To30Days,
+                    Amount = agingBuckets.Amount8To30Days
+                },
+                Aging31PlusDays = new BillingAgingBucketResponse
+                {
+                    Count = agingBuckets.Count31PlusDays,
+                    Amount = agingBuckets.Amount31PlusDays
+                }
             };
         }
     }

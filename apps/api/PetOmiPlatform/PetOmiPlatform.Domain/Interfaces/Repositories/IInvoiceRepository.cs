@@ -1,4 +1,5 @@
 using PetOmiPlatform.Domain.Entities;
+using PetOmiPlatform.Domain.Models;
 
 namespace PetOmiPlatform.Domain.Interfaces.Repositories
 {
@@ -13,6 +14,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<IEnumerable<InvoiceItemDomain>> GetItemsByInvoiceIdAsync(Guid invoiceId);
         Task<IEnumerable<InvoiceDomain>> GetByClinicIdAsync(Guid clinicId, int page, int pageSize);
         Task<(int UnpaidCount, decimal UnpaidAmount)> GetUnpaidSummaryByClinicIdAsync(Guid clinicId);
+        Task<InvoiceAgingBucketSummary> GetUnpaidAgingBucketSummaryByClinicIdAsync(Guid clinicId);
         Task<bool> HasActiveInvoiceAsync(Guid appointmentId);
         Task UpdateAsync(InvoiceDomain invoice);
     }

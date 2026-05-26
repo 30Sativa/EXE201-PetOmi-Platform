@@ -71,7 +71,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IReadOnlyList<InvoiceAgingItemResponse>>.Ok(result));
         }
 
-        /// <summary>Tong quan billing cho dashboard FE: so hoa don no, tong tien no, va giao dich SePay chua doi soat.</summary>
+        /// <summary>Tong quan billing cho dashboard FE: no hien tai, giao dich can doi soat, va bucket cong no theo tuoi no.</summary>
         [HttpGet("billing-summary")]
         public async Task<IActionResult> GetBillingSummary([FromQuery] Guid clinicId)
         {

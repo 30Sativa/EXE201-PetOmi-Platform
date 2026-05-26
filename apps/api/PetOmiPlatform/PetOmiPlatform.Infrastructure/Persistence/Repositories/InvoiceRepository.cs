@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
+using PetOmiPlatform.Domain.Models;
 using PetOmiPlatform.Infrastructure.Mappers;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 
@@ -84,6 +85,44 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var amount = await query.SumAsync(i => (decimal?)i.FinalAmount) ?? 0m;
 
             return (count, amount);
+        }
+
+        public async Task<InvoiceAgingBucketSummary> GetUnpaidAgingBucketSummaryByClinicIdAsync(Guid clinicId)
+        {
+            var nowUtc = DateTime.UtcNow;
+
+            var query = _context.Invoices
+                .Where(i => i.ClinicId == clinicId && i.Status == "Unpaid");
+
+            var bucket = await query
+                .GroupBy(_ => 1)
+                .Select(g => new InvoiceAgingBucketSummary
+                {
+                    Count0To7Days = g.Count(i =>
+                        EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) >= 0 &&
+                        EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) <= 7),
+                    Amount0To7Days = g.Where(i =>
+                            EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) >= 0 &&
+                            EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) <= 7)
+                        .Sum(i => (decimal?)i.FinalAmount) ?? 0m,
+
+                    Count8To30Days = g.Count(i =>
+                        EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) >= 8 &&
+                        EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) <= 30),
+                    Amount8To30Days = g.Where(i =>
+                            EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) >= 8 &&
+                            EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) <= 30)
+                        .Sum(i => (decimal?)i.FinalAmount) ?? 0m,
+
+                    Count31PlusDays = g.Count(i =>
+                        EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) >= 31),
+                    Amount31PlusDays = g.Where(i =>
+                            EF.Functions.DateDiffDay(i.CreatedAt, nowUtc) >= 31)
+                        .Sum(i => (decimal?)i.FinalAmount) ?? 0m
+                })
+                .FirstOrDefaultAsync();
+
+            return bucket ?? new InvoiceAgingBucketSummary();
         }
 
         public async Task<bool> HasActiveInvoiceAsync(Guid appointmentId)

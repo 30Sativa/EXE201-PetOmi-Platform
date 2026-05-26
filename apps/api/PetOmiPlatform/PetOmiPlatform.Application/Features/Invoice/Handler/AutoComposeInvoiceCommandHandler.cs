@@ -85,7 +85,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             await _invoiceRepository.AddItemsAsync(finalizedItems);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return invoice.ToResponse(finalizedItems);
+            var warnings = BuildComposeWarnings(finalizedItems);
+            return invoice.ToResponse(finalizedItems, warnings);
         }
 
         private async Task<MedicalExaminationDomain?> ResolveExaminationAsync(
@@ -190,6 +191,14 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
         private static string BuildMedicationDescription(PrescriptionDomain prescription)
         {
             return $"{prescription.MedicationName} - {prescription.Dosage}, {prescription.Frequency}, {prescription.DurationDays} days";
+        }
+
+        private static List<string> BuildComposeWarnings(IEnumerable<InvoiceItemDomain> items)
+        {
+            return items
+                .Where(x => x.UnitPrice == 0)
+                .Select(x => $"Dong '{x.Description}' chua co don gia (UnitPrice = 0). Vui long kiem tra truoc khi thu tien.")
+                .ToList();
         }
     }
 }

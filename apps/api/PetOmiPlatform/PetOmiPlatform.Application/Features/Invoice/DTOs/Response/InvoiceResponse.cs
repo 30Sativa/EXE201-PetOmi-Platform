@@ -34,7 +34,13 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public string? Notes { get; set; }
         public DateTime? PaidAt { get; set; }
         public DateTime CreatedAt { get; set; }
-        
+
+        /// <summary>
+        /// Cac canh bao nghiep vu de FE hien thi cho thu ngan truoc khi thu tien.
+        /// Vi du: dong thuoc auto-compose chua co don gia (UnitPrice = 0).
+        /// </summary>
+        public List<string> Warnings { get; set; } = new();
+
         public List<InvoiceItemResponse> Items { get; set; } = new();
     }
 }

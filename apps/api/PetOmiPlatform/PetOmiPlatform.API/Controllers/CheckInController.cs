@@ -8,6 +8,9 @@ using PetOmiPlatform.Application.Common.Models;
 
 namespace PetOmiPlatform.API.Controllers
 {
+    /// <summary>
+    /// API check-in lich hen tai quay tiep don.
+    /// </summary>
     [Route("api/appointments")]
     [ApiController]
     [Authorize] // Staff/Clinic/Vet
@@ -15,6 +18,7 @@ namespace PetOmiPlatform.API.Controllers
     {
         public CheckInController(IMediator mediator) : base(mediator) { }
 
+        /// <summary>Danh dau owner/pet da den phong kham cho lich hen.</summary>
         [HttpPost("{id:guid}/checkin")]
         public async Task<IActionResult> CheckIn(Guid id, [FromQuery] Guid clinicId)
         {

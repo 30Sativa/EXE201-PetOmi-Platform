@@ -7,7 +7,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.Mappers
     {
         public static InvoiceResponse ToResponse(
             this InvoiceDomain invoice,
-            IEnumerable<InvoiceItemDomain>? items = null)
+            IEnumerable<InvoiceItemDomain>? items = null,
+            IEnumerable<string>? warnings = null)
         {
             return new InvoiceResponse
             {
@@ -31,6 +32,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Mappers
                 Notes = invoice.Notes,
                 PaidAt = invoice.PaidAt,
                 CreatedAt = invoice.CreatedAt,
+                Warnings = warnings?.ToList() ?? new List<string>(),
                 Items = items?.Select(ToResponse).ToList() ?? new List<InvoiceItemResponse>()
             };
         }

@@ -11,6 +11,9 @@ using PetOmiPlatform.Infrastructure.Common.Settings;
 
 namespace PetOmiPlatform.API.Controllers
 {
+    /// <summary>
+    /// Webhook endpoints cho cac provider thanh toan/ngoai he thong.
+    /// </summary>
     [Route("api/webhooks")]
     [ApiController]
     [AllowAnonymous]
@@ -25,6 +28,10 @@ namespace PetOmiPlatform.API.Controllers
             _sePaySettings = sePaySettings.Value;
         }
 
+        /// <summary>Webhook SePay thong bao bien dong giao dich vao tai khoan clinic.</summary>
+        /// <remarks>
+        /// Backend se xac thuc API key/HMAC (neu bat), ghi PaymentTransaction, va auto-mark invoice Paid neu match hop le.
+        /// </remarks>
         [HttpPost("sepay")]
         public async Task<IActionResult> ReceiveSePayWebhook()
         {

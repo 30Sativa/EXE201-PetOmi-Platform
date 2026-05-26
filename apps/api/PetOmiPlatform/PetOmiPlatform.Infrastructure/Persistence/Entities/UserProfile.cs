@@ -15,6 +15,8 @@ public partial class UserProfile
 
     public string? AvatarUrl { get; set; }
 
+    public string? AvatarCloudinaryPublicId { get; set; }
+
     public DateOnly? DateOfBirth { get; set; }
 
     public string? Gender { get; set; }

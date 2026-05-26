@@ -55,6 +55,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 DateOfBirth = p.DateOfBirth,
                 IsBirthDateEstimated = p.IsBirthDateEstimated,
                 AvatarUrl = p.AvatarUrl,
+                AvatarCloudinaryPublicId = p.AvatarCloudinaryPublicId,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             }).ToList();

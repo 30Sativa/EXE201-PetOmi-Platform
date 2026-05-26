@@ -13,7 +13,22 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         /// <summary>Lấy lịch bác sĩ theo clinic và thứ trong tuần — dùng tính available slots.</summary>
         Task<IEnumerable<DoctorScheduleDomain>> GetByClinicAndDayAsync(Guid clinicId, int dayOfWeek);
 
+        /// <summary>Lấy doctor schedule với thông tin bác sĩ (dùng tính available slots).</summary>
+        Task<List<DoctorScheduleWithDoctorDto>> GetByClinicAndDayWithDoctorAsync(Guid clinicId, int dayOfWeek, Guid? vetClinicId = null);
+
         Task UpdateAsync(DoctorScheduleDomain schedule);
         Task DeleteAsync(Guid scheduleId);
+    }
+
+    public class DoctorScheduleWithDoctorDto
+    {
+        public Guid ScheduleId { get; set; }
+        public Guid VetClinicId { get; set; }
+        public Guid VetProfileId { get; set; }
+        public int DayOfWeek { get; set; }
+        public TimeOnly StartTime { get; set; }
+        public TimeOnly EndTime { get; set; }
+        public string DoctorName { get; set; } = null!;
+        public string? Specialization { get; set; }
     }
 }

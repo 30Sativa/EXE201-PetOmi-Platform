@@ -189,7 +189,7 @@ export default function ResetPasswordPage() {
             </div>
 
             {message && (
-              <p className={`rounded-lg px-3 py-2 text-sm font-bold ${status === "success" ? "bg-po-success-soft text-po-success" : "bg-po-danger-soft text-po-danger"}`}>
+              <p className={`rounded-lg px-3 py-2 text-sm font-bold ${status === "error" ? "bg-po-danger-soft text-po-danger" : "bg-po-success-soft text-po-success"}`}>
                 {message}
               </p>
             )}

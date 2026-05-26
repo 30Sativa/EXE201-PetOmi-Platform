@@ -87,9 +87,6 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             TimeOnly endTime,
             Guid? excludeId = null)
         {
-            // Conflict = appointment của bác sĩ đó trong ngày đó
-            // có khoảng thời gian chồng lấp với [startTime, endTime]
-            // Chỉ tính Pending và Confirmed (không tính Cancelled/Rejected/Expired)
             var query = _context.Appointments.Where(a =>
                 a.VetClinicId == vetClinicId &&
                 a.AppointmentDate == date &&
@@ -101,6 +98,24 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 query = query.Where(a => a.AppointmentId != excludeId.Value);
 
             return await query.AnyAsync();
+        }
+
+        public async Task<bool> HasDoctorConflictAcrossClinicsAsync(
+            List<Guid> allVetClinicIds,
+            DateOnly date,
+            TimeOnly startTime,
+            TimeOnly endTime)
+        {
+            if (!allVetClinicIds.Any())
+                return false;
+
+            return await _context.Appointments
+                .Where(a => allVetClinicIds.Contains(a.VetClinicId ?? Guid.Empty)
+                    && a.AppointmentDate == date
+                    && (a.Status == "Pending" || a.Status == "Confirmed")
+                    && a.StartTime < endTime
+                    && a.EndTime > startTime)
+                .AnyAsync();
         }
 
         public async Task<IEnumerable<AppointmentDomain>> GetPendingExpiredAsync(int timeoutMinutes = 30)

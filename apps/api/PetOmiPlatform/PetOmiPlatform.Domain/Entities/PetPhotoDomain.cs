@@ -7,6 +7,7 @@ namespace PetOmiPlatform.Domain.Entities
     {
         public Guid PetId { get; private set; }
         public string ImageUrl { get; private set; }
+        public string? CloudinaryPublicId { get; private set; }
         public string? Caption { get; private set; }
         public bool IsAvatar { get; private set; }
         public DateTime? TakenAt { get; private set; }
@@ -20,6 +21,7 @@ namespace PetOmiPlatform.Domain.Entities
         private PetPhotoDomain(
             Guid petId,
             string imageUrl,
+            string? cloudinaryPublicId,
             string? caption,
             bool isAvatar,
             DateTime? takenAt)
@@ -27,6 +29,7 @@ namespace PetOmiPlatform.Domain.Entities
             Id = Guid.NewGuid();
             PetId = petId;
             ImageUrl = imageUrl;
+            CloudinaryPublicId = cloudinaryPublicId;
             Caption = caption;
             IsAvatar = isAvatar;
             TakenAt = takenAt;
@@ -37,19 +40,21 @@ namespace PetOmiPlatform.Domain.Entities
         public static PetPhotoDomain Create(
             Guid petId,
             string imageUrl,
+            string? cloudinaryPublicId,
             string? caption,
             bool isAvatar,
             DateTime? takenAt)
         {
             if (string.IsNullOrWhiteSpace(imageUrl))
                 throw new Domain.Exceptions.DomainException("URL ảnh không được để trống.");
-            return new PetPhotoDomain(petId, imageUrl, caption, isAvatar, takenAt);
+            return new PetPhotoDomain(petId, imageUrl, cloudinaryPublicId, caption, isAvatar, takenAt);
         }
 
         public static PetPhotoDomain Reconstitute(
             Guid id,
             Guid petId,
             string imageUrl,
+            string? cloudinaryPublicId,
             string? caption,
             bool isAvatar,
             DateTime? takenAt,
@@ -62,6 +67,7 @@ namespace PetOmiPlatform.Domain.Entities
                 Id = id,
                 PetId = petId,
                 ImageUrl = imageUrl,
+                CloudinaryPublicId = cloudinaryPublicId,
                 Caption = caption,
                 IsAvatar = isAvatar,
                 TakenAt = takenAt,

@@ -31,6 +31,8 @@ public partial class PetMedicalRecord
 
     public string? AttachmentUrl { get; set; }
 
+    public string? AttachmentCloudinaryPublicId { get; set; }
+
     public DateTime CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

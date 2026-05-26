@@ -53,7 +53,8 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 phone: command.Request.Phone,
                 email: command.Request.Email,
                 licenseNumber: command.Request.LicenseNumber,
-                licenseImageUrl: command.Request.LicenseImageUrl
+                licenseImageUrl: command.Request.LicenseImageUrl,
+                licenseCloudinaryPublicId: command.Request.LicenseCloudinaryPublicId
             );
             await _clinicRepository.AddAsync(clinic);
 
@@ -72,10 +73,15 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
             return new CreateClinicResponse
             {
                 ClinicId = clinic.Id,
+                VetProfileId = vetProfile.Id,
                 ClinicName = clinic.ClinicName,
+                Address = clinic.Address,
+                Phone = clinic.Phone,
+                Email = clinic.Email,
                 LicenseNumber = clinic.LicenseNumber,
                 LicenseImageUrl = clinic.LicenseImageUrl,
-                Status = clinic.Status.ToString() // enum → string
+                LicenseCloudinaryPublicId = clinic.LicenseCloudinaryPublicId,
+                Status = clinic.Status.ToString()
             };
         }
     }

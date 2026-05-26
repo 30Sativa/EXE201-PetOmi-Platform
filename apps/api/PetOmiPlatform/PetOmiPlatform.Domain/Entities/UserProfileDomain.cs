@@ -9,6 +9,7 @@ namespace PetOmiPlatform.Domain.Entities
         public string? FullName { get; private set; }
         public string? Phone { get; private set; }
         public string? AvatarUrl { get; private set; }
+        public string? AvatarCloudinaryPublicId { get; private set; }
         public DateOnly? DateOfBirth { get; private set; }
         public string? Gender { get; private set; }
         public string? Address { get; private set; }
@@ -22,6 +23,7 @@ namespace PetOmiPlatform.Domain.Entities
             string? fullName,
             string? phone,
             string? avatarUrl,
+            string? avatarCloudinaryPublicId,
             DateOnly? dateOfBirth,
             string? gender,
             string? address)
@@ -33,6 +35,7 @@ namespace PetOmiPlatform.Domain.Entities
                 FullName = fullName,
                 Phone = phone,
                 AvatarUrl = avatarUrl,
+                AvatarCloudinaryPublicId = avatarCloudinaryPublicId,
                 DateOfBirth = dateOfBirth,
                 Gender = gender,
                 Address = address,
@@ -45,6 +48,7 @@ namespace PetOmiPlatform.Domain.Entities
             string? fullName,
             string? phone,
             string? avatarUrl,
+            string? avatarCloudinaryPublicId,
             DateOnly? dateOfBirth,
             string? gender,
             string? address)
@@ -52,6 +56,7 @@ namespace PetOmiPlatform.Domain.Entities
             if (fullName != null) FullName = fullName;
             if (phone != null) Phone = phone;
             if (avatarUrl != null) AvatarUrl = avatarUrl;
+            if (avatarCloudinaryPublicId != null) AvatarCloudinaryPublicId = avatarCloudinaryPublicId;
             if (dateOfBirth != null) DateOfBirth = dateOfBirth;
             if (gender != null) Gender = gender;
             if (address != null) Address = address;
@@ -64,6 +69,7 @@ namespace PetOmiPlatform.Domain.Entities
             string? fullName,
             string? phone,
             string? avatarUrl,
+            string? avatarCloudinaryPublicId,
             DateOnly? dateOfBirth,
             string? gender,
             string? address,
@@ -77,6 +83,7 @@ namespace PetOmiPlatform.Domain.Entities
                 FullName = fullName,
                 Phone = phone,
                 AvatarUrl = avatarUrl,
+                AvatarCloudinaryPublicId = avatarCloudinaryPublicId,
                 DateOfBirth = dateOfBirth,
                 Gender = gender,
                 Address = address,

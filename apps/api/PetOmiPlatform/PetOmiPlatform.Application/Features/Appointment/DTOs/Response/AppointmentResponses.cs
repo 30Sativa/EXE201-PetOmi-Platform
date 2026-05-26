@@ -42,11 +42,23 @@ namespace PetOmiPlatform.Application.Features.Appointment.DTOs.Response
         public DateTime CreatedAt { get; set; }
     }
 
-    /// <summary>Slot trống cho owner chọn khi đặt lịch.</summary>
     public class AvailableSlotResponse
     {
+        public Guid VetClinicId { get; set; }
+        public string DoctorName { get; set; } = null!;
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }
         public bool IsAvailable { get; set; }
+    }
+
+    public class ClinicDoctorResponse
+    {
+        public Guid VetClinicId { get; set; }
+        public Guid VetProfileId { get; set; }
+        public Guid UserId { get; set; }
+        public string FullName { get; set; } = null!;
+        public string? AvatarUrl { get; set; }
+        public string? Specialization { get; set; }
+        public string RoleName { get; set; } = null!;
     }
 }

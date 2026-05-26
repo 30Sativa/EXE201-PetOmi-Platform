@@ -18,6 +18,7 @@ namespace PetOmiPlatform.Domain.Entities
         public DateOnly? StartDate { get; private set; }
         public DateOnly? EndDate { get; private set; }
         public string? AttachmentUrl { get; private set; }
+        public string? AttachmentCloudinaryPublicId { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
         public DateTime? DeletedAt { get; private set; }
@@ -39,7 +40,8 @@ namespace PetOmiPlatform.Domain.Entities
             string? dosage,
             DateOnly? startDate,
             DateOnly? endDate,
-            string? attachmentUrl)
+            string? attachmentUrl,
+            string? attachmentCloudinaryPublicId)
         {
             Id = Guid.NewGuid();
             PetId = petId;
@@ -54,6 +56,7 @@ namespace PetOmiPlatform.Domain.Entities
             StartDate = startDate;
             EndDate = endDate;
             AttachmentUrl = attachmentUrl;
+            AttachmentCloudinaryPublicId = attachmentCloudinaryPublicId;
             CreatedAt = DateTime.UtcNow;
             IsActive = true;
         }
@@ -70,14 +73,15 @@ namespace PetOmiPlatform.Domain.Entities
             string? dosage,
             DateOnly? startDate,
             DateOnly? endDate,
-            string? attachmentUrl)
+            string? attachmentUrl,
+            string? attachmentCloudinaryPublicId)
         {
             ValidateRecordType(recordType);
             ValidateDates(recordDate, startDate, endDate);
             return new PetMedicalRecordDomain(
                 petId, recordType, title, description, recordDate,
                 vetName, clinicName, medicationName, dosage,
-                startDate, endDate, attachmentUrl);
+                startDate, endDate, attachmentUrl, attachmentCloudinaryPublicId);
         }
 
         public static PetMedicalRecordDomain Reconstitute(
@@ -94,6 +98,7 @@ namespace PetOmiPlatform.Domain.Entities
             DateOnly? startDate,
             DateOnly? endDate,
             string? attachmentUrl,
+            string? attachmentCloudinaryPublicId,
             DateTime createdAt,
             DateTime? updatedAt,
             DateTime? deletedAt,
@@ -114,6 +119,7 @@ namespace PetOmiPlatform.Domain.Entities
                 StartDate = startDate,
                 EndDate = endDate,
                 AttachmentUrl = attachmentUrl,
+                AttachmentCloudinaryPublicId = attachmentCloudinaryPublicId,
                 CreatedAt = createdAt,
                 UpdatedAt = updatedAt,
                 DeletedAt = deletedAt,
@@ -132,7 +138,8 @@ namespace PetOmiPlatform.Domain.Entities
             string? dosage,
             DateOnly? startDate,
             DateOnly? endDate,
-            string? attachmentUrl)
+            string? attachmentUrl,
+            string? attachmentCloudinaryPublicId)
         {
             if (recordType != null) ValidateRecordType(recordType);
             if (recordDate != null && startDate != null && endDate != null)
@@ -148,6 +155,7 @@ namespace PetOmiPlatform.Domain.Entities
             if (startDate != null) StartDate = startDate;
             if (endDate != null) EndDate = endDate;
             if (attachmentUrl != null) AttachmentUrl = attachmentUrl;
+            if (attachmentCloudinaryPublicId != null) AttachmentCloudinaryPublicId = attachmentCloudinaryPublicId;
             UpdatedAt = DateTime.UtcNow;
         }
 

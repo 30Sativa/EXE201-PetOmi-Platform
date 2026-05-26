@@ -2,7 +2,6 @@ using MediatR;
 using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Pet.Command;
 using PetOmiPlatform.Application.Interfaces;
-using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System;
 using System.Threading;
@@ -14,19 +13,19 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     {
         private readonly IPetRepository _petRepository;
         private readonly IPetWeightLogRepository _weightLogRepository;
-        private readonly IPetUserAccessRepository _accessRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPetAccessService _accessService;
 
         public DeletePetWeightLogCommandHandler(
             IPetRepository petRepository,
             IPetWeightLogRepository weightLogRepository,
-            IPetUserAccessRepository accessRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPetAccessService accessService)
         {
             _petRepository = petRepository;
             _weightLogRepository = weightLogRepository;
-            _accessRepository = accessRepository;
             _unitOfWork = unitOfWork;
+            _accessService = accessService;
         }
 
         public async Task Handle(DeletePetWeightLogCommand command, CancellationToken cancellationToken)
@@ -34,7 +33,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             var pet = await _petRepository.GetByIdAsync(command.PetId)
                 ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
-            await EnsureCanWrite(pet, command.UserId);
+            await _accessService.EnsureCanWriteAsync(pet, command.UserId, cancellationToken);
 
             var weightLog = await _weightLogRepository.GetByIdAsync(command.WeightLogId)
                 ?? throw new NotFoundException("Không tìm thấy bản ghi cân nặng.");
@@ -44,14 +43,6 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
 
             await _weightLogRepository.DeleteAsync(command.WeightLogId);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-
-        private async Task EnsureCanWrite(PetDomain pet, Guid userId)
-        {
-            if (pet.OwnerUserId == userId) return;
-            var access = await _accessRepository.GetByPetAndUserAsync(pet.Id, userId);
-            if (access == null || !access.CanWrite())
-                throw new ForbiddenException("Bạn không có quyền thực hiện thao tác này.");
         }
     }
 }

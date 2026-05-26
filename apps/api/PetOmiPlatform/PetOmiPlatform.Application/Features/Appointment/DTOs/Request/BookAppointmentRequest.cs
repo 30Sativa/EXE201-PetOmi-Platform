@@ -4,6 +4,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.DTOs.Request
     public class BookAppointmentRequest
     {
         public Guid ClinicId { get; set; }
+        public Guid? VetClinicId { get; set; }         // Bắt buộc - bác sĩ phụ trách
         public Guid PetId { get; set; }
         public Guid? ServiceId { get; set; }        // optional — nếu không chọn thì mặc định 30 phút
         public DateOnly AppointmentDate { get; set; }

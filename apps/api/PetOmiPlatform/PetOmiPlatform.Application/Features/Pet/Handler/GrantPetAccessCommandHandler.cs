@@ -4,7 +4,6 @@ using PetOmiPlatform.Application.Features.Pet.Command;
 using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Entities;
-using PetOmiPlatform.Domain.Exceptions;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System;
 using System.Threading;
@@ -18,17 +17,20 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
         private readonly IPetUserAccessRepository _accessRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IPetAccessService _accessService;
 
         public GrantPetAccessCommandHandler(
             IPetRepository petRepository,
             IPetUserAccessRepository accessRepository,
             IUserRepository userRepository,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IPetAccessService accessService)
         {
             _petRepository = petRepository;
             _accessRepository = accessRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _accessService = accessService;
         }
 
         public async Task<PetUserAccessResponse> Handle(GrantPetAccessCommand command, CancellationToken cancellationToken)
@@ -36,18 +38,15 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             var pet = await _petRepository.GetByIdAsync(command.PetId)
                 ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
-            pet.EnsureOwner(command.UserId);
+            await _accessService.EnsureOwnerAsync(pet, command.UserId, cancellationToken);
 
             var normalizedEmail = command.Request.UserEmail.Trim().ToUpperInvariant();
             var targetUser = await _userRepository.GetByNormalizedEmail(normalizedEmail)
                 ?? throw new NotFoundException("Người dùng được cấp quyền không tồn tại.");
 
-            if (targetUser.Id == command.UserId)
-                throw new DomainException("Không thể tự cấp quyền cho chính mình.");
-
             var existingAccess = await _accessRepository.GetByPetAndUserAsync(command.PetId, targetUser.Id);
             if (existingAccess != null)
-                throw new DomainException("Người dùng đã có quyền truy cập. Vui lòng sử dụng endpoint cập nhật.");
+                throw new ConflictException("Người dùng đã có quyền truy cập. Vui lòng sử dụng endpoint cập nhật.");
 
             var access = PetUserAccessDomain.Create(
                 petId: command.PetId,

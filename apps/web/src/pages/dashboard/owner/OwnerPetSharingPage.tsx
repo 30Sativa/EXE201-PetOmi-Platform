@@ -12,7 +12,6 @@ import {
   getPetAccessApi,
   revokePetAccessApi,
   sharePetAccessApi,
-  updatePetAccessApi,
 } from "@/services/pets.service"
 import type {
   PetResponse,
@@ -49,7 +48,6 @@ export default function OwnerPetSharingPage() {
     },
   })
 
-  const totalShares = (pets ?? []).reduce((sum, pet) => sum, 0)
 
   return (
     <div className="grid gap-6">
@@ -148,7 +146,6 @@ export default function OwnerPetSharingPage() {
       {invitingPetId && (
         <InviteModal
           petId={invitingPetId}
-          pets={pets ?? []}
           onClose={() => setInvitingPetId(null)}
         />
       )}
@@ -261,6 +258,7 @@ function PetAccessCard({
                     <Avatar
                       fallback={access.userId.slice(0, 2).toUpperCase()}
                       size="sm"
+                      alt={access.userId}
                     />
                     <div>
                       <p className="text-sm font-semibold text-po-text">
@@ -311,15 +309,12 @@ function PetAccessCard({
 
 function InviteModal({
   petId,
-  pets,
   onClose,
 }: {
   petId: string
-  pets: PetResponse[]
   onClose: () => void
 }) {
   const queryClient = useQueryClient()
-  const pet = pets.find((p) => p.petId === petId)
 
   const [email, setEmail] = useState("")
   const [role, setRole] = useState("Viewer")
@@ -356,7 +351,7 @@ function InviteModal({
               Mời người dùng
             </h3>
             <p className="mt-1 text-sm text-po-text-muted">
-              Chia sẻ quyền truy cập {pet?.name ?? "thú cưng"} với người khác.
+              Chia sẻ quyền truy cập với người khác.
             </p>
           </div>
           <button

@@ -15,5 +15,6 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Request
         public DateOnly? StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
         public string? AttachmentUrl { get; set; }
+        public string? AttachmentCloudinaryPublicId { get; set; }
     }
 }

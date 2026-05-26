@@ -15,9 +15,14 @@ namespace PetOmiPlatform.Domain.Entities
         public string? Email { get; private set; }
         public string? LicenseNumber { get; private set; }
         public string? LicenseImageUrl { get; private set; }  // URL ảnh Giấy phép kinh doanh
+        public string? LicenseCloudinaryPublicId { get; private set; }
         public string? LogoUrl { get; private set; }          // Logo phòng khám
+        public string? LogoCloudinaryPublicId { get; private set; }
         public string? Description { get; private set; }      // Mô tả ngắn
         public string? OpeningHours { get; private set; }     // JSON: {"Mon-Fri":"08:00-17:00",...}
+        public double? Latitude { get; private set; }           // Toa do dia ly - tim clinic theo vi tri
+        public double? Longitude { get; private set; }         // Toa do dia ly - tim clinic theo vi tri
+        public int AppointmentBufferMins { get; private set; }  // Buffer time giua cac appointment (default 0)
         public ClinicStatus Status { get; private set; }
         public string? RejectedReason { get; private set; }
         public Guid? ReviewedByAdminId { get; private set; }
@@ -27,7 +32,7 @@ namespace PetOmiPlatform.Domain.Entities
         // / === Constructors ===
         private ClinicDomain() { }
 
-        private ClinicDomain(string clinicName, string? address, string? phone, string? email, string? licenseNumber, string? licenseImageUrl)
+        private ClinicDomain(string clinicName, string? address, string? phone, string? email, string? licenseNumber, string? licenseImageUrl, string? licenseCloudinaryPublicId, double? latitude, double? longitude, int appointmentBufferMins)
         {
             Id = Guid.NewGuid();
             ClinicName = clinicName;
@@ -36,6 +41,10 @@ namespace PetOmiPlatform.Domain.Entities
             Email = email;
             LicenseNumber = licenseNumber;
             LicenseImageUrl = licenseImageUrl;
+            LicenseCloudinaryPublicId = licenseCloudinaryPublicId;
+            Latitude = latitude;
+            Longitude = longitude;
+            AppointmentBufferMins = appointmentBufferMins;
             Status = ClinicStatus.Pending;
             CreatedAt = DateTime.UtcNow;
         }
@@ -49,14 +58,19 @@ namespace PetOmiPlatform.Domain.Entities
         string? email,
         string? licenseNumber,
         string? licenseImageUrl,
+        string? licenseCloudinaryPublicId,
         string? logoUrl,
+        string? logoCloudinaryPublicId,
         string? description,
         string? openingHours,
         string status,
         string? rejectedReason,
         Guid? reviewedByAdminId,
         DateTime createdAt,
-        DateTime? updatedAt)
+        DateTime? updatedAt,
+        double? latitude,
+        double? longitude,
+        int appointmentBufferMins)
         {
             return new ClinicDomain
             {
@@ -67,9 +81,14 @@ namespace PetOmiPlatform.Domain.Entities
                 Email = email,
                 LicenseNumber = licenseNumber,
                 LicenseImageUrl = licenseImageUrl,
+                LicenseCloudinaryPublicId = licenseCloudinaryPublicId,
                 LogoUrl = logoUrl,
+                LogoCloudinaryPublicId = logoCloudinaryPublicId,
                 Description = description,
                 OpeningHours = openingHours,
+                Latitude = latitude,
+                Longitude = longitude,
+                AppointmentBufferMins = appointmentBufferMins,
                 Status = Enum.Parse<ClinicStatus>(status),
                 RejectedReason = rejectedReason,
                 ReviewedByAdminId = reviewedByAdminId,
@@ -80,9 +99,9 @@ namespace PetOmiPlatform.Domain.Entities
 
         // Factory method for creating a new clinic
 
-        public static ClinicDomain Create(string clinicName, string? address, string? phone, string? email, string? licenseNumber, string? licenseImageUrl)
+        public static ClinicDomain Create(string clinicName, string? address, string? phone, string? email, string? licenseNumber, string? licenseImageUrl, string? licenseCloudinaryPublicId, double? latitude = null, double? longitude = null, int appointmentBufferMins = 0)
         {
-            return new ClinicDomain(clinicName, address, phone, email, licenseNumber, licenseImageUrl);
+            return new ClinicDomain(clinicName, address, phone, email, licenseNumber, licenseImageUrl, licenseCloudinaryPublicId, latitude, longitude, appointmentBufferMins);
         }
 
         // behavior methods for updating clinic status
@@ -125,7 +144,7 @@ namespace PetOmiPlatform.Domain.Entities
         /// ClinicOwner cập nhật thông tin phòng khám sau khi được Approved.
         /// </summary>
         public void UpdateInfo(string? clinicName, string? address, string? phone,
-            string? email, string? logoUrl, string? description, string? openingHours)
+            string? email, string? logoUrl, string? logoCloudinaryPublicId, string? description, string? openingHours)
         {
             EnsureApproved();
 
@@ -134,6 +153,7 @@ namespace PetOmiPlatform.Domain.Entities
             if (phone != null) Phone = phone;
             if (email != null) Email = email;
             if (logoUrl != null) LogoUrl = logoUrl;
+            if (logoCloudinaryPublicId != null) LogoCloudinaryPublicId = logoCloudinaryPublicId;
             if (description != null) Description = description;
             if (openingHours != null) OpeningHours = openingHours;
 
@@ -143,7 +163,7 @@ namespace PetOmiPlatform.Domain.Entities
         /// <summary>
         /// Chủ phòng khám re-apply sau khi bị Reject — reset về Pending, xóa lý do từ chối.
         /// </summary>
-        public void Resubmit(string? newLicenseNumber, string? newLicenseImageUrl)
+        public void Resubmit(string? newLicenseNumber, string? newLicenseImageUrl, string? newLicenseCloudinaryPublicId)
         {
             if (Status != ClinicStatus.Rejected)
                 throw new DomainException("Chỉ có thể nộp lại phòng khám đã bị từ chối.");
@@ -152,11 +172,40 @@ namespace PetOmiPlatform.Domain.Entities
                 LicenseNumber = newLicenseNumber;
 
             if (!string.IsNullOrWhiteSpace(newLicenseImageUrl))
+            {
                 LicenseImageUrl = newLicenseImageUrl;
+                LicenseCloudinaryPublicId = newLicenseCloudinaryPublicId;
+            }
 
             Status = ClinicStatus.Pending;
             RejectedReason = null;
             ReviewedByAdminId = null;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Cập nhật tọa độ địa lý (GPS location) và buffer time cho appointment.
+        /// </summary>
+        public void UpdateLocation(double? latitude, double? longitude, int? appointmentBufferMins)
+        {
+            if (latitude.HasValue)
+            {
+                if (latitude < -90 || latitude > 90)
+                    throw new DomainException("Latitude phải nằm trong khoảng -90 đến 90.");
+                Latitude = latitude;
+            }
+            if (longitude.HasValue)
+            {
+                if (longitude < -180 || longitude > 180)
+                    throw new DomainException("Longitude phải nằm trong khoảng -180 đến 180.");
+                Longitude = longitude;
+            }
+            if (appointmentBufferMins.HasValue)
+            {
+                if (appointmentBufferMins < 0 || appointmentBufferMins > 60)
+                    throw new DomainException("Buffer time phải nằm trong khoảng 0 đến 60 phút.");
+                AppointmentBufferMins = appointmentBufferMins.Value;
+            }
             UpdatedAt = DateTime.UtcNow;
         }
     }

@@ -7,7 +7,6 @@ using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Request;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
 using PetOmiPlatform.Application.Features.Appointment.Query;
-using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -25,9 +24,6 @@ namespace PetOmiPlatform.API.Controllers
     {
         public PublicAppointmentController(IMediator mediator) : base(mediator) { }
 
-        private Guid CurrentUserId =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
         /// <summary>Owner xem danh sách lịch hẹn của mình (phân trang).</summary>
         [HttpGet]
         public async Task<IActionResult> GetMyAppointments(
@@ -44,11 +40,20 @@ namespace PetOmiPlatform.API.Controllers
         public async Task<IActionResult> GetAvailableSlots(
             [FromQuery] Guid clinicId,
             [FromQuery] DateOnly date,
-            [FromQuery] Guid? serviceId)
+            [FromQuery] Guid? serviceId,
+            [FromQuery] Guid? vetClinicId = null)
         {
             var result = await Mediator.Send(
-                new GetAvailableSlotsQuery(clinicId, date, serviceId));
+                new GetAvailableSlotsQuery(clinicId, date, serviceId, vetClinicId));
             return Ok(BaseResponse<List<AvailableSlotResponse>>.Ok(result));
+        }
+
+        /// <summary>lay danh sach bac si active tai clinic (de owner chon bac si khi dat lich).</summary>
+        [HttpGet("doctors")]
+        public async Task<IActionResult> GetClinicDoctors([FromQuery] Guid clinicId)
+        {
+            var result = await Mediator.Send(new GetClinicDoctorsQuery(clinicId));
+            return Ok(BaseResponse<List<ClinicDoctorResponse>>.Ok(result));
         }
 
         /// <summary>Owner đặt lịch hẹn tại clinic.</summary>

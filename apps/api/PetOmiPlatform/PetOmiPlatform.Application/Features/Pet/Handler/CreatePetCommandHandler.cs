@@ -41,7 +41,8 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 gender: command.Request.Gender,
                 dateOfBirth: command.Request.DateOfBirth,
                 isBirthDateEstimated: command.Request.IsBirthDateEstimated,
-                avatarUrl: command.Request.AvatarUrl
+                avatarUrl: command.Request.AvatarUrl,
+                avatarCloudinaryPublicId: command.Request.AvatarCloudinaryPublicId
             );
 
             await _petRepository.AddAsync(pet);
@@ -61,6 +62,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 DateOfBirth = pet.DateOfBirth,
                 IsBirthDateEstimated = pet.IsBirthDateEstimated,
                 AvatarUrl = pet.AvatarUrl,
+                AvatarCloudinaryPublicId = pet.AvatarCloudinaryPublicId,
                 CreatedAt = pet.CreatedAt,
                 UpdatedAt = pet.UpdatedAt
             };

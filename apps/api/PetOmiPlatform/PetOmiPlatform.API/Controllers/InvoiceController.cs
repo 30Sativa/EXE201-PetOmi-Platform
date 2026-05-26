@@ -7,7 +7,6 @@ using PetOmiPlatform.Application.Features.Invoice.DTOs.Response;
 using PetOmiPlatform.Application.Features.Invoice.Query;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.Application.Common.Models;
-using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -17,8 +16,6 @@ namespace PetOmiPlatform.API.Controllers
     public class InvoiceController : BaseController
     {
         public InvoiceController(IMediator mediator) : base(mediator) { }
-
-        private Guid CurrentUserId => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         [HttpPost]
         public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceRequest request, [FromQuery] Guid clinicId)

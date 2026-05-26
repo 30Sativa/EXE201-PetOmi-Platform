@@ -63,5 +63,39 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             if (entity != null)
                 _context.DoctorSchedules.Remove(entity);
         }
+
+        public async Task<List<DoctorScheduleWithDoctorDto>> GetByClinicAndDayWithDoctorAsync(Guid clinicId, int dayOfWeek, Guid? vetClinicId = null)
+        {
+            var query = _context.DoctorSchedules
+                .Where(s => s.VetClinic.ClinicId == clinicId &&
+                            s.DayOfWeek == dayOfWeek &&
+                            s.IsActive &&
+                            s.VetClinic.IsActive &&
+                            s.VetClinic.VetProfile.IsActive);
+
+            if (vetClinicId.HasValue)
+                query = query.Where(s => s.VetClinicId == vetClinicId.Value);
+
+            return await query
+                .Include(s => s.VetClinic)
+                    .ThenInclude(vc => vc.VetProfile)
+                        .ThenInclude(vp => vp.User!)
+                            .ThenInclude(u => u.UserProfile)
+                .OrderBy(s => s.StartTime)
+                .Select(s => new DoctorScheduleWithDoctorDto
+                {
+                    ScheduleId = s.ScheduleId,
+                    VetClinicId = s.VetClinicId,
+                    VetProfileId = s.VetClinic.VetProfileId,
+                    DayOfWeek = s.DayOfWeek,
+                    StartTime = s.StartTime,
+                    EndTime = s.EndTime,
+                    DoctorName = s.VetClinic.VetProfile.User != null && s.VetClinic.VetProfile.User.UserProfile != null
+                        ? s.VetClinic.VetProfile.User.UserProfile.FullName
+                        : (s.VetClinic.VetProfile.User != null ? s.VetClinic.VetProfile.User.Email : "Unknown"),
+                    Specialization = s.VetClinic.VetProfile.Specialization
+                })
+                .ToListAsync();
+        }
     }
 }

@@ -7,7 +7,6 @@ using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Request;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
 using PetOmiPlatform.Application.Features.Appointment.Query;
-using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -20,9 +19,6 @@ namespace PetOmiPlatform.API.Controllers
     public class AppointmentController : BaseController
     {
         public AppointmentController(IMediator mediator) : base(mediator) { }
-
-        private Guid CurrentUserId =>
-            Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
         /// <summary>Xem danh sách lịch hẹn của clinic (phân trang, filter theo ngày và status).</summary>
         [HttpGet]
@@ -84,6 +80,24 @@ namespace PetOmiPlatform.API.Controllers
         {
             var result = await Mediator.Send(
                 new CompleteAppointmentCommand(appointmentId, CurrentUserId));
+            return Ok(BaseResponse<AppointmentResponse>.Ok(result));
+        }
+
+        /// <summary>Staff đánh dấu owner không đến (Confirmed → NoShow).</summary>
+        [HttpPost("{appointmentId:guid}/no-show")]
+        public async Task<IActionResult> MarkNoShow(Guid appointmentId)
+        {
+            var result = await Mediator.Send(
+                new MarkNoShowCommand(appointmentId, CurrentUserId));
+            return Ok(BaseResponse<AppointmentResponse>.Ok(result));
+        }
+
+        /// <summary>Staff tạo emergency appointment (bypass slot check).</summary>
+        [HttpPost("emergency")]
+        public async Task<IActionResult> CreateEmergency([FromBody] CreateEmergencyRequest request)
+        {
+            var result = await Mediator.Send(
+                new CreateEmergencyAppointmentCommand(CurrentUserId, request));
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
     }

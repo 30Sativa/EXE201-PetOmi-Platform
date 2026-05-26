@@ -2,7 +2,7 @@ using MediatR;
 using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Features.Pet.Query;
-using PetOmiPlatform.Domain.Entities;
+using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System;
 using System.Threading;
@@ -14,16 +14,16 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     {
         private readonly IPetRepository _petRepository;
         private readonly IPetHealthProfileRepository _healthProfileRepository;
-        private readonly IPetUserAccessRepository _accessRepository;
+        private readonly IPetAccessService _accessService;
 
         public GetPetHealthProfileQueryHandler(
             IPetRepository petRepository,
             IPetHealthProfileRepository healthProfileRepository,
-            IPetUserAccessRepository accessRepository)
+            IPetAccessService accessService)
         {
             _petRepository = petRepository;
             _healthProfileRepository = healthProfileRepository;
-            _accessRepository = accessRepository;
+            _accessService = accessService;
         }
 
         public async Task<PetHealthProfileResponse> Handle(GetPetHealthProfileQuery query, CancellationToken cancellationToken)
@@ -31,7 +31,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             var pet = await _petRepository.GetByIdAsync(query.PetId)
                 ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
-            await EnsureCanRead(pet, query.UserId);
+            await _accessService.EnsureCanReadAsync(pet, query.UserId, cancellationToken);
 
             var profile = await _healthProfileRepository.GetByPetIdAsync(query.PetId)
                 ?? throw new NotFoundException("Hồ sơ sức khỏe chưa được tạo.");
@@ -49,14 +49,6 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 CreatedAt = profile.CreatedAt,
                 UpdatedAt = profile.UpdatedAt
             };
-        }
-
-        private async Task EnsureCanRead(PetDomain pet, Guid userId)
-        {
-            if (pet.OwnerUserId == userId) return;
-            var access = await _accessRepository.GetByPetAndUserAsync(pet.Id, userId);
-            if (access == null || !access.CanRead())
-                throw new ForbiddenException("Bạn không có quyền xem thông tin này.");
         }
     }
 }

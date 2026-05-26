@@ -6,21 +6,14 @@ using PetOmiPlatform.Application.Features.Prescription.DTOs.Request;
 using PetOmiPlatform.Application.Features.Prescription.DTOs.Response;
 using PetOmiPlatform.Application.Features.Prescription.Query;
 using PetOmiPlatform.API.Common;
-
-
 using PetOmiPlatform.Application.Common.Models;
-using System.Security.Claims;
 
 
 namespace PetOmiPlatform.API.Controllers
 {
     [Route("api/examinations/{examinationId:guid}/prescriptions")]
-
     [Authorize]
-
     [ApiController]
-    [Authorize] // Vet/Clinic
-
     public class PrescriptionController : BaseController
     {
         public PrescriptionController(IMediator mediator) : base(mediator) { }

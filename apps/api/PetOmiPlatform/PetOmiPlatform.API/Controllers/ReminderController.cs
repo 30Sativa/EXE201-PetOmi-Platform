@@ -9,7 +9,6 @@ using PetOmiPlatform.Application.Features.Reminder.DTOs.Response;
 using PetOmiPlatform.Application.Features.Reminder.Query;
 using System;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace PetOmiPlatform.API.Controllers
@@ -23,17 +22,13 @@ namespace PetOmiPlatform.API.Controllers
         {
         }
 
-        private Guid GetCurrentUserId()
-            => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
         /// <summary>
         /// Lấy danh sách tất cả reminder của user hiện tại.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetMyReminders()
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new GetUserRemindersQuery(userId));
+            var result = await Mediator.Send(new GetUserRemindersQuery(CurrentUserId));
             return Ok(BaseResponse<List<ReminderResponse>>.Ok(result));
         }
 
@@ -43,8 +38,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateReminder([FromBody] CreateReminderRequest request)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new CreateReminderCommand(userId, request));
+            var result = await Mediator.Send(new CreateReminderCommand(CurrentUserId, request));
             return Ok(BaseResponse<ReminderResponse>.Ok(result));
         }
 
@@ -54,8 +48,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost("{reminderId:guid}/toggle")]
         public async Task<IActionResult> ToggleReminder(Guid reminderId)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new ToggleReminderCommand(userId, reminderId));
+            var result = await Mediator.Send(new ToggleReminderCommand(CurrentUserId, reminderId));
             return Ok(BaseResponse<ReminderResponse>.Ok(result));
         }
 
@@ -65,8 +58,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpPost("{reminderId:guid}/dismiss")]
         public async Task<IActionResult> DismissReminder(Guid reminderId)
         {
-            var userId = GetCurrentUserId();
-            var result = await Mediator.Send(new DismissReminderCommand(userId, reminderId));
+            var result = await Mediator.Send(new DismissReminderCommand(CurrentUserId, reminderId));
             return Ok(BaseResponse<ReminderResponse>.Ok(result));
         }
     }

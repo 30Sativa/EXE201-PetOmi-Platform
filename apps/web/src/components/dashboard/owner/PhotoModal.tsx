@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { createPetPhotoApi } from "@/services/pets.service"
 import ImageUploadField from "@/components/ui/ImageUploadField"
+import { cn } from "@/lib/utils"
 import type { CreatePetPhotoRequest } from "@/types"
 
 interface PhotoModalProps {
@@ -23,6 +24,7 @@ export default function PhotoModal({
   const [caption, setCaption] = useState("")
   const [isAvatar, setIsAvatar] = useState(false)
   const [takenAt, setTakenAt] = useState("")
+  const [touchedTakenAt, setTakenAtTouched] = useState(false)
 
   const mutation = useMutation({
     mutationFn: (data: CreatePetPhotoRequest) =>
@@ -45,7 +47,9 @@ export default function PhotoModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    setTakenAtTouched(true)
     if (!imageUrl.trim()) return
+    if (!takenAt.trim()) return
     mutation.mutate({
       imageUrl: imageUrl.trim(),
       caption: caption.trim() || undefined,
@@ -117,11 +121,23 @@ export default function PhotoModal({
           <input
             type="date"
             value={takenAt}
-            onChange={(e) => setTakenAt(e.target.value)}
+            onChange={(e) => {
+              setTakenAt(e.target.value)
+              setTakenAtTouched(true)
+            }}
+            onBlur={() => setTakenAtTouched(true)}
             max={new Date().toISOString().split("T")[0]}
             disabled={mutation.isPending}
-            className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
+            className={cn(
+              "h-11 w-full rounded-xl border bg-white px-4 text-sm focus:outline-none focus:ring-2 disabled:opacity-60",
+              touchedTakenAt && !takenAt.trim()
+                ? "border-po-danger focus:border-po-danger focus:ring-po-danger/20"
+                : "border-po-border focus:border-po-primary focus:ring-po-primary/20"
+            )}
           />
+          {touchedTakenAt && !takenAt.trim() && (
+            <p className="text-xs text-po-danger">Vui lòng chọn ngày chụp.</p>
+          )}
         </div>
 
         <label className="flex cursor-pointer items-center gap-3">
@@ -148,7 +164,7 @@ export default function PhotoModal({
           </button>
           <button
             type="submit"
-            disabled={mutation.isPending || !imageUrl.trim()}
+            disabled={mutation.isPending || !imageUrl.trim() || !takenAt.trim()}
             className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
           >
             {mutation.isPending ? "Đang tải..." : "Thêm ảnh"}

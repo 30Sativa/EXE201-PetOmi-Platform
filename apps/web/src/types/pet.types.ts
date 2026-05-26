@@ -164,6 +164,10 @@ export interface UpdatePetPhotoRequest {
   setAsAvatar?: boolean | null
 }
 
+export interface SetPetAvatarRequest {
+  photoId: string
+}
+
 // ==================== USER ACCESS / SHARING ====================
 
 export interface PetUserAccessResponse {

@@ -47,6 +47,10 @@ namespace PetOmiPlatform.Domain.Entities
         {
             if (string.IsNullOrWhiteSpace(imageUrl))
                 throw new Domain.Exceptions.DomainException("URL ảnh không được để trống.");
+            if (!takenAt.HasValue)
+                throw new Domain.Exceptions.DomainException("Ngày chụp là bắt buộc.");
+            if (takenAt.Value.Date > DateTime.UtcNow.Date)
+                throw new Domain.Exceptions.DomainException("Ngày chụp không được là ngày trong tương lai.");
             return new PetPhotoDomain(petId, imageUrl, cloudinaryPublicId, caption, isAvatar, takenAt);
         }
 

@@ -12,6 +12,7 @@ import type {
   PetResponse,
   PetUserAccessResponse,
   PetWeightLogResponse,
+  SetPetAvatarRequest,
   UpdatePetAccessRequest,
   UpdatePetHealthProfileRequest,
   UpdatePetMedicalRecordRequest,
@@ -182,6 +183,14 @@ export const deletePetPhotoApi = async (
   photoId: string,
 ): Promise<void> => {
   await api.delete(`/pets/${petId}/photos/${photoId}`)
+}
+
+export const setPetAvatarApi = async (
+  petId: string,
+  data: SetPetAvatarRequest,
+): Promise<PetPhotoResponse> => {
+  const response = await api.patch(`/pets/${petId}/avatar`, data)
+  return unwrapResponse<PetPhotoResponse>(response)
 }
 
 // ==================== PET ACCESS (SHARING) ====================

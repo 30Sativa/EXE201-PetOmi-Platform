@@ -16,6 +16,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Validation
                 .WithMessage("Caption tối đa 255 ký tự.");
 
             RuleFor(x => x.TakenAt)
+                .NotNull().WithMessage("Ngày chụp là bắt buộc.")
                 .Must(BeAValidDate).When(x => x.TakenAt.HasValue)
                 .WithMessage("Ngày chụp không hợp lệ.")
                 .Must(BeNotInFuture).When(x => x.TakenAt.HasValue)

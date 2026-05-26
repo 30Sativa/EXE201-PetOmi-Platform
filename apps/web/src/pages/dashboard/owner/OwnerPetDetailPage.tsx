@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 import {
   Activity,
   ArrowLeft,
@@ -36,6 +37,7 @@ import {
   getPetPhotosApi,
   getPetWeightLogsApi,
   revokePetAccessApi,
+  setPetAvatarApi,
 } from "@/services/pets.service"
 import {
   getRemindersApi,
@@ -219,6 +221,19 @@ export default function OwnerPetDetailPage() {
     },
   })
 
+  const setAvatarMutation = useMutation({
+    mutationFn: (photoId: string) => setPetAvatarApi(petId!, { photoId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pet-photos", petId] })
+      queryClient.invalidateQueries({ queryKey: ["pet", petId] })
+      queryClient.invalidateQueries({ queryKey: ["owner-pets"] })
+      toast.success("Đặt ảnh đại diện thành công!")
+    },
+    onError: () => {
+      toast.error("Đặt ảnh đại diện thất bại. Vui lòng thử lại.")
+    },
+  })
+
   const isLoading =
     loadingPet ||
     loadingHealth ||
@@ -377,6 +392,8 @@ export default function OwnerPetDetailPage() {
             <PhotosTab
               photos={photos}
               onAdd={() => setIsPhotoModalOpen(true)}
+              onSetAvatar={(photoId) => setAvatarMutation.mutate(photoId)}
+              isSettingAvatar={setAvatarMutation.isPending}
             />
           )}
           {activeTab === "sharing" && (
@@ -904,9 +921,13 @@ function MedicalTab({
 function PhotosTab({
   photos,
   onAdd,
+  onSetAvatar,
+  isSettingAvatar,
 }: {
   photos?: PetPhotoResponse[] | null
   onAdd: () => void
+  onSetAvatar: (photoId: string) => void
+  isSettingAvatar: boolean
 }) {
   return (
     <DashboardSection
@@ -949,6 +970,18 @@ function PhotosTab({
               {photo.caption && (
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
                   <p className="text-xs font-medium text-white">{photo.caption}</p>
+                </div>
+              )}
+              {!photo.isAvatar && (
+                <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  <button
+                    onClick={() => onSetAvatar(photo.photoId)}
+                    disabled={isSettingAvatar}
+                    className="rounded-full bg-white/90 p-1.5 text-po-primary shadow transition hover:bg-white hover:text-po-primary-hover disabled:opacity-50"
+                    title="Đặt làm ảnh đại diện"
+                  >
+                    <Camera className="size-4" />
+                  </button>
                 </div>
               )}
             </div>

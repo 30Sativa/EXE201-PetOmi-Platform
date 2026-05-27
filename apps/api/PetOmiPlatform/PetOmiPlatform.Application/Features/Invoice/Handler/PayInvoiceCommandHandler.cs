@@ -36,8 +36,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequireInvoiceWriter(staff);
 
-            var paymentMethod = Enum.Parse<PaymentMethod>(request.Payload.PaymentMethod);
-            invoice.Pay(paymentMethod);
+            var paymentMethod = Enum.Parse<PaymentMethod>(request.Payload.PaymentMethod, ignoreCase: true);
+            invoice.Pay(paymentMethod, request.Payload.PaidAmount);
 
             await _invoiceRepository.UpdateAsync(invoice);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

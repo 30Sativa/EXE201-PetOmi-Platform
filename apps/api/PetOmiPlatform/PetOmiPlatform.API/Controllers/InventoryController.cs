@@ -25,7 +25,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetInventory(Guid clinicId)
         {
-            var result = await Mediator.Send(new GetInventoryQuery(clinicId));
+            var result = await Mediator.Send(new GetInventoryQuery(CurrentUserId, clinicId));
             return Ok(BaseResponse<IEnumerable<InventoryItemResponse>>.Ok(result));
         }
 
@@ -33,7 +33,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("low-stock")]
         public async Task<IActionResult> GetLowStock(Guid clinicId)
         {
-            var result = await Mediator.Send(new GetLowStockQuery(clinicId));
+            var result = await Mediator.Send(new GetLowStockQuery(CurrentUserId, clinicId));
             return Ok(BaseResponse<IEnumerable<InventoryItemResponse>>.Ok(result));
         }
 

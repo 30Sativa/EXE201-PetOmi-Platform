@@ -37,6 +37,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<int> CountLowStockItemsAsync(Guid clinicId)
+        {
+            return await _context.Inventories
+                .Where(i => i.ClinicId == clinicId && i.IsActive && i.Quantity <= i.LowStockThreshold)
+                .CountAsync();
+        }
+
         public async Task UpdateAsync(InventoryItemDomain item)
         {
             var entity = await _context.Inventories.FindAsync(item.Id);

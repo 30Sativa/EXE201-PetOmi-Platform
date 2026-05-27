@@ -49,9 +49,13 @@ public partial class Clinic
 
     public virtual ICollection<ClinicService> ClinicServices { get; set; } = new List<ClinicService>();
 
+    public virtual ICollection<ClinicPaymentAccount> ClinicPaymentAccounts { get; set; } = new List<ClinicPaymentAccount>();
+
     public virtual ICollection<Inventory> Inventories { get; set; } = new List<Inventory>();
 
     public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+
+    public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 
     public virtual User? ReviewedByAdmin { get; set; }
 

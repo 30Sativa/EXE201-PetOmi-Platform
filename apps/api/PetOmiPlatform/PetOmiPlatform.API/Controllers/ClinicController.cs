@@ -108,6 +108,14 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<ClinicPublicResponse>.Ok(result));
         }
 
+        /// <summary>Lay danh sach bac si/staff active cua clinic de FE quan ly noi bo.</summary>
+        [HttpGet("{clinicId:guid}/doctors")]
+        public async Task<IActionResult> GetClinicDoctors(Guid clinicId)
+        {
+            var result = await Mediator.Send(new GetClinicDoctorsQuery(CurrentUserId, clinicId));
+            return Ok(BaseResponse<IReadOnlyList<ClinicDoctorListItemResponse>>.Ok(result));
+        }
+
         /// <summary>
         /// Thêm dịch vụ mới vào phòng khám.
         /// Clinic phải Approved. DurationMins quan trọng để hệ thống tính slot đặt lịch.
@@ -144,4 +152,4 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<object>.Ok(null, "Đã xóa dịch vụ."));
         }
     }
-}
+}

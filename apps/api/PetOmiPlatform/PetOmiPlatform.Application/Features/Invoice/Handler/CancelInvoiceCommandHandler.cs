@@ -35,7 +35,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequireInvoiceWriter(staff);
 
-            invoice.Cancel();
+            invoice.Cancel(request.StaffUserId, request.CancelReason);
 
             await _invoiceRepository.UpdateAsync(invoice);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

@@ -101,6 +101,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         public async Task<List<ClinicDoctorDto>> GetClinicDoctorsAsync(Guid clinicId)
         {
             return await _context.VetClinics
+                .AsNoTracking()
                 .Where(vc => vc.ClinicId == clinicId && vc.IsActive)
                 .Include(vc => vc.VetProfile)
                     .ThenInclude(vp => vp.User!)

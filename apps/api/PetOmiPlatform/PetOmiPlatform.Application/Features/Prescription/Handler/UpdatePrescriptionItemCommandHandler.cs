@@ -38,7 +38,10 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
                 throw new NotFoundException($"Không tìm thấy thuốc kê đơn ID {request.PrescriptionId}");
 
             var exam = await _examinationRepository.GetByIdAsync(prescription.ExaminationId);
-            var appointment = await _appointmentRepository.GetByIdAsync(exam!.AppointmentId);
+            if (exam == null)
+                throw new NotFoundException($"Khong tim thay phieu kham ID {prescription.ExaminationId}");
+
+            var appointment = await _appointmentRepository.GetByIdAsync(exam.AppointmentId);
 
             if (appointment == null || appointment.ClinicId != request.ClinicId)
                 throw new ForbiddenException("Không có quyền cập nhật thuốc trong đơn này.");

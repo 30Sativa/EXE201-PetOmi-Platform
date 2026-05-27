@@ -84,6 +84,7 @@ namespace PetOmiPlatform.API.Controllers
         /// <remarks>
         /// Mac dinh: neu khong truyen fromDate/toDate thi lay 14 ngay gan nhat (UTC).
         /// He thong tra du tat ca ngay trong khoang (ngay khong co doanh thu van co point = 0).
+        /// Co breakdown theo payment method: Cash / BankTransfer / SePayBankTransfer.
         /// </remarks>
         [HttpGet("billing-revenue-trend")]
         public async Task<IActionResult> GetBillingRevenueTrend(

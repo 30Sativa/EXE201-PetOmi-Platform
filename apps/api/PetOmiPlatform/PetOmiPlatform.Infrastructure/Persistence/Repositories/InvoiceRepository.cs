@@ -29,19 +29,24 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task<InvoiceDomain?> GetByIdAsync(Guid invoiceId)
         {
-            var entity = await _context.Invoices.FindAsync(invoiceId);
+            var entity = await _context.Invoices
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.InvoiceId == invoiceId);
             return entity?.ToDomain();
         }
 
         public async Task<InvoiceDomain?> GetByInvoiceCodeAsync(string invoiceCode)
         {
-            var entity = await _context.Invoices.FirstOrDefaultAsync(i => i.InvoiceCode == invoiceCode);
+            var entity = await _context.Invoices
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.InvoiceCode == invoiceCode);
             return entity?.ToDomain();
         }
 
         public async Task<InvoiceDomain?> GetByAppointmentIdAsync(Guid appointmentId)
         {
             var entity = await _context.Invoices
+                .AsNoTracking()
                 .Where(i => i.AppointmentId == appointmentId && i.Status != "Cancelled")
                 .FirstOrDefaultAsync();
             return entity?.ToDomain();
@@ -50,6 +55,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         public async Task<InvoiceDomain?> GetByPaymentReferenceAsync(string paymentReference)
         {
             var entity = await _context.Invoices
+                .AsNoTracking()
                 .Where(i => i.PaymentReference == paymentReference && i.Status != "Cancelled")
                 .FirstOrDefaultAsync();
 
@@ -59,6 +65,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         public async Task<IEnumerable<InvoiceItemDomain>> GetItemsByInvoiceIdAsync(Guid invoiceId)
         {
             return await _context.InvoiceItems
+                .AsNoTracking()
                 .Where(i => i.InvoiceId == invoiceId)
                 .Select(i => i.ToDomain())
                 .ToListAsync();
@@ -67,6 +74,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         public async Task<IEnumerable<InvoiceDomain>> GetByClinicIdAsync(Guid clinicId, int page, int pageSize)
         {
             return await _context.Invoices
+                .AsNoTracking()
                 .Where(i => i.ClinicId == clinicId)
                 .OrderByDescending(i => i.CreatedAt)
                 .Skip((page - 1) * pageSize)
@@ -78,6 +86,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         public async Task<IEnumerable<InvoiceDomain>> GetPendingManualRefundsByClinicIdAsync(Guid clinicId, int page, int pageSize)
         {
             return await _context.Invoices
+                .AsNoTracking()
                 .Where(i =>
                     i.ClinicId == clinicId &&
                     i.Status == "Cancelled" &&
@@ -117,6 +126,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var nextDayUtc = dayStartUtc.AddDays(1);
 
             return await _context.Invoices
+                .AsNoTracking()
                 .Where(i =>
                     i.ClinicId == clinicId &&
                     i.Status == "Paid" &&
@@ -132,6 +142,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var toExclusiveUtc = toDate.AddDays(1).ToDateTime(TimeOnly.MinValue);
 
             var rawRows = await _context.Invoices
+                .AsNoTracking()
                 .Where(i =>
                     i.ClinicId == clinicId &&
                     i.Status == "Paid" &&
@@ -143,7 +154,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 {
                     Date = g.Key,
                     Revenue = g.Sum(i => (decimal?)(i.PaidAmount ?? i.FinalAmount)) ?? 0m,
-                    PaidInvoiceCount = g.Count()
+                    PaidInvoiceCount = g.Count(),
+                    CashRevenue = g.Where(i => i.PaymentMethod == "Cash").Sum(i => (decimal?)(i.PaidAmount ?? i.FinalAmount)) ?? 0m,
+                    CashInvoiceCount = g.Count(i => i.PaymentMethod == "Cash"),
+                    BankTransferRevenue = g.Where(i => i.PaymentMethod == "BankTransfer").Sum(i => (decimal?)(i.PaidAmount ?? i.FinalAmount)) ?? 0m,
+                    BankTransferInvoiceCount = g.Count(i => i.PaymentMethod == "BankTransfer"),
+                    SePayRevenue = g.Where(i => i.PaymentMethod == "SePayBankTransfer").Sum(i => (decimal?)(i.PaidAmount ?? i.FinalAmount)) ?? 0m,
+                    SePayInvoiceCount = g.Count(i => i.PaymentMethod == "SePayBankTransfer")
                 })
                 .ToListAsync();
 
@@ -152,7 +169,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 {
                     Date = DateOnly.FromDateTime(x.Date),
                     Revenue = x.Revenue,
-                    PaidInvoiceCount = x.PaidInvoiceCount
+                    PaidInvoiceCount = x.PaidInvoiceCount,
+                    CashRevenue = x.CashRevenue,
+                    CashInvoiceCount = x.CashInvoiceCount,
+                    BankTransferRevenue = x.BankTransferRevenue,
+                    BankTransferInvoiceCount = x.BankTransferInvoiceCount,
+                    SePayRevenue = x.SePayRevenue,
+                    SePayInvoiceCount = x.SePayInvoiceCount
                 })
                 .ToList();
 
@@ -164,6 +187,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var nowUtc = DateTime.UtcNow;
 
             var query = _context.Invoices
+                .AsNoTracking()
                 .Where(i => i.ClinicId == clinicId && i.Status == "Unpaid");
 
             var bucket = await query

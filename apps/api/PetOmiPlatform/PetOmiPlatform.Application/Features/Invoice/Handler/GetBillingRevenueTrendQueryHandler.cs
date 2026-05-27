@@ -40,7 +40,13 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                     {
                         Date = date,
                         Revenue = row.Revenue,
-                        PaidInvoiceCount = row.PaidInvoiceCount
+                        PaidInvoiceCount = row.PaidInvoiceCount,
+                        CashRevenue = row.CashRevenue,
+                        CashInvoiceCount = row.CashInvoiceCount,
+                        BankTransferRevenue = row.BankTransferRevenue,
+                        BankTransferInvoiceCount = row.BankTransferInvoiceCount,
+                        SePayRevenue = row.SePayRevenue,
+                        SePayInvoiceCount = row.SePayInvoiceCount
                     });
                 }
                 else
@@ -49,7 +55,13 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                     {
                         Date = date,
                         Revenue = 0m,
-                        PaidInvoiceCount = 0
+                        PaidInvoiceCount = 0,
+                        CashRevenue = 0m,
+                        CashInvoiceCount = 0,
+                        BankTransferRevenue = 0m,
+                        BankTransferInvoiceCount = 0,
+                        SePayRevenue = 0m,
+                        SePayInvoiceCount = 0
                     });
                 }
             }
@@ -60,6 +72,12 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 ToDate = request.ToDate,
                 TotalRevenue = points.Sum(x => x.Revenue),
                 TotalPaidInvoiceCount = points.Sum(x => x.PaidInvoiceCount),
+                TotalCashRevenue = points.Sum(x => x.CashRevenue),
+                TotalCashInvoiceCount = points.Sum(x => x.CashInvoiceCount),
+                TotalBankTransferRevenue = points.Sum(x => x.BankTransferRevenue),
+                TotalBankTransferInvoiceCount = points.Sum(x => x.BankTransferInvoiceCount),
+                TotalSePayRevenue = points.Sum(x => x.SePayRevenue),
+                TotalSePayInvoiceCount = points.Sum(x => x.SePayInvoiceCount),
                 Points = points
             };
         }

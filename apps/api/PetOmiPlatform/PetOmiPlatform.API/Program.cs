@@ -30,8 +30,8 @@ builder.Services.AddCors(options =>
                 "http://localhost:5173",
                 "http://localhost:5174",
                 "http://localhost:3000",
-                "http://localhost:5273",
-                "http://localhost:7297"
+                "https://petomi.cloud",
+                "https://www.petomi.cloud"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()

@@ -24,10 +24,18 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequireInvoiceViewer(staff);
 
+            var periodDays = request.ToDate.DayNumber - request.FromDate.DayNumber + 1;
+            var previousToDate = request.FromDate.AddDays(-1);
+            var previousFromDate = previousToDate.AddDays(-(periodDays - 1));
+
             var summaries = await _invoiceRepository.GetPaidRevenueTrendByClinicAsync(
                 request.ClinicId,
                 request.FromDate,
                 request.ToDate);
+            var previousSummaries = await _invoiceRepository.GetPaidRevenueTrendByClinicAsync(
+                request.ClinicId,
+                previousFromDate,
+                previousToDate);
 
             var mapByDate = summaries.ToDictionary(x => x.Date);
             var points = new List<BillingRevenueTrendPointResponse>();
@@ -66,12 +74,23 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 }
             }
 
+            var totalRevenue = points.Sum(x => x.Revenue);
+            var totalPaidInvoiceCount = points.Sum(x => x.PaidInvoiceCount);
+            var previousTotalRevenue = previousSummaries.Sum(x => x.Revenue);
+            var previousTotalPaidInvoiceCount = previousSummaries.Sum(x => x.PaidInvoiceCount);
+
             return new BillingRevenueTrendResponse
             {
                 FromDate = request.FromDate,
                 ToDate = request.ToDate,
-                TotalRevenue = points.Sum(x => x.Revenue),
-                TotalPaidInvoiceCount = points.Sum(x => x.PaidInvoiceCount),
+                PreviousFromDate = previousFromDate,
+                PreviousToDate = previousToDate,
+                TotalRevenue = totalRevenue,
+                TotalPaidInvoiceCount = totalPaidInvoiceCount,
+                PreviousTotalRevenue = previousTotalRevenue,
+                PreviousTotalPaidInvoiceCount = previousTotalPaidInvoiceCount,
+                RevenueChangePercent = CalculateChangePercent(totalRevenue, previousTotalRevenue),
+                PaidInvoiceCountChangePercent = CalculateChangePercent(totalPaidInvoiceCount, previousTotalPaidInvoiceCount),
                 TotalCashRevenue = points.Sum(x => x.CashRevenue),
                 TotalCashInvoiceCount = points.Sum(x => x.CashInvoiceCount),
                 TotalBankTransferRevenue = points.Sum(x => x.BankTransferRevenue),
@@ -81,5 +100,18 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 Points = points
             };
         }
+
+        private static decimal? CalculateChangePercent(decimal current, decimal previous)
+        {
+            if (previous == 0m)
+            {
+                return current == 0m ? 0m : null;
+            }
+
+            return Math.Round(((current - previous) / previous) * 100m, 2);
+        }
+
+        private static decimal? CalculateChangePercent(int current, int previous)
+            => CalculateChangePercent((decimal)current, previous);
     }
 }

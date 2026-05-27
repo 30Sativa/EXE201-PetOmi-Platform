@@ -27,8 +27,15 @@ namespace PetOmiPlatform.Application.Features.Invoice.Mappers
                 BankAccountNo = invoice.BankAccountNo,
                 BankCode = invoice.BankCode,
                 PaidAmount = invoice.PaidAmount,
+                OverpaidAmount = invoice.PaidAmount.HasValue && invoice.PaidAmount.Value > invoice.FinalAmount
+                    ? invoice.PaidAmount.Value - invoice.FinalAmount
+                    : 0m,
                 PaymentWebhookAt = invoice.PaymentWebhookAt,
                 PaymentMethod = invoice.PaymentMethod?.ToString(),
+                CancellationReason = invoice.CancellationReason,
+                CancelledByUserId = invoice.CancelledByUserId,
+                CancelledAt = invoice.CancelledAt,
+                RequiresManualRefund = invoice.RequiresManualRefund,
                 Notes = invoice.Notes,
                 PaidAt = invoice.PaidAt,
                 CreatedAt = invoice.CreatedAt,

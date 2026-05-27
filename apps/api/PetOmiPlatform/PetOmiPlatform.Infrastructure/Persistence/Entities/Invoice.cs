@@ -39,6 +39,14 @@ public partial class Invoice
 
     public string? PaymentMethod { get; set; }
 
+    public string? CancellationReason { get; set; }
+
+    public Guid? CancelledByUserId { get; set; }
+
+    public DateTime? CancelledAt { get; set; }
+
+    public bool RequiresManualRefund { get; set; }
+
     public DateTime? PaidAt { get; set; }
 
     public string? Notes { get; set; }

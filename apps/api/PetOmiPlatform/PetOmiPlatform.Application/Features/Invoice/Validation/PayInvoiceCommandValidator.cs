@@ -15,6 +15,11 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
                 .NotEmpty().WithMessage("Payment method khong duoc de trong.")
                 .Must(value => Enum.TryParse<PaymentMethod>(value, true, out _))
                 .WithMessage("Payment method khong hop le.");
+
+            RuleFor(x => x.Payload.PaidAmount)
+                .GreaterThan(0)
+                .When(x => x.Payload.PaidAmount.HasValue)
+                .WithMessage("PaidAmount phai lon hon 0.");
         }
     }
 }

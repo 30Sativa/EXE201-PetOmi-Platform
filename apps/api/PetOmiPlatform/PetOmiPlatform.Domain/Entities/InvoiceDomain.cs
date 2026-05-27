@@ -25,6 +25,10 @@ namespace PetOmiPlatform.Domain.Entities
         public decimal? PaidAmount { get; private set; }
         public DateTime? PaymentWebhookAt { get; private set; }
         public PaymentMethodEnum? PaymentMethod { get; private set; }
+        public string? CancellationReason { get; private set; }
+        public Guid? CancelledByUserId { get; private set; }
+        public DateTime? CancelledAt { get; private set; }
+        public bool RequiresManualRefund { get; private set; }
         public string? Notes { get; private set; }
 
         public DateTime? PaidAt { get; private set; }
@@ -83,6 +87,10 @@ namespace PetOmiPlatform.Domain.Entities
             decimal? paidAmount,
             DateTime? paymentWebhookAt,
             PaymentMethodEnum? paymentMethod,
+            string? cancellationReason,
+            Guid? cancelledByUserId,
+            DateTime? cancelledAt,
+            bool requiresManualRefund,
             string? notes,
             DateTime? paidAt,
             DateTime createdAt,
@@ -107,6 +115,10 @@ namespace PetOmiPlatform.Domain.Entities
                 PaidAmount = paidAmount,
                 PaymentWebhookAt = paymentWebhookAt,
                 PaymentMethod = paymentMethod,
+                CancellationReason = cancellationReason,
+                CancelledByUserId = cancelledByUserId,
+                CancelledAt = cancelledAt,
+                RequiresManualRefund = requiresManualRefund,
                 Notes = notes,
                 PaidAt = paidAt,
                 CreatedAt = createdAt,
@@ -118,13 +130,21 @@ namespace PetOmiPlatform.Domain.Entities
         {
             if (Status != InvoiceStatus.Unpaid)
                 throw new DomainException("Chi co the thanh toan hoa don chua thanh toan.");
+            if (paidAmount.HasValue && paidAmount.Value <= 0)
+                throw new DomainException("So tien thanh toan phai lon hon 0.");
+
+            var actualPaidAmount = paidAmount ?? FinalAmount;
+            if (actualPaidAmount < FinalAmount)
+            {
+                throw new DomainException("MVP hien tai chua ho tro thanh toan mot phan. Vui long thu du so tien hoa don.");
+            }
 
             Status = InvoiceStatus.Paid;
             PaymentMethod = method;
             PaymentProvider = method == PaymentMethodEnum.SePayBankTransfer
                 ? PaymentProvider.SePay
                 : PaymentProvider.Manual;
-            PaidAmount = paidAmount ?? FinalAmount;
+            PaidAmount = actualPaidAmount;
             PaidAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
         }
@@ -167,14 +187,24 @@ namespace PetOmiPlatform.Domain.Entities
             Pay(PaymentMethodEnum.SePayBankTransfer, paidAmount);
         }
 
-        public void Cancel()
+        public void Cancel(Guid cancelledByUserId, string? cancellationReason = null)
         {
-            if (Status == InvoiceStatus.Paid)
-                throw new DomainException("Khong the huy hoa don da thanh toan.");
             if (Status == InvoiceStatus.Cancelled)
                 throw new DomainException("Hoa don da duoc huy roi.");
 
+            var wasPaid = Status == InvoiceStatus.Paid;
+            if (wasPaid && string.IsNullOrWhiteSpace(cancellationReason))
+            {
+                throw new DomainException("Hoa don da thanh toan bat buoc phai co ly do huy de doi soat hoan tien thu cong.");
+            }
+
             Status = InvoiceStatus.Cancelled;
+            CancellationReason = string.IsNullOrWhiteSpace(cancellationReason)
+                ? null
+                : cancellationReason.Trim();
+            CancelledByUserId = cancelledByUserId;
+            CancelledAt = DateTime.UtcNow;
+            RequiresManualRefund = wasPaid && PaidAmount.HasValue && PaidAmount.Value > 0;
             UpdatedAt = DateTime.UtcNow;
         }
 

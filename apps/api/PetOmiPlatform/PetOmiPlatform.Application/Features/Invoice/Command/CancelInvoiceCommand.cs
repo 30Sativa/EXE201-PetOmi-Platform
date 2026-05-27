@@ -6,7 +6,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.Command
     public record CancelInvoiceCommand(
         Guid ClinicId,
         Guid StaffUserId,
-        Guid InvoiceId
+        Guid InvoiceId,
+        string? CancelReason
     ) : IRequest<bool>, IAuditableCommand
     {
         public Guid? UserId => StaffUserId;

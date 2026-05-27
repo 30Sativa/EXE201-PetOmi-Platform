@@ -81,6 +81,11 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         /// <summary>Thu tien thu cong cho hoa don (tien mat/chuyen khoan thu cong).</summary>
+        /// <remarks>
+        /// MVP rule: chua ho tro partial payment.
+        /// - Neu PaidAmount nho hon FinalAmount: tu choi thanh toan.
+        /// - Neu PaidAmount lon hon FinalAmount: cho phep, luu overpaid de doi soat cuoi ngay.
+        /// </remarks>
         [HttpPost("{id:guid}/pay")]
         public async Task<IActionResult> PayInvoice(Guid id, [FromBody] PayInvoiceRequest request, [FromQuery] Guid clinicId)
         {
@@ -153,11 +158,19 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<bool>.Ok(result, "Da danh dau giao dich SePay la da xu ly thu cong."));
         }
 
-        /// <summary>Huy hoa don chua thanh toan.</summary>
+        /// <summary>Huy hoa don; neu hoa don da paid thi bat buoc nhap ly do de doi soat hoan tien thu cong.</summary>
+        /// <remarks>
+        /// MVP policy:
+        /// - Khong auto refund tren he thong.
+        /// - Invoice da paid khi huy se duoc danh dau RequiresManualRefund=true de thu ngan xu ly ngoai he thong.
+        /// </remarks>
         [HttpPost("{id:guid}/cancel")]
-        public async Task<IActionResult> CancelInvoice(Guid id, [FromQuery] Guid clinicId)
+        public async Task<IActionResult> CancelInvoice(
+            Guid id,
+            [FromBody] CancelInvoiceRequest? request,
+            [FromQuery] Guid clinicId)
         {
-            var command = new CancelInvoiceCommand(clinicId, CurrentUserId, id);
+            var command = new CancelInvoiceCommand(clinicId, CurrentUserId, id, request?.CancelReason);
             var result = await Mediator.Send(command);
             return Ok(BaseResponse<bool>.Ok(result, "Huy hoa don thanh cong."));
         }

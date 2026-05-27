@@ -408,6 +408,9 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.ExaminationId).HasColumnName("ExaminationID");
             entity.Property(e => e.FinalAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.InvoiceCode).HasMaxLength(30);
+            entity.Property(e => e.CancellationReason).HasMaxLength(500);
+            entity.Property(e => e.CancelledAt).HasColumnType("datetime");
+            entity.Property(e => e.CancelledByUserId).HasColumnName("CancelledByUserID");
             entity.Property(e => e.Notes).HasMaxLength(500);
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
             entity.Property(e => e.PaidAmount).HasColumnType("decimal(18, 2)");
@@ -418,6 +421,7 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.PaymentWebhookAt).HasColumnType("datetime");
             entity.Property(e => e.PaymentMethod).HasMaxLength(30);
             entity.Property(e => e.QrCodeUrl).HasMaxLength(1000);
+            entity.Property(e => e.RequiresManualRefund).HasDefaultValue(false);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("Unpaid");

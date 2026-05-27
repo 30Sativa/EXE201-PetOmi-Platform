@@ -29,8 +29,13 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public string? BankAccountNo { get; set; }
         public string? BankCode { get; set; }
         public decimal? PaidAmount { get; set; }
+        public decimal OverpaidAmount { get; set; }
         public DateTime? PaymentWebhookAt { get; set; }
         public string? PaymentMethod { get; set; }
+        public string? CancellationReason { get; set; }
+        public Guid? CancelledByUserId { get; set; }
+        public DateTime? CancelledAt { get; set; }
+        public bool RequiresManualRefund { get; set; }
         public string? Notes { get; set; }
         public DateTime? PaidAt { get; set; }
         public DateTime CreatedAt { get; set; }

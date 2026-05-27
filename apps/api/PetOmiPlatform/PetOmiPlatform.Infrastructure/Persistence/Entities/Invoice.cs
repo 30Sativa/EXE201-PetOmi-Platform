@@ -47,6 +47,12 @@ public partial class Invoice
 
     public bool RequiresManualRefund { get; set; }
 
+    public string? RefundNote { get; set; }
+
+    public Guid? RefundConfirmedByUserId { get; set; }
+
+    public DateTime? RefundConfirmedAt { get; set; }
+
     public DateTime? PaidAt { get; set; }
 
     public string? Notes { get; set; }

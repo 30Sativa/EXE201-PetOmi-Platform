@@ -5,6 +5,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public int UnpaidInvoiceCount { get; set; }
         public decimal TotalUnpaidAmount { get; set; }
         public int PendingReconciliationCount { get; set; }
+        public int PendingManualRefundCount { get; set; }
         public int TodayVisitCount { get; set; }
         public decimal TodayPaidRevenue { get; set; }
         public int LowStockItemCount { get; set; }

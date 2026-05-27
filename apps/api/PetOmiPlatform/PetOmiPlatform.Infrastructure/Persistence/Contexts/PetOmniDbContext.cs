@@ -421,6 +421,9 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.PaymentWebhookAt).HasColumnType("datetime");
             entity.Property(e => e.PaymentMethod).HasMaxLength(30);
             entity.Property(e => e.QrCodeUrl).HasMaxLength(1000);
+            entity.Property(e => e.RefundConfirmedAt).HasColumnType("datetime");
+            entity.Property(e => e.RefundConfirmedByUserId).HasColumnName("RefundConfirmedByUserID");
+            entity.Property(e => e.RefundNote).HasMaxLength(500);
             entity.Property(e => e.RequiresManualRefund).HasDefaultValue(false);
             entity.Property(e => e.Status)
                 .HasMaxLength(20)

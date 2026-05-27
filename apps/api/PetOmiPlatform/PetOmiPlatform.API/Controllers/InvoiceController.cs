@@ -71,13 +71,25 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IReadOnlyList<InvoiceAgingItemResponse>>.Ok(result));
         }
 
-        /// <summary>Tong quan billing cho dashboard FE: no hien tai, doi soat SePay, bucket cong no, luot kham hom nay, doanh thu hom nay, low-stock.</summary>
+        /// <summary>Tong quan billing cho dashboard FE: no hien tai, doi soat SePay, pending manual refund, bucket cong no, luot kham hom nay, doanh thu hom nay, low-stock.</summary>
         [HttpGet("billing-summary")]
         public async Task<IActionResult> GetBillingSummary([FromQuery] Guid clinicId)
         {
             var query = new GetBillingDashboardSummaryQuery(clinicId, CurrentUserId);
             var result = await Mediator.Send(query);
             return Ok(BaseResponse<BillingDashboardSummaryResponse>.Ok(result));
+        }
+
+        /// <summary>Danh sach hoa don da huy nhung chua xac nhan hoan tien thu cong.</summary>
+        [HttpGet("manual-refunds/pending")]
+        public async Task<IActionResult> GetPendingManualRefunds(
+            [FromQuery] Guid clinicId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            var query = new GetPendingManualRefundsQuery(clinicId, CurrentUserId, page, pageSize);
+            var result = await Mediator.Send(query);
+            return Ok(BaseResponse<IReadOnlyList<PendingManualRefundItemResponse>>.Ok(result));
         }
 
         /// <summary>Thu tien thu cong cho hoa don (tien mat/chuyen khoan thu cong).</summary>
@@ -173,6 +185,26 @@ namespace PetOmiPlatform.API.Controllers
             var command = new CancelInvoiceCommand(clinicId, CurrentUserId, id, request?.CancelReason);
             var result = await Mediator.Send(command);
             return Ok(BaseResponse<bool>.Ok(result, "Huy hoa don thanh cong."));
+        }
+
+        /// <summary>Xac nhan da hoan tien thu cong cho invoice da huy co co RequiresManualRefund.</summary>
+        /// <remarks>
+        /// Dung sau khi thu ngan da chuyen tra tien ngoai he thong cho khach.
+        /// Bat buoc co RefundNote de luu audit va doi soat.
+        /// </remarks>
+        [HttpPost("{id:guid}/refund-confirmation")]
+        public async Task<IActionResult> ConfirmManualRefund(
+            Guid id,
+            [FromBody] ConfirmManualRefundRequest request,
+            [FromQuery] Guid clinicId)
+        {
+            var command = new ConfirmManualRefundCommand(
+                clinicId,
+                CurrentUserId,
+                id,
+                request.RefundNote);
+            var result = await Mediator.Send(command);
+            return Ok(BaseResponse<bool>.Ok(result, "Xac nhan hoan tien thu cong thanh cong."));
         }
     }
 }

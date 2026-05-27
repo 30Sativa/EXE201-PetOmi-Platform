@@ -75,6 +75,21 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<InvoiceDomain>> GetPendingManualRefundsByClinicIdAsync(Guid clinicId, int page, int pageSize)
+        {
+            return await _context.Invoices
+                .Where(i =>
+                    i.ClinicId == clinicId &&
+                    i.Status == "Cancelled" &&
+                    i.RequiresManualRefund &&
+                    !i.RefundConfirmedAt.HasValue)
+                .OrderByDescending(i => i.CancelledAt ?? i.UpdatedAt ?? i.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(i => i.ToDomain())
+                .ToListAsync();
+        }
+
         public async Task<(int UnpaidCount, decimal UnpaidAmount)> GetUnpaidSummaryByClinicIdAsync(Guid clinicId)
         {
             var query = _context.Invoices.Where(i =>
@@ -85,6 +100,15 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var amount = await query.SumAsync(i => (decimal?)i.FinalAmount) ?? 0m;
 
             return (count, amount);
+        }
+
+        public async Task<int> CountPendingManualRefundsByClinicIdAsync(Guid clinicId)
+        {
+            return await _context.Invoices.CountAsync(i =>
+                i.ClinicId == clinicId &&
+                i.Status == "Cancelled" &&
+                i.RequiresManualRefund &&
+                !i.RefundConfirmedAt.HasValue);
         }
 
         public async Task<decimal> GetPaidRevenueByClinicAndDateAsync(Guid clinicId, DateOnly date)

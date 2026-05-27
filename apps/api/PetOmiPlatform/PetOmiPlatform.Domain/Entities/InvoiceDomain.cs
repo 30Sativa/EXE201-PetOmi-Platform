@@ -29,6 +29,9 @@ namespace PetOmiPlatform.Domain.Entities
         public Guid? CancelledByUserId { get; private set; }
         public DateTime? CancelledAt { get; private set; }
         public bool RequiresManualRefund { get; private set; }
+        public string? RefundNote { get; private set; }
+        public Guid? RefundConfirmedByUserId { get; private set; }
+        public DateTime? RefundConfirmedAt { get; private set; }
         public string? Notes { get; private set; }
 
         public DateTime? PaidAt { get; private set; }
@@ -91,6 +94,9 @@ namespace PetOmiPlatform.Domain.Entities
             Guid? cancelledByUserId,
             DateTime? cancelledAt,
             bool requiresManualRefund,
+            string? refundNote,
+            Guid? refundConfirmedByUserId,
+            DateTime? refundConfirmedAt,
             string? notes,
             DateTime? paidAt,
             DateTime createdAt,
@@ -119,6 +125,9 @@ namespace PetOmiPlatform.Domain.Entities
                 CancelledByUserId = cancelledByUserId,
                 CancelledAt = cancelledAt,
                 RequiresManualRefund = requiresManualRefund,
+                RefundNote = refundNote,
+                RefundConfirmedByUserId = refundConfirmedByUserId,
+                RefundConfirmedAt = refundConfirmedAt,
                 Notes = notes,
                 PaidAt = paidAt,
                 CreatedAt = createdAt,
@@ -205,6 +214,27 @@ namespace PetOmiPlatform.Domain.Entities
             CancelledByUserId = cancelledByUserId;
             CancelledAt = DateTime.UtcNow;
             RequiresManualRefund = wasPaid && PaidAmount.HasValue && PaidAmount.Value > 0;
+            RefundNote = null;
+            RefundConfirmedByUserId = null;
+            RefundConfirmedAt = null;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void ConfirmManualRefund(Guid confirmedByUserId, string refundNote)
+        {
+            if (Status != InvoiceStatus.Cancelled)
+                throw new DomainException("Chi xac nhan hoan tien thu cong cho hoa don da huy.");
+            if (!RequiresManualRefund)
+                throw new DomainException("Hoa don nay khong o trang thai can hoan tien thu cong.");
+            if (RefundConfirmedAt.HasValue)
+                throw new DomainException("Hoa don da duoc xac nhan hoan tien truoc do.");
+            if (string.IsNullOrWhiteSpace(refundNote))
+                throw new DomainException("Bat buoc nhap ghi chu xac nhan hoan tien.");
+
+            RequiresManualRefund = false;
+            RefundNote = refundNote.Trim();
+            RefundConfirmedByUserId = confirmedByUserId;
+            RefundConfirmedAt = DateTime.UtcNow;
             UpdatedAt = DateTime.UtcNow;
         }
 

@@ -36,6 +36,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var (unpaidCount, unpaidAmount) = await _invoiceRepository.GetUnpaidSummaryByClinicIdAsync(request.ClinicId);
+            var pendingManualRefundCount = await _invoiceRepository.CountPendingManualRefundsByClinicIdAsync(request.ClinicId);
             var todayPaidRevenue = await _invoiceRepository.GetPaidRevenueByClinicAndDateAsync(request.ClinicId, today);
             var agingBuckets = await _invoiceRepository.GetUnpaidAgingBucketSummaryByClinicIdAsync(request.ClinicId);
             var pendingReconciliationCount = await _paymentTransactionRepository.CountUnresolvedByClinicIdAsync(request.ClinicId);
@@ -50,6 +51,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 UnpaidInvoiceCount = unpaidCount,
                 TotalUnpaidAmount = unpaidAmount,
                 PendingReconciliationCount = pendingReconciliationCount,
+                PendingManualRefundCount = pendingManualRefundCount,
                 TodayVisitCount = todayVisitCount,
                 TodayPaidRevenue = todayPaidRevenue,
                 LowStockItemCount = lowStockItemCount,

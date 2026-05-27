@@ -36,6 +36,9 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public Guid? CancelledByUserId { get; set; }
         public DateTime? CancelledAt { get; set; }
         public bool RequiresManualRefund { get; set; }
+        public string? RefundNote { get; set; }
+        public Guid? RefundConfirmedByUserId { get; set; }
+        public DateTime? RefundConfirmedAt { get; set; }
         public string? Notes { get; set; }
         public DateTime? PaidAt { get; set; }
         public DateTime CreatedAt { get; set; }

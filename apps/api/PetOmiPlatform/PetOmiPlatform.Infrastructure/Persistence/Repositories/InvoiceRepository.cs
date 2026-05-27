@@ -87,6 +87,21 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return (count, amount);
         }
 
+        public async Task<decimal> GetPaidRevenueByClinicAndDateAsync(Guid clinicId, DateOnly date)
+        {
+            var dayStartUtc = date.ToDateTime(TimeOnly.MinValue);
+            var nextDayUtc = dayStartUtc.AddDays(1);
+
+            return await _context.Invoices
+                .Where(i =>
+                    i.ClinicId == clinicId &&
+                    i.Status == "Paid" &&
+                    i.PaidAt.HasValue &&
+                    i.PaidAt.Value >= dayStartUtc &&
+                    i.PaidAt.Value < nextDayUtc)
+                .SumAsync(i => (decimal?)(i.PaidAmount ?? i.FinalAmount)) ?? 0m;
+        }
+
         public async Task<InvoiceAgingBucketSummary> GetUnpaidAgingBucketSummaryByClinicIdAsync(Guid clinicId)
         {
             var nowUtc = DateTime.UtcNow;

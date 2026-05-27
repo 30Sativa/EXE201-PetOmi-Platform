@@ -7,9 +7,8 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task AddAsync(InventoryItemDomain item);
         Task<InventoryItemDomain?> GetByIdAsync(Guid itemId);
         Task<IEnumerable<InventoryItemDomain>> GetByClinicIdAsync(Guid clinicId, bool activeOnly = true);
-
-        /// <summary>Lấy danh sách thuốc sắp hết (IsLowStock = true).</summary>
         Task<IEnumerable<InventoryItemDomain>> GetLowStockItemsAsync(Guid clinicId);
+        Task<int> CountLowStockItemsAsync(Guid clinicId);
         Task UpdateAsync(InventoryItemDomain item);
     }
 }

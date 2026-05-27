@@ -1,6 +1,7 @@
 import { Eye, EyeOff } from "lucide-react"
 import { Link } from "react-router-dom"
 
+import FormStatusMessage from "@/components/ui/FormStatusMessage"
 import { useLoginForm, useGoogleLogin } from "@/hooks"
 
 const fieldClass =
@@ -69,9 +70,11 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
       </div>
 
       {message ? (
-        <p className={`rounded-2xl px-4 py-3 text-sm font-semibold ${status === "success" ? "bg-po-success-soft text-po-success" : "bg-po-danger-soft text-po-danger"}`}>
-          {message}
-        </p>
+        <FormStatusMessage
+          status={status === "success" ? "success" : "error"}
+          title={status === "success" ? "Đăng nhập thành công" : "Không thể đăng nhập"}
+          message={message}
+        />
       ) : null}
 
       <button

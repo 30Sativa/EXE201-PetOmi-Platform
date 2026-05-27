@@ -229,6 +229,27 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<object>.Ok(null, "Xóa hồ sơ y tế thành công."));
         }
 
+        // ==================== Activity Feed / Timeline ====================
+
+        /// <summary>
+        /// Lấy timeline (activity feed) của thú cưng.
+        /// Aggregates data from: Medical Records, Weight Logs, Photos, Reminders, Appointments, Health Profile.
+        /// Sorted by occurrence date descending (newest first).
+        /// </summary>
+        [HttpGet("{petId:guid}/timeline")]
+        public async Task<IActionResult> GetPetTimeline(
+            Guid petId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? activityType = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null)
+        {
+            var result = await Mediator.Send(new GetPetTimelineQuery(
+                CurrentUserId, petId, page, pageSize, activityType, fromDate, toDate));
+            return Ok(BaseResponse<PetTimelineResponse>.Ok(result));
+        }
+
         // ==================== User Access ====================
 
         /// <summary>

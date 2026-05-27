@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client"
 import { RouterProvider } from "react-router-dom"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { Toaster } from "sonner"
+import { AlertTriangle, CheckCircle2, Info } from "lucide-react"
 
 import { AuthProvider } from "@/contexts/AuthContext"
 import { NotificationProvider } from "@/contexts/NotificationContext"
@@ -28,15 +29,28 @@ createRoot(document.getElementById("root")!).render(
           <SignalRConnector />
           <Toaster
             position="top-center"
+            offset={20}
+            mobileOffset={12}
+            visibleToasts={3}
             toastOptions={{
-              duration: 3000,
-              style: {
-                fontFamily: "inherit",
-                fontWeight: "600",
-                fontSize: "15px",
-                padding: "14px 20px",
-                borderRadius: "16px",
+              duration: 4200,
+              classNames: {
+                toast: "po-toast",
+                success: "po-toast-success",
+                error: "po-toast-error",
+                warning: "po-toast-warning",
+                info: "po-toast-info",
+                title: "po-toast-title",
+                description: "po-toast-description",
+                content: "po-toast-content",
+                icon: "po-toast-icon",
               },
+            }}
+            icons={{
+              success: <CheckCircle2 className="size-5" />,
+              error: <AlertTriangle className="size-5" />,
+              warning: <AlertTriangle className="size-5" />,
+              info: <Info className="size-5" />,
             }}
           />
           <RouterProvider router={router} />

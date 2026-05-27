@@ -36,6 +36,7 @@ export function useForgotPasswordForm(): UseForgotPasswordFormReturn {
 
   const onSubmit = async (data: ForgotPasswordRequest) => {
     setStatus("idle")
+    setMessage("")
     try {
       await forgotPasswordApi(data)
       setStatus("success")

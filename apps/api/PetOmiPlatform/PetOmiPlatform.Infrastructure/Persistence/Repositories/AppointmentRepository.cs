@@ -80,6 +80,24 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .CountAsync(a => a.BookedByUserId == ownerUserId);
         }
 
+        public async Task<IEnumerable<AppointmentDomain>> GetByPetIdAsync(Guid petId, int page, int pageSize)
+        {
+            return await _context.Appointments
+                .Where(a => a.PetId == petId)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.StartTime)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(a => a.ToDomain())
+                .ToListAsync();
+        }
+
+        public async Task<int> CountByPetIdAsync(Guid petId)
+        {
+            return await _context.Appointments
+                .CountAsync(a => a.PetId == petId);
+        }
+
         public async Task<bool> HasConflictAsync(
             Guid vetClinicId,
             DateOnly date,

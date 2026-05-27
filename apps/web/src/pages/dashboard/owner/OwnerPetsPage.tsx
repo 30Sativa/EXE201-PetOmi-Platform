@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, PawPrint, Search, Trash2 } from "lucide-react"
+import { PencilLine, Plus, PawPrint, Search, Trash2 } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
@@ -9,23 +9,11 @@ import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import PetModal from "@/components/dashboard/owner/PetModal"
+import Avatar from "@/components/ui/Avatar"
 import { useQuery } from "@tanstack/react-query"
 import { getPetsApi, deletePetApi } from "@/services/pets.service"
 import { cn } from "@/lib/utils"
 import type { PetResponse } from "@/types"
-
-const speciesEmoji: Record<string, string> = {
-  Dog: "🐶",
-  Cat: "🐱",
-  Bird: "🐦",
-  Fish: "🐟",
-  Rabbit: "🐰",
-  Hamster: "🐹",
-  default: "🐾",
-}
-
-const getSpeciesEmoji = (species: string) =>
-  speciesEmoji[species] ?? speciesEmoji.default
 
 const formatAge = (dob: string | null) => {
   if (!dob) return null
@@ -42,6 +30,17 @@ const formatAge = (dob: string | null) => {
     return null
   }
 }
+
+const speciesLabels: Record<string, string> = {
+  Dog: "Chó",
+  Cat: "Mèo",
+  Bird: "Chim",
+  Fish: "Cá",
+  Rabbit: "Thỏ",
+  Hamster: "Hamster",
+}
+
+const formatSpecies = (species: string) => speciesLabels[species] ?? species
 
 export default function OwnerPetsPage() {
   const navigate = useNavigate()
@@ -235,88 +234,114 @@ function PetCard({
   onView: () => void
 }) {
   const age = formatAge(pet.dateOfBirth)
+  const speciesLabel = formatSpecies(pet.species)
 
   return (
-    <div className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-po-border bg-white transition hover:border-po-border-strong hover:shadow-md">
-      {/* Avatar / Hero */}
+    <article className="group overflow-hidden rounded-[26px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md hover:shadow-orange-200/25">
       <div
-        className="relative h-32 bg-gradient-to-br from-po-primary-soft to-po-surface-muted"
+        className="relative h-32 cursor-pointer bg-po-surface-muted"
         onClick={onView}
       >
-        {pet.avatarUrl ? (
-          <img
-            src={pet.avatarUrl}
-            alt={pet.name}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-6xl">{getSpeciesEmoji(pet.species)}</span>
-          </div>
-        )}
-        {/* Action buttons overlay */}
-        <div className="absolute right-3 top-3 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
+        <div className="absolute inset-0 overflow-hidden">
+          {pet.avatarUrl ? (
+            <>
+              <img
+                src={pet.avatarUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-55 blur-sm"
+              />
+              <img
+                src={pet.avatarUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full object-cover opacity-75"
+              />
+            </>
+          ) : (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,_rgba(245,158,11,0.26),_transparent_32%),linear-gradient(135deg,_#fff7ed,_#fff1e6)]" />
+          )}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,_rgba(255,247,237,0.02),_rgba(255,247,237,0.72))]" />
+        </div>
+
+        <div className="absolute right-3 top-3 flex gap-1.5 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
           <button
             onClick={(e) => {
               e.stopPropagation()
               onEdit(pet)
             }}
-            className="grid size-8 place-items-center rounded-full bg-white/90 text-po-text shadow-sm backdrop-blur-sm hover:bg-white"
-            aria-label="Sửa thú cưng"
+            className="grid size-9 place-items-center rounded-full bg-white/92 text-po-text shadow-sm ring-1 ring-po-border/80 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white"
+            aria-label={`Sửa ${pet.name}`}
           >
-            <svg className="size-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125" />
-            </svg>
+            <PencilLine className="size-4" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation()
               onDelete(pet)
             }}
-            className="grid size-8 place-items-center rounded-full bg-white/90 text-po-danger shadow-sm backdrop-blur-sm hover:bg-po-danger/10"
-            aria-label="Xóa thú cưng"
+            className="grid size-9 place-items-center rounded-full bg-white/92 text-po-danger shadow-sm ring-1 ring-po-danger/15 backdrop-blur transition hover:-translate-y-0.5 hover:bg-po-danger-soft"
+            aria-label={`Xóa ${pet.name}`}
           >
-            <Trash2 className="size-3.5" />
+            <Trash2 className="size-4" />
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={onView}
+          className="absolute bottom-0 left-4 z-10 translate-y-1/2 rounded-full text-left"
+          aria-label={`Mở hồ sơ ${pet.name}`}
+        >
+          <Avatar
+            src={pet.avatarUrl}
+            alt={pet.name}
+            size="xl"
+            className="size-20 border-4 border-white bg-white shadow-lg shadow-orange-200/30 ring-1 ring-po-border/80"
+          />
+        </button>
       </div>
 
-      {/* Info */}
-      <div className="p-4" onClick={onView}>
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-base font-bold text-po-text">{pet.name}</p>
-            <p className="mt-0.5 text-xs text-po-text-muted">
-              {pet.species}
-              {pet.breed ? ` · ${pet.breed}` : ""}
-            </p>
-          </div>
-          <span className="shrink-0 text-2xl">{getSpeciesEmoji(pet.species)}</span>
+      <div className="cursor-pointer px-4 pb-4 pt-12" onClick={onView}>
+        <div className="min-w-0">
+          <p className="truncate text-lg font-extrabold leading-tight text-po-text">{pet.name}</p>
+          <p className="mt-1 truncate text-sm text-po-text-muted">
+            {speciesLabel}
+            {pet.breed ? ` · ${pet.breed}` : ""}
+          </p>
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="rounded-full bg-po-primary-soft/80 px-3 py-1 text-xs font-semibold text-po-primary">
+            {speciesLabel}
+          </span>
+          {pet.color ? (
+            <span className="rounded-full bg-po-surface-muted px-3 py-1 text-xs font-medium text-po-text-muted">
+              {pet.color}
+            </span>
+          ) : null}
           {pet.gender && (
-            <span className="rounded-full bg-po-surface-muted px-2.5 py-0.5 text-xs font-medium text-po-text-muted">
+            <span className="rounded-full bg-po-surface-muted px-3 py-1 text-xs font-medium text-po-text-muted">
               {pet.gender === "Male" ? "Đực" : pet.gender === "Female" ? "Cái" : pet.gender}
             </span>
           )}
           {age && (
-            <span className="rounded-full bg-po-surface-muted px-2.5 py-0.5 text-xs font-medium text-po-text-muted">
+            <span className="rounded-full bg-po-surface-muted px-3 py-1 text-xs font-medium text-po-text-muted">
               {age}
             </span>
           )}
           {pet.isBirthDateEstimated && (
-            <span className="rounded-full bg-po-warning-soft px-2.5 py-0.5 text-xs font-medium text-po-warning">
+            <span className="rounded-full bg-po-warning-soft px-3 py-1 text-xs font-medium text-po-warning">
               Tuổi ước lượng
             </span>
           )}
           {pet.isNeutered && (
-            <span className="rounded-full bg-po-success-soft px-2.5 py-0.5 text-xs font-medium text-po-success">
+            <span className="rounded-full bg-po-success-soft px-3 py-1 text-xs font-medium text-po-success">
               {pet.isNeutered === "Yes" ? "Đã triệt sản" : "Chưa triệt sản"}
             </span>
           )}
         </div>
       </div>
-    </div>
+    </article>
   )
 }

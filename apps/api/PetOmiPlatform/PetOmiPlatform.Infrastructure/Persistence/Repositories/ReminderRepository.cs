@@ -57,6 +57,15 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entities.Select(e => e.ToDomain()).ToList();
         }
 
+        public async Task<List<ReminderDomain>> GetByPetIdAsync(Guid petId)
+        {
+            var entities = await _context.Reminders
+                .Where(r => r.PetId == petId)
+                .OrderByDescending(r => r.RemindAt)
+                .ToListAsync();
+            return entities.Select(e => e.ToDomain()).ToList();
+        }
+
         public async Task AddAsync(ReminderDomain reminder)
         {
             await _context.Reminders.AddAsync(reminder.ToEntity());

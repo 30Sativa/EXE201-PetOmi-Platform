@@ -114,7 +114,11 @@ var app = builder.Build();
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-if (app.Environment.IsDevelopment())
+// Swagger — bật khi Development hoặc EnableSwagger=true trong config
+var enableSwagger = app.Environment.IsDevelopment()
+    || builder.Configuration.GetValue<bool>("EnableSwagger");
+
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI();

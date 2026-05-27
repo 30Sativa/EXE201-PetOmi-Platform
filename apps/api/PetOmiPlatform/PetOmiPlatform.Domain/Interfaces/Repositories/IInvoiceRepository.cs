@@ -17,6 +17,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<(int UnpaidCount, decimal UnpaidAmount)> GetUnpaidSummaryByClinicIdAsync(Guid clinicId);
         Task<int> CountPendingManualRefundsByClinicIdAsync(Guid clinicId);
         Task<decimal> GetPaidRevenueByClinicAndDateAsync(Guid clinicId, DateOnly date);
+        Task<IReadOnlyList<InvoiceRevenueDailySummary>> GetPaidRevenueTrendByClinicAsync(Guid clinicId, DateOnly fromDate, DateOnly toDate);
         Task<InvoiceAgingBucketSummary> GetUnpaidAgingBucketSummaryByClinicIdAsync(Guid clinicId);
         Task<bool> HasActiveInvoiceAsync(Guid appointmentId);
         Task UpdateAsync(InvoiceDomain invoice);

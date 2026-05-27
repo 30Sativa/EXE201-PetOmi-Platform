@@ -126,6 +126,39 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .SumAsync(i => (decimal?)(i.PaidAmount ?? i.FinalAmount)) ?? 0m;
         }
 
+        public async Task<IReadOnlyList<InvoiceRevenueDailySummary>> GetPaidRevenueTrendByClinicAsync(Guid clinicId, DateOnly fromDate, DateOnly toDate)
+        {
+            var fromUtc = fromDate.ToDateTime(TimeOnly.MinValue);
+            var toExclusiveUtc = toDate.AddDays(1).ToDateTime(TimeOnly.MinValue);
+
+            var rawRows = await _context.Invoices
+                .Where(i =>
+                    i.ClinicId == clinicId &&
+                    i.Status == "Paid" &&
+                    i.PaidAt.HasValue &&
+                    i.PaidAt.Value >= fromUtc &&
+                    i.PaidAt.Value < toExclusiveUtc)
+                .GroupBy(i => i.PaidAt!.Value.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    Revenue = g.Sum(i => (decimal?)(i.PaidAmount ?? i.FinalAmount)) ?? 0m,
+                    PaidInvoiceCount = g.Count()
+                })
+                .ToListAsync();
+
+            var rows = rawRows
+                .Select(x => new InvoiceRevenueDailySummary
+                {
+                    Date = DateOnly.FromDateTime(x.Date),
+                    Revenue = x.Revenue,
+                    PaidInvoiceCount = x.PaidInvoiceCount
+                })
+                .ToList();
+
+            return rows;
+        }
+
         public async Task<InvoiceAgingBucketSummary> GetUnpaidAgingBucketSummaryByClinicIdAsync(Guid clinicId)
         {
             var nowUtc = DateTime.UtcNow;

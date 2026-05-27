@@ -80,6 +80,29 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<BillingDashboardSummaryResponse>.Ok(result));
         }
 
+        /// <summary>Trend doanh thu da thu theo ngay trong khoang thoi gian de FE ve line/bar chart.</summary>
+        /// <remarks>
+        /// Mac dinh: neu khong truyen fromDate/toDate thi lay 14 ngay gan nhat (UTC).
+        /// He thong tra du tat ca ngay trong khoang (ngay khong co doanh thu van co point = 0).
+        /// </remarks>
+        [HttpGet("billing-revenue-trend")]
+        public async Task<IActionResult> GetBillingRevenueTrend(
+            [FromQuery] Guid clinicId,
+            [FromQuery] DateOnly? fromDate = null,
+            [FromQuery] DateOnly? toDate = null)
+        {
+            var effectiveToDate = toDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+            var effectiveFromDate = fromDate ?? effectiveToDate.AddDays(-13);
+
+            var query = new GetBillingRevenueTrendQuery(
+                clinicId,
+                CurrentUserId,
+                effectiveFromDate,
+                effectiveToDate);
+            var result = await Mediator.Send(query);
+            return Ok(BaseResponse<BillingRevenueTrendResponse>.Ok(result));
+        }
+
         /// <summary>Danh sach hoa don da huy nhung chua xac nhan hoan tien thu cong.</summary>
         [HttpGet("manual-refunds/pending")]
         public async Task<IActionResult> GetPendingManualRefunds(

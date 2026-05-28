@@ -154,5 +154,10 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var updated = appointment.ToEntity();
             _context.Entry(entity).CurrentValues.SetValues(updated);
         }
+
+        public async Task<int> CountAllAsync()
+        {
+            return await _context.Appointments.CountAsync();
+        }
     }
 }

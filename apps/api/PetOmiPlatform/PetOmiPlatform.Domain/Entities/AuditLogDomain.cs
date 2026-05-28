@@ -1,7 +1,5 @@
 ﻿using PetOmiPlatform.Domain.Common;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace PetOmiPlatform.Domain.Entities
 {
@@ -16,6 +14,7 @@ namespace PetOmiPlatform.Domain.Entities
         public string? UserAgent { get; private set; }
         public string Severity { get; private set; }
         public DateTime CreatedAt { get; private set; }
+        public string? UserEmail { get; private set; }
 
         private AuditLogDomain() { }
 
@@ -41,6 +40,35 @@ namespace PetOmiPlatform.Domain.Entities
                 UserAgent = userAgent,
                 Severity = severity,
                 CreatedAt = DateTime.UtcNow
+            };
+        }
+
+        public static AuditLogDomain Reconstitute(
+            Guid id,
+            string action,
+            string category,
+            string? entityType,
+            Guid? entityId,
+            string? ipAddress,
+            string? userAgent,
+            string severity,
+            DateTime createdAt,
+            string? userEmail = null,
+            Guid? userId = null)
+        {
+            return new AuditLogDomain
+            {
+                Id = id,
+                UserId = userId,
+                Action = action,
+                Category = category,
+                EntityType = entityType,
+                EntityId = entityId,
+                IpAddress = ipAddress,
+                UserAgent = userAgent,
+                Severity = severity,
+                CreatedAt = createdAt,
+                UserEmail = userEmail
             };
         }
     }

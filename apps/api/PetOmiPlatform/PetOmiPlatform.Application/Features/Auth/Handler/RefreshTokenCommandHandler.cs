@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Auth;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
@@ -19,6 +20,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         private readonly IUnitOfWork _unitOfWork;
         private readonly IJwtService _jwtService;
         private readonly ITokenGenerator _tokenGenerator;
+        private readonly IUserRoleRepository _userRoleRepository;
 
         public RefreshTokenCommandHandler(
             IRefreshTokenRepository refreshTokenRepository,
@@ -26,7 +28,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             IUserRepository userRepository,
             IUnitOfWork unitOfWork,
             IJwtService jwtService,
-            ITokenGenerator tokenGenerator)
+            ITokenGenerator tokenGenerator,
+            IUserRoleRepository userRoleRepository)
         {
             _refreshTokenRepository = refreshTokenRepository;
             _sessionRepository = sessionRepository;
@@ -34,6 +37,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             _unitOfWork = unitOfWork;
             _jwtService = jwtService;
             _tokenGenerator = tokenGenerator;
+            _userRoleRepository = userRoleRepository;
         }
         public async Task<RefreshTokenResponse> Handle(RefreshTokenCommand request, CancellationToken cancellationToken)
         {
@@ -96,12 +100,16 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             await _unitOfWork.SaveChangesAsync(cancellationToken);  
 
             // 10. Generate access token mới
-            var newAccessToken = _jwtService.GenerateToken(user);
+            var roles = await _userRoleRepository.GetRolesByUserIdAsync(user.Id);
+            var activeRole = AuthRoleResolver.ResolveDefaultActiveRole(roles);
+            var newAccessToken = _jwtService.GenerateTokenWithRole(user, activeRole);
 
             return new RefreshTokenResponse
             {
                 AccessToken = newAccessToken,
                 RefreshToken = newTokenRaw,
+                ActiveRole = activeRole,
+                Roles = roles,
                 IsProfileCompleted = user.IsProfileCompleted
             };
         }

@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 
 import { useAuth } from "@/contexts/AuthContext"
 import { loginApi } from "@/services/auth.service"
+import { getDashboardPathForRole, resolvePreferredRole } from "@/lib/authRoles"
 import { getDeviceInfo } from "@/lib/device"
 import { getErrorMessage } from "@/lib/utils"
 import { LoginRequestSchema } from "@/schemas/auth.schema"
@@ -59,8 +60,12 @@ export function useLoginForm(): UseLoginFormReturn {
         setAuthFromTokens(
           response.accessToken,
           response.refreshToken,
-          response.userId,
-          response.email,
+          {
+            userId: response.userId,
+            email: response.email,
+            activeRole: response.activeRole,
+            roles: response.roles,
+          },
         )
       }
 
@@ -68,10 +73,15 @@ export function useLoginForm(): UseLoginFormReturn {
       setMessage("Đăng nhập thành công.")
 
       setTimeout(() => {
+        const preferredRole = resolvePreferredRole(
+          response.activeRole,
+          response.roles,
+        )
+
         if (response.isProfileCompleted === false) {
           navigate("/complete-profile")
         } else {
-          navigate("/dashboard")
+          navigate(getDashboardPathForRole(preferredRole))
         }
       }, 500)
     } catch (error) {

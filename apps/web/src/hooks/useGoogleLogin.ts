@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 
 import { useAuth } from "@/contexts/AuthContext"
+import { getDashboardPathForRole, resolvePreferredRole } from "@/lib/authRoles"
 
 export function useGoogleLogin() {
   const navigate = useNavigate()
@@ -12,13 +13,29 @@ export function useGoogleLogin() {
     const handleMessage = (event: MessageEvent) => {
       if (event.data?.type !== "GOOGLE_AUTH_SUCCESS") return
 
-      const { accessToken, refreshToken, email, userId, isProfileCompleted } = event.data
+      const {
+        accessToken,
+        refreshToken,
+        email,
+        userId,
+        isProfileCompleted,
+        activeRole,
+        roles,
+      } = event.data
 
       if (accessToken && refreshToken) {
-        setAuthFromTokens(accessToken, refreshToken, userId, email)
+        setAuthFromTokens(accessToken, refreshToken, {
+          userId,
+          email,
+          activeRole,
+          roles,
+        })
 
         if (isProfileCompleted) {
-          navigate("/dashboard/owner", { replace: true })
+          navigate(
+            getDashboardPathForRole(resolvePreferredRole(activeRole, roles)),
+            { replace: true },
+          )
         } else {
           navigate("/complete-profile", { replace: true })
         }
@@ -55,16 +72,27 @@ export function useGoogleLogin() {
       email: string
       userId: string
       isProfileCompleted: boolean
+      activeRole?: string
+      roles?: string[]
     }) => {
       setAuthFromTokens(
         tokens.accessToken,
         tokens.refreshToken,
-        tokens.userId,
-        tokens.email,
+        {
+          userId: tokens.userId,
+          email: tokens.email,
+          activeRole: tokens.activeRole,
+          roles: tokens.roles,
+        },
       )
 
       if (tokens.isProfileCompleted) {
-        navigate("/dashboard/owner", { replace: true })
+        navigate(
+          getDashboardPathForRole(
+            resolvePreferredRole(tokens.activeRole, tokens.roles),
+          ),
+          { replace: true },
+        )
       } else {
         navigate("/complete-profile", { replace: true })
       }

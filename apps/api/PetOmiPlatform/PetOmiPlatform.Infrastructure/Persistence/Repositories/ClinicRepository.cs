@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
+using PetOmiPlatform.Infrastructure.Common.Utils;
 using PetOmiPlatform.Infrastructure.Mappers;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 
@@ -32,10 +33,6 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .AnyAsync(c => c.LicenseNumber == licenseNumber);
         }
 
-        /// <summary>
-        /// Lấy clinic mà user đang sở hữu (có role ClinicOwner trong VetClinic).
-        /// Join: VetClinic → VetProfile → Users → so sánh UserId.
-        /// </summary>
         public async Task<ClinicDomain?> GetByOwnerUserIdAsync(Guid userId)
         {
             var entity = await _context.Clinics
@@ -72,7 +69,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             entity.Status = clinic.Status.ToString();
         }
 
-        public async Task<(List<ClinicSearchResultDto> Items, int TotalCount)> SearchAsync(
+        public async Task<(List<ClinicDomain> Items, int TotalCount)> SearchAsync(
             double? userLat, double? userLng,
             string? keyword, string? city,
             int radiusKm, int page, int pageSize)
@@ -96,7 +93,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                     c.Address != null && c.Address.ToLower().Contains(cityStr));
             }
 
-            var all = await query
+            var raw = await query
                 .Select(c => new
                 {
                     c.ClinicId,
@@ -107,70 +104,85 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                     c.Latitude,
                     c.Longitude,
                     c.OpeningHours,
-                    c.AppointmentBufferMins
+                    c.AppointmentBufferMins,
+                    Entity = c
                 })
                 .ToListAsync();
 
             var hasLocation = userLat.HasValue && userLng.HasValue;
 
-            var withDistance = all
+            var withDistance = raw
                 .Select(c =>
                 {
                     double? distKm = null;
                     if (hasLocation && c.Latitude.HasValue && c.Longitude.HasValue)
                     {
-                        distKm = CalculateHaversineDistanceKm(
+                        distKm = GeoUtils.CalculateHaversineDistanceKm(
                             userLat!.Value, userLng!.Value,
                             c.Latitude!.Value, c.Longitude!.Value);
                     }
-                    return new ClinicSearchResultDto
+                    return new
                     {
-                        ClinicId = c.ClinicId,
-                        ClinicName = c.ClinicName,
-                        Address = c.Address,
-                        LogoUrl = c.LogoUrl,
-                        Description = c.Description,
-                        Latitude = c.Latitude,
-                        Longitude = c.Longitude,
-                        DistanceKm = distKm.HasValue ? Math.Round(distKm.Value, 2) : null,
-                        OpeningHours = c.OpeningHours,
-                        AppointmentBufferMins = c.AppointmentBufferMins
+                        Domain = c.Entity.ToDomain(),
+                        DistanceKm = distKm.HasValue ? Math.Round(distKm.Value, 2) : (double?)null,
+                        c.Latitude,
+                        c.Longitude,
+                        c.OpeningHours,
+                        c.AppointmentBufferMins
                     };
                 })
                 .Where(x => !hasLocation || (x.DistanceKm.HasValue && x.DistanceKm.Value <= radiusKm))
                 .ToList();
 
             var totalCount = withDistance.Count;
+
             var paged = withDistance
                 .OrderBy(x => hasLocation ? x.DistanceKm ?? double.MaxValue : 0)
-                .ThenBy(x => x.ClinicName)
+                .ThenBy(x => x.Domain.ClinicName)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
 
-            return (paged, totalCount);
-        }
+            var items = paged.Select(x => x.Domain).ToList();
 
-        private static double CalculateHaversineDistanceKm(
-            double lat1, double lon1, double lat2, double lon2)
-        {
-            const double R = 6371.0;
-            var dLat = (lat2 - lat1) * Math.PI / 180.0;
-            var dLon = (lon2 - lon1) * Math.PI / 180.0;
-            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                    Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
-                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return R * c;
+            return (items, totalCount);
         }
 
         public async Task<int> GetBufferMinsAsync(Guid clinicId)
         {
-            var clinic = await _context.Clinics
+            return await _context.Clinics
                 .Where(c => c.ClinicId == clinicId)
                 .Select(c => c.AppointmentBufferMins)
                 .FirstOrDefaultAsync();
-            return clinic;
+        }
+
+        public async Task<Dictionary<string, int>> GetClinicCountByStatusAsync()
+        {
+            return await _context.Clinics
+                .GroupBy(c => c.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Status, x => x.Count);
+        }
+
+        public async Task<Dictionary<string, int>> GetClinicCreatedTrendAsync(int days = 30)
+        {
+            var startDate = DateTime.UtcNow.AddDays(-days).Date;
+
+            var data = await _context.Clinics
+                .Where(c => c.CreatedAt >= startDate)
+                .GroupBy(c => c.CreatedAt.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var result = new Dictionary<string, int>();
+            for (int i = days; i >= 0; i--)
+            {
+                var date = DateTime.UtcNow.Date.AddDays(-i);
+                var key = date.ToString("yyyy-MM-dd");
+                result[key] = data.FirstOrDefault(d => d.Date == date)?.Count ?? 0;
+            }
+
+            return result;
         }
     }
 }

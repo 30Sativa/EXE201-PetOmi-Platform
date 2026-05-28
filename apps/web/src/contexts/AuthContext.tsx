@@ -13,6 +13,7 @@ import { AUTH_EVENTS } from "@/lib/axios"
 import { logoutApi } from "@/services/auth.service"
 
 import type {
+  AuthSessionMetadata,
   AuthContextType,
   User,
 } from "@/types"
@@ -21,37 +22,61 @@ const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 )
 
+const NAME_IDENTIFIER_CLAIM =
+  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+const EMAIL_CLAIM =
+  "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+
+function claimString(
+  payload: Record<string, unknown> | null,
+  ...keys: string[]
+) {
+  for (const key of keys) {
+    const value = payload?.[key]
+    if (typeof value === "string" && value) {
+      return value
+    }
+  }
+
+  return ""
+}
+
+function createUserFromAuth(
+  payload: Record<string, unknown> | null,
+  metadata?: AuthSessionMetadata,
+): User {
+  const activeRole =
+    metadata?.activeRole ??
+    claimString(payload, "activeRole", "role") ??
+    ""
+
+  return {
+    id:
+      metadata?.userId ??
+      claimString(payload, "sub", "nameid", "nameidentifier", NAME_IDENTIFIER_CLAIM),
+    email: metadata?.email ?? claimString(payload, "email", EMAIL_CLAIM),
+    role: activeRole,
+    activeRole,
+    roles: metadata?.roles?.length ? metadata.roles : activeRole ? [activeRole] : [],
+  }
+}
+
 export function AuthProvider({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(() => {
+    const token = tokenStorage.getAccessToken()
+    if (!token) return null
+
+    return createUserFromAuth(decodeAccessToken())
+  })
 
   const [isAuthenticated, setIsAuthenticated] =
-    useState(false)
+    useState(() => tokenStorage.hasValidToken())
 
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const token = tokenStorage.getAccessToken()
-
-    if (token) {
-      setIsAuthenticated(true)
-
-      const payload = decodeAccessToken()
-      setUser({
-        id: (payload?.sub as string) ?? (payload?.nameidentifier as string) ?? "",
-        email: (payload?.email as string) ?? (payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as string) ?? "",
-        role: (payload?.role as string) ?? (payload?.activeRole as string) ?? "",
-      })
-    } else {
-      setIsAuthenticated(false)
-      setUser(null)
-    }
-
-    setIsLoading(false)
-  }, [])
+  const isLoading = false
 
   useEffect(() => {
     const handleTokenRefreshed = (e: Event) => {
@@ -62,6 +87,9 @@ export function AuthProvider({
               ...prev,
               id: detail.userId || prev.id,
               email: detail.email || prev.email,
+              role: detail.activeRole || prev.role,
+              activeRole: detail.activeRole || prev.activeRole,
+              roles: detail.roles?.length ? detail.roles : prev.roles,
             }
           : null
       )
@@ -85,19 +113,14 @@ export function AuthProvider({
     (
       accessToken: string,
       refreshToken: string,
-      userId?: string,
-      email?: string,
+      metadata?: AuthSessionMetadata,
     ) => {
       tokenStorage.setAccessToken(accessToken)
       tokenStorage.setRefreshToken(refreshToken)
       setIsAuthenticated(true)
 
       const payload = decodeAccessToken()
-      setUser({
-        id: userId ?? (payload?.sub as string) ?? (payload?.nameidentifier as string) ?? "",
-        email: email ?? (payload?.email as string) ?? (payload?.["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] as string) ?? "",
-        role: (payload?.role as string) ?? (payload?.activeRole as string) ?? "",
-      })
+      setUser(createUserFromAuth(payload, metadata))
     },
     [],
   )

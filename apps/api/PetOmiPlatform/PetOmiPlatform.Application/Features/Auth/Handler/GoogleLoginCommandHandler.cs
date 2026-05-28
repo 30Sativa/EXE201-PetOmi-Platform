@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Auth;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
@@ -92,11 +93,15 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             }
 
             // 4. Generate JWT
-            var token = _jwtService.GenerateTokenWithRole(user, RoleConstants.Owner);
+            var roles = await _userRoleRepository.GetRolesByUserIdAsync(user.Id);
+            var activeRole = AuthRoleResolver.ResolveDefaultActiveRole(roles);
+            var token = _jwtService.GenerateTokenWithRole(user, activeRole);
 
             return new LoginResponse
             {
                 AccessToken = token,
+                ActiveRole = activeRole,
+                Roles = roles,
                 UserId = user.Id,
                 Email = user.Email.Value,
                 IsProfileCompleted = user.IsProfileCompleted

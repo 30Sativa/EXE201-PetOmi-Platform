@@ -28,8 +28,7 @@ export const tokenStorage = {
   },
 }
 
-export function decodeAccessToken(): Record<string, unknown> | null {
-  const token = localStorage.getItem(TOKEN_KEY)
+export function decodeJwt(token: string): Record<string, unknown> | null {
   if (!token) return null
 
   try {
@@ -46,4 +45,11 @@ export function decodeAccessToken(): Record<string, unknown> | null {
   } catch {
     return null
   }
+}
+
+export function decodeAccessToken(): Record<string, unknown> | null {
+  const token = localStorage.getItem(TOKEN_KEY)
+  if (!token) return null
+
+  return decodeJwt(token)
 }

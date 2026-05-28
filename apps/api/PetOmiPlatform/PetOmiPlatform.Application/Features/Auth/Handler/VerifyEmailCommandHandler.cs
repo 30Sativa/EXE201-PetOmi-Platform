@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Auth;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
@@ -21,6 +22,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         private readonly IJwtService _jwtService;
         private readonly IUserSessionRepository _userSessionRepository;
         private readonly IUserDeviceRepository _userDeviceRepository;
+        private readonly IUserRoleRepository _userRoleRepository;
 
         public VerifyEmailCommandHandler(
             IEmailVerificationTokenRepository tokenRepository,
@@ -30,7 +32,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             ITokenGenerator tokenGenerator,
             IJwtService jwtService,
             IUserSessionRepository userSessionRepository,
-            IUserDeviceRepository userDeviceRepository)
+            IUserDeviceRepository userDeviceRepository,
+            IUserRoleRepository userRoleRepository)
         {
             _tokenRepository = tokenRepository;
             _userRepository = userRepository;
@@ -40,6 +43,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             _jwtService = jwtService;
             _userSessionRepository = userSessionRepository;
             _userDeviceRepository = userDeviceRepository;
+            _userRoleRepository = userRoleRepository;
         }
 
         public async Task<VerifyEmailResponse> Handle(VerifyEmailCommand request, CancellationToken cancellationToken)
@@ -90,12 +94,16 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             session.AssignToken(refreshToken.Id);
             await _userSessionRepository.UpdateAsync(session);
 
-            var accessToken = _jwtService.GenerateToken(user);
+            var roles = await _userRoleRepository.GetRolesByUserIdAsync(user.Id);
+            var activeRole = AuthRoleResolver.ResolveDefaultActiveRole(roles);
+            var accessToken = _jwtService.GenerateTokenWithRole(user, activeRole);
 
             return new VerifyEmailResponse
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshTokenRaw,
+                ActiveRole = activeRole,
+                Roles = roles,
                 Email = user.Email.Value,
                 IsProfileCompleted = user.IsProfileCompleted,
                 Message = user.IsProfileCompleted

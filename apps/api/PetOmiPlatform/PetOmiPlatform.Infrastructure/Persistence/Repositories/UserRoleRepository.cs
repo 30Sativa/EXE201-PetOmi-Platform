@@ -37,5 +37,26 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .Select(ur => ur.Role!.RoleName)
                 .ToListAsync();
         }
+
+        public async Task<bool> HasRoleAsync(Guid userId, Guid roleId)
+        {
+            return await _context.UserRoles
+                .AnyAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+        }
+
+        public async Task AddIfNotExistsAsync(Guid userId, Guid roleId)
+        {
+            if (!await HasRoleAsync(userId, roleId))
+                await AddAsync(userId, roleId);
+        }
+
+        public async Task RemoveRoleAsync(Guid userId, Guid roleId)
+        {
+            var userRole = await _context.UserRoles
+                .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoleId == roleId);
+
+            if (userRole != null)
+                _context.UserRoles.Remove(userRole);
+        }
     }
 }

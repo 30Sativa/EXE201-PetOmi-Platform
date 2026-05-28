@@ -1,6 +1,6 @@
 import axios from "axios"
 
-import { tokenStorage } from "./tokenStorage"
+import { decodeJwt, tokenStorage } from "./tokenStorage"
 
 export const AUTH_EVENTS = {
   TOKEN_REFRESHED: "auth:tokenRefreshed",
@@ -66,30 +66,21 @@ api.interceptors.response.use(
 
         originalRequest.headers.Authorization = `Bearer ${accessToken}`
 
-        const refreshedPayload = (() => {
-          try {
-            const base64Url = accessToken.split(".")[1]
-            if (!base64Url) return null
-            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
-            const jsonPayload = decodeURIComponent(
-              atob(base64)
-                .split("")
-                .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
-                .join("")
-            )
-            return JSON.parse(jsonPayload)
-          } catch {
-            return null
-          }
-        })()
+        const refreshedPayload = decodeJwt(accessToken)
 
         window.dispatchEvent(
           new CustomEvent(AUTH_EVENTS.TOKEN_REFRESHED, {
             detail: {
               accessToken,
               refreshToken: newRefreshToken,
-              userId: refreshedPayload?.sub ?? refreshedPayload?.nameidentifier ?? "",
+              userId:
+                refreshedPayload?.sub ??
+                refreshedPayload?.nameid ??
+                refreshedPayload?.nameidentifier ??
+                "",
               email: refreshedPayload?.email ?? "",
+              activeRole: data?.activeRole ?? refreshedPayload?.activeRole ?? "",
+              roles: Array.isArray(data?.roles) ? data.roles : [],
             },
           })
         )

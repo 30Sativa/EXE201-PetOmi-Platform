@@ -18,7 +18,12 @@ var builder = WebApplication.CreateBuilder(args);
 // ADD SERVICES
 // =======================
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+    });
 builder.Services.AddEndpointsApiExplorer();
 
 // CORS

@@ -24,6 +24,8 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<ClinicPaymentAccount> ClinicPaymentAccounts { get; set; }
 
+    public virtual DbSet<SystemSetting> SystemSettings { get; set; }
+
     public virtual DbSet<ClinicService> ClinicServices { get; set; }
 
     public virtual DbSet<DoctorSchedule> DoctorSchedules { get; set; }
@@ -1194,6 +1196,23 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey<VetProfile>(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__VetProfil__UserI__6477ECF3");
+        });
+
+        modelBuilder.Entity<SystemSetting>(entity =>
+        {
+            entity.HasKey(e => e.SettingId).HasName("PK__SystemSetting__1F7F6B5E2A1B3C4D");
+            entity.ToTable("SystemSetting");
+            entity.Property(e => e.SettingId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("SettingID");
+            entity.Property(e => e.Category).HasMaxLength(50).HasDefaultValue("General");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.HasIndex(e => e.SettingKey).IsUnique();
         });
 
         OnModelCreatingPartial(modelBuilder);

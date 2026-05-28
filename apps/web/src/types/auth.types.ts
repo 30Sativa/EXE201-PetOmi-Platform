@@ -6,6 +6,15 @@ export interface User {
   id: string
   email: string
   role: string
+  activeRole: string
+  roles: string[]
+}
+
+export interface AuthSessionMetadata {
+  userId?: string
+  email?: string
+  activeRole?: string
+  roles?: string[]
 }
 
 // =========================
@@ -20,8 +29,7 @@ export interface AuthContextType {
   setAuthFromTokens: (
     accessToken: string,
     refreshToken: string,
-    userId?: string,
-    email?: string,
+    metadata?: AuthSessionMetadata,
   ) => void
 
   logout: () => Promise<void>
@@ -37,6 +45,8 @@ export interface LoginResponse {
   email: string
   userId: string
   isProfileCompleted: boolean
+  activeRole: string
+  roles: string[]
   expiresIn?: number
 }
 
@@ -58,6 +68,8 @@ export interface VerifyEmailResponse {
   refreshToken: string
   email: string
   isProfileCompleted: boolean
+  activeRole: string
+  roles: string[]
   message: string
 }
 
@@ -65,6 +77,8 @@ export interface RefreshTokenResponse {
   accessToken: string
   refreshToken: string
   isProfileCompleted: boolean
+  activeRole: string
+  roles: string[]
 }
 
 export interface UserProfileInfo {

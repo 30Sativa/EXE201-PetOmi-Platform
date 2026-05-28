@@ -16,3 +16,20 @@ export type RegisterPageProps = {
 
 // Form status
 export type FormStatus = "idle" | "success" | "error"
+
+// Pagination
+export interface PaginationMeta {
+  pageNumber: number
+  pageSize: number
+  totalRecords: number
+  totalPages: number
+  hasNext: boolean
+  hasPrevious: boolean
+}
+
+export interface PagedData<T> {
+  items?: T[]
+  Items?: T[]
+  meta?: PaginationMeta
+  Meta?: PaginationMeta
+}

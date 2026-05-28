@@ -24,6 +24,11 @@ export function useVerifyEmail(token: string) {
         setAuthFromTokens(
           data.accessToken,
           data.refreshToken,
+          {
+            email: data.email,
+            activeRole: data.activeRole,
+            roles: data.roles,
+          },
         )
       }
     },

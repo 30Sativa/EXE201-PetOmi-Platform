@@ -8,5 +8,8 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
     {
         Task AddAsync(Guid userId, Guid roleId);
         Task<List<string>> GetRolesByUserIdAsync(Guid userId);
+        Task<bool> HasRoleAsync(Guid userId, Guid roleId);
+        Task AddIfNotExistsAsync(Guid userId, Guid roleId);
+        Task RemoveRoleAsync(Guid userId, Guid roleId);
     }
 }

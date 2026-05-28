@@ -15,10 +15,17 @@ export default function GoogleCallbackPage() {
     const refreshToken = searchParams.get("refreshToken")
     const email = searchParams.get("email")
     const userId = searchParams.get("userId")
+    const activeRole = searchParams.get("activeRole") ?? undefined
+    const roles = searchParams.getAll("roles")
     const isProfileCompleted = searchParams.get("isProfileCompleted") === "true"
 
     if (accessToken && refreshToken) {
-      setAuthFromTokens(accessToken, refreshToken, userId ?? undefined, email ?? undefined)
+      setAuthFromTokens(accessToken, refreshToken, {
+        userId: userId ?? undefined,
+        email: email ?? undefined,
+        activeRole,
+        roles,
+      })
 
       handleCallback({
         accessToken,
@@ -26,6 +33,8 @@ export default function GoogleCallbackPage() {
         email: email ?? "",
         userId: userId ?? "",
         isProfileCompleted,
+        activeRole,
+        roles,
       })
     } else {
       navigate("/login", { replace: true })

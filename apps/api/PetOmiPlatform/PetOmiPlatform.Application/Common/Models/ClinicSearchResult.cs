@@ -1,4 +1,4 @@
-namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response;
+namespace PetOmiPlatform.Application.Common.Models;
 
 public class ClinicSearchResult
 {

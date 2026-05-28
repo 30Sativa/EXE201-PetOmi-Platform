@@ -1,7 +1,7 @@
 using MediatR;
+using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.Clinic.Command;
 using PetOmiPlatform.Application.Features.Clinic.DTOs.Response;
-using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
 namespace PetOmiPlatform.Application.Features.Clinic.Handler;
@@ -19,32 +19,33 @@ public class SearchClinicsQueryHandler
     public async Task<PagedSearchClinicsResponse> Handle(
         SearchClinicsQuery request, CancellationToken cancellationToken)
     {
-        var (items, totalCount) = await _clinicRepository.SearchAsync(
+        var (clinics, totalCount) = await _clinicRepository.SearchAsync(
             request.Latitude, request.Longitude,
             request.Keyword, request.City,
             request.RadiusKm, request.Page, request.PageSize);
 
-        var results = items.Select(x => new ClinicSearchResult
+        var items = clinics.Select(c => new ClinicSearchResult
         {
-            ClinicId = x.ClinicId,
-            ClinicName = x.ClinicName,
-            Address = x.Address,
-            LogoUrl = x.LogoUrl,
-            Description = x.Description,
-            Latitude = x.Latitude,
-            Longitude = x.Longitude,
-            DistanceKm = x.DistanceKm,
-            OpeningHours = x.OpeningHours,
-            AppointmentBufferMins = x.AppointmentBufferMins
+            ClinicId = c.Id,
+            ClinicName = c.ClinicName,
+            Address = c.Address,
+            LogoUrl = c.LogoUrl,
+            Description = c.Description,
+            Latitude = c.Latitude,
+            Longitude = c.Longitude,
+            OpeningHours = c.OpeningHours,
+            AppointmentBufferMins = c.AppointmentBufferMins
         }).ToList();
 
-        var meta = new PaginationMeta<ClinicSearchResult>
+        return new PagedSearchClinicsResponse
         {
-            PageNumber = request.Page,
-            PageSize = request.PageSize,
-            TotalRecords = totalCount
+            Items = items,
+            Meta = new PaginationMeta<ClinicSearchResult>
+            {
+                PageNumber = request.Page,
+                PageSize = request.PageSize,
+                TotalRecords = totalCount
+            }
         };
-
-        return new PagedSearchClinicsResponse { Items = results, Meta = meta };
     }
 }

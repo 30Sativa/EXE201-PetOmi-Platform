@@ -2,17 +2,19 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetOmiPlatform.API.Common;
+using PetOmiPlatform.API.Common.Authorization;
 using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.Clinic.Command;
 using PetOmiPlatform.Application.Features.Clinic.DTOs.Request;
 using PetOmiPlatform.Application.Features.Clinic.DTOs.Response;
+using PetOmiPlatform.Domain.Common.Constants;
 using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
 {
     [Route("api/admin/clinics")]
     [ApiController]
-    [Authorize]
+    [Authorize(Policy = Policies.AdminOnly)]
     public class AdminClinicController : BaseController
     {
         public AdminClinicController(IMediator mediator) : base(mediator) { }
@@ -53,4 +55,4 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<ReviewClinicResponse>.Ok(result, "Phòng khám đã bị từ chối."));
         }
     }
-}
+}   

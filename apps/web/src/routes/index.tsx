@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter } from "react-router-dom"
 import App from "@/App"
 
 import { RequireAuth } from "@/components/guards/RequireAuth"
+import { DashboardRedirect } from "@/components/guards/DashboardRedirect"
 
 import AdminDashboardLayout from "@/components/dashboard/AdminDashboardLayout"
 import ClinicDashboardLayout from "@/components/dashboard/ClinicDashboardLayout"
@@ -19,6 +20,12 @@ import ResetPasswordPage from "@/pages/ResetPasswordPage"
 import VerifyEmailPage from "@/pages/VerifyEmailPage"
 
 import AdminDashboardPage from "@/pages/dashboard/AdminDashboardPage"
+import AdminAlertsPage from "@/pages/dashboard/AdminAlertsPage"
+import AdminAuditLogsPage from "@/pages/dashboard/AdminAuditLogsPage"
+import AdminClinicsPage from "@/pages/dashboard/AdminClinicsPage"
+import AdminRolesPage from "@/pages/dashboard/AdminRolesPage"
+import AdminSettingsPage from "@/pages/dashboard/AdminSettingsPage"
+import AdminUsersPage from "@/pages/dashboard/AdminUsersPage"
 import ClinicDashboardPage from "@/pages/dashboard/ClinicDashboardPage"
 import OwnerDashboardPage from "@/pages/dashboard/owner/OwnerDashboardPage"
 import OwnerAppointmentsPage from "@/pages/dashboard/owner/OwnerAppointmentsPage"
@@ -89,7 +96,11 @@ const router = createBrowserRouter([
 
       {
         path: "dashboard",
-        element: <Navigate to="/dashboard/owner" replace />,
+        element: (
+          <RequireAuth>
+            <DashboardRedirect />
+          </RequireAuth>
+        ),
       },
 
       {
@@ -176,6 +187,30 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <AdminDashboardPage />,
+          },
+          {
+            path: "clinics",
+            element: <AdminClinicsPage />,
+          },
+          {
+            path: "users",
+            element: <AdminUsersPage />,
+          },
+          {
+            path: "roles",
+            element: <AdminRolesPage />,
+          },
+          {
+            path: "alerts",
+            element: <AdminAlertsPage />,
+          },
+          {
+            path: "audit-logs",
+            element: <AdminAuditLogsPage />,
+          },
+          {
+            path: "settings",
+            element: <AdminSettingsPage />,
           },
         ],
       },

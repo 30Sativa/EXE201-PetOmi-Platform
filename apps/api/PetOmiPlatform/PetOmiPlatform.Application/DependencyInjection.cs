@@ -15,7 +15,7 @@ namespace PetOmiPlatform.Application
         {
             var assembly = Assembly.GetExecutingAssembly();
 
-            // MediatR
+            // MediatR - discover handlers from Application assembly
             services.AddMediatR(cfg =>
                 cfg.RegisterServicesFromAssembly(assembly));
 

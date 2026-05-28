@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Features.Auth;
 using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
@@ -23,6 +24,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         private readonly ITokenGenerator _tokenGenerator;
         private readonly IUserSessionRepository _userSession;
         private readonly IUserDeviceRepository _userDeviceRepository;
+        private readonly IUserRoleRepository _userRoleRepository;
 
         public LoginCommandHandler(
             IUserRepository userRepository,
@@ -32,7 +34,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             IJwtService jwtService,
             ITokenGenerator tokenGenerator, 
             IUserSessionRepository userSessionRepository,
-            IUserDeviceRepository userDeviceRepository)
+            IUserDeviceRepository userDeviceRepository,
+            IUserRoleRepository userRoleRepository)
         {
             _userRepository = userRepository;
             _refreshTokenRepository = refreshTokenRepository;
@@ -42,6 +45,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             _tokenGenerator = tokenGenerator;
             _userSession = userSessionRepository;
             _userDeviceRepository = userDeviceRepository;
+            _userRoleRepository = userRoleRepository;
         }
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
@@ -119,12 +123,16 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 8. Generate access token
-            var accessToken = _jwtService.GenerateToken(user);
+            var roles = await _userRoleRepository.GetRolesByUserIdAsync(user.Id);
+            var activeRole = AuthRoleResolver.ResolveDefaultActiveRole(roles);
+            var accessToken = _jwtService.GenerateTokenWithRole(user, activeRole);
 
             return new LoginResponse
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshTokenRaw,
+                ActiveRole = activeRole,
+                Roles = roles,
                 UserId = user.Id,
                 Email = user.Email.Value,
                 IsProfileCompleted = user.IsProfileCompleted

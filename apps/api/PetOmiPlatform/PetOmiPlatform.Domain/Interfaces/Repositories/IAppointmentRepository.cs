@@ -60,5 +60,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<IEnumerable<AppointmentDomain>> GetPendingExpiredAsync(int timeoutMinutes = 30);
 
         Task UpdateAsync(AppointmentDomain appointment);
+
+        Task<int> CountAllAsync();
     }
 }

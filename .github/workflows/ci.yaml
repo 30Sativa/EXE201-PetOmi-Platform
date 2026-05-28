@@ -61,7 +61,7 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Cache NuGet packages       # ← dùng lại cache, không download lại
+      - name: Cache NuGet packages
         uses: actions/cache@v4
         with:
           path: ~/.nuget/packages
@@ -80,10 +80,51 @@ jobs:
         working-directory: apps/api/PetOmiPlatform
         run: dotnet test --no-build --configuration Release --logger "console;verbosity=normal"
 
+  sonar:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: test
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: ${{ runner.os }}-nuget-
+
+      - name: Install SonarCloud scanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Run SonarCloud Analysis
+        working-directory: apps/api/PetOmiPlatform
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet restore
+          dotnet sonarscanner begin \
+            /k:"30Sativa_EXE201-PetOmi-Platform" \
+            /o:"30sativa" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="${SONAR_TOKEN}"
+          dotnet build --no-restore --configuration Release
+          dotnet sonarscanner end /d:sonar.token="${SONAR_TOKEN}"
+
   docker:
     name: Docker build check
     runs-on: ubuntu-latest
-    needs: test
+    needs: sonar
     timeout-minutes: 10
 
     steps:

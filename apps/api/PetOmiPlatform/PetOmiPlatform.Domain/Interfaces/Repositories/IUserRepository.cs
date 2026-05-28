@@ -26,6 +26,8 @@ public interface IUserRepository
 
     Task<int> CountByIsActiveAsync(bool isActive);
 
+    Task<int> CountByEmailVerifiedAsync(bool emailVerified);
+
     Task<List<Guid>> GetAllUserIdsAsync();
 
     Task<List<Guid>> GetUserIdsByRoleAsync(string roleName);

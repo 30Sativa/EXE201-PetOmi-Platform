@@ -1,5 +1,6 @@
 import { api } from "@/lib/axios"
 import type {
+  AdminAlertsResponse,
   AdminDashboardResponse,
   AdminUserListResponse,
   AuditLogItemResponse,
@@ -133,4 +134,16 @@ export const updateSystemSettingApi = async (
 ): Promise<SystemSettingResponse> => {
   const response = await api.put(`/admin/settings/${encodeURIComponent(key)}`, { value })
   return unwrapResponse<SystemSettingResponse>(response)
+}
+
+// --- Alerts ---
+export const getAdminAlertsApi = async (params?: {
+  maxItems?: number
+}): Promise<AdminAlertsResponse> => {
+  const response = await api.get("/admin/alerts", {
+    params: {
+      maxItems: params?.maxItems ?? 50,
+    },
+  })
+  return unwrapResponse<AdminAlertsResponse>(response)
 }

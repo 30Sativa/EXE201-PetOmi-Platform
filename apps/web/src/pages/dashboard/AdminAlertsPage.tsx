@@ -18,25 +18,17 @@ import EmptyState from "@/components/ui/EmptyState"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import RejectDialog from "@/components/ui/RejectDialog"
 import {
-  getAdminClinicsApi,
-  getAdminUsersApi,
+  getAdminAlertsApi,
   approveClinicApi,
   rejectClinicApi,
   toggleUserStatusApi,
 } from "@/services/admin.service"
-import type { ClinicListItemResponse, AdminUserListResponse } from "@/types"
-
-type AlertSeverity = "high" | "medium" | "low"
-
-interface AlertItem {
-  id: string
-  type: "pending_clinic" | "inactive_user" | "unverified_user" | "system"
-  severity: AlertSeverity
-  title: string
-  description: string
-  timestamp: string
-  data: ClinicListItemResponse | AdminUserListResponse
-}
+import type {
+  AdminAlertItemResponse,
+  AdminAlertSeverity,
+  AdminUserListResponse,
+  ClinicListItemResponse,
+} from "@/types"
 
 function formatDate(dateStr: string) {
   try {
@@ -61,17 +53,17 @@ function formatRelative(dateStr: string): string {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return "Vừa xong"
-    if (diffMins < 60) return `${diffMins} phút trước`
-    if (diffHours < 24) return `${diffHours} giờ trước`
-    if (diffDays < 7) return `${diffDays} ngày trước`
+    if (diffMins < 1) return "Vua xong"
+    if (diffMins < 60) return `${diffMins} phut truoc`
+    if (diffHours < 24) return `${diffHours} gio truoc`
+    if (diffDays < 7) return `${diffDays} ngay truoc`
     return formatDate(dateStr)
   } catch {
     return dateStr
   }
 }
 
-function getSeverityIcon(severity: AlertSeverity) {
+function getSeverityIcon(severity: AdminAlertSeverity) {
   switch (severity) {
     case "high":
       return <AlertCircle className="size-4 text-po-danger" />
@@ -82,37 +74,27 @@ function getSeverityIcon(severity: AlertSeverity) {
   }
 }
 
-const severityOrder: Record<AlertSeverity, number> = {
+const severityOrder: Record<AdminAlertSeverity, number> = {
   high: 0,
   medium: 1,
   low: 2,
 }
 
+type AlertItem = AdminAlertItemResponse
+
 export default function AdminAlertsPage() {
   const queryClient = useQueryClient()
 
-  const [filterSeverity, setFilterSeverity] = useState<"all" | AlertSeverity>("all")
+  const [filterSeverity, setFilterSeverity] = useState<"all" | AdminAlertSeverity>("all")
   const [filterType, setFilterType] = useState<"all" | AlertItem["type"]>("all")
 
   const [approveTarget, setApproveTarget] = useState<ClinicListItemResponse | null>(null)
   const [rejectTarget, setRejectTarget] = useState<ClinicListItemResponse | null>(null)
   const [activateTarget, setActivateTarget] = useState<AdminUserListResponse | null>(null)
 
-  const { data: clinicsData, isLoading: clinicsLoading } = useQuery({
-    queryKey: ["admin", "clinics", "Pending", 1],
-    queryFn: () => getAdminClinicsApi({ status: "Pending", page: 1, pageSize: 50 }),
-    staleTime: 30 * 1000,
-  })
-
-  const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["admin", "alerts", "inactive"],
-    queryFn: () => getAdminUsersApi({ isActive: false, page: 1, pageSize: 50 }),
-    staleTime: 30 * 1000,
-  })
-
-  const { data: unverifiedData, isLoading: unverifiedLoading } = useQuery({
-    queryKey: ["admin", "alerts", "unverified"],
-    queryFn: () => getAdminUsersApi({ page: 1, pageSize: 50 }),
+  const { data: alertsData, isLoading } = useQuery({
+    queryKey: ["admin", "alerts"],
+    queryFn: () => getAdminAlertsApi({ maxItems: 100 }),
     staleTime: 30 * 1000,
   })
 
@@ -147,41 +129,7 @@ export default function AdminAlertsPage() {
     },
   })
 
-  const pendingClinics = (clinicsData?.items ?? clinicsData?.Items ?? []) as ClinicListItemResponse[]
-  const inactiveUsers = (usersData?.items ?? usersData?.Items ?? []) as AdminUserListResponse[]
-  const allUsers = (unverifiedData?.items ?? unverifiedData?.Items ?? []) as AdminUserListResponse[]
-  const unverifiedUsers = allUsers.filter((u) => !u.emailVerified)
-
-  const allAlerts: AlertItem[] = [
-    ...pendingClinics.map((c) => ({
-      id: `clinic-${c.clinicId}`,
-      type: "pending_clinic" as const,
-      severity: "high" as AlertSeverity,
-      title: `Phòng khám chờ duyệt: ${c.clinicName}`,
-      description: c.address ?? "Không có địa chỉ",
-      timestamp: c.createdAt,
-      data: c,
-    })),
-    ...inactiveUsers.map((u) => ({
-      id: `inactive-${u.userId}`,
-      type: "inactive_user" as const,
-      severity: "medium" as AlertSeverity,
-      title: `Tài khoản bị khóa: ${u.fullName ?? u.email}`,
-      description: u.email,
-      timestamp: u.createdAt,
-      data: u,
-    })),
-    ...unverifiedUsers.slice(0, 10).map((u) => ({
-      id: `unverified-${u.userId}`,
-      type: "unverified_user" as const,
-      severity: "low" as AlertSeverity,
-      title: `Tài khoản chưa xác thực: ${u.fullName ?? u.email}`,
-      description: u.email,
-      timestamp: u.createdAt,
-      data: u,
-    })),
-  ]
-
+  const allAlerts = alertsData?.items ?? []
   const filteredAlerts = allAlerts
     .filter((a) => filterSeverity === "all" || a.severity === filterSeverity)
     .filter((a) => filterType === "all" || a.type === filterType)
@@ -191,27 +139,25 @@ export default function AdminAlertsPage() {
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     })
 
-  const isLoading = clinicsLoading || usersLoading || unverifiedLoading
-
-  const stats = {
+  const stats = alertsData?.stats ?? {
     total: allAlerts.length,
     high: allAlerts.filter((a) => a.severity === "high").length,
     medium: allAlerts.filter((a) => a.severity === "medium").length,
     low: allAlerts.filter((a) => a.severity === "low").length,
   }
 
-  const severityTabs: { label: string; value: "all" | AlertSeverity; count?: number }[] = [
-    { label: "Tất cả", value: "all", count: stats.total },
-    { label: "Nguy hiểm", value: "high", count: stats.high },
-    { label: "Cần chú ý", value: "medium", count: stats.medium },
-    { label: "Thấp", value: "low", count: stats.low },
+  const severityTabs: { label: string; value: "all" | AdminAlertSeverity; count?: number }[] = [
+    { label: "Tat ca", value: "all", count: stats.total },
+    { label: "Nguy hiem", value: "high", count: stats.high },
+    { label: "Can chu y", value: "medium", count: stats.medium },
+    { label: "Thap", value: "low", count: stats.low },
   ]
 
   const typeTabs: { label: string; value: "all" | AlertItem["type"] }[] = [
-    { label: "Tất cả loại", value: "all" },
+    { label: "Tat ca loai", value: "all" },
     { label: "Clinic", value: "pending_clinic" },
-    { label: "Tài khoản", value: "inactive_user" },
-    { label: "Chưa xác thực", value: "unverified_user" },
+    { label: "Tai khoan", value: "inactive_user" },
+    { label: "Chua xac thuc", value: "unverified_user" },
   ]
 
   return (
@@ -222,34 +168,34 @@ export default function AdminAlertsPage() {
             Admin alerts center
           </p>
           <h2 className="mt-4 text-3xl font-extrabold leading-tight md:text-4xl">
-            Trung tâm cảnh báo
+            Trung tam canh bao
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted">
-            Theo dõi các thông báo, yêu cầu chờ duyệt và hành động cần xử lý nhanh. Ưu tiên các
-            cảnh báo nguy hiểm trước.
+            Theo doi cac thong bao, yeu cau cho duyet va hanh dong can xu ly nhanh.
+            Uu tien cac canh bao muc cao truoc.
           </p>
 
           <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <HeroMetric
-              label="Tổng cảnh báo"
+              label="Tong canh bao"
               value={String(stats.total)}
               variant="primary"
               icon={ShieldAlert}
             />
             <HeroMetric
-              label="Nguy hiểm"
+              label="Nguy hiem"
               value={String(stats.high)}
               variant="danger"
               icon={AlertCircle}
             />
             <HeroMetric
-              label="Cần chú ý"
+              label="Can chu y"
               value={String(stats.medium)}
               variant="warning"
               icon={AlertTriangle}
             />
             <HeroMetric
-              label="Thấp"
+              label="Thap"
               value={String(stats.low)}
               variant="muted"
               icon={Bell}
@@ -316,14 +262,14 @@ export default function AdminAlertsPage() {
           <div className="rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
             <EmptyState
               icon={BellOff}
-              title="Không có cảnh báo nào"
-              description="Hệ thống hiện tại không có thông báo hay hành động nào cần xử lý."
+              title="Khong co canh bao nao"
+              description="He thong hien tai khong co thong bao hay hanh dong can xu ly."
             />
           </div>
         ) : (
           filteredAlerts.map((alert) => (
             <AlertCard
-              key={alert.id}
+              key={alert.alertId}
               alert={alert}
               onApproveClinic={(clinic) => setApproveTarget(clinic)}
               onRejectClinic={(clinic) => setRejectTarget(clinic)}
@@ -340,9 +286,9 @@ export default function AdminAlertsPage() {
           if (!approveTarget) return
           approveMutation.mutate(approveTarget.clinicId)
         }}
-        title="Duyệt phòng khámở"
-        description={`Bạn chắc chắn muốn duyệt phòng khám "${approveTarget?.clinicName}"?`}
-        confirmLabel="Duyệt"
+        title="Duyet phong kham?"
+        description={`Ban chac chan muon duyet phong kham "${approveTarget?.clinicName}"?`}
+        confirmLabel="Duyet"
         variant="primary"
         isLoading={approveMutation.isPending}
       />
@@ -354,9 +300,9 @@ export default function AdminAlertsPage() {
           if (!rejectTarget) return
           rejectMutation.mutate({ clinicId: rejectTarget.clinicId, reason })
         }}
-        title="Từ chối phòng khámở"
-        description={`Bạn muốn từ chối phòng khám "${rejectTarget?.clinicName}".`}
-        confirmLabel="Từ chối"
+        title="Tu choi phong kham?"
+        description={`Ban muon tu choi phong kham "${rejectTarget?.clinicName}".`}
+        confirmLabel="Tu choi"
         isLoading={rejectMutation.isPending}
       />
 
@@ -367,9 +313,9 @@ export default function AdminAlertsPage() {
           if (!activateTarget) return
           activateMutation.mutate({ userId: activateTarget.userId, isActive: true })
         }}
-        title="Mở khóa tài khoản?"
-        description={`Mở khóa tài khoản "${activateTarget?.fullName ?? activateTarget?.email}" để họ có thể đăng nhập trở lại.`}
-        confirmLabel="Mở khóa"
+        title="Mo khoa tai khoan?"
+        description={`Mo khoa tai khoan "${activateTarget?.fullName ?? activateTarget?.email}" de ho co the dang nhap tro lai.`}
+        confirmLabel="Mo khoa"
         variant="primary"
         isLoading={activateMutation.isPending}
       />
@@ -388,9 +334,6 @@ function AlertCard({
   onRejectClinic: (clinic: ClinicListItemResponse) => void
   onActivateUser: (user: AdminUserListResponse) => void
 }) {
-  const clinic = alert.data as ClinicListItemResponse
-  const user = alert.data as AdminUserListResponse
-
   return (
     <div
       className={`overflow-hidden rounded-[24px] bg-white shadow-sm ring-1 transition hover:shadow-md ${
@@ -431,10 +374,10 @@ function AlertCard({
                 }`}
               >
                 {alert.severity === "high"
-                  ? "Nguy hiểm"
+                  ? "Nguy hiem"
                   : alert.severity === "medium"
-                    ? "Cần chú ý"
-                    : "Thấp"}
+                    ? "Can chu y"
+                    : "Thap"}
               </span>
               <p className="mt-1 flex items-center gap-1 text-[10px] text-po-text-muted">
                 <Clock className="size-3" />
@@ -443,51 +386,51 @@ function AlertCard({
             </div>
           </div>
 
-          {alert.type === "pending_clinic" && (
+          {alert.type === "pending_clinic" && alert.clinic && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {clinic.licenseNumber ? (
+              {alert.clinic.licenseNumber ? (
                 <span className="inline-flex items-center gap-1 text-po-success text-xs">
                   <BadgeCheck className="size-3" />
-                  GPLX: {clinic.licenseNumber}
+                  GPLX: {alert.clinic.licenseNumber}
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-po-warning text-xs">
                   <AlertCircle className="size-3" />
-                  Chưa có GPLX
+                  Chua co GPLX
                 </span>
               )}
               <div className="ml-auto flex flex-wrap gap-2">
                 <button
-                  onClick={() => onApproveClinic(clinic)}
+                  onClick={() => onApproveClinic(alert.clinic!)}
                   className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-success-soft text-po-success transition hover:-translate-y-0.5 hover:bg-po-success hover:text-white"
                 >
                   <CheckCircle2 className="size-3.5" />
-                  Duyệt
+                  Duyet
                 </button>
                 <button
-                  onClick={() => onRejectClinic(clinic)}
+                  onClick={() => onRejectClinic(alert.clinic!)}
                   className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-danger-soft text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white"
                 >
                   <XCircle className="size-3.5" />
-                  Từ chối
+                  Tu choi
                 </button>
               </div>
             </div>
           )}
 
-          {alert.type === "inactive_user" && (
+          {alert.type === "inactive_user" && alert.user && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5 text-xs text-po-text-muted">
                 <UserCheck className="size-3" />
-                <span>Tài khoản bi khoa</span>
+                <span>Tai khoan bi khoa</span>
               </div>
               <div className="ml-auto flex flex-wrap gap-2">
                 <button
-                  onClick={() => onActivateUser(user)}
+                  onClick={() => onActivateUser(alert.user!)}
                   className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-primary-soft text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white"
                 >
                   <UserCheck className="size-3.5" />
-                  Mở khóa
+                  Mo khoa
                 </button>
               </div>
             </div>
@@ -497,7 +440,7 @@ function AlertCard({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5 text-xs text-po-warning">
                 <AlertTriangle className="size-3" />
-                <span>Email chưa xác thực</span>
+                <span>Email chua xac thuc</span>
               </div>
             </div>
           )}

@@ -122,6 +122,11 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return await _context.Users.CountAsync(u => u.IsActive == isActive);
         }
 
+        public async Task<int> CountByEmailVerifiedAsync(bool emailVerified)
+        {
+            return await _context.Users.CountAsync(u => u.EmailVerified == emailVerified);
+        }
+
         public async Task<List<Guid>> GetAllUserIdsAsync()
         {
             return await _context.Users

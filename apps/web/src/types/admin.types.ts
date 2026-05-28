@@ -99,3 +99,35 @@ export interface SystemSettingResponse {
   Description: string | null
   UpdatedAt: string
 }
+
+// Admin Alerts
+export type AdminAlertType =
+  | "pending_clinic"
+  | "inactive_user"
+  | "unverified_user"
+  | "system"
+
+export type AdminAlertSeverity = "high" | "medium" | "low"
+
+export interface AdminAlertItemResponse {
+  alertId: string
+  type: AdminAlertType
+  severity: AdminAlertSeverity
+  title: string
+  description: string
+  timestamp: string
+  clinic?: ClinicListItemResponse | null
+  user?: AdminUserListResponse | null
+}
+
+export interface AdminAlertStatsResponse {
+  total: number
+  high: number
+  medium: number
+  low: number
+}
+
+export interface AdminAlertsResponse {
+  items: AdminAlertItemResponse[]
+  stats: AdminAlertStatsResponse
+}

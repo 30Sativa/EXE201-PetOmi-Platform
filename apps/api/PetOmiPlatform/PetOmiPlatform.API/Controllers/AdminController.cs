@@ -30,6 +30,16 @@ public class AdminController : BaseController
     }
 
     /// <summary>
+    /// Danh sach canh bao cho trang admin alerts.
+    /// </summary>
+    [HttpGet("alerts")]
+    public async Task<IActionResult> GetAlerts([FromQuery] int maxItems = 50)
+    {
+        var result = await Mediator.Send(new GetAdminAlertsQuery(maxItems));
+        return Ok(BaseResponse<AdminAlertsResponse>.Ok(result));
+    }
+
+    /// <summary>
     /// Danh sach nguoi dung co phan trang, co the loc theo trang thai kich hoat.
     /// </summary>
     [HttpGet("users")]

@@ -1,5 +1,6 @@
 import {
   ArrowRight,
+  Building2,
   CalendarCheck,
   ClipboardList,
   PawPrint,
@@ -127,6 +128,13 @@ export default function OwnerDashboardPage() {
               >
                 Xem lịch hẹn
                 <ArrowRight className="size-4" />
+              </button>
+              <button
+                onClick={() => navigate("/dashboard/owner/register-clinic")}
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
+              >
+                Dang ky clinic
+                <Building2 className="size-4" />
               </button>
             </div>
 
@@ -316,3 +324,5 @@ function AppointmentRow({
     </div>
   )
 }
+
+

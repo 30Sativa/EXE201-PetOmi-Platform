@@ -1,80 +1,38 @@
-﻿import {
+import {
   BadgeCheck,
   Building2,
-  CheckCircle2,
-  Clock3,
   ShieldCheck,
   Sparkles,
   TrendingUp,
   UsersRound,
-  XCircle,
 } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import StatCard from "@/components/dashboard/StatCard"
+import EmptyState from "@/components/ui/EmptyState"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
-import { getAdminDashboardApi, getAdminClinicsApi } from "@/services/admin.service"
+import {
+  getAdminAlertsApi,
+  getAdminDashboardApi,
+  getAdminClinicsApi,
+  getAuditLogsApi,
+} from "@/services/admin.service"
 import type {
+  AuditLogItemResponse,
   ClinicListItemResponse,
   PagedData,
 } from "@/types"
 
-const fallbackClinics: ClinicListItemResponse[] = [
-  {
-    clinicId: "sample-happy-vet",
-    clinicName: "Happy Vet Care",
-    address: "Quan 7, TP.HCM",
-    phone: "0901 222 333",
-    email: "hello@happyvet.vn",
-    licenseNumber: "GPKD-2026-118",
-    licenseImageUrl: null,
-    licenseCloudinaryPublicId: null,
-    status: "Pending",
-    rejectedReason: null,
-    createdAt: new Date().toISOString(),
-  },
-  {
-    clinicId: "sample-sunrise-clinic",
-    clinicName: "Sunrise Pet Clinic",
-    address: "Thu Duc, TP.HCM",
-    phone: "0908 777 121",
-    email: "review@sunrise.pet",
-    licenseNumber: "GPKD-2026-042",
-    licenseImageUrl: null,
-    licenseCloudinaryPublicId: null,
-    status: "Pending",
-    rejectedReason: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
-  },
-  {
-    clinicId: "sample-paw-house",
-    clinicName: "Paw House Animal Hospital",
-    address: "Binh Thanh, TP.HCM",
-    phone: "0912 890 123",
-    email: "ops@pawhouse.vn",
-    licenseNumber: "GPKD-2026-073",
-    licenseImageUrl: null,
-    licenseCloudinaryPublicId: null,
-    status: "Pending",
-    rejectedReason: null,
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
-  },
-]
-
-const systemSignals = [
-  { label: "Auth & JWT", value: "Stable", tone: "success", detail: "Role claim đã sẵn sàng cho policy" },
-  { label: "Clinic review", value: "12m avg", tone: "info", detail: "Thời gian xử lý trung bình" },
-  { label: "Security alerts", value: "3 open", tone: "warning", detail: "Cần kiểm tra trong ngày" },
-] as const
-
-const auditFeed = [
-  { action: "ApproveClinic", actor: "admin@petomi.vn", time: "09:42", result: "Completed" },
-  { action: "RejectClinic", actor: "reviewer@petomi.vn", time: "08:18", result: "Needs follow-up" },
-  { action: "ToggleRole", actor: "system", time: "Yesterday", result: "Logged" },
-]
+type NormalizedAuditItem = {
+  id: string
+  action: string
+  actor: string
+  createdAt: string
+  severity: string
+}
 
 function getPagedItems<T>(paged?: PagedData<T>) {
   return paged?.items ?? paged?.Items ?? []
@@ -96,6 +54,20 @@ function formatDate(dateStr: string) {
   }
 }
 
+function formatDateTime(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  } catch {
+    return dateStr
+  }
+}
+
 function statusVariant(status: string) {
   switch (status.toLowerCase()) {
     case "approved":
@@ -106,6 +78,23 @@ function statusVariant(status: string) {
       return "warning" as const
     default:
       return "default" as const
+  }
+}
+
+function normalizeAuditItem(log: AuditLogItemResponse): NormalizedAuditItem {
+  const dynamicLog = log as AuditLogItemResponse & Record<string, unknown>
+  const id = String(dynamicLog.auditLogId ?? dynamicLog.AuditLogId ?? "")
+  const action = String(dynamicLog.action ?? dynamicLog.Action ?? "UnknownAction")
+  const userEmail = String(dynamicLog.userEmail ?? dynamicLog.UserEmail ?? "System")
+  const createdAt = String(dynamicLog.createdAt ?? dynamicLog.CreatedAt ?? new Date().toISOString())
+  const severity = String(dynamicLog.severity ?? dynamicLog.Severity ?? "Info")
+
+  return {
+    id,
+    action,
+    actor: userEmail,
+    createdAt,
+    severity,
   }
 }
 
@@ -121,18 +110,59 @@ export default function AdminDashboardPage() {
   const { data: pendingClinics, isLoading: clinicLoading } = useQuery({
     queryKey: ["admin", "clinics", "pending", "dashboard"],
     queryFn: () => getAdminClinicsApi({ status: "Pending", page: 1, pageSize: 5 }),
-    retry: false,
     staleTime: 30 * 1000,
   })
 
-  const realClinicItems = getPagedItems(pendingClinics)
-  const clinicQueue = realClinicItems.length > 0 ? realClinicItems : fallbackClinics
-  const pendingCount = getPagedTotal(pendingClinics) || fallbackClinics.length
-  const queueSource = realClinicItems.length > 0 ? "Dữ liệu backend" : "Sample preview"
+  const { data: alertsData, isLoading: alertsLoading } = useQuery({
+    queryKey: ["admin", "alerts", "dashboard"],
+    queryFn: () => getAdminAlertsApi({ maxItems: 10 }),
+    staleTime: 30 * 1000,
+  })
+
+  const { data: auditLogs, isLoading: auditLoading } = useQuery({
+    queryKey: ["admin", "audit-logs", "dashboard"],
+    queryFn: () => getAuditLogsApi({ page: 1, pageSize: 5 }),
+    staleTime: 30 * 1000,
+  })
+
+  const clinicQueue = getPagedItems(pendingClinics)
+  const auditItems = getPagedItems(auditLogs).map((item) => normalizeAuditItem(item as AuditLogItemResponse))
+  const highAlerts = alertsData?.stats?.high ?? 0
+  const totalAlerts = alertsData?.stats?.total ?? 0
+
+  const auditToday = auditItems.filter((item) => {
+    try {
+      return new Date(item.createdAt).toDateString() === new Date().toDateString()
+    } catch {
+      return false
+    }
+  }).length
 
   const summary = dashboard?.summary
   const userStats = dashboard?.userStats
   const clinicStats = dashboard?.clinicStats
+  const pendingCount = clinicStats?.pending ?? getPagedTotal(pendingClinics)
+
+  const systemSignals = [
+    {
+      label: "Canh bao muc cao",
+      value: String(highAlerts),
+      tone: highAlerts > 0 ? ("danger" as const) : ("success" as const),
+      detail: highAlerts > 0 ? "Can xu ly ngay" : "Khong co canh bao nghiem trong",
+    },
+    {
+      label: "Tong canh bao",
+      value: String(totalAlerts),
+      tone: totalAlerts > 0 ? ("warning" as const) : ("success" as const),
+      detail: "Trang thai canh bao toan bo he thong",
+    },
+    {
+      label: "Audit hom nay",
+      value: String(auditToday),
+      tone: "info" as const,
+      detail: "So hanh dong quan tri trong ngay",
+    },
+  ]
 
   return (
     <div className="grid gap-5 md:gap-6">
@@ -143,11 +173,11 @@ export default function AdminDashboardPage() {
               Admin command center
             </p>
             <h2 className="mt-4 max-w-2xl text-3xl font-extrabold leading-[1.08] md:text-5xl">
-              Duyệt clinic nhanh, giữ hệ thống PetOmi gọn và an toàn.
+              Duyet clinic nhanh, giu he thong PetOmi gon va an toan.
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-po-text-muted md:text-base md:leading-8">
-              Theo dõi hồ sơ đang chờ, tín hiệu bảo mật và các nhóm quyền quan trọng trong
-              một dashboard có cùng UX với owner workspace.
+              Theo doi ho so dang cho, canh bao he thong va cac hanh dong quan tri
+              moi nhat trong mot dashboard duy nhat.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -156,21 +186,21 @@ export default function AdminDashboardPage() {
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
               >
                 <BadgeCheck className="size-4" />
-                Mở queue duyệt
+                Mo queue duyet
               </button>
               <button
                 onClick={() => navigate("/dashboard/admin/users")}
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
               >
                 <UsersRound className="size-4" />
-                Quản lý người dùng
+                Quan ly nguoi dung
               </button>
             </div>
 
             <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
               <HeroMetric label="Clinic pending" value={String(pendingCount)} />
-              <HeroMetric label="Review SLA" value="12m" />
-              <HeroMetric label="Policy roles" value="3" />
+              <HeroMetric label="High alerts" value={String(highAlerts)} />
+              <HeroMetric label="Admin users" value={String(userStats?.admins ?? 0)} />
             </div>
           </div>
 
@@ -184,7 +214,7 @@ export default function AdminDashboardPage() {
                 Admin review mode
               </div>
               <p className="mt-1 text-xs leading-5 text-po-text-muted">
-                Một màn hình cho các quyết định nhạy cảm: approve, reject, role và audit.
+                Mot man hinh cho cac quyet dinh nhay cam: approve, reject, role va audit.
               </p>
             </div>
           </div>
@@ -202,28 +232,28 @@ export default function AdminDashboardPage() {
         ) : (
           <>
             <StatCard
-              label="Clinic chờ duyệt"
+              label="Clinic cho duyet"
               value={String(clinicStats?.pending ?? 0)}
               icon={BadgeCheck}
-              hint={queueSource}
+              hint="Du lieu backend"
             />
             <StatCard
-              label="Tài khoản hoạt động"
+              label="Tai khoan hoat dong"
               value={String(summary?.activeUsers ?? 0)}
               icon={UsersRound}
               hint="Owner + Vet + Admin"
             />
             <StatCard
-              label="Tổng người dùng"
+              label="Tong nguoi dung"
               value={String(summary?.totalUsers ?? 0)}
               icon={UsersRound}
-              hint="Tất cả tài khoản"
+              hint="Tat ca tai khoan"
             />
             <StatCard
-              label="Tổng clinic"
+              label="Tong clinic"
               value={String(clinicStats?.total ?? 0)}
               icon={Building2}
-              hint={`${clinicStats?.approved ?? 0} đã duyệt, ${clinicStats?.rejected ?? 0} từ chối`}
+              hint={`${clinicStats?.approved ?? 0} da duyet, ${clinicStats?.rejected ?? 0} tu choi`}
             />
           </>
         )}
@@ -231,14 +261,14 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <DashboardSection
-          title="Queue duyệt clinic"
-          subtitle="Hồ sơ đang chờ admin xác minh giấy phép, thông tin liên hệ và trạng thái hoạt động."
+          title="Queue duyet clinic"
+          subtitle="Ho so dang cho admin xac minh giay phep va thong tin lien he."
           action={
             <button
               onClick={() => navigate("/dashboard/admin/clinics")}
               className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
             >
-              Xem tất cả
+              Xem tat ca
             </button>
           }
         >
@@ -246,6 +276,12 @@ export default function AdminDashboardPage() {
             <div className="flex justify-center py-8">
               <LoadingSpinner />
             </div>
+          ) : clinicQueue.length === 0 ? (
+            <EmptyState
+              icon={Building2}
+              title="Khong co clinic cho duyet"
+              description="Tat ca ho so da duoc xu ly."
+            />
           ) : (
             <div className="grid gap-3">
               {clinicQueue.map((clinic) => (
@@ -259,33 +295,39 @@ export default function AdminDashboardPage() {
           )}
         </DashboardSection>
 
-        <DashboardSection title="System pulse" subtitle="Những tín hiệu cần admin nhìn trước khi thao tác.">
-          <div className="grid gap-3">
-            {systemSignals.map((item) => (
-              <div key={item.label} className="rounded-2xl bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-po-text">{item.label}</p>
-                    <p className="mt-1 text-xs leading-5 text-po-text-muted">{item.detail}</p>
+        <DashboardSection title="System pulse" subtitle="Tin hieu he thong can admin theo doi.">
+          {alertsLoading || auditLoading ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {systemSignals.map((item) => (
+                <div key={item.label} className="rounded-2xl bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-po-text">{item.label}</p>
+                      <p className="mt-1 text-xs leading-5 text-po-text-muted">{item.detail}</p>
+                    </div>
+                    <StatusBadge variant={item.tone} label={item.value} />
                   </div>
-                  <StatusBadge variant={item.tone} label={item.value} />
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </DashboardSection>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <DashboardSection
           title="Role matrix"
-          subtitle="Tóm tắt nhóm quyền chính để đối chiếu với policy backend."
+          subtitle="Tom tat nhom quyen chinh de doi chieu voi policy backend."
           action={
             <button
               onClick={() => navigate("/dashboard/admin/users")}
               className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
             >
-              Xem người dùng
+              Xem nguoi dung
             </button>
           }
         >
@@ -317,24 +359,36 @@ export default function AdminDashboardPage() {
           )}
         </DashboardSection>
 
-        <DashboardSection title="Audit activity" subtitle="Các hành động quan trọng gần đây trong auth và clinic review.">
-          <div className="grid gap-3">
-            {auditFeed.map((item) => (
-              <div key={`${item.action}-${item.time}`} className="flex items-center gap-3 rounded-2xl bg-po-surface-muted/70 px-4 py-3 ring-1 ring-po-border/70">
-                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/80">
-                  <TrendingUp className="size-4" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-po-text">{item.action}</p>
-                  <p className="truncate text-xs text-po-text-muted">{item.actor}</p>
+        <DashboardSection title="Audit activity" subtitle="Cac hanh dong quan trong gan day tren he thong.">
+          {auditLoading ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : auditItems.length === 0 ? (
+            <EmptyState
+              icon={TrendingUp}
+              title="Chua co audit log"
+              description="Khong co hanh dong quan tri gan day."
+            />
+          ) : (
+            <div className="grid gap-3">
+              {auditItems.map((item) => (
+                <div key={item.id || `${item.action}-${item.createdAt}`} className="flex items-center gap-3 rounded-2xl bg-po-surface-muted/70 px-4 py-3 ring-1 ring-po-border/70">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/80">
+                    <TrendingUp className="size-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-po-text">{item.action}</p>
+                    <p className="truncate text-xs text-po-text-muted">{item.actor}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold text-po-text">{formatDateTime(item.createdAt)}</p>
+                    <p className="text-xs text-po-text-muted">{item.severity}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-semibold text-po-text">{item.time}</p>
-                  <p className="text-xs text-po-text-muted">{item.result}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </DashboardSection>
       </div>
     </div>
@@ -376,13 +430,13 @@ function ClinicReviewRow({
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-po-text">{clinic.clinicName}</p>
-            <p className="truncate text-xs text-po-text-muted">{clinic.address ?? "Chưa có địa chỉ"}</p>
+            <p className="truncate text-xs text-po-text-muted">{clinic.address ?? "Chua co dia chi"}</p>
           </div>
           <StatusBadge variant={statusVariant(clinic.status)} label={clinic.status} />
         </div>
         <div className="mt-3 grid gap-2 text-xs text-po-text-muted sm:grid-cols-3">
-          <span>License: {clinic.licenseNumber ?? "Chưa cập nhật"}</span>
-          <span>Email: {clinic.email ?? "Chưa có"}</span>
+          <span>License: {clinic.licenseNumber ?? "Chua cap nhat"}</span>
+          <span>Email: {clinic.email ?? "Chua co"}</span>
           <span>Submitted: {formatDate(clinic.createdAt)}</span>
         </div>
       </div>
@@ -390,23 +444,8 @@ function ClinicReviewRow({
       <div className="flex flex-wrap gap-2 md:justify-end">
         <button
           onClick={onReview}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-po-success ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
-        >
-          <CheckCircle2 className="size-3.5" />
-          Approve
-        </button>
-        <button
-          onClick={onReview}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-po-danger ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0"
-        >
-          <XCircle className="size-3.5" />
-          Reject
-        </button>
-        <button
-          onClick={onReview}
           className="inline-flex h-9 items-center gap-1.5 rounded-full bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
         >
-          <Clock3 className="size-3.5" />
           Review
         </button>
       </div>

@@ -100,7 +100,7 @@ export const toggleRoleApi = async (
 }
 
 export const googleLoginApi = async (): Promise<void> => {
-  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:7297/api"
+  const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5273/api"
   window.location.href = `${baseUrl}/auth/google/login`
 }
 

@@ -7,7 +7,7 @@ export const AUTH_EVENTS = {
   LOGOUT: "auth:logout",
 } as const
 
-const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:7297/api"
+const baseURL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5273/api"
 
 export const api = axios.create({
   baseURL,

@@ -34,7 +34,7 @@ export function useGoogleLogin() {
   }, [navigate, setAuthFromTokens])
 
   const login = useCallback(() => {
-    const googleAuthUrl = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:7297/api"}/auth/google/login`
+    const googleAuthUrl = `${import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5273/api"}/auth/google/login`
 
     const width = 500
     const height = 600

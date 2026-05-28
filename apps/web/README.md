@@ -34,7 +34,7 @@ npm run lint     # lint code
 Tạo `.env` ở thư mục `apps/web/`:
 
 ```bash
-VITE_API_BASE_URL=http://localhost:7297/api  # API base URL
+VITE_API_BASE_URL=http://localhost:5273/api  # API base URL
 VITE_USE_MOCK_AUTH=true                     # dùng mock auth thay vì gọi API thật
 ```
 

@@ -3,7 +3,7 @@ import * as signalR from "@microsoft/signalr"
 import { tokenStorage } from "./tokenStorage"
 
 const HUB_URL =
-  (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:7297/api")
+  (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5273/api")
     .replace("/api", "")
     .replace(/\/+$/, "") + "/hubs/notifications"
 

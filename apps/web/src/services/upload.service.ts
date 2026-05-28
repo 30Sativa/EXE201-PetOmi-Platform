@@ -10,7 +10,13 @@ export interface CloudinaryUploadResult {
   format: string
 }
 
-export type ImageType = "user_avatar" | "pet_avatar" | "pet_photo"
+export type ImageType =
+  | "user_avatar"
+  | "pet_avatar"
+  | "pet_photo"
+  | "clinic_logo"
+  | "clinic_license"
+  | "medical_attachment"
 
 interface UploadResponse {
   data: CloudinaryUploadResult
@@ -28,11 +34,7 @@ export const uploadImageApi = async (
     formData.append("ResourceId", resourceId)
   }
 
-  const response = await api.post<UploadResponse>("/images", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  })
+  const response = await api.post<UploadResponse>("/images", formData)
 
   return response.data.data
 }

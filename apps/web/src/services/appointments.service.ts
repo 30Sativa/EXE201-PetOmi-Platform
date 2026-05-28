@@ -5,6 +5,7 @@ import type {
   AvailableSlotResponse,
   BookAppointmentRequest,
   CancelAppointmentRequest,
+  ClinicDoctorResponse,
   RescheduleAppointmentRequest,
 } from "@/types"
 
@@ -36,9 +37,15 @@ export const getAvailableSlotsApi = async (params: {
   clinicId: string
   date: string
   serviceId?: string
+  vetClinicId?: string
 }): Promise<AvailableSlotResponse[]> => {
   const response = await api.get("/appointments/available-slots", { params })
   return unwrapResponse<AvailableSlotResponse[]>(response)
+}
+
+export const getClinicDoctorsApi = async (clinicId: string): Promise<ClinicDoctorResponse[]> => {
+  const response = await api.get("/appointments/doctors", { params: { clinicId } })
+  return unwrapResponse<ClinicDoctorResponse[]>(response)
 }
 
 export const bookAppointmentApi = async (

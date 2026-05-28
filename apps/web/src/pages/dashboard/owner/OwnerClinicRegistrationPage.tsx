@@ -2,43 +2,241 @@ import { useMemo, useState } from "react"
 import {
   ArrowRight,
   Building2,
+  CheckCircle2,
   ClipboardCheck,
   FileText,
-  ShieldCheck,
+  MapPin,
+  Sparkles,
   Stethoscope,
+  UploadCloud,
 } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
-import EmptyState from "@/components/ui/EmptyState"
+import ImageUploadField from "@/components/ui/ImageUploadField"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { useMe } from "@/hooks/useAuthQueries"
 import { createClinicApi, createVetProfileApi, getMyClinicApi } from "@/services/clinic.service"
-import { getErrorMessage } from "@/lib/utils"
+import { cn, getErrorMessage } from "@/lib/utils"
 import type { CreateClinicRequest, MyClinicResponse } from "@/types"
+
+type StepKey = "vet" | "clinic"
 
 type FormState = {
   vetLicenseNumber: string
   specialization: string
   clinicName: string
-  address: string
+  provinceCode: string
+  districtCode: string
+  wardCode: string
+  addressDetail: string
   phone: string
   email: string
   licenseNumber: string
   licenseImageUrl: string
+  licenseCloudinaryPublicId: string
 }
+
+type FormErrors = Partial<Record<keyof FormState, string>>
+
+type WardOption = {
+  code: string
+  name: string
+}
+
+type DistrictOption = {
+  code: string
+  name: string
+  wards: WardOption[]
+}
+
+type ProvinceOption = {
+  code: string
+  name: string
+  districts: DistrictOption[]
+}
+
+const ADDRESS_OPTIONS: ProvinceOption[] = [
+  {
+    code: "hcm",
+    name: "TP. Hồ Chí Minh",
+    districts: [
+      {
+        code: "hcm-thu-duc",
+        name: "TP. Thủ Đức",
+        wards: [
+          { code: "hcm-thu-duc-thao-dien", name: "Phường Thảo Điền" },
+          { code: "hcm-thu-duc-an-phu", name: "Phường An Phú" },
+          { code: "hcm-thu-duc-linh-trung", name: "Phường Linh Trung" },
+        ],
+      },
+      {
+        code: "hcm-q1",
+        name: "Quận 1",
+        wards: [
+          { code: "hcm-q1-ben-nghe", name: "Phường Bến Nghé" },
+          { code: "hcm-q1-ben-thanh", name: "Phường Bến Thành" },
+          { code: "hcm-q1-da-kao", name: "Phường Đa Kao" },
+        ],
+      },
+      {
+        code: "hcm-q7",
+        name: "Quận 7",
+        wards: [
+          { code: "hcm-q7-tan-phong", name: "Phường Tân Phong" },
+          { code: "hcm-q7-tan-phu", name: "Phường Tân Phú" },
+          { code: "hcm-q7-phu-my", name: "Phường Phú Mỹ" },
+        ],
+      },
+    ],
+  },
+  {
+    code: "hn",
+    name: "Hà Nội",
+    districts: [
+      {
+        code: "hn-ba-dinh",
+        name: "Quận Ba Đình",
+        wards: [
+          { code: "hn-ba-dinh-truc-bach", name: "Phường Trúc Bạch" },
+          { code: "hn-ba-dinh-lieu-giai", name: "Phường Liễu Giai" },
+          { code: "hn-ba-dinh-ngoc-ha", name: "Phường Ngọc Hà" },
+        ],
+      },
+      {
+        code: "hn-cau-giay",
+        name: "Quận Cầu Giấy",
+        wards: [
+          { code: "hn-cau-giay-dich-vong", name: "Phường Dịch Vọng" },
+          { code: "hn-cau-giay-yen-hoa", name: "Phường Yên Hòa" },
+          { code: "hn-cau-giay-mai-dich", name: "Phường Mai Dịch" },
+        ],
+      },
+      {
+        code: "hn-dong-da",
+        name: "Quận Đống Đa",
+        wards: [
+          { code: "hn-dong-da-lang-ha", name: "Phường Láng Hạ" },
+          { code: "hn-dong-da-cat-linh", name: "Phường Cát Linh" },
+          { code: "hn-dong-da-o-cho-dua", name: "Phường Ô Chợ Dừa" },
+        ],
+      },
+    ],
+  },
+  {
+    code: "dn",
+    name: "Đà Nẵng",
+    districts: [
+      {
+        code: "dn-hai-chau",
+        name: "Quận Hải Châu",
+        wards: [
+          { code: "dn-hai-chau-thach-thang", name: "Phường Thạch Thang" },
+          { code: "dn-hai-chau-hai-chau-1", name: "Phường Hải Châu I" },
+          { code: "dn-hai-chau-binh-hien", name: "Phường Bình Hiên" },
+        ],
+      },
+      {
+        code: "dn-son-tra",
+        name: "Quận Sơn Trà",
+        wards: [
+          { code: "dn-son-tra-an-hai-bac", name: "Phường An Hải Bắc" },
+          { code: "dn-son-tra-phuoc-my", name: "Phường Phước Mỹ" },
+          { code: "dn-son-tra-tho-quang", name: "Phường Thọ Quang" },
+        ],
+      },
+    ],
+  },
+  {
+    code: "ct",
+    name: "Cần Thơ",
+    districts: [
+      {
+        code: "ct-ninh-kieu",
+        name: "Quận Ninh Kiều",
+        wards: [
+          { code: "ct-ninh-kieu-an-khanh", name: "Phường An Khánh" },
+          { code: "ct-ninh-kieu-cai-khe", name: "Phường Cái Khế" },
+          { code: "ct-ninh-kieu-tan-an", name: "Phường Tân An" },
+        ],
+      },
+      {
+        code: "ct-cai-rang",
+        name: "Quận Cái Răng",
+        wards: [
+          { code: "ct-cai-rang-le-binh", name: "Phường Lê Bình" },
+          { code: "ct-cai-rang-hung-phu", name: "Phường Hưng Phú" },
+          { code: "ct-cai-rang-ba-lang", name: "Phường Ba Láng" },
+        ],
+      },
+    ],
+  },
+  {
+    code: "bd",
+    name: "Bình Dương",
+    districts: [
+      {
+        code: "bd-thu-dau-mot",
+        name: "TP. Thủ Dầu Một",
+        wards: [
+          { code: "bd-tdm-phu-cuong", name: "Phường Phú Cường" },
+          { code: "bd-tdm-hiep-thanh", name: "Phường Hiệp Thành" },
+          { code: "bd-tdm-phu-loi", name: "Phường Phú Lợi" },
+        ],
+      },
+      {
+        code: "bd-di-an",
+        name: "TP. Dĩ An",
+        wards: [
+          { code: "bd-di-an-di-an", name: "Phường Dĩ An" },
+          { code: "bd-di-an-an-binh", name: "Phường An Bình" },
+          { code: "bd-di-an-tan-dong-hiep", name: "Phường Tân Đông Hiệp" },
+        ],
+      },
+    ],
+  },
+  {
+    code: "dnai",
+    name: "Đồng Nai",
+    districts: [
+      {
+        code: "dnai-bien-hoa",
+        name: "TP. Biên Hòa",
+        wards: [
+          { code: "dnai-bien-hoa-tan-mai", name: "Phường Tân Mai" },
+          { code: "dnai-bien-hoa-thong-nhat", name: "Phường Thống Nhất" },
+          { code: "dnai-bien-hoa-tan-phong", name: "Phường Tân Phong" },
+        ],
+      },
+      {
+        code: "dnai-long-khanh",
+        name: "TP. Long Khánh",
+        wards: [
+          { code: "dnai-long-khanh-xuan-an", name: "Phường Xuân An" },
+          { code: "dnai-long-khanh-xuan-binh", name: "Phường Xuân Bình" },
+          { code: "dnai-long-khanh-bao-vinh", name: "Phường Bảo Vinh" },
+        ],
+      },
+    ],
+  },
+]
 
 const initialForm: FormState = {
   vetLicenseNumber: "",
   specialization: "",
   clinicName: "",
-  address: "",
+  provinceCode: "",
+  districtCode: "",
+  wardCode: "",
+  addressDetail: "",
   phone: "",
   email: "",
   licenseNumber: "",
   licenseImageUrl: "",
+  licenseCloudinaryPublicId: "",
 }
 
 function statusVariant(status: string) {
@@ -51,6 +249,19 @@ function statusVariant(status: string) {
       return "warning" as const
     default:
       return "default" as const
+  }
+}
+
+function statusLabel(status: string) {
+  switch (status.toLowerCase()) {
+    case "approved":
+      return "Đã duyệt"
+    case "rejected":
+      return "Bị từ chối"
+    case "pending":
+      return "Đang chờ duyệt"
+    default:
+      return status
   }
 }
 
@@ -71,10 +282,42 @@ function toNullable(value: string) {
   return trimmed.length > 0 ? trimmed : null
 }
 
+function isEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+function findProvince(code: string) {
+  return ADDRESS_OPTIONS.find((province) => province.code === code)
+}
+
+function findDistrict(provinceCode: string, districtCode: string) {
+  return findProvince(provinceCode)?.districts.find((district) => district.code === districtCode)
+}
+
+function findWard(provinceCode: string, districtCode: string, wardCode: string) {
+  return findDistrict(provinceCode, districtCode)?.wards.find((ward) => ward.code === wardCode)
+}
+
+function composeAddress(form: FormState) {
+  const province = findProvince(form.provinceCode)
+  const district = findDistrict(form.provinceCode, form.districtCode)
+  const ward = findWard(form.provinceCode, form.districtCode, form.wardCode)
+
+  return [
+    form.addressDetail.trim(),
+    ward?.name,
+    district?.name,
+    province?.name,
+  ].filter(Boolean).join(", ")
+}
+
 export default function OwnerClinicRegistrationPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(initialForm)
+  const [formErrors, setFormErrors] = useState<FormErrors>({})
+  const [activeStep, setActiveStep] = useState<StepKey>("vet")
+  const [localVetProfileCreated, setLocalVetProfileCreated] = useState(false)
   const [message, setMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
 
@@ -85,125 +328,243 @@ export default function OwnerClinicRegistrationPage() {
     retry: false,
   })
 
+  const hasVetProfile = Boolean(me?.vetProfile) || localVetProfileCreated
+  const visibleStep = hasVetProfile ? "clinic" : activeStep
+
+  const selectedProvince = findProvince(form.provinceCode)
+  const selectedDistrict = findDistrict(form.provinceCode, form.districtCode)
+
+  const clearFeedback = () => {
+    setMessage("")
+    setErrorMessage("")
+  }
+
+  const markVetProfileReady = async (successMessage?: string) => {
+    setLocalVetProfileCreated(true)
+    setFormErrors({})
+    setErrorMessage("")
+    setActiveStep("clinic")
+    if (successMessage) toast.success(successMessage)
+    await queryClient.invalidateQueries({ queryKey: ["auth", "me"] })
+  }
+
+  const createVetProfileMutation = useMutation({
+    mutationFn: () =>
+      createVetProfileApi({
+        licenseNumber: toNullable(form.vetLicenseNumber),
+        specialization: toNullable(form.specialization),
+      }),
+    onSuccess: () => markVetProfileReady("Đã tạo hồ sơ bác sĩ thú y."),
+    onError: async (error) => {
+      const errorText = getErrorMessage(error, "Tạo hồ sơ bác sĩ thất bại. Vui lòng thử lại.")
+      if (errorText.toLowerCase().includes("vetprofile")) {
+        await markVetProfileReady("Hồ sơ bác sĩ đã tồn tại, mình chuyển sang bước phòng khám.")
+        return
+      }
+
+      setMessage("")
+      setErrorMessage(errorText)
+      toast.error(errorText)
+    },
+  })
+
   const createClinicMutation = useMutation({
     mutationFn: async () => {
-      if (!me?.vetProfile) {
-        try {
-          await createVetProfileApi({
-            licenseNumber: toNullable(form.vetLicenseNumber),
-            specialization: toNullable(form.specialization),
-          })
-        } catch (error) {
-          const errorText = getErrorMessage(error)
-          if (!errorText.toLowerCase().includes("vetprofile")) {
-            throw error
-          }
-        }
+      if (!hasVetProfile) {
+        await createVetProfileApi({
+          licenseNumber: toNullable(form.vetLicenseNumber),
+          specialization: toNullable(form.specialization),
+        })
       }
 
       const payload: CreateClinicRequest = {
         clinicName: form.clinicName.trim(),
-        address: toNullable(form.address),
+        address: toNullable(composeAddress(form)),
         phone: toNullable(form.phone),
         email: toNullable(form.email),
         licenseNumber: toNullable(form.licenseNumber),
         licenseImageUrl: toNullable(form.licenseImageUrl),
-        licenseCloudinaryPublicId: null,
+        licenseCloudinaryPublicId: toNullable(form.licenseCloudinaryPublicId),
       }
 
       return createClinicApi(payload)
     },
     onSuccess: async () => {
       setErrorMessage("")
-      setMessage("Dang ky clinic thanh cong. Ho so dang cho admin duyet.")
+      setMessage("Đã gửi hồ sơ phòng khám. Admin sẽ duyệt trước khi bạn mở dashboard phòng khám.")
+      toast.success("Đã gửi hồ sơ phòng khám.")
       setForm(initialForm)
+      setFormErrors({})
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["owner", "my-clinic"] }),
         queryClient.invalidateQueries({ queryKey: ["auth", "me"] }),
       ])
     },
     onError: (error) => {
+      const errorText = getErrorMessage(error, "Đăng ký phòng khám thất bại. Vui lòng thử lại.")
       setMessage("")
-      setErrorMessage(getErrorMessage(error, "Dang ky clinic that bai. Vui long thu lai."))
+      setErrorMessage(errorText)
+      toast.error(errorText)
     },
   })
 
   const isLoading = loadingMe || loadingClinic
-  const hasVetProfile = Boolean(me?.vetProfile)
-  const canSubmit = useMemo(
-    () => form.clinicName.trim().length >= 2 && !createClinicMutation.isPending && !myClinic,
-    [createClinicMutation.isPending, form.clinicName, myClinic],
-  )
+
+  const clinicCompleteness = useMemo(() => {
+    const fields = [
+      form.clinicName,
+      form.licenseNumber,
+      form.email,
+      form.phone,
+      form.provinceCode,
+      form.districtCode,
+      form.wardCode,
+      form.addressDetail,
+      form.licenseImageUrl,
+    ]
+    const filled = fields.filter((value) => value.trim().length > 0).length
+    return Math.round((filled / fields.length) * 100)
+  }, [form])
+
+  const updateValue = (field: keyof FormState, value: string) => {
+    setForm((current) => {
+      const next = {
+        ...current,
+        [field]: value,
+      }
+
+      if (field === "provinceCode") {
+        next.districtCode = ""
+        next.wardCode = ""
+      }
+
+      if (field === "districtCode") {
+        next.wardCode = ""
+      }
+
+      if (field === "licenseImageUrl" && !value) {
+        next.licenseCloudinaryPublicId = ""
+      }
+
+      return next
+    })
+
+    setFormErrors((current) => {
+      if (!current[field]) return current
+      const next = { ...current }
+      delete next[field]
+      return next
+    })
+  }
 
   const updateField =
     (field: keyof FormState) =>
-    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setForm((current) => ({
-        ...current,
-        [field]: event.target.value,
-      }))
+    (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+      updateValue(field, event.target.value)
     }
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const validateVetStep = () => {
+    if (hasVetProfile) return true
+
+    const errors: FormErrors = {}
+    if (!form.vetLicenseNumber.trim()) {
+      errors.vetLicenseNumber = "Nhập số chứng chỉ hành nghề của bác sĩ."
+    }
+    if (!form.specialization.trim()) {
+      errors.specialization = "Nhập chuyên môn chính của bác sĩ."
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const validateClinicStep = () => {
+    const errors: FormErrors = {}
+
+    if (form.clinicName.trim().length < 2) {
+      errors.clinicName = "Tên phòng khám cần có ít nhất 2 ký tự."
+    }
+    if (!form.licenseNumber.trim()) {
+      errors.licenseNumber = "Nhập số giấy phép kinh doanh/phòng khám."
+    }
+    if (!form.licenseImageUrl.trim()) {
+      errors.licenseImageUrl = "Upload ảnh giấy phép để admin có thể đối chiếu."
+    }
+    if (!form.email.trim()) {
+      errors.email = "Nhập email để admin liên hệ khi cần."
+    } else if (!isEmail(form.email.trim())) {
+      errors.email = "Email chưa đúng định dạng."
+    }
+    if (!form.phone.trim()) {
+      errors.phone = "Nhập số điện thoại liên hệ của phòng khám."
+    }
+    if (!form.provinceCode) {
+      errors.provinceCode = "Chọn tỉnh/thành phố."
+    }
+    if (!form.districtCode) {
+      errors.districtCode = "Chọn quận/huyện."
+    }
+    if (!form.wardCode) {
+      errors.wardCode = "Chọn phường/xã."
+    }
+    if (!form.addressDetail.trim()) {
+      errors.addressDetail = "Nhập số nhà và tên đường."
+    }
+
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleVetSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setMessage("")
-    setErrorMessage("")
-    if (!canSubmit) return
+    clearFeedback()
+    if (!validateVetStep()) return
+
+    if (hasVetProfile) {
+      setActiveStep("clinic")
+      return
+    }
+
+    createVetProfileMutation.mutate()
+  }
+
+  const handleClinicSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    clearFeedback()
+    if (!validateClinicStep() || myClinic) return
     createClinicMutation.mutate()
   }
 
   return (
     <div className="grid gap-5 md:gap-6">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="p-6 md:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-              Owner to clinic owner
-            </p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-extrabold leading-[1.08] md:text-5xl">
-              Dang ky clinic tu tai khoan owner hien tai.
-            </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-po-text-muted md:text-base md:leading-8">
-              Tai khoan owner se tao ho so vet neu chua co, sau do gui ho so clinic.
-              Nguoi tao clinic duoc gan vai tro ClinicOwner mac dinh.
-            </p>
-          </div>
-
-          <div className="relative min-h-[220px] overflow-hidden bg-[linear-gradient(135deg,#fff7ed,#f6fffb)] lg:min-h-full">
-            <div className="absolute right-8 top-8 grid size-24 place-items-center rounded-[28px] bg-white/75 text-po-primary shadow-xl shadow-orange-200/30 ring-1 ring-po-border/70">
-              <Building2 className="size-11" />
-            </div>
-            <div className="absolute bottom-5 left-5 right-5 rounded-[24px] bg-white/[0.9] p-4 shadow-xl backdrop-blur">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <ShieldCheck className="size-4 text-po-primary" />
-                ClinicOwner flow
-              </div>
-              <p className="mt-1 text-xs leading-5 text-po-text-muted">
-                VetProfile truoc, clinic pending sau, admin duyet cuoi cung.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <div className="grid gap-4 sm:grid-cols-3">
         <FlowStep
           icon={Stethoscope}
-          title="1. Ho so vet"
-          text={hasVetProfile ? "Da co VetProfile" : "Se tao VetProfile tu form nay"}
+          title="1. Hồ sơ bác sĩ"
+          text={hasVetProfile ? "Đã có hồ sơ chuyên môn" : "Tạo hồ sơ từ thông tin hành nghề"}
+          active={!myClinic && visibleStep === "vet"}
           done={hasVetProfile}
+          onClick={() => {
+            if (!hasVetProfile) setActiveStep("vet")
+          }}
         />
         <FlowStep
           icon={Building2}
-          title="2. Ho so clinic"
-          text={myClinic ? "Da co clinic" : "Gui thong tin phong kham"}
+          title="2. Hồ sơ phòng khám"
+          text={myClinic ? "Đã gửi hồ sơ phòng khám" : "Nhập thông tin để admin review"}
+          active={!myClinic && visibleStep === "clinic"}
           done={Boolean(myClinic)}
+          disabled={!hasVetProfile}
+          onClick={() => {
+            if (hasVetProfile) setActiveStep("clinic")
+          }}
         />
         <FlowStep
           icon={ClipboardCheck}
-          title="3. Admin duyet"
-          text={myClinic?.status ?? "Cho admin review"}
+          title="3. Admin duyệt"
+          text={myClinic ? statusLabel(myClinic.status) : "Chờ sau khi gửi hồ sơ"}
           done={myClinic?.status === "Approved"}
+          disabled
         />
       </div>
 
@@ -213,102 +574,346 @@ export default function OwnerClinicRegistrationPage() {
         </div>
       ) : myClinic ? (
         <ExistingClinicPanel clinic={myClinic} onOpenClinic={() => navigate("/dashboard/clinic")} />
+      ) : visibleStep === "vet" ? (
+        <VetProfileStep
+          form={form}
+          errors={formErrors}
+          isSubmitting={createVetProfileMutation.isPending}
+          onSubmit={handleVetSubmit}
+          onCancel={() => navigate("/dashboard/owner")}
+          onChange={updateField}
+        />
       ) : (
-        <DashboardSection
-          title="Thong tin dang ky clinic"
-          subtitle="Nhap thong tin co ban de gui ho so cho admin review."
-        >
-          <form onSubmit={handleSubmit} className="grid gap-5">
-            {!hasVetProfile && (
-              <div className="grid gap-4 rounded-2xl bg-po-surface-muted/65 p-4 ring-1 ring-po-border/70 md:grid-cols-2">
-                <InputField
-                  label="Vet license"
-                  value={form.vetLicenseNumber}
-                  onChange={updateField("vetLicenseNumber")}
-                  placeholder="So chung chi hanh nghe"
-                />
-                <InputField
-                  label="Chuyen mon"
-                  value={form.specialization}
-                  onChange={updateField("specialization")}
-                  placeholder="Noi khoa, phau thuat, da lieu..."
-                />
-              </div>
-            )}
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <InputField
-                label="Ten clinic"
-                value={form.clinicName}
-                onChange={updateField("clinicName")}
-                placeholder="PetOmi Clinic District 2"
-                required
-              />
-              <InputField
-                label="So giay phep clinic"
-                value={form.licenseNumber}
-                onChange={updateField("licenseNumber")}
-                placeholder="GPKD-..."
-              />
-              <InputField
-                label="Email clinic"
-                value={form.email}
-                onChange={updateField("email")}
-                placeholder="clinic@example.com"
-                type="email"
-              />
-              <InputField
-                label="So dien thoai"
-                value={form.phone}
-                onChange={updateField("phone")}
-                placeholder="090..."
-              />
-              <InputField
-                label="Link anh giay phep"
-                value={form.licenseImageUrl}
-                onChange={updateField("licenseImageUrl")}
-                placeholder="https://..."
-              />
-              <InputField
-                label="Dia chi"
-                value={form.address}
-                onChange={updateField("address")}
-                placeholder="So nha, phuong, quan, thanh pho"
-              />
-            </div>
-
-            {message && (
-              <p className="rounded-2xl bg-po-success-soft px-4 py-3 text-sm font-semibold text-po-success">
-                {message}
-              </p>
-            )}
-            {errorMessage && (
-              <p className="rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">
-                {errorMessage}
-              </p>
-            )}
-
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => navigate("/dashboard/owner")}
-                className="inline-flex h-11 items-center rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-white"
-              >
-                Huy
-              </button>
-              <button
-                type="submit"
-                disabled={!canSubmit}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {createClinicMutation.isPending ? "Dang gui..." : "Gui dang ky"}
-                <ArrowRight className="size-4" />
-              </button>
-            </div>
-          </form>
-        </DashboardSection>
+        <ClinicProfileStep
+          form={form}
+          errors={formErrors}
+          hasVetProfile={hasVetProfile}
+          completion={clinicCompleteness}
+          message={message}
+          errorMessage={errorMessage}
+          isSubmitting={createClinicMutation.isPending}
+          provinceOptions={ADDRESS_OPTIONS}
+          districtOptions={selectedProvince?.districts ?? []}
+          wardOptions={selectedDistrict?.wards ?? []}
+          composedAddress={composeAddress(form)}
+          onBack={() => setActiveStep("vet")}
+          onCancel={() => navigate("/dashboard/owner")}
+          onSubmit={handleClinicSubmit}
+          onChange={updateField}
+          onValueChange={updateValue}
+        />
       )}
     </div>
+  )
+}
+
+function VetProfileStep({
+  form,
+  errors,
+  isSubmitting,
+  onSubmit,
+  onCancel,
+  onChange,
+}: {
+  form: FormState
+  errors: FormErrors
+  isSubmitting: boolean
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  onCancel: () => void
+  onChange: (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => void
+}) {
+  return (
+    <DashboardSection
+      title="Hồ sơ bác sĩ thú y"
+      subtitle="Bước này xác nhận người đại diện chuyên môn cho phòng khám. Sau khi lưu, bạn sẽ chuyển sang phần thông tin phòng khám."
+      className="bg-white/92"
+      action={
+        <span className="inline-flex items-center gap-2 rounded-full bg-po-primary-soft px-3 py-1.5 text-xs font-semibold text-po-primary">
+          <Sparkles className="size-3.5" />
+          Bước bắt buộc
+        </span>
+      }
+    >
+      <form onSubmit={onSubmit} className="grid gap-5">
+        <div className="rounded-[26px] bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70 md:p-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <InputField
+              label="Số chứng chỉ hành nghề"
+              value={form.vetLicenseNumber}
+              onChange={onChange("vetLicenseNumber")}
+              placeholder="VD: CCHN-VET-2026-001"
+              error={errors.vetLicenseNumber}
+              helper="Dùng để admin đối chiếu năng lực chuyên môn."
+              required
+            />
+            <InputField
+              label="Chuyên môn chính"
+              value={form.specialization}
+              onChange={onChange("specialization")}
+              placeholder="Nội khoa, phẫu thuật, da liễu..."
+              error={errors.specialization}
+              helper="Có thể nhập nhiều chuyên môn, cách nhau bằng dấu phẩy."
+              required
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex h-11 items-center rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-white"
+          >
+            Hủy
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSubmitting ? "Đang tạo hồ sơ..." : "Tạo hồ sơ bác sĩ"}
+            <ArrowRight className="size-4" />
+          </button>
+        </div>
+      </form>
+    </DashboardSection>
+  )
+}
+
+function ClinicProfileStep({
+  form,
+  errors,
+  hasVetProfile,
+  completion,
+  message,
+  errorMessage,
+  isSubmitting,
+  provinceOptions,
+  districtOptions,
+  wardOptions,
+  composedAddress,
+  onBack,
+  onCancel,
+  onSubmit,
+  onChange,
+  onValueChange,
+}: {
+  form: FormState
+  errors: FormErrors
+  hasVetProfile: boolean
+  completion: number
+  message: string
+  errorMessage: string
+  isSubmitting: boolean
+  provinceOptions: ProvinceOption[]
+  districtOptions: DistrictOption[]
+  wardOptions: WardOption[]
+  composedAddress: string
+  onBack: () => void
+  onCancel: () => void
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  onChange: (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
+  onValueChange: (field: keyof FormState, value: string) => void
+}) {
+  return (
+    <DashboardSection
+      title="Thông tin phòng khám"
+      subtitle="Nhập thông tin admin cần để kiểm tra giấy phép, địa chỉ và kênh liên hệ của phòng khám."
+      action={
+        <div className="min-w-[150px] rounded-2xl bg-po-surface-muted px-3 py-2 ring-1 ring-po-border/70">
+          <p className="text-xs font-semibold text-po-text-subtle">Độ đầy đủ hồ sơ</p>
+          <div className="mt-2 h-2 rounded-full bg-white">
+            <div
+              className="h-2 rounded-full bg-po-primary transition-all"
+              style={{ width: `${completion}%` }}
+            />
+          </div>
+        </div>
+      }
+    >
+      <form onSubmit={onSubmit} className="grid gap-5">
+        <div className="flex flex-wrap items-center gap-3 rounded-[24px] bg-po-success-soft px-4 py-3 text-sm text-po-success ring-1 ring-po-success/15">
+          <CheckCircle2 className="size-5 shrink-0" />
+          <span className="font-semibold">
+            {hasVetProfile
+              ? "Hồ sơ bác sĩ đã sẵn sàng. Bạn có thể gửi thông tin phòng khám."
+              : "Bạn cần tạo hồ sơ bác sĩ trước khi gửi phòng khám."}
+          </span>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <InputField
+            label="Tên phòng khám"
+            value={form.clinicName}
+            onChange={onChange("clinicName")}
+            placeholder="PetOmi Clinic Thảo Điền"
+            error={errors.clinicName}
+            required
+          />
+          <InputField
+            label="Số giấy phép phòng khám"
+            value={form.licenseNumber}
+            onChange={onChange("licenseNumber")}
+            placeholder="GPKD-..."
+            error={errors.licenseNumber}
+            required
+          />
+          <InputField
+            label="Email phòng khám"
+            value={form.email}
+            onChange={onChange("email")}
+            placeholder="clinic@example.com"
+            type="email"
+            error={errors.email}
+            required
+          />
+          <InputField
+            label="Số điện thoại"
+            value={form.phone}
+            onChange={onChange("phone")}
+            placeholder="090..."
+            error={errors.phone}
+            required
+          />
+        </div>
+
+        <div className="grid gap-4 rounded-[26px] bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70 md:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-extrabold text-po-text">Ảnh giấy phép</p>
+              <p className="mt-1 text-xs leading-5 text-po-text-muted">
+                Upload ảnh từ máy để admin xem trực tiếp, không cần tự paste link.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-po-text-muted ring-1 ring-po-border/80">
+              <UploadCloud className="size-3.5" />
+              JPG, PNG, WEBP
+            </span>
+          </div>
+          <ImageUploadField
+            value={form.licenseImageUrl}
+            onChange={(url) => onValueChange("licenseImageUrl", url)}
+            onUploadComplete={(result) => onValueChange("licenseCloudinaryPublicId", result.publicId)}
+            imageType="clinic_license"
+            previewClassName="h-40 w-full rounded-2xl border border-po-border object-cover"
+            maxSizeMb={5}
+            showHelpText={false}
+          />
+          {errors.licenseImageUrl ? (
+            <p className="text-xs font-semibold leading-5 text-po-danger">{errors.licenseImageUrl}</p>
+          ) : null}
+        </div>
+
+        <div className="grid gap-4 rounded-[26px] bg-white p-4 ring-1 ring-po-border/80 md:p-5">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
+              <MapPin className="size-4" />
+            </span>
+            <div>
+              <p className="text-sm font-extrabold text-po-text">Địa chỉ phòng khám</p>
+              <p className="mt-1 text-xs leading-5 text-po-text-muted">
+                Chọn theo danh mục để hạn chế sai chính tả. FE sẽ ghép thành chuỗi địa chỉ gửi về backend.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <SelectField
+              label="Tỉnh/Thành phố"
+              value={form.provinceCode}
+              onChange={onChange("provinceCode")}
+              options={provinceOptions.map((province) => ({
+                value: province.code,
+                label: province.name,
+              }))}
+              placeholder="Chọn tỉnh/thành"
+              error={errors.provinceCode}
+              required
+            />
+            <SelectField
+              label="Quận/Huyện"
+              value={form.districtCode}
+              onChange={onChange("districtCode")}
+              options={districtOptions.map((district) => ({
+                value: district.code,
+                label: district.name,
+              }))}
+              placeholder="Chọn quận/huyện"
+              error={errors.districtCode}
+              disabled={!form.provinceCode}
+              required
+            />
+            <SelectField
+              label="Phường/Xã"
+              value={form.wardCode}
+              onChange={onChange("wardCode")}
+              options={wardOptions.map((ward) => ({
+                value: ward.code,
+                label: ward.name,
+              }))}
+              placeholder="Chọn phường/xã"
+              error={errors.wardCode}
+              disabled={!form.districtCode}
+              required
+            />
+          </div>
+
+          <InputField
+            label="Số nhà, tên đường"
+            value={form.addressDetail}
+            onChange={onChange("addressDetail")}
+            placeholder="VD: 12 Nguyễn Văn Hưởng"
+            error={errors.addressDetail}
+            required
+          />
+
+          {composedAddress ? (
+            <div className="rounded-2xl bg-po-surface-muted px-4 py-3 text-sm text-po-text-muted ring-1 ring-po-border/70">
+              <span className="font-semibold text-po-text">Địa chỉ sẽ lưu:</span> {composedAddress}
+            </div>
+          ) : null}
+        </div>
+
+        {message ? (
+          <p className="rounded-2xl bg-po-success-soft px-4 py-3 text-sm font-semibold text-po-success">
+            {message}
+          </p>
+        ) : null}
+        {errorMessage ? (
+          <p className="rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">
+            {errorMessage}
+          </p>
+        ) : null}
+
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={hasVetProfile}
+          >
+            Quay lại hồ sơ bác sĩ
+          </button>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="inline-flex h-11 items-center rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-white"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting || !hasVetProfile}
+              className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmitting ? "Đang gửi hồ sơ..." : "Gửi hồ sơ phòng khám"}
+              <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      </form>
+    </DashboardSection>
   )
 }
 
@@ -316,25 +921,52 @@ function FlowStep({
   icon: Icon,
   title,
   text,
+  active,
   done,
+  disabled,
+  onClick,
 }: {
   icon: React.ElementType
   title: string
   text: string
+  active?: boolean
   done?: boolean
+  disabled?: boolean
+  onClick?: () => void
 }) {
   return (
-    <div className="rounded-[26px] bg-white/85 p-5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled || !onClick}
+      className={cn(
+        "rounded-[26px] bg-white/85 p-5 text-left shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 transition",
+        active && !done && "bg-white shadow-md shadow-orange-200/25 ring-po-primary/40",
+        done && "bg-white ring-po-success/25",
+        !disabled && onClick && "hover:-translate-y-0.5 hover:shadow-md",
+        disabled && !done && "cursor-default opacity-80",
+        disabled && done && "cursor-default",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-extrabold text-po-text">{title}</p>
           <p className="mt-1 text-xs leading-5 text-po-text-muted">{text}</p>
         </div>
-        <span className={`grid size-10 place-items-center rounded-2xl ${done ? "bg-po-success-soft text-po-success" : "bg-po-primary-soft text-po-primary"}`}>
-          <Icon className="size-4" />
+        <span
+          className={cn(
+            "grid size-10 place-items-center rounded-2xl",
+            done
+              ? "bg-po-success-soft text-po-success"
+              : active
+                ? "bg-po-primary text-white"
+                : "bg-po-primary-soft text-po-primary",
+          )}
+        >
+          {done ? <CheckCircle2 className="size-4" /> : <Icon className="size-4" />}
         </span>
       </div>
-    </div>
+    </button>
   )
 }
 
@@ -345,23 +977,31 @@ function ExistingClinicPanel({
   clinic: MyClinicResponse
   onOpenClinic: () => void
 }) {
+  const reviewState =
+    clinic.status === "Approved"
+      ? {
+          title: "Đã được duyệt",
+          description: "Bạn có thể vào dashboard phòng khám và bắt đầu quản lý lịch hẹn.",
+          hint: "Phòng khám đang hoạt động",
+        }
+      : clinic.status === "Rejected"
+        ? {
+            title: "Cần bổ sung hồ sơ",
+            description: "Hồ sơ bị từ chối. Hãy kiểm tra lý do và chuẩn bị nộp lại khi chức năng resubmit được mở.",
+            hint: "Cần chủ phòng khám xử lý",
+          }
+        : {
+            title: "Đang chờ duyệt",
+            description: "Admin đang kiểm tra giấy phép và thông tin liên hệ của phòng khám.",
+            hint: "Thường xử lý sau khi giấy phép hợp lệ",
+          }
+
   return (
     <DashboardSection
-      title="Clinic cua ban"
-      subtitle="Tai khoan nay da tao clinic, khong can dang ky lai."
-      action={
-        clinic.status === "Approved" ? (
-          <button
-            onClick={onOpenClinic}
-            className="inline-flex h-9 items-center gap-2 rounded-full bg-po-primary px-4 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover"
-          >
-            Mo clinic dashboard
-            <ArrowRight className="size-3.5" />
-          </button>
-        ) : null
-      }
+      title="Phòng khám của bạn"
+      subtitle="Tài khoản này đã có hồ sơ phòng khám, không cần đăng ký lại."
     >
-      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="rounded-2xl bg-po-surface-muted/65 p-5 ring-1 ring-po-border/70">
           <div className="flex flex-wrap items-center gap-3">
             <span className="grid size-11 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/80">
@@ -369,43 +1009,70 @@ function ExistingClinicPanel({
             </span>
             <div className="min-w-0">
               <p className="truncate text-lg font-extrabold text-po-text">{clinic.clinicName}</p>
-              <p className="mt-1 text-xs text-po-text-muted">{clinic.address ?? "Chua co dia chi"}</p>
+              <p className="mt-1 text-xs text-po-text-muted">{clinic.address ?? "Chưa có địa chỉ"}</p>
             </div>
-            <StatusBadge variant={statusVariant(clinic.status)} label={clinic.status} />
+            <StatusBadge variant={statusVariant(clinic.status)} label={statusLabel(clinic.status)} />
           </div>
 
           <div className="mt-5 grid gap-3 text-sm text-po-text-muted sm:grid-cols-2">
-            <InfoRow label="Email" value={clinic.email ?? "Chua co"} />
-            <InfoRow label="Phone" value={clinic.phone ?? "Chua co"} />
-            <InfoRow label="License" value={clinic.licenseNumber ?? "Chua co"} />
-            <InfoRow label="Created" value={formatDate(clinic.createdAt)} />
+            <InfoRow label="Email" value={clinic.email ?? "Chưa có"} />
+            <InfoRow label="Điện thoại" value={clinic.phone ?? "Chưa có"} />
+            <InfoRow label="Giấy phép" value={clinic.licenseNumber ?? "Chưa có"} />
+            <InfoRow label="Ngày tạo" value={formatDate(clinic.createdAt)} />
           </div>
 
-          {clinic.rejectedReason && (
+          {clinic.rejectedReason ? (
             <p className="mt-4 rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">
-              Ly do tu choi: {clinic.rejectedReason}
+              Lý do từ chối: {clinic.rejectedReason}
             </p>
-          )}
+          ) : null}
         </div>
 
-        <EmptyState
-          icon={FileText}
-          title={
-            clinic.status === "Approved"
-              ? "Da duoc duyet"
-              : clinic.status === "Rejected"
-                ? "Can nop lai ho so"
-                : "Dang cho admin duyet"
-          }
-          description={
-            clinic.status === "Approved"
-              ? "Ban co the vao clinic dashboard."
-              : clinic.status === "Rejected"
-                ? "Backend da co endpoint resubmit, FE co the them buoc nop lai tiep theo."
-                : "Admin se review thong tin clinic."
-          }
-          className="rounded-2xl bg-white ring-1 ring-po-border/80"
-        />
+        <aside className="relative overflow-hidden rounded-[26px] bg-white p-5 ring-1 ring-po-border/80">
+          <div className="absolute -right-10 -top-10 size-32 rounded-full bg-po-primary-soft/80" />
+          <div className="relative">
+            <div className="flex items-start justify-between gap-3">
+              <span
+                className={cn(
+                  "grid size-12 place-items-center rounded-2xl ring-1 ring-po-border/70",
+                  clinic.status === "Approved"
+                    ? "bg-po-success-soft text-po-success"
+                    : clinic.status === "Rejected"
+                      ? "bg-po-danger-soft text-po-danger"
+                      : "bg-po-primary-soft text-po-primary",
+                )}
+              >
+                {clinic.status === "Approved" ? (
+                  <CheckCircle2 className="size-5" />
+                ) : (
+                  <FileText className="size-5" />
+                )}
+              </span>
+              <StatusBadge variant={statusVariant(clinic.status)} label={statusLabel(clinic.status)} />
+            </div>
+
+            <h3 className="mt-5 text-lg font-extrabold text-po-text">{reviewState.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-po-text-muted">{reviewState.description}</p>
+
+            <div className="mt-5 rounded-2xl bg-po-surface-muted/75 px-4 py-3 ring-1 ring-po-border/60">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-po-text-subtle">
+                Trạng thái xử lý
+              </p>
+              <p className="mt-1 text-sm font-semibold text-po-text">{reviewState.hint}</p>
+            </div>
+
+            {clinic.status === "Approved" ? (
+              <button
+                type="button"
+                onClick={onOpenClinic}
+                className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/45 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
+              >
+                Vào dashboard phòng khám
+                <ArrowRight className="size-4" />
+              </button>
+            ) : null}
+          </div>
+        </aside>
       </div>
     </DashboardSection>
   )
@@ -427,6 +1094,8 @@ function InputField({
   placeholder,
   type = "text",
   required,
+  error,
+  helper,
 }: {
   label: string
   value: string
@@ -434,18 +1103,84 @@ function InputField({
   placeholder?: string
   type?: string
   required?: boolean
+  error?: string
+  helper?: string
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-semibold text-po-text">
-      {label}
+      <span>
+        {label}
+        {required ? <span className="ml-1 text-po-danger">*</span> : null}
+      </span>
       <input
         type={type}
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        required={required}
-        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+        aria-invalid={Boolean(error)}
+        className={cn(
+          "h-11 rounded-2xl border bg-white px-4 text-sm font-medium text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:ring-2",
+          error
+            ? "border-po-danger focus:border-po-danger focus:ring-po-danger/15"
+            : "border-po-border focus:border-po-primary focus:ring-po-primary/20",
+        )}
       />
+      {error ? (
+        <span className="text-xs font-semibold leading-5 text-po-danger">{error}</span>
+      ) : helper ? (
+        <span className="text-xs font-medium leading-5 text-po-text-muted">{helper}</span>
+      ) : null}
+    </label>
+  )
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  required,
+  disabled,
+  error,
+}: {
+  label: string
+  value: string
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void
+  options: Array<{ value: string; label: string }>
+  placeholder: string
+  required?: boolean
+  disabled?: boolean
+  error?: string
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+      <span>
+        {label}
+        {required ? <span className="ml-1 text-po-danger">*</span> : null}
+      </span>
+      <select
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        aria-invalid={Boolean(error)}
+        className={cn(
+          "h-11 rounded-2xl border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:bg-po-surface-muted disabled:text-po-text-subtle",
+          error
+            ? "border-po-danger focus:border-po-danger focus:ring-po-danger/15"
+            : "border-po-border focus:border-po-primary focus:ring-po-primary/20",
+        )}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {error ? (
+        <span className="text-xs font-semibold leading-5 text-po-danger">{error}</span>
+      ) : null}
     </label>
   )
 }

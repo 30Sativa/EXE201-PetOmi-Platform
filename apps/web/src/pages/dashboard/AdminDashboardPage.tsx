@@ -145,22 +145,22 @@ export default function AdminDashboardPage() {
 
   const systemSignals = [
     {
-      label: "Canh bao muc cao",
+      label: "Cảnh báo mức cao",
       value: String(highAlerts),
       tone: highAlerts > 0 ? ("danger" as const) : ("success" as const),
-      detail: highAlerts > 0 ? "Can xu ly ngay" : "Khong co canh bao nghiem trong",
+      detail: highAlerts > 0 ? "Cần xử lý ngay" : "Không có cảnh báo nghiêm trọng",
     },
     {
-      label: "Tong canh bao",
+      label: "Tổng cảnh báo",
       value: String(totalAlerts),
       tone: totalAlerts > 0 ? ("warning" as const) : ("success" as const),
-      detail: "Trang thai canh bao toan bo he thong",
+      detail: "Trạng thái cảnh báo toàn bộ hệ thống",
     },
     {
-      label: "Audit hom nay",
+      label: "Audit hôm nay",
       value: String(auditToday),
       tone: "info" as const,
-      detail: "So hanh dong quan tri trong ngay",
+      detail: "Số hành động quản trị trong ngày",
     },
   ]
 
@@ -173,11 +173,11 @@ export default function AdminDashboardPage() {
               Admin command center
             </p>
             <h2 className="mt-4 max-w-2xl text-3xl font-extrabold leading-[1.08] md:text-5xl">
-              Duyet clinic nhanh, giu he thong PetOmi gon va an toan.
+              Duyệt phòng khám nhanh, giữ PetOmi gọn và an toàn.
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-po-text-muted md:text-base md:leading-8">
-              Theo doi ho so dang cho, canh bao he thong va cac hanh dong quan tri
-              moi nhat trong mot dashboard duy nhat.
+              Theo dõi hồ sơ đang chờ, cảnh báo hệ thống và các hành động quản trị
+              mới nhất trong một dashboard duy nhất.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -186,21 +186,21 @@ export default function AdminDashboardPage() {
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
               >
                 <BadgeCheck className="size-4" />
-                Mo queue duyet
+                Mở danh sách duyệt
               </button>
               <button
                 onClick={() => navigate("/dashboard/admin/users")}
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
               >
                 <UsersRound className="size-4" />
-                Quan ly nguoi dung
+                Quản lý người dùng
               </button>
             </div>
 
             <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              <HeroMetric label="Clinic pending" value={String(pendingCount)} />
-              <HeroMetric label="High alerts" value={String(highAlerts)} />
-              <HeroMetric label="Admin users" value={String(userStats?.admins ?? 0)} />
+              <HeroMetric label="Phòng khám chờ" value={String(pendingCount)} />
+              <HeroMetric label="Cảnh báo cao" value={String(highAlerts)} />
+              <HeroMetric label="Admin" value={String(userStats?.admins ?? 0)} />
             </div>
           </div>
 
@@ -214,7 +214,7 @@ export default function AdminDashboardPage() {
                 Admin review mode
               </div>
               <p className="mt-1 text-xs leading-5 text-po-text-muted">
-                Mot man hinh cho cac quyet dinh nhay cam: approve, reject, role va audit.
+                Một màn hình cho các quyết định nhạy cảm: duyệt, từ chối, role và audit.
               </p>
             </div>
           </div>
@@ -232,28 +232,28 @@ export default function AdminDashboardPage() {
         ) : (
           <>
             <StatCard
-              label="Clinic cho duyet"
+              label="Phòng khám chờ duyệt"
               value={String(clinicStats?.pending ?? 0)}
               icon={BadgeCheck}
-              hint="Du lieu backend"
+              hint="Dữ liệu backend"
             />
             <StatCard
-              label="Tai khoan hoat dong"
+              label="Tài khoản hoạt động"
               value={String(summary?.activeUsers ?? 0)}
               icon={UsersRound}
               hint="Owner + Vet + Admin"
             />
             <StatCard
-              label="Tong nguoi dung"
+              label="Tổng người dùng"
               value={String(summary?.totalUsers ?? 0)}
               icon={UsersRound}
-              hint="Tat ca tai khoan"
+              hint="Tất cả tài khoản"
             />
             <StatCard
-              label="Tong clinic"
+              label="Tổng phòng khám"
               value={String(clinicStats?.total ?? 0)}
               icon={Building2}
-              hint={`${clinicStats?.approved ?? 0} da duyet, ${clinicStats?.rejected ?? 0} tu choi`}
+              hint={`${clinicStats?.approved ?? 0} đã duyệt, ${clinicStats?.rejected ?? 0} từ chối`}
             />
           </>
         )}
@@ -261,14 +261,14 @@ export default function AdminDashboardPage() {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <DashboardSection
-          title="Queue duyet clinic"
-          subtitle="Ho so dang cho admin xac minh giay phep va thong tin lien he."
+          title="Hồ sơ phòng khám chờ duyệt"
+          subtitle="Hồ sơ đang chờ admin xác minh giấy phép và thông tin liên hệ."
           action={
             <button
               onClick={() => navigate("/dashboard/admin/clinics")}
               className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
             >
-              Xem tat ca
+              Xem tất cả
             </button>
           }
         >
@@ -279,8 +279,8 @@ export default function AdminDashboardPage() {
           ) : clinicQueue.length === 0 ? (
             <EmptyState
               icon={Building2}
-              title="Khong co clinic cho duyet"
-              description="Tat ca ho so da duoc xu ly."
+              title="Không có phòng khám chờ duyệt"
+              description="Tất cả hồ sơ đã được xử lý."
             />
           ) : (
             <div className="grid gap-3">
@@ -295,7 +295,7 @@ export default function AdminDashboardPage() {
           )}
         </DashboardSection>
 
-        <DashboardSection title="System pulse" subtitle="Tin hieu he thong can admin theo doi.">
+        <DashboardSection title="System pulse" subtitle="Tín hiệu hệ thống admin cần theo dõi.">
           {alertsLoading || auditLoading ? (
             <div className="flex justify-center py-8">
               <LoadingSpinner />
@@ -321,13 +321,13 @@ export default function AdminDashboardPage() {
       <div className="grid gap-5 lg:grid-cols-2">
         <DashboardSection
           title="Role matrix"
-          subtitle="Tom tat nhom quyen chinh de doi chieu voi policy backend."
+          subtitle="Tóm tắt nhóm quyền chính để đối chiếu với policy backend."
           action={
             <button
               onClick={() => navigate("/dashboard/admin/users")}
               className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
             >
-              Xem nguoi dung
+              Xem người dùng
             </button>
           }
         >
@@ -338,9 +338,9 @@ export default function AdminDashboardPage() {
           ) : (
             <div className="grid gap-3">
               {[
-                { name: "Owner", permissions: "Pets, bookings, reminders", users: userStats?.owners ?? 0 },
-                { name: "Vet", permissions: "Clinic mode, medical records", users: userStats?.vets ?? 0 },
-                { name: "Admin", permissions: "Clinic review, roles, audit", users: userStats?.admins ?? 0 },
+                { name: "Owner", permissions: "Thú cưng, lịch hẹn, nhắc nhở", users: userStats?.owners ?? 0 },
+                { name: "Vet", permissions: "Phòng khám, hồ sơ y tế", users: userStats?.vets ?? 0 },
+                { name: "Admin", permissions: "Duyệt phòng khám, roles, audit", users: userStats?.admins ?? 0 },
               ].map((role) => (
                 <div
                   key={role.name}
@@ -359,7 +359,7 @@ export default function AdminDashboardPage() {
           )}
         </DashboardSection>
 
-        <DashboardSection title="Audit activity" subtitle="Cac hanh dong quan trong gan day tren he thong.">
+        <DashboardSection title="Audit activity" subtitle="Các hành động quan trọng gần đây trên hệ thống.">
           {auditLoading ? (
             <div className="flex justify-center py-8">
               <LoadingSpinner />
@@ -367,8 +367,8 @@ export default function AdminDashboardPage() {
           ) : auditItems.length === 0 ? (
             <EmptyState
               icon={TrendingUp}
-              title="Chua co audit log"
-              description="Khong co hanh dong quan tri gan day."
+              title="Chưa có audit log"
+              description="Không có hành động quản trị gần đây."
             />
           ) : (
             <div className="grid gap-3">
@@ -430,14 +430,14 @@ function ClinicReviewRow({
           </span>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-po-text">{clinic.clinicName}</p>
-            <p className="truncate text-xs text-po-text-muted">{clinic.address ?? "Chua co dia chi"}</p>
+            <p className="truncate text-xs text-po-text-muted">{clinic.address ?? "Chưa có địa chỉ"}</p>
           </div>
           <StatusBadge variant={statusVariant(clinic.status)} label={clinic.status} />
         </div>
         <div className="mt-3 grid gap-2 text-xs text-po-text-muted sm:grid-cols-3">
-          <span>License: {clinic.licenseNumber ?? "Chua cap nhat"}</span>
-          <span>Email: {clinic.email ?? "Chua co"}</span>
-          <span>Submitted: {formatDate(clinic.createdAt)}</span>
+          <span>Giấy phép: {clinic.licenseNumber ?? "Chưa cập nhật"}</span>
+          <span>Email: {clinic.email ?? "Chưa có"}</span>
+          <span>Ngày gửi: {formatDate(clinic.createdAt)}</span>
         </div>
       </div>
 
@@ -446,7 +446,7 @@ function ClinicReviewRow({
           onClick={onReview}
           className="inline-flex h-9 items-center gap-1.5 rounded-full bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
         >
-          Review
+          Xem hồ sơ
         </button>
       </div>
     </div>

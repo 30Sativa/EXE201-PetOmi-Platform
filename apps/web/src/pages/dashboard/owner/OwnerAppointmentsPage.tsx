@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Plus, CalendarCheck, X } from "lucide-react"
+import { Plus, CalendarCheck, CalendarCog, X } from "lucide-react"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
@@ -7,6 +7,8 @@ import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge, { appointmentStatusVariant } from "@/components/ui/StatusBadge"
 import TabFilter from "@/components/ui/TabFilter"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
+import OwnerBookAppointmentModal from "@/components/dashboard/owner/OwnerBookAppointmentModal"
+import OwnerRescheduleModal from "@/components/dashboard/owner/OwnerRescheduleModal"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { getOwnerAppointmentsApi, cancelAppointmentApi } from "@/services/appointments.service"
 import { getPetsApi } from "@/services/pets.service"
@@ -52,6 +54,8 @@ export default function OwnerAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [cancelTarget, setCancelTarget] = useState<AppointmentListItemResponse | null>(null)
   const [cancelReason, setCancelReason] = useState("")
+  const [isBookingOpen, setIsBookingOpen] = useState(false)
+  const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentListItemResponse | null>(null)
   const queryClient = useQueryClient()
 
   const { data: appointments, isLoading, error } = useQuery({
@@ -118,7 +122,10 @@ export default function OwnerAppointmentsPage() {
             Xem, đặt và quản lý lịch hẹn khám cho thú cưng.
           </p>
         </div>
-        <button className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
+        <button
+          onClick={() => setIsBookingOpen(true)}
+          className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
+        >
           <Plus className="size-4" />
           Đặt lịch hẹn
         </button>
@@ -156,7 +163,10 @@ export default function OwnerAppointmentsPage() {
             title="Không có lịch hẹn nào"
             description="Hãy đặt lịch hẹn để chăm sóc thú cưng của bạn."
             action={
-              <button className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover">
+              <button
+                onClick={() => setIsBookingOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
+              >
                 <Plus className="size-4" />
                 Đặt lịch hẹn
               </button>
@@ -171,6 +181,7 @@ export default function OwnerAppointmentsPage() {
                 petName={getPetName(appt.petId)}
                 canCancel={canCancel(appt)}
                 onCancel={() => setCancelTarget(appt)}
+                onReschedule={() => setRescheduleTarget(appt)}
               />
             ))}
           </div>
@@ -198,6 +209,18 @@ export default function OwnerAppointmentsPage() {
         variant="danger"
         isLoading={cancelMutation.isPending}
       />
+
+      <OwnerBookAppointmentModal
+        isOpen={isBookingOpen}
+        onClose={() => setIsBookingOpen(false)}
+      />
+
+      <OwnerRescheduleModal
+        isOpen={rescheduleTarget !== null}
+        onClose={() => setRescheduleTarget(null)}
+        appointment={rescheduleTarget}
+        petName={rescheduleTarget ? getPetName(rescheduleTarget.petId) : ""}
+      />
     </div>
   )
 }
@@ -207,11 +230,13 @@ function AppointmentCard({
   petName,
   canCancel,
   onCancel,
+  onReschedule,
 }: {
   appt: AppointmentListItemResponse
   petName: string
   canCancel: boolean
   onCancel: () => void
+  onReschedule: () => void
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-4 rounded-2xl border border-po-border bg-white px-4 py-4">
@@ -240,15 +265,26 @@ function AppointmentCard({
         </div>
       </div>
 
-      {canCancel && (
-        <button
-          onClick={onCancel}
-          className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-po-border px-3 text-xs font-semibold text-po-danger transition hover:border-po-danger hover:bg-po-danger-soft"
-        >
-          <X className="size-3" />
-          Hủy
-        </button>
-      )}
+      <div className="flex shrink-0 items-center gap-2">
+        {canCancel && (
+          <>
+            <button
+              onClick={onReschedule}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border px-3 text-xs font-semibold text-po-primary transition hover:border-po-primary hover:bg-po-primary-soft"
+            >
+              <CalendarCog className="size-3" />
+              Đổi lịch
+            </button>
+            <button
+              onClick={onCancel}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border px-3 text-xs font-semibold text-po-danger transition hover:border-po-danger hover:bg-po-danger-soft"
+            >
+              <X className="size-3" />
+              Hủy
+            </button>
+          </>
+        )}
+      </div>
     </div>
   )
 }

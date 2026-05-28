@@ -75,8 +75,20 @@ namespace PetOmiPlatform.API.Controllers
             else if (folderTemplate.Contains("{clinicId}"))
             {
                 if (string.IsNullOrWhiteSpace(request.ResourceId))
-                    return BadRequest(BaseResponse<object>.Fail($"Voi imageType '{request.ImageType}', resourceId (clinicId) la bat buoc."));
-                folder = folderTemplate.Replace("{clinicId}", request.ResourceId, StringComparison.OrdinalIgnoreCase);
+                {
+                    if (request.ImageType.Equals("clinic_license", StringComparison.OrdinalIgnoreCase))
+                    {
+                        folder = $"clinics/pending/{userId}/license";
+                    }
+                    else
+                    {
+                        return BadRequest(BaseResponse<object>.Fail($"Voi imageType '{request.ImageType}', resourceId (clinicId) la bat buoc."));
+                    }
+                }
+                else
+                {
+                    folder = folderTemplate.Replace("{clinicId}", request.ResourceId, StringComparison.OrdinalIgnoreCase);
+                }
             }
             else if (folderTemplate.Contains("{userId}"))
             {

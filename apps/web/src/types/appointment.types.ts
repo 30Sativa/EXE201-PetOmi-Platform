@@ -35,22 +35,33 @@ export interface AppointmentListItemResponse {
 }
 
 export interface AvailableSlotResponse {
+  vetClinicId: string
   startTime: string
   endTime: string
   isAvailable: boolean
+}
+
+export interface ClinicDoctorResponse {
+  vetClinicId: string
+  vetProfileId: string
+  userId: string
+  fullName: string
+  avatarUrl: string | null
+  specialization: string | null
+  roleName: string
 }
 
 // Request types
 export interface BookAppointmentRequest {
   petId: string
   clinicId: string
+  vetClinicId: string
   serviceId?: string
   appointmentDate: string
   startTime: string
   endTime: string
   appointmentType: string
   notes?: string
-  isWalkIn?: boolean
 }
 
 export interface CancelAppointmentRequest {

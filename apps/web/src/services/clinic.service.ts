@@ -1,5 +1,7 @@
 import { api } from "@/lib/axios"
 import type {
+  ClinicSearchResult,
+  ClinicServiceResponse,
   CreateClinicRequest,
   CreateClinicResponse,
   CreateVetProfileRequest,
@@ -18,6 +20,16 @@ const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
 export const getMyClinicApi = async (): Promise<MyClinicResponse | null> => {
   const response = await api.get("/clinic/my-clinic")
   return unwrapResponse<MyClinicResponse | null>(response)
+}
+
+export const searchClinicsApi = async (params?: {
+  city?: string
+  keyword?: string
+  page?: number
+  pageSize?: number
+}): Promise<{ items: ClinicSearchResult[]; meta: { page: number; pageSize: number; totalCount: number } }> => {
+  const response = await api.get("/public/clinics", { params })
+  return unwrapResponse<{ items: ClinicSearchResult[]; meta: { page: number; pageSize: number; totalCount: number } }>(response)
 }
 
 export const createVetProfileApi = async (

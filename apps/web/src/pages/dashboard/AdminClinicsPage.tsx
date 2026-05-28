@@ -7,6 +7,7 @@ import {
   Eye,
   MapPin,
   Phone,
+  X,
   XCircle,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -16,12 +17,12 @@ import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import EmptyState from "@/components/ui/EmptyState"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import RejectDialog from "@/components/ui/RejectDialog"
-import ClinicDetailDrawer from "@/components/clinic/ClinicDetailDrawer"
 import {
   getAdminClinicsApi,
   approveClinicApi,
   rejectClinicApi,
 } from "@/services/admin.service"
+import { cn } from "@/lib/utils"
 import type { ClinicListItemResponse, PagedData } from "@/types"
 
 function getPagedItems<T>(paged?: PagedData<T>) {
@@ -46,6 +47,31 @@ function formatDate(dateStr: string) {
 
 type StatusFilter = "Pending" | "Approved" | "Rejected"
 
+const actionButtonClass =
+  "inline-flex h-9 min-w-[104px] items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+
+function clinicStatusLabel(status: string) {
+  switch (status) {
+    case "Approved":
+      return "Đã duyệt"
+    case "Rejected":
+      return "Từ chối"
+    default:
+      return "Chờ duyệt"
+  }
+}
+
+function clinicStatusVariant(status: string) {
+  switch (status) {
+    case "Approved":
+      return "success" as const
+    case "Rejected":
+      return "danger" as const
+    default:
+      return "warning" as const
+  }
+}
+
 export default function AdminClinicsPage() {
   const queryClient = useQueryClient()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending")
@@ -55,6 +81,8 @@ export default function AdminClinicsPage() {
   const [approveTarget, setApproveTarget] = useState<ClinicListItemResponse | null>(null)
   const [rejectTarget, setRejectTarget] = useState<ClinicListItemResponse | null>(null)
   const [detailClinic, setDetailClinic] = useState<ClinicListItemResponse | null>(null)
+  const [licensePreviewClinic, setLicensePreviewClinic] =
+    useState<ClinicListItemResponse | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "clinics", statusFilter, page],
@@ -97,7 +125,7 @@ export default function AdminClinicsPage() {
       <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
         <div className="p-6 md:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-            Admin clinic management
+            Quản lý duyệt phòng khám
           </p>
           <h2 className="mt-4 text-3xl font-extrabold leading-tight md:text-4xl">
             Duyệt phòng khám
@@ -256,15 +284,14 @@ export default function AdminClinicsPage() {
                             {clinic.licenseNumber}
                           </span>
                           {clinic.licenseImageUrl && (
-                            <a
-                              href={clinic.licenseImageUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-po-primary text-xs hover:underline"
+                            <button
+                              type="button"
+                              onClick={() => setLicensePreviewClinic(clinic)}
+                              className="inline-flex items-center gap-1 text-po-primary text-xs font-semibold transition hover:text-po-primary-hover"
                             >
                               <Eye className="size-3" />
                               Xem ảnh
-                            </a>
+                            </button>
                           )}
                         </div>
                       ) : (
@@ -276,20 +303,8 @@ export default function AdminClinicsPage() {
                     </td>
                     <td className="px-5 py-4">
                       <StatusBadge
-                        variant={
-                          clinic.status === "Approved"
-                            ? "success"
-                            : clinic.status === "Rejected"
-                              ? "danger"
-                              : "warning"
-                        }
-                        label={
-                          clinic.status === "Approved"
-                            ? "Đã duyệt"
-                            : clinic.status === "Rejected"
-                              ? "Từ chối"
-                              : "Chờ duyệt"
-                        }
+                        variant={clinicStatusVariant(clinic.status)}
+                        label={clinicStatusLabel(clinic.status)}
                       />
                       {clinic.rejectedReason && (
                         <p className="mt-1 max-w-[180px] truncate text-[10px] text-po-text-muted">
@@ -301,10 +316,14 @@ export default function AdminClinicsPage() {
                       {formatDate(clinic.createdAt)}
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex flex-wrap items-center gap-2">
+                      <div className="grid w-[116px] gap-2">
                         <button
+                          type="button"
                           onClick={() => setDetailClinic(clinic)}
-                          className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-surface-muted text-po-text transition hover:-translate-y-0.5 hover:bg-po-border/30"
+                          className={cn(
+                            actionButtonClass,
+                            "bg-po-surface-muted text-po-text ring-1 ring-po-border/70 hover:bg-white hover:shadow-sm",
+                          )}
                           title="Xem chi tiết"
                         >
                           <Eye className="size-3.5" />
@@ -314,9 +333,13 @@ export default function AdminClinicsPage() {
                         {clinic.status === "Pending" && (
                           <>
                             <button
+                              type="button"
                               onClick={() => setApproveTarget(clinic)}
                               disabled={approveMutation.isPending}
-                              className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-success-soft text-po-success transition hover:-translate-y-0.5 hover:bg-po-success hover:text-white"
+                              className={cn(
+                                actionButtonClass,
+                                "bg-po-success-soft text-po-success hover:bg-po-success hover:text-white hover:shadow-sm",
+                              )}
                               title="Duyệt phòng khám"
                             >
                               <CheckCircle2 className="size-3.5" />
@@ -324,9 +347,13 @@ export default function AdminClinicsPage() {
                             </button>
 
                             <button
+                              type="button"
                               onClick={() => setRejectTarget(clinic)}
                               disabled={rejectMutation.isPending}
-                              className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-danger-soft text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white"
+                              className={cn(
+                                actionButtonClass,
+                                "bg-po-danger-soft text-po-danger hover:bg-po-danger hover:text-white hover:shadow-sm",
+                              )}
                               title="Từ chối phòng khám"
                             >
                               <XCircle className="size-3.5" />
@@ -420,9 +447,15 @@ export default function AdminClinicsPage() {
         isLoading={rejectMutation.isPending}
       />
 
-      <ClinicDetailDrawer
+      <ClinicDetailModal
         clinic={detailClinic}
         onClose={() => setDetailClinic(null)}
+        onPreviewLicense={(clinic) => setLicensePreviewClinic(clinic)}
+      />
+
+      <LicenseImageModal
+        clinic={licensePreviewClinic}
+        onClose={() => setLicensePreviewClinic(null)}
       />
     </div>
   )
@@ -449,6 +482,169 @@ function HeroMetric({
         {value}
       </p>
       <p className="mt-1 text-xs leading-5 text-po-text-muted">{label}</p>
+    </div>
+  )
+}
+
+function ClinicDetailModal({
+  clinic,
+  onClose,
+  onPreviewLicense,
+}: {
+  clinic: ClinicListItemResponse | null
+  onClose: () => void
+  onPreviewLicense: (clinic: ClinicListItemResponse) => void
+}) {
+  if (!clinic) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-po-text/45 px-4 py-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <section
+        className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[30px] bg-white shadow-2xl shadow-orange-950/20 ring-1 ring-po-border/80"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-po-border/70 px-5 py-4 md:px-6">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-po-text-subtle">
+              Chi tiết hồ sơ phòng khám
+            </p>
+            <h3 className="mt-1 truncate text-2xl font-extrabold text-po-text">
+              {clinic.clinicName}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-po-surface-muted text-po-text-muted transition hover:bg-po-border/50 hover:text-po-text"
+            aria-label="Đóng chi tiết phòng khám"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(88vh-96px)] overflow-y-auto p-5 md:p-6">
+          <div className="grid gap-4 md:grid-cols-[1fr_240px]">
+            <div className="rounded-3xl bg-po-surface-muted/70 p-5 ring-1 ring-po-border/70">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="grid size-12 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/80">
+                  <BadgeCheck className="size-5" />
+                </span>
+                <div>
+                  <StatusBadge
+                    variant={clinicStatusVariant(clinic.status)}
+                    label={clinicStatusLabel(clinic.status)}
+                  />
+                  <p className="mt-2 text-xs text-po-text-muted">
+                    Ngày đăng ký: {formatDate(clinic.createdAt)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <DetailInfo label="Email" value={clinic.email ?? "Chưa có"} />
+                <DetailInfo label="Điện thoại" value={clinic.phone ?? "Chưa có"} />
+                <DetailInfo label="Số giấy phép" value={clinic.licenseNumber ?? "Chưa có"} />
+                <DetailInfo label="Trạng thái" value={clinicStatusLabel(clinic.status)} />
+              </div>
+
+              <div className="mt-4">
+                <DetailInfo label="Địa chỉ" value={clinic.address ?? "Chưa có địa chỉ"} />
+              </div>
+
+              {clinic.rejectedReason ? (
+                <p className="mt-5 rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">
+                  Lý do từ chối: {clinic.rejectedReason}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="rounded-3xl bg-white p-4 ring-1 ring-po-border/80">
+              <p className="text-sm font-extrabold text-po-text">Ảnh giấy phép</p>
+              {clinic.licenseImageUrl ? (
+                <button
+                  type="button"
+                  onClick={() => onPreviewLicense(clinic)}
+                  className="mt-3 block w-full overflow-hidden rounded-2xl bg-po-surface-muted text-left ring-1 ring-po-border/70 transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <img
+                    src={clinic.licenseImageUrl}
+                    alt={`Giấy phép phòng khám ${clinic.clinicName}`}
+                    className="h-48 w-full object-cover"
+                  />
+                  <span className="flex items-center justify-center gap-1.5 px-3 py-3 text-xs font-semibold text-po-primary">
+                    <Eye className="size-3.5" />
+                    Xem ảnh lớn
+                  </span>
+                </button>
+              ) : (
+                <div className="mt-3 rounded-2xl bg-po-surface-muted px-4 py-8 text-center text-sm font-semibold text-po-text-muted">
+                  Chưa có ảnh giấy phép
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function LicenseImageModal({
+  clinic,
+  onClose,
+}: {
+  clinic: ClinicListItemResponse | null
+  onClose: () => void
+}) {
+  if (!clinic?.licenseImageUrl) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] grid place-items-center bg-po-text/55 px-4 py-6 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <section
+        className="w-full max-w-5xl overflow-hidden rounded-[30px] bg-white shadow-2xl shadow-orange-950/25 ring-1 ring-po-border/80"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-4 border-b border-po-border/70 px-5 py-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-po-text-subtle">
+              Ảnh giấy phép
+            </p>
+            <h3 className="truncate text-lg font-extrabold text-po-text">{clinic.clinicName}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-po-surface-muted text-po-text-muted transition hover:bg-po-border/50 hover:text-po-text"
+            aria-label="Đóng ảnh giấy phép"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+        <div className="bg-po-surface-muted/60 p-4">
+          <img
+            src={clinic.licenseImageUrl}
+            alt={`Giấy phép phòng khám ${clinic.clinicName}`}
+            className="mx-auto max-h-[72vh] w-auto rounded-2xl bg-white object-contain shadow-sm ring-1 ring-po-border/80"
+          />
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function DetailInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.13em] text-po-text-subtle">
+        {label}
+      </p>
+      <p className="mt-1 break-words text-sm font-semibold text-po-text">{value}</p>
     </div>
   )
 }

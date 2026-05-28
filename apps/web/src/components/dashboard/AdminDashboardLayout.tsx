@@ -2,7 +2,6 @@
   Activity,
   Bell,
   BadgeCheck,
-  ClipboardCheck,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -18,7 +17,7 @@ import { cn } from "@/lib/utils"
 
 const navItems = [
   { label: "Tổng quan", to: "/dashboard/admin", icon: LayoutDashboard, exact: true },
-  { label: "Duyệt clinic", to: "/dashboard/admin/clinics", icon: BadgeCheck },
+  { label: "Duyệt phòng khám", to: "/dashboard/admin/clinics", icon: BadgeCheck },
   { label: "Người dùng", to: "/dashboard/admin/users", icon: UsersRound },
   { label: "Roles", to: "/dashboard/admin/roles", icon: KeyRound },
   { label: "Cảnh báo", to: "/dashboard/admin/alerts", icon: ShieldAlert },
@@ -54,11 +53,7 @@ export default function AdminDashboardLayout() {
             </span>
           </Link>
 
-          <div className="rounded-2xl bg-po-primary-soft px-3 py-3 text-xs font-semibold leading-5 text-po-primary ring-1 ring-po-border/60">
-            Kiểm soát clinic, người dùng và quyền truy cập trong một nơi.
-          </div>
-
-          <nav className="mt-1 grid gap-1">
+          <nav className="mt-3 grid gap-1">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -78,16 +73,6 @@ export default function AdminDashboardLayout() {
               </NavLink>
             ))}
           </nav>
-
-          <div className="mt-auto grid gap-2 rounded-2xl bg-po-surface-muted/80 p-4 text-sm ring-1 ring-po-border/70">
-            <div className="flex items-center gap-2 font-semibold text-po-text">
-              <ClipboardCheck className="size-4" />
-              Review flow
-            </div>
-            <p className="text-xs leading-5 text-po-text-muted">
-              Ưu tiên hồ sơ pending, theo dõi audit và xử lý cảnh báo trước khi cấp quyền.
-            </p>
-          </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col gap-5">

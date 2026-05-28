@@ -27,6 +27,7 @@ import AdminRolesPage from "@/pages/dashboard/AdminRolesPage"
 import AdminSettingsPage from "@/pages/dashboard/AdminSettingsPage"
 import AdminUsersPage from "@/pages/dashboard/AdminUsersPage"
 import ClinicDashboardPage from "@/pages/dashboard/ClinicDashboardPage"
+import ClinicAppointmentsPage from "@/pages/dashboard/clinic/ClinicAppointmentsPage"
 import OwnerDashboardPage from "@/pages/dashboard/owner/OwnerDashboardPage"
 import OwnerAppointmentsPage from "@/pages/dashboard/owner/OwnerAppointmentsPage"
 import OwnerClinicRegistrationPage from "@/pages/dashboard/owner/OwnerClinicRegistrationPage"
@@ -176,6 +177,10 @@ const router = createBrowserRouter([
           {
             index: true,
             element: <ClinicDashboardPage />,
+          },
+          {
+            path: "appointments",
+            element: <ClinicAppointmentsPage />,
           },
         ],
       },

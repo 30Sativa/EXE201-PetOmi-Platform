@@ -64,21 +64,21 @@ function formatRelative(dateStr: string): string {
 }
 
 const ACTION_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  ApproveClinic: { label: "Duyệt clinic", icon: CheckCircle2, color: "text-po-success" },
-  RejectClinic: { label: "Từ chối clinic", icon: X, color: "text-po-danger" },
+  ApproveClinic: { label: "Duyệt phòng khám", icon: CheckCircle2, color: "text-po-success" },
+  RejectClinic: { label: "Từ chối phòng khám", icon: X, color: "text-po-danger" },
   ActivateUser: { label: "Mở khóa tài khoản", icon: UserCheck, color: "text-po-success" },
   DeactivateUser: { label: "Khóa tài khoản", icon: AlertCircle, color: "text-po-warning" },
   AssignAdminRole: { label: "Gán Admin", icon: KeyRound, color: "text-po-primary" },
   RevokeAdminRole: { label: "Thu hồi Admin", icon: KeyRound, color: "text-po-danger" },
-  CreateClinic: { label: "Tạo clinic", icon: ShieldAlert, color: "text-po-success" },
-  UpdateClinic: { label: "Cập nhật clinic", icon: ShieldAlert, color: "text-po-primary" },
+  CreateClinic: { label: "Tạo phòng khám", icon: ShieldAlert, color: "text-po-success" },
+  UpdateClinic: { label: "Cập nhật phòng khám", icon: ShieldAlert, color: "text-po-primary" },
   BookAppointment: { label: "Đặt lịch", icon: Clock, color: "text-po-primary" },
   CancelAppointment: { label: "Hủy lịch", icon: X, color: "text-po-danger" },
   ApproveAppointment: { label: "Duyệt lịch", icon: CheckCircle2, color: "text-po-success" },
 }
 
 const CATEGORY_META: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  Clinic: { label: "Clinic", icon: ShieldAlert, color: "text-po-primary" },
+  Clinic: { label: "Phòng khám", icon: ShieldAlert, color: "text-po-primary" },
   Role: { label: "Role", icon: KeyRound, color: "text-po-warning" },
   User: { label: "User", icon: UsersRound, color: "text-po-success" },
   Appointment: { label: "Appointment", icon: Clock, color: "text-po-primary" },

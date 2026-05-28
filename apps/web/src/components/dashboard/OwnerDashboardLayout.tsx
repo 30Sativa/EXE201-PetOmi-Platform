@@ -19,7 +19,7 @@ const navItems = [
   { label: "Tổng quan", to: "/dashboard/owner", icon: LayoutDashboard, exact: true },
   { label: "Thú cưng", to: "/dashboard/owner/pets", icon: PawPrint },
   { label: "Lịch hẹn", to: "/dashboard/owner/appointments", icon: CalendarCheck },
-  { label: "Dang ky clinic", to: "/dashboard/owner/register-clinic", icon: Building2 },
+  { label: "Đăng ký phòng khám", to: "/dashboard/owner/register-clinic", icon: Building2 },
   { label: "Lịch sử khám", to: "/dashboard/owner/history", icon: ClipboardList },
   { label: "Đánh giá", to: "/dashboard/owner/reviews", icon: MessageSquare },
   { label: "Nhắc nhở", to: "/dashboard/owner/reminders", icon: Bell },

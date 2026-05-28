@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { Camera, Upload, X } from "lucide-react"
+import { getErrorMessage } from "@/lib/utils"
 import { uploadImageApi, type CloudinaryUploadResult, type ImageType } from "@/services/upload.service"
 
 interface ImageUploadFieldProps {
@@ -16,9 +17,30 @@ interface ImageUploadFieldProps {
   buttonLabel?: string
   buttonClassName?: string
   showHelpText?: boolean
+  onUploadComplete?: (result: CloudinaryUploadResult) => void
 }
 
 const DEFAULT_MAX_SIZE_MB = 5
+
+function getUploadErrorMessage(error: unknown, imageType: ImageType) {
+  const message = getErrorMessage(error, "Upload thất bại. Vui lòng thử lại.")
+  const normalized = message.toLowerCase()
+
+  if (
+    normalized.includes("resourceid") ||
+    normalized.includes("clinicid") ||
+    normalized.includes("petid") ||
+    normalized.includes("imagetype")
+  ) {
+    if (imageType === "clinic_license") {
+      return "Chưa thể upload ảnh giấy phép. Vui lòng tải lại trang hoặc thử lại sau khi hệ thống cập nhật."
+    }
+
+    return "Chưa thể upload ảnh do thiếu thông tin liên kết. Vui lòng thử lại sau."
+  }
+
+  return message
+}
 
 export default function ImageUploadField({
   label,
@@ -34,15 +56,13 @@ export default function ImageUploadField({
   buttonLabel,
   buttonClassName,
   showHelpText = true,
+  onUploadComplete,
 }: ImageUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(value ?? null)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    setPreview(value ?? null)
-  }, [value])
+  const currentPreview = preview ?? value ?? null
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -65,8 +85,9 @@ export default function ImageUploadField({
         resourceId,
       )
       onChange(result.secureUrl)
-    } catch {
-      setError("Upload thất bại. Vui lòng thử lại.")
+      onUploadComplete?.(result)
+    } catch (error) {
+      setError(getUploadErrorMessage(error, imageType))
       URL.revokeObjectURL(objectUrl)
       setPreview(null)
     } finally {
@@ -107,11 +128,11 @@ export default function ImageUploadField({
             ) : (
               <>
                 <Camera className="size-4" />
-                {buttonLabel ?? (preview ? "Thay ảnh" : "Tải ảnh lên")}
+                {buttonLabel ?? (currentPreview ? "Thay ảnh" : "Tải ảnh lên")}
               </>
             )}
           </button>
-          {preview && !disabled && (
+          {currentPreview && !disabled && (
             <button
               type="button"
               onClick={handleRemove}
@@ -142,7 +163,7 @@ export default function ImageUploadField({
     )
   }
 
-  if (preview) {
+  if (currentPreview) {
     return (
       <div className="grid gap-1.5">
         {label && (
@@ -150,7 +171,7 @@ export default function ImageUploadField({
         )}
         <div className="relative inline-block w-full">
           <img
-            src={preview}
+            src={currentPreview}
             alt="Preview"
             className={previewClassName ?? "h-24 w-full rounded-xl border border-po-border object-cover"}
             onError={() => setError("Không thể tải ảnh.")}

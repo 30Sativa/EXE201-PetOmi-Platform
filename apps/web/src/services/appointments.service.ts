@@ -39,12 +39,12 @@ export const getAvailableSlotsApi = async (params: {
   serviceId?: string
   vetClinicId?: string
 }): Promise<AvailableSlotResponse[]> => {
-  const response = await api.get("/appointments/available-slots", { params })
+  const response = await api.get("/appointments/owner/available-slots", { params })
   return unwrapResponse<AvailableSlotResponse[]>(response)
 }
 
 export const getClinicDoctorsApi = async (clinicId: string): Promise<ClinicDoctorResponse[]> => {
-  const response = await api.get("/appointments/doctors", { params: { clinicId } })
+  const response = await api.get("/appointments/owner/doctors", { params: { clinicId } })
   return unwrapResponse<ClinicDoctorResponse[]>(response)
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { AlertTriangle, CalendarCheck, ChevronLeft, Clock, Plus, Stethoscope, X } from "lucide-react"
+import { AlertTriangle, CalendarCheck, Clock, Plus, Stethoscope, X } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
@@ -42,10 +42,12 @@ export default function ClinicQuickAddModal({
 
   useEffect(() => {
     if (!isOpen) {
-      setSelectedPet(null)
-      setAppointmentType("Checkup")
-      setNotes("")
-      setErrorMessage("")
+      queueMicrotask(() => {
+        setSelectedPet(null)
+        setAppointmentType("Checkup")
+        setNotes("")
+        setErrorMessage("")
+      })
     }
   }, [isOpen])
 
@@ -122,7 +124,6 @@ export default function ClinicQuickAddModal({
   }
 
   const isLoading = walkInMutation.isPending || emergencyMutation.isPending
-  const currentMutation = type === "emergency" ? emergencyMutation : walkInMutation
 
   const handleSubmit = () => {
     if (!selectedPet) {
@@ -141,7 +142,6 @@ export default function ClinicQuickAddModal({
 
   const isEmergency = type === "emergency"
   const now = new Date()
-  const todayStr = now.toISOString().split("T")[0]
   const timeStr = now.toTimeString().slice(0, 5)
 
   return (

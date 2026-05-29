@@ -7,36 +7,40 @@ import {
   Clock,
   LogIn,
   Plus,
+  Stethoscope,
+  UserPlus,
   X,
   XCircle,
 } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import TabFilter from "@/components/ui/TabFilter"
-import ConfirmDialog from "@/components/ui/ConfirmDialog"
-import ClinicQuickAddModal from "@/components/dashboard/clinic/ClinicQuickAddModal"
-import { useMe } from "@/hooks/useAuthQueries"
-import { cn } from "@/lib/utils"
-import { getErrorMessage } from "@/lib/utils"
-import { getMyClinicApi } from "@/services/clinic.service"
+import { useMyClinic } from "@/hooks/useClinicQueries"
+import { cn, getErrorMessage } from "@/lib/utils"
+import { formatDate, formatShortId, formatTime, todayDateInput } from "@/lib/format"
 import {
-  checkInAppointmentApi,
+  cancelAppointmentApi,
+  checkInClinicAppointmentApi,
   completeAppointmentApi,
   confirmAppointmentApi,
   createEmergencyAppointmentApi,
-  createWalkInAppointmentApi,
+  createGuestWalkInIntakeApi,
   getClinicAppointmentsApi,
   noShowAppointmentApi,
   rejectAppointmentApi,
 } from "@/services/clinic-appointments.service"
-import type { AppointmentListItemResponse } from "@/types"
+import { getClinicDoctorsInternalApi, getClinicPublicApi } from "@/services/clinic.service"
+import type { AppointmentListItemResponse, CreateGuestWalkInIntakeRequest } from "@/types"
 
-type StatusFilter = "all" | "pending" | "confirmed" | "checked-in" | "completed" | "cancelled" | "no-show" | "expired"
+type StatusFilter = "all" | "pending" | "confirmed" | "checked-in" | "completed" | "cancelled" | "no-show"
+type ActionType = "confirm" | "reject" | "check-in" | "complete" | "no-show" | "cancel"
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Tất cả" },
@@ -48,237 +52,156 @@ const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "no-show", label: "Không đến" },
 ]
 
-const statusBadgeVariant = (status: string): "pending" | "confirmed" | "completed" | "cancelled" | "default" => {
+const appointmentTypes = [
+  { value: "Checkup", label: "Khám tổng quát" },
+  { value: "Vaccination", label: "Tiêm phòng" },
+  { value: "Surgery", label: "Phẫu thuật" },
+  { value: "Emergency", label: "Cấp cứu" },
+  { value: "Grooming", label: "Làm đẹp" },
+  { value: "Followup", label: "Tái khám" },
+]
+
+function statusVariant(status: string) {
   switch (status.toLowerCase()) {
-    case "pending": return "pending"
-    case "confirmed": return "confirmed"
-    case "checked-in": return "confirmed"
-    case "completed": return "completed"
-    case "cancelled": return "cancelled"
-    case "rejected": return "cancelled"
-    case "no-show": return "cancelled"
-    default: return "default"
+    case "pending":
+      return "pending" as const
+    case "confirmed":
+    case "checked-in":
+      return "confirmed" as const
+    case "completed":
+      return "completed" as const
+    case "cancelled":
+    case "rejected":
+    case "no-show":
+      return "cancelled" as const
+    default:
+      return "default" as const
   }
 }
 
-const statusLabel = (status: string) => {
-  switch (status.toLowerCase()) {
-    case "pending": return "Chờ xác nhận"
-    case "confirmed": return "Đã xác nhận"
-    case "checked-in": return "Đã check-in"
-    case "completed": return "Hoàn thành"
-    case "cancelled": return "Đã hủy"
-    case "rejected": return "Bị từ chối"
-    case "no-show": return "Không đến"
-    case "expired": return "Hết hạn"
-    default: return status
+function statusLabel(status: string) {
+  const map: Record<string, string> = {
+    pending: "Chờ xác nhận",
+    confirmed: "Đã xác nhận",
+    "checked-in": "Đã check-in",
+    completed: "Hoàn thành",
+    cancelled: "Đã hủy",
+    rejected: "Bị từ chối",
+    "no-show": "Không đến",
+    expired: "Hết hạn",
   }
-}
 
-const formatDate = (dateStr: string) => {
-  try {
-    return new Date(dateStr).toLocaleDateString("vi-VN", {
-      weekday: "short",
-      day: "2-digit",
-      month: "2-digit",
-    })
-  } catch {
-    return dateStr
-  }
-}
-
-const formatTime = (timeStr: string) => timeStr.slice(0, 5)
-
-interface ActionState {
-  appointment: AppointmentListItemResponse | null
-  type: "confirm" | "reject" | "complete" | "no-show" | "check-in" | null
+  return map[status.toLowerCase()] ?? status
 }
 
 export default function ClinicAppointmentsPage() {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
+  const clinicId = clinic?.clinicId ?? ""
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending")
-  const [actionTarget, setActionTarget] = useState<ActionState>({ appointment: null, type: null })
-  const [rejectReason, setRejectReason] = useState("")
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
-  const [quickAddType, setQuickAddType] = useState<"walk-in" | "emergency">("walk-in")
+  const [dateFilter, setDateFilter] = useState(todayDateInput())
+  const [actionTarget, setActionTarget] = useState<{ appointment: AppointmentListItemResponse; type: ActionType } | null>(null)
+  const [reason, setReason] = useState("")
+  const [isGuestOpen, setIsGuestOpen] = useState(false)
+  const [isEmergencyOpen, setIsEmergencyOpen] = useState(false)
 
-  const { data: me } = useMe()
-  const { data: myClinic } = useQuery({
-    queryKey: ["owner", "my-clinic"],
-    queryFn: getMyClinicApi,
-    enabled: me?.roles?.includes("ClinicOwner") ?? false,
-    retry: false,
-  })
-
-  const clinicId = myClinic?.clinicId ?? ""
-
-  const { data: appointmentsData, isLoading, error } = useQuery({
-    queryKey: ["clinic-appointments", clinicId, statusFilter],
+  const appointmentsQuery = useQuery({
+    queryKey: ["clinic", clinicId, "appointments", statusFilter, dateFilter],
     queryFn: () =>
       getClinicAppointmentsApi({
         clinicId,
         status: statusFilter === "all" ? undefined : statusFilter,
+        date: dateFilter || undefined,
         page: 1,
         pageSize: 50,
       }),
-    enabled: clinicId !== "",
+    enabled: Boolean(clinicId),
   })
 
-  const appointments = appointmentsData?.items ?? []
+  const appointments = appointmentsQuery.data?.items ?? []
 
-  const confirmMutation = useMutation({
-    mutationFn: (id: string) => confirmAppointmentApi(id),
-    onSuccess: () => {
-      toast.success("Đã xác nhận lịch hẹn.")
-      queryClient.invalidateQueries({ queryKey: ["clinic-appointments"] })
-      setActionTarget({ appointment: null, type: null })
-    },
-    onError: (e) => toast.error(getErrorMessage(e, "Xác nhận thất bại.")),
-  })
+  const invalidateAppointments = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "appointments"] }),
+      queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "dashboard-summary"] }),
+    ])
+  }
 
-  const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-      rejectAppointmentApi(id, { reason }),
-    onSuccess: () => {
-      toast.success("Đã từ chối lịch hẹn.")
-      queryClient.invalidateQueries({ queryKey: ["clinic-appointments"] })
-      setActionTarget({ appointment: null, type: null })
-      setRejectReason("")
-    },
-    onError: (e) => toast.error(getErrorMessage(e, "Từ chối thất bại.")),
-  })
-
-  const completeMutation = useMutation({
-    mutationFn: (id: string) => completeAppointmentApi(id),
-    onSuccess: () => {
-      toast.success("Đã đánh dấu hoàn thành.")
-      queryClient.invalidateQueries({ queryKey: ["clinic-appointments"] })
-      setActionTarget({ appointment: null, type: null })
-    },
-    onError: (e) => toast.error(getErrorMessage(e, "Thao tác thất bại.")),
-  })
-
-  const noShowMutation = useMutation({
-    mutationFn: (id: string) => noShowAppointmentApi(id),
-    onSuccess: () => {
-      toast.success("Đã đánh dấu không đến.")
-      queryClient.invalidateQueries({ queryKey: ["clinic-appointments"] })
-      setActionTarget({ appointment: null, type: null })
-    },
-    onError: (e) => toast.error(getErrorMessage(e, "Thao tác thất bại.")),
-  })
-
-  const checkInMutation = useMutation({
-    mutationFn: (id: string) => checkInAppointmentApi(id),
-    onSuccess: () => {
-      toast.success("Đã check-in thành công.")
-      queryClient.invalidateQueries({ queryKey: ["clinic-appointments"] })
-      setActionTarget({ appointment: null, type: null })
-    },
-    onError: (e) => toast.error(getErrorMessage(e, "Check-in thất bại.")),
-  })
-
-  const getActionDialog = () => {
-    const { type, appointment } = actionTarget
-    if (!type || !appointment) return null
-
-    const isLoading =
-      confirmMutation.isPending ||
-      rejectMutation.isPending ||
-      completeMutation.isPending ||
-      noShowMutation.isPending ||
-      checkInMutation.isPending
-
-    const handleConfirm = () => {
+  const actionMutation = useMutation({
+    mutationFn: async ({ appointment, type, reasonText }: { appointment: AppointmentListItemResponse; type: ActionType; reasonText?: string }) => {
       switch (type) {
         case "confirm":
-          confirmMutation.mutate(appointment.appointmentId)
-          break
-        case "complete":
-          completeMutation.mutate(appointment.appointmentId)
-          break
-        case "no-show":
-          noShowMutation.mutate(appointment.appointmentId)
-          break
+          return confirmAppointmentApi(appointment.appointmentId)
+        case "reject":
+          return rejectAppointmentApi(appointment.appointmentId, { reason: reasonText ?? "" })
         case "check-in":
-          checkInMutation.mutate(appointment.appointmentId)
-          break
+          return checkInClinicAppointmentApi(appointment.appointmentId, clinicId)
+        case "complete":
+          return completeAppointmentApi(appointment.appointmentId)
+        case "no-show":
+          return noShowAppointmentApi(appointment.appointmentId)
+        case "cancel":
+          return cancelAppointmentApi(appointment.appointmentId, { reason: reasonText })
       }
+    },
+    onSuccess: async (_, variables) => {
+      const successMap: Record<ActionType, string> = {
+        confirm: "Đã xác nhận lịch hẹn.",
+        reject: "Đã từ chối lịch hẹn.",
+        "check-in": "Đã check-in thành công.",
+        complete: "Đã hoàn thành lịch hẹn.",
+        "no-show": "Đã đánh dấu không đến.",
+        cancel: "Đã hủy lịch hẹn.",
+      }
+      toast.success(successMap[variables.type])
+      setActionTarget(null)
+      setReason("")
+      await invalidateAppointments()
+    },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật lịch hẹn.")),
+  })
+
+  const handleConfirmAction = () => {
+    if (!actionTarget) return
+    const needsReason = actionTarget.type === "reject" || actionTarget.type === "cancel"
+    if (needsReason && !reason.trim()) {
+      toast.error("Vui lòng nhập lý do.")
+      return
     }
 
-    const dialogs: Record<string, { title: string; description: string; confirmLabel: string; variant: "danger" | "primary" }> = {
-      confirm: {
-        title: "Xác nhận lịch hẹn",
-        description: `Xác nhận lịch hẹn của pet?`,
-        confirmLabel: "Xác nhận",
-        variant: "primary",
-      },
-      complete: {
-        title: "Hoàn thành lịch hẹn",
-        description: `Đánh dấu lịch hẹn này là đã hoàn thành?`,
-        confirmLabel: "Hoàn thành",
-        variant: "primary",
-      },
-      "no-show": {
-        title: "Đánh dấu không đến",
-        description: `Pet không đến trong lịch hẹn này?`,
-        confirmLabel: "Xác nhận",
-        variant: "danger",
-      },
-      "check-in": {
-        title: "Check-in lịch hẹn",
-        description: `Xác nhận pet đã đến phòng khám?`,
-        confirmLabel: "Check-in",
-        variant: "primary",
-      },
-    }
+    actionMutation.mutate({
+      appointment: actionTarget.appointment,
+      type: actionTarget.type,
+      reasonText: reason.trim() || undefined,
+    })
+  }
 
-    const d = dialogs[type]
-    if (!d) return null
+  if (isClinicLoading) {
+    return <div className="rounded-[30px] bg-white/88 py-16 text-center ring-1 ring-po-border/80"><LoadingSpinner /></div>
+  }
 
-    return (
-      <ConfirmDialog
-        isOpen={true}
-        onClose={() => {
-          setActionTarget({ appointment: null, type: null })
-          setRejectReason("")
-        }}
-        onConfirm={handleConfirm}
-        title={d.title}
-        description={d.description}
-        confirmLabel={d.confirmLabel}
-        variant={d.variant}
-        isLoading={isLoading}
-      />
-    )
+  if (!clinic) {
+    return <EmptyState icon={CalendarCheck} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi quản lý lịch hẹn." />
   }
 
   return (
     <div className="grid gap-6">
-      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-extrabold text-po-text">Quản lý lịch hẹn</h2>
-          <p className="mt-1 text-sm text-po-text-muted">
-            Xem, xác nhận và cập nhật trạng thái lịch hẹn của phòng khám.
-          </p>
+          <p className="mt-1 text-sm text-po-text-muted">Xác nhận, check-in, tiếp nhận walk-in và mở phiếu khám.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => {
-              setQuickAddType("walk-in")
-              setIsQuickAddOpen(true)
-            }}
+            onClick={() => setIsGuestOpen(true)}
             className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-po-primary-hover"
           >
-            <Plus className="size-4" />
-            Walk-in
+            <UserPlus className="size-4" />
+            Khách vãng lai
           </button>
           <button
-            onClick={() => {
-              setQuickAddType("emergency")
-              setIsQuickAddOpen(true)
-            }}
+            onClick={() => setIsEmergencyOpen(true)}
             className="inline-flex h-10 items-center gap-2 rounded-full bg-po-danger px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-po-danger/90"
           >
             <AlertTriangle className="size-4" />
@@ -287,110 +210,139 @@ export default function ClinicAppointmentsPage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <TabFilter
-        tabs={statusFilters}
-        activeTab={statusFilter}
-        onChange={setStatusFilter}
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="flex-1" />
+        <label className="flex h-11 items-center gap-2 rounded-2xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text-muted">
+          Ngày
+          <input
+            type="date"
+            value={dateFilter}
+            onChange={(event) => setDateFilter(event.target.value)}
+            className="h-9 rounded-xl border border-po-border bg-white px-2 text-sm font-semibold text-po-text"
+          />
+        </label>
+      </div>
 
-      {/* Appointment List */}
       <DashboardSection
         title={`${appointments.length} lịch hẹn`}
-        subtitle={
-          statusFilter !== "all"
-            ? statusFilters.find((f) => f.value === statusFilter)?.label
-            : "Tất cả lịch hẹn"
-        }
+        subtitle={dateFilter ? `Ngày ${formatDate(dateFilter)}` : "Không lọc ngày"}
       >
-        {isLoading ? (
-          <div className="flex justify-center py-12">
-            <LoadingSpinner />
-          </div>
-        ) : error ? (
-          <EmptyState
-            icon={CalendarCheck}
-            title="Không thể tải lịch hẹn"
-            description="Đã xảy ra lỗi. Vui lòng thử lại."
-          />
+        {appointmentsQuery.isLoading ? (
+          <div className="flex justify-center py-12"><LoadingSpinner /></div>
+        ) : appointmentsQuery.error ? (
+          <EmptyState icon={CalendarCheck} title="Không thể tải lịch hẹn" description="Đã xảy ra lỗi. Vui lòng thử lại." />
         ) : appointments.length === 0 ? (
-          <EmptyState
-            icon={CalendarCheck}
-            title="Không có lịch hẹn nào"
-            description="Chưa có lịch hẹn trong trạng thái này."
-          />
+          <EmptyState icon={CalendarCheck} title="Không có lịch hẹn" description="Thử đổi bộ lọc hoặc tạo lịch walk-in cho khách tại quầy." />
         ) : (
           <div className="grid gap-3">
-            {appointments.map((appt) => (
+            {appointments.map((appointment) => (
               <ClinicAppointmentCard
-                key={appt.appointmentId}
-                appt={appt}
-                onConfirm={() => setActionTarget({ appointment: appt, type: "confirm" })}
-                onReject={() => setActionTarget({ appointment: appt, type: "reject" })}
-                onComplete={() => setActionTarget({ appointment: appt, type: "complete" })}
-                onNoShow={() => setActionTarget({ appointment: appt, type: "no-show" })}
-                onCheckIn={() => setActionTarget({ appointment: appt, type: "check-in" })}
+                key={appointment.appointmentId}
+                appointment={appointment}
+                onAction={(type) => {
+                  setReason("")
+                  setActionTarget({ appointment, type })
+                }}
+                onOpenVisit={() => navigate(`/dashboard/clinic/appointments/${appointment.appointmentId}/visit`)}
               />
             ))}
           </div>
         )}
       </DashboardSection>
 
-      {/* Action dialogs */}
-      {getActionDialog()}
+      <ConfirmDialog
+        isOpen={actionTarget !== null && actionTarget.type !== "reject" && actionTarget.type !== "cancel"}
+        onClose={() => setActionTarget(null)}
+        onConfirm={handleConfirmAction}
+        title={actionTarget ? actionDialogText(actionTarget.type).title : ""}
+        description={actionTarget ? actionDialogText(actionTarget.type).description : ""}
+        confirmLabel={actionTarget ? actionDialogText(actionTarget.type).confirmLabel : "Xác nhận"}
+        variant={actionTarget?.type === "no-show" ? "danger" : "primary"}
+        isLoading={actionMutation.isPending}
+      />
 
-      {/* Reject reason dialog */}
-      {actionTarget.type === "reject" && actionTarget.appointment && (
-        <RejectReasonDialog
-          isOpen={actionTarget.type === "reject"}
-          reason={rejectReason}
-          onReasonChange={setRejectReason}
+      {actionTarget && (actionTarget.type === "reject" || actionTarget.type === "cancel") ? (
+        <ReasonDialog
+          type={actionTarget.type}
+          reason={reason}
+          isLoading={actionMutation.isPending}
+          onReasonChange={setReason}
           onClose={() => {
-            setActionTarget({ appointment: null, type: null })
-            setRejectReason("")
+            setActionTarget(null)
+            setReason("")
           }}
-          onConfirm={() => {
-            if (!rejectReason.trim()) {
-              toast.error("Vui lòng nhập lý do từ chối.")
-              return
-            }
-            rejectMutation.mutate({
-              id: actionTarget.appointment!.appointmentId,
-              reason: rejectReason,
-            })
-          }}
+          onConfirm={handleConfirmAction}
         />
-      )}
+      ) : null}
 
-      <ClinicQuickAddModal
-        isOpen={isQuickAddOpen}
-        onClose={() => setIsQuickAddOpen(false)}
-        type={quickAddType}
+      <GuestWalkInModal
+        isOpen={isGuestOpen}
         clinicId={clinicId}
+        onClose={() => setIsGuestOpen(false)}
+        onDone={invalidateAppointments}
+      />
+
+      <EmergencyModal
+        isOpen={isEmergencyOpen}
+        clinicId={clinicId}
+        onClose={() => setIsEmergencyOpen(false)}
+        onDone={invalidateAppointments}
       />
     </div>
   )
 }
 
+function actionDialogText(type: ActionType) {
+  const map: Record<ActionType, { title: string; description: string; confirmLabel: string }> = {
+    confirm: {
+      title: "Xác nhận lịch hẹn",
+      description: "Lịch sẽ chuyển sang trạng thái đã xác nhận.",
+      confirmLabel: "Xác nhận",
+    },
+    reject: {
+      title: "Từ chối lịch hẹn",
+      description: "Owner sẽ thấy lý do từ chối.",
+      confirmLabel: "Từ chối",
+    },
+    "check-in": {
+      title: "Check-in lịch hẹn",
+      description: "Xác nhận pet đã đến phòng khám.",
+      confirmLabel: "Check-in",
+    },
+    complete: {
+      title: "Hoàn thành lịch hẹn",
+      description: "Chỉ dùng khi ca khám đã hoàn tất.",
+      confirmLabel: "Hoàn thành",
+    },
+    "no-show": {
+      title: "Đánh dấu không đến",
+      description: "Lịch sẽ được ghi nhận là owner không đến.",
+      confirmLabel: "Đánh dấu",
+    },
+    cancel: {
+      title: "Hủy lịch hẹn",
+      description: "Lịch sẽ bị hủy bởi clinic.",
+      confirmLabel: "Hủy lịch",
+    },
+  }
+
+  return map[type]
+}
+
 function ClinicAppointmentCard({
-  appt,
-  onConfirm,
-  onReject,
-  onComplete,
-  onNoShow,
-  onCheckIn,
+  appointment,
+  onAction,
+  onOpenVisit,
 }: {
-  appt: AppointmentListItemResponse
-  onConfirm: () => void
-  onReject: () => void
-  onComplete: () => void
-  onNoShow: () => void
-  onCheckIn: () => void
+  appointment: AppointmentListItemResponse
+  onAction: (type: ActionType) => void
+  onOpenVisit: () => void
 }) {
-  const status = appt.status.toLowerCase()
+  const status = appointment.status.toLowerCase()
   const isPending = status === "pending"
   const isConfirmed = status === "confirmed"
-  const canComplete = status === "confirmed" || status === "checked-in"
+  const isCheckedIn = status === "checked-in"
+  const canOpenVisit = isCheckedIn || status === "completed"
 
   return (
     <div className="rounded-2xl border border-po-border bg-white px-4 py-4">
@@ -401,134 +353,395 @@ function ClinicAppointmentCard({
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-bold text-po-text">
-                Pet ID: {appt.petId.slice(0, 8)}
-              </p>
-              <StatusBadge
-                variant={statusBadgeVariant(appt.status)}
-                label={statusLabel(appt.status)}
-              />
-              {appt.isWalkIn && (
-                <span className="rounded-full bg-po-accent-soft px-2.5 py-0.5 text-xs font-medium text-po-accent">
-                  Walk-in
-                </span>
-              )}
+              <p className="text-sm font-bold text-po-text">Pet {formatShortId(appointment.petId)}</p>
+              <StatusBadge variant={statusVariant(appointment.status)} label={statusLabel(appointment.status)} />
+              {appointment.isWalkIn ? <span className="rounded-full bg-po-accent-soft px-2.5 py-0.5 text-xs font-medium text-po-accent">Walk-in</span> : null}
             </div>
-            <p className="mt-1 text-xs text-po-text-muted">{appt.appointmentType}</p>
-            <div className="mt-2 flex items-center gap-4 text-xs text-po-text-subtle">
+            <p className="mt-1 text-xs text-po-text-muted">{appointment.appointmentType}</p>
+            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-po-text-subtle">
               <span className="flex items-center gap-1">
                 <CalendarCheck className="size-3" />
-                {formatDate(appt.appointmentDate)}
+                {formatDate(appointment.appointmentDate)}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="size-3" />
-                {formatTime(appt.startTime)} – {formatTime(appt.endTime)}
+                {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex shrink-0 flex-wrap items-center gap-2">
-          {isPending && (
+          {isPending ? (
             <>
-              <button
-                onClick={onConfirm}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-po-success px-3 text-xs font-semibold text-white transition hover:bg-po-success/90"
-              >
-                <Check className="size-3" />
-                Xác nhận
-              </button>
-              <button
-                onClick={onReject}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border px-3 text-xs font-semibold text-po-danger transition hover:border-po-danger hover:bg-po-danger-soft"
-              >
-                <XCircle className="size-3" />
-                Từ chối
-              </button>
+              <ActionButton icon={Check} label="Xác nhận" tone="success" onClick={() => onAction("confirm")} />
+              <ActionButton icon={XCircle} label="Từ chối" tone="dangerSoft" onClick={() => onAction("reject")} />
             </>
-          )}
-          {isConfirmed && (
+          ) : null}
+          {isConfirmed ? (
             <>
-              <button
-                onClick={onCheckIn}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-po-primary px-3 text-xs font-semibold text-white transition hover:bg-po-primary-hover"
-              >
-                <LogIn className="size-3" />
-                Check-in
-              </button>
-              <button
-                onClick={onNoShow}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border px-3 text-xs font-semibold text-po-text-muted transition hover:border-po-danger hover:bg-po-danger-soft hover:text-po-danger"
-              >
-                <X className="size-3" />
-                Không đến
-              </button>
+              <ActionButton icon={LogIn} label="Check-in" tone="primary" onClick={() => onAction("check-in")} />
+              <ActionButton icon={X} label="Không đến" tone="muted" onClick={() => onAction("no-show")} />
+              <ActionButton icon={XCircle} label="Hủy" tone="dangerSoft" onClick={() => onAction("cancel")} />
             </>
-          )}
-          {canComplete && (
-            <button
-              onClick={onComplete}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-po-success px-3 text-xs font-semibold text-white transition hover:bg-po-success/90"
-            >
-              <CheckCircle2 className="size-3" />
-              Hoàn thành
-            </button>
-          )}
+          ) : null}
+          {canOpenVisit ? (
+            <ActionButton icon={Stethoscope} label="Phiếu khám" tone="primarySoft" onClick={onOpenVisit} />
+          ) : null}
+          {(isCheckedIn || isConfirmed) ? (
+            <ActionButton icon={CheckCircle2} label="Hoàn thành" tone="success" onClick={() => onAction("complete")} />
+          ) : null}
         </div>
       </div>
     </div>
   )
 }
 
-function RejectReasonDialog({
-  isOpen,
+function ActionButton({
+  icon: Icon,
+  label,
+  tone,
+  onClick,
+}: {
+  icon: React.ElementType
+  label: string
+  tone: "primary" | "primarySoft" | "success" | "dangerSoft" | "muted"
+  onClick: () => void
+}) {
+  const classes = {
+    primary: "bg-po-primary text-white hover:bg-po-primary-hover",
+    primarySoft: "bg-po-primary-soft text-po-primary hover:bg-po-primary hover:text-white",
+    success: "bg-po-success text-white hover:bg-po-success/90",
+    dangerSoft: "border border-po-border text-po-danger hover:border-po-danger hover:bg-po-danger-soft",
+    muted: "border border-po-border text-po-text-muted hover:bg-po-surface-muted hover:text-po-text",
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn("inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition", classes[tone])}
+    >
+      <Icon className="size-3" />
+      {label}
+    </button>
+  )
+}
+
+function ReasonDialog({
+  type,
   reason,
+  isLoading,
   onReasonChange,
   onClose,
   onConfirm,
 }: {
-  isOpen: boolean
+  type: "reject" | "cancel"
   reason: string
-  onReasonChange: (v: string) => void
+  isLoading: boolean
+  onReasonChange: (value: string) => void
   onClose: () => void
   onConfirm: () => void
 }) {
-  if (!isOpen) return null
+  const text = actionDialogText(type)
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 p-4 animate-dialog-in"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="m-auto w-[min(420px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
-        <h3 className="text-lg font-extrabold text-po-text">Lý do từ chối</h3>
-        <p className="mt-1 text-sm text-po-text-muted">
-          Vui lòng nhập lý do từ chối lịch hẹn này.
-        </p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="m-auto w-[min(440px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
+        <h3 className="text-lg font-extrabold text-po-text">{text.title}</h3>
+        <p className="mt-2 text-sm text-po-text-muted">{text.description}</p>
         <textarea
           value={reason}
-          onChange={(e) => onReasonChange(e.target.value)}
+          onChange={(event) => onReasonChange(event.target.value)}
           rows={3}
-          placeholder="VD: Bác sĩ không có mặt, phòng khám đã kín lịch..."
+          placeholder="Nhập lý do để lưu audit và thông báo cho owner"
           className="mt-4 w-full resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
         />
-        <div className="mt-4 flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted"
-          >
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={onClose} disabled={isLoading} className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted">
             Hủy
           </button>
-          <button
-            onClick={onConfirm}
-            disabled={!reason.trim()}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-po-danger px-5 text-sm font-semibold text-white transition hover:bg-po-danger/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Xác nhận từ chối
+          <button onClick={onConfirm} disabled={isLoading || !reason.trim()} className="inline-flex h-10 items-center rounded-full bg-po-danger px-5 text-sm font-semibold text-white transition hover:bg-po-danger/90 disabled:opacity-60">
+            {isLoading ? "Đang xử lý..." : text.confirmLabel}
           </button>
         </div>
       </div>
     </div>
+  )
+}
+
+function GuestWalkInModal({
+  isOpen,
+  clinicId,
+  onClose,
+  onDone,
+}: {
+  isOpen: boolean
+  clinicId: string
+  onClose: () => void
+  onDone: () => Promise<void>
+}) {
+  const queryClient = useQueryClient()
+  const [form, setForm] = useState<CreateGuestWalkInIntakeRequest>(() => buildGuestWalkInInitial(clinicId))
+
+  const { data: doctors } = useQuery({
+    queryKey: ["clinic", clinicId, "doctors"],
+    queryFn: () => getClinicDoctorsInternalApi(clinicId),
+    enabled: isOpen && Boolean(clinicId),
+  })
+
+  const { data: publicProfile } = useQuery({
+    queryKey: ["clinic", clinicId, "public"],
+    queryFn: () => getClinicPublicApi(clinicId),
+    enabled: isOpen && Boolean(clinicId),
+  })
+
+  const mutation = useMutation({
+    mutationFn: () => createGuestWalkInIntakeApi({
+      ...form,
+      clinicId,
+      ownerAddress: form.ownerAddress?.trim() || null,
+      petBreed: form.petBreed?.trim() || null,
+      petDateOfBirth: form.petDateOfBirth || null,
+      vetClinicId: form.vetClinicId || null,
+      serviceId: form.serviceId || null,
+      notes: form.notes?.trim() || null,
+    }),
+    onSuccess: async () => {
+      toast.success("Đã tiếp nhận khách vãng lai.")
+      setForm(buildGuestWalkInInitial(clinicId))
+      await onDone()
+      await queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "appointments"] })
+      onClose()
+    },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể tiếp nhận khách vãng lai.")),
+  })
+
+  if (!isOpen) return null
+
+  const update = (key: keyof CreateGuestWalkInIntakeRequest, value: string | boolean) => {
+    setForm((current) => ({ ...current, [key]: value }))
+  }
+
+  const canSubmit = form.ownerFullName.trim() && form.ownerPhone.trim() && form.petName.trim() && form.petSpecies.trim()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="m-auto max-h-[90vh] w-[min(780px,100%)] overflow-hidden rounded-[28px] border border-po-border bg-white shadow-2xl shadow-black/20 animate-dialog-content-in">
+        <div className="flex items-start justify-between gap-4 border-b border-po-border px-6 py-5">
+          <div>
+            <h3 className="text-lg font-extrabold text-po-text">Tiếp nhận khách vãng lai</h3>
+            <p className="mt-1 text-sm text-po-text-muted">Tạo owner tạm, pet tạm và lịch walk-in trong một bước.</p>
+          </div>
+          <button onClick={onClose} className="rounded-full p-1.5 text-po-text-muted transition hover:bg-po-surface-muted">
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="max-h-[calc(90vh-150px)] overflow-y-auto px-6 py-5">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Input label="Tên chủ pet" value={form.ownerFullName} onChange={(value) => update("ownerFullName", value)} required />
+            <Input label="Số điện thoại" value={form.ownerPhone} onChange={(value) => update("ownerPhone", value)} required />
+            <Input label="Địa chỉ owner" value={form.ownerAddress ?? ""} onChange={(value) => update("ownerAddress", value)} />
+            <Input label="Tên pet" value={form.petName} onChange={(value) => update("petName", value)} required />
+            <Select label="Loài" value={form.petSpecies} onChange={(value) => update("petSpecies", value)} options={[{ value: "Dog", label: "Chó" }, { value: "Cat", label: "Mèo" }, { value: "Other", label: "Khác" }]} />
+            <Input label="Giống" value={form.petBreed ?? ""} onChange={(value) => update("petBreed", value)} />
+            <Select label="Giới tính" value={form.petGender ?? "Unknown"} onChange={(value) => update("petGender", value)} options={[{ value: "Male", label: "Đực" }, { value: "Female", label: "Cái" }, { value: "Unknown", label: "Chưa rõ" }]} />
+            <Input label="Ngày sinh pet" type="date" value={form.petDateOfBirth ?? ""} onChange={(value) => update("petDateOfBirth", value)} />
+            <Select label="Bác sĩ" value={form.vetClinicId ?? ""} onChange={(value) => update("vetClinicId", value)} options={[{ value: "", label: "Chọn sau" }, ...(doctors ?? []).map((doctor) => ({ value: doctor.vetClinicId, label: `${doctor.fullName} · ${doctor.roleName}` }))]} />
+            <Select label="Dịch vụ" value={form.serviceId ?? ""} onChange={(value) => update("serviceId", value)} options={[{ value: "", label: "Chưa chọn dịch vụ" }, ...(publicProfile?.services ?? []).map((service) => ({ value: service.serviceId, label: service.serviceName }))]} />
+            <Input label="Ngày hẹn" type="date" value={form.appointmentDate} onChange={(value) => update("appointmentDate", value)} required />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Bắt đầu" type="time" value={form.startTime} onChange={(value) => update("startTime", value)} required />
+              <Input label="Kết thúc" type="time" value={form.endTime} onChange={(value) => update("endTime", value)} required />
+            </div>
+            <Select label="Loại khám" value={form.appointmentType} onChange={(value) => update("appointmentType", value)} options={appointmentTypes} />
+            <label className="flex items-center gap-2 self-end rounded-2xl border border-po-border bg-po-surface-muted px-4 py-3 text-sm font-semibold text-po-text">
+              <input
+                type="checkbox"
+                checked={form.isPetBirthDateEstimated}
+                onChange={(event) => update("isPetBirthDateEstimated", event.target.checked)}
+              />
+              Ngày sinh ước tính
+            </label>
+          </div>
+          <label className="mt-5 grid gap-1.5 text-sm font-semibold text-po-text">
+            Ghi chú
+            <textarea
+              rows={3}
+              value={form.notes ?? ""}
+              onChange={(event) => update("notes", event.target.value)}
+              className="resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+            />
+          </label>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-po-border px-6 py-4">
+          <button onClick={onClose} className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted">
+            Hủy
+          </button>
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={!canSubmit || mutation.isPending}
+            className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+          >
+            <Plus className="size-4" />
+            {mutation.isPending ? "Đang tiếp nhận..." : "Tạo walk-in"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function buildGuestWalkInInitial(clinicId: string): CreateGuestWalkInIntakeRequest {
+  const now = new Date()
+  return {
+    clinicId,
+    ownerFullName: "",
+    ownerPhone: "",
+    ownerAddress: "",
+    petName: "",
+    petSpecies: "Dog",
+    petBreed: "",
+    petGender: "Unknown",
+    petDateOfBirth: "",
+    isPetBirthDateEstimated: true,
+    appointmentDate: todayDateInput(),
+    startTime: now.toTimeString().slice(0, 5),
+    endTime: new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5),
+    appointmentType: "Checkup",
+    notes: "",
+  }
+}
+
+function EmergencyModal({
+  isOpen,
+  clinicId,
+  onClose,
+  onDone,
+}: {
+  isOpen: boolean
+  clinicId: string
+  onClose: () => void
+  onDone: () => Promise<void>
+}) {
+  const [petId, setPetId] = useState("")
+  const [notes, setNotes] = useState("")
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      const now = new Date()
+      return createEmergencyAppointmentApi({
+        clinicId,
+        petId,
+        appointmentDate: now.toISOString().slice(0, 10),
+        startTime: now.toTimeString().slice(0, 5),
+        endTime: new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5),
+        notes: notes.trim() || undefined,
+      })
+    },
+    onSuccess: async () => {
+      toast.success("Đã tạo lịch cấp cứu.")
+      setPetId("")
+      setNotes("")
+      await onDone()
+      onClose()
+    },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo lịch cấp cứu.")),
+  })
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in" onClick={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="m-auto w-[min(480px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
+        <div className="flex items-start gap-3">
+          <span className="grid size-10 place-items-center rounded-2xl bg-po-danger text-white">
+            <AlertTriangle className="size-5" />
+          </span>
+          <div>
+            <h3 className="text-lg font-extrabold text-po-text">Tạo lịch cấp cứu</h3>
+            <p className="mt-1 text-sm text-po-text-muted">Dùng cho pet đã có hồ sơ. Khách mới nên dùng tiếp nhận vãng lai.</p>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-4">
+          <Input label="Pet ID" value={petId} onChange={setPetId} required />
+          <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+            Ghi chú
+            <textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              rows={3}
+              className="resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+            />
+          </label>
+        </div>
+        <div className="mt-5 flex justify-end gap-3">
+          <button onClick={onClose} className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted">Hủy</button>
+          <button
+            onClick={() => mutation.mutate()}
+            disabled={!petId.trim() || mutation.isPending}
+            className="inline-flex h-10 items-center rounded-full bg-po-danger px-5 text-sm font-semibold text-white transition hover:bg-po-danger/90 disabled:opacity-60"
+          >
+            {mutation.isPending ? "Đang tạo..." : "Tạo cấp cứu"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Input({
+  label,
+  value,
+  onChange,
+  type = "text",
+  required,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  type?: string
+  required?: boolean
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+      <span>{label}{required ? <span className="ml-1 text-po-danger">*</span> : null}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+      />
+    </label>
+  )
+}
+
+function Select({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: Array<{ value: string; label: string }>
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+      {label}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }

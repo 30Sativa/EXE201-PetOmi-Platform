@@ -16,15 +16,18 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
     {
         private readonly IClinicRepository _clinicRepo;
         private readonly IDoctorScheduleRepository _scheduleRepo;
+        private readonly IVetClinicRepository _vetClinicRepo;
         private readonly IUnitOfWork _uow;
 
         public SetDoctorScheduleCommandHandler(
             IClinicRepository clinicRepo,
             IDoctorScheduleRepository scheduleRepo,
+            IVetClinicRepository vetClinicRepo,
             IUnitOfWork uow)
         {
             _clinicRepo = clinicRepo;
             _scheduleRepo = scheduleRepo;
+            _vetClinicRepo = vetClinicRepo;
             _uow = uow;
         }
 
@@ -36,6 +39,19 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
             if (clinic.Id != command.ClinicId)
                 throw new ForbiddenException("Bạn không có quyền thao tác với phòng khám này.");
             clinic.EnsureApproved();
+
+            var vetClinic = await _vetClinicRepo.GetActiveByVetClinicIdAndClinicIdAsync(
+                command.VetClinicId,
+                command.ClinicId)
+                ?? throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
+
+            var existingSchedules = await _scheduleRepo.GetByVetClinicIdAsync(command.VetClinicId);
+            var overlaps = existingSchedules.Any(x =>
+                x.DayOfWeek == command.Request.DayOfWeek &&
+                x.StartTime < command.Request.EndTime &&
+                x.EndTime > command.Request.StartTime);
+            if (overlaps)
+                throw new ConflictException("Ca lam viec bi trung voi lich hien co cua bac si.");
 
             var schedule = DoctorScheduleDomain.Create(
                 vetClinicId: command.VetClinicId,

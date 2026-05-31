@@ -16,6 +16,7 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IPrescriptionRepository _prescriptionRepository;
         private readonly IVetClinicRepository _vetClinicRepository;
+        private readonly IInventoryRepository _inventoryRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public AddPrescriptionItemCommandHandler(
@@ -23,12 +24,14 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
             IAppointmentRepository appointmentRepository,
             IPrescriptionRepository prescriptionRepository,
             IVetClinicRepository vetClinicRepository,
+            IInventoryRepository inventoryRepository,
             IUnitOfWork unitOfWork)
         {
             _examinationRepository = examinationRepository;
             _appointmentRepository = appointmentRepository;
             _prescriptionRepository = prescriptionRepository;
             _vetClinicRepository = vetClinicRepository;
+            _inventoryRepository = inventoryRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -44,6 +47,14 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequirePrescriptionWriter(staff);
+
+            if (request.Payload.InventoryItemId.HasValue)
+            {
+                var item = await _inventoryRepository.GetByIdAsync(request.Payload.InventoryItemId.Value)
+                    ?? throw new NotFoundException("InventoryItem", request.Payload.InventoryItemId.Value);
+                if (item.ClinicId != request.ClinicId || !item.IsActive)
+                    throw new ValidationException("InventoryItemId", "Vat tu/thuoc khong thuoc clinic hoac da ngung hoat dong.");
+            }
 
             var prescription = PrescriptionDomain.Create(
                 examinationId: exam.Id,

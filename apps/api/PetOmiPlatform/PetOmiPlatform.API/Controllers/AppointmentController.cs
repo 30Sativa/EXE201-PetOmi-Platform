@@ -30,7 +30,7 @@ namespace PetOmiPlatform.API.Controllers
             [FromQuery] int pageSize = 20)
         {
             var result = await Mediator.Send(
-                new GetClinicAppointmentsQuery(clinicId, status, date, page, pageSize));
+                new GetClinicAppointmentsQuery(CurrentUserId, clinicId, status, date, page, pageSize));
             return Ok(BaseResponse<PagedData<AppointmentListItemResponse>>.Ok(result));
         }
 
@@ -83,7 +83,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
 
-        /// <summary>Mark appointment completed (Confirmed or CheckedIn to Completed).</summary>
+        /// <summary>Mark appointment completed (CheckedIn to Completed).</summary>
         [HttpPost("{appointmentId:guid}/complete")]
         public async Task<IActionResult> Complete(Guid appointmentId)
         {

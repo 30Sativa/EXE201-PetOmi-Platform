@@ -23,6 +23,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         private readonly IUserRoleRepository _userRoleRepository;
         private readonly IUserProfileRepository _userProfileRepository;
         private readonly IPetRepository _petRepository;
+        private readonly IClinicServiceRepository _serviceRepository;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IUnitOfWork _unitOfWork;
@@ -34,6 +35,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             IUserRoleRepository userRoleRepository,
             IUserProfileRepository userProfileRepository,
             IPetRepository petRepository,
+            IClinicServiceRepository serviceRepository,
             IAppointmentRepository appointmentRepository,
             IPasswordHasher passwordHasher,
             IUnitOfWork unitOfWork)
@@ -44,6 +46,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             _userRoleRepository = userRoleRepository;
             _userProfileRepository = userProfileRepository;
             _petRepository = petRepository;
+            _serviceRepository = serviceRepository;
             _appointmentRepository = appointmentRepository;
             _passwordHasher = passwordHasher;
             _unitOfWork = unitOfWork;
@@ -65,6 +68,14 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var appointmentType))
                 throw new ValidationException("AppointmentType", $"Loai lich hen khong hop le: {req.AppointmentType}");
 
+            if (req.ServiceId.HasValue)
+            {
+                var service = await _serviceRepository.GetByIdAsync(req.ServiceId.Value)
+                    ?? throw new NotFoundException("ClinicService", req.ServiceId.Value);
+                if (service.ClinicId != req.ClinicId || !service.IsActive)
+                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+            }
+
             if (req.VetClinicId.HasValue)
             {
                 var vetClinic = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
@@ -73,8 +84,9 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 if (vetClinic == null)
                     throw new ValidationException("VetClinicId", "VetClinicId khong thuoc clinic hoac da ngung hoat dong.");
 
-                var hasConflict = await _appointmentRepository.HasConflictAsync(
-                    req.VetClinicId.Value,
+                var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
+                var hasConflict = await _appointmentRepository.HasDoctorConflictAcrossClinicsAsync(
+                    allVetClinicIds,
                     req.AppointmentDate,
                     req.StartTime,
                     req.EndTime);

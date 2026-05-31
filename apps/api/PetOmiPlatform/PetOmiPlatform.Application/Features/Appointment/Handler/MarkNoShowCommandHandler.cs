@@ -2,6 +2,7 @@ using MediatR;
 using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
@@ -11,13 +12,16 @@ public class MarkNoShowCommandHandler
     : IRequestHandler<MarkNoShowCommand, AppointmentResponse>
 {
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly IVetClinicRepository _vetClinicRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public MarkNoShowCommandHandler(
         IAppointmentRepository appointmentRepository,
+        IVetClinicRepository vetClinicRepository,
         IUnitOfWork unitOfWork)
     {
         _appointmentRepository = appointmentRepository;
+        _vetClinicRepository = vetClinicRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -26,6 +30,11 @@ public class MarkNoShowCommandHandler
     {
         var appointment = await _appointmentRepository.GetByIdAsync(command.AppointmentId)
             ?? throw new NotFoundException("Appointment", command.AppointmentId);
+
+        var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(
+            command.StaffUserId,
+            appointment.ClinicId);
+        ClinicRoleGuard.RequireActiveStaff(staff);
 
         appointment.MarkNoShow();
 

@@ -11,13 +11,16 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         : IRequestHandler<RescheduleAppointmentCommand, AppointmentResponse>
     {
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public RescheduleAppointmentCommandHandler(
             IAppointmentRepository appointmentRepository,
+            IVetClinicRepository vetClinicRepository,
             IUnitOfWork unitOfWork)
         {
             _appointmentRepository = appointmentRepository;
+            _vetClinicRepository = vetClinicRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -27,13 +30,18 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             var appointment = await _appointmentRepository.GetByIdAsync(command.AppointmentId)
                 ?? throw new NotFoundException("Appointment", command.AppointmentId);
 
+            if (appointment.BookedByUserId != command.OwnerUserId)
+                throw new ForbiddenException("Ban khong co quyen doi lich hen nay.");
+
             var req = command.Request;
 
             if (appointment.VetClinicId.HasValue)
             {
-                var hasConflict = await _appointmentRepository.HasConflictAsync(
-                    appointment.VetClinicId.Value, req.NewDate, req.NewStartTime, req.NewEndTime,
-                    excludeId: appointment.Id);
+                var vetClinic = await _vetClinicRepository.GetByVetClinicIdAsync(appointment.VetClinicId.Value)
+                    ?? throw new NotFoundException("VetClinic", appointment.VetClinicId.Value);
+                var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
+                var hasConflict = await _appointmentRepository.HasDoctorConflictAcrossClinicsAsync(
+                    allVetClinicIds, req.NewDate, req.NewStartTime, req.NewEndTime, appointment.Id);
 
                 if (hasConflict)
                     throw new ConflictException("Bác sĩ đã có lịch trong khung giờ này. Vui lòng chọn giờ khác.");

@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Appointment.Command;
@@ -17,9 +18,11 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         private readonly IClinicServiceRepository _serviceRepository;
         private readonly IVetClinicRepository _vetClinicRepository;
         private readonly IPetRepository _petRepository;
+        private readonly IPetAccessService _petAccessService;
         private readonly IReminderRepository _reminderRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IReminderAutoCreator _reminderAutoCreator;
+        private readonly ILogger<BookAppointmentCommandHandler> _logger;
 
         public BookAppointmentCommandHandler(
             IAppointmentRepository appointmentRepository,
@@ -27,18 +30,22 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             IClinicServiceRepository serviceRepository,
             IVetClinicRepository vetClinicRepository,
             IPetRepository petRepository,
+            IPetAccessService petAccessService,
             IReminderRepository reminderRepository,
             IUnitOfWork unitOfWork,
-            IReminderAutoCreator reminderAutoCreator)
+            IReminderAutoCreator reminderAutoCreator,
+            ILogger<BookAppointmentCommandHandler> logger)
         {
             _appointmentRepository = appointmentRepository;
             _clinicRepository = clinicRepository;
             _serviceRepository = serviceRepository;
             _vetClinicRepository = vetClinicRepository;
             _petRepository = petRepository;
+            _petAccessService = petAccessService;
             _reminderRepository = reminderRepository;
             _unitOfWork = unitOfWork;
             _reminderAutoCreator = reminderAutoCreator;
+            _logger = logger;
         }
 
         public async Task<AppointmentResponse> Handle(
@@ -53,11 +60,18 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 ?? throw new NotFoundException("Clinic", req.ClinicId);
             clinic.EnsureApproved();
 
+            var pet = await _petRepository.GetByIdAsync(req.PetId)
+                ?? throw new NotFoundException("Pet", req.PetId);
+            pet.EnsureActive();
+            await _petAccessService.EnsureCanWriteAsync(pet, command.OwnerUserId, cancellationToken);
+
             int durationMins = 30;
             if (req.ServiceId.HasValue)
             {
                 var service = await _serviceRepository.GetByIdAsync(req.ServiceId.Value)
                     ?? throw new NotFoundException("ClinicService", req.ServiceId.Value);
+                if (service.ClinicId != req.ClinicId || !service.IsActive)
+                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
                 durationMins = service.DurationMins;
             }
             int bufferMins = clinic.AppointmentBufferMins;
@@ -67,8 +81,10 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var apptType))
                 throw new ValidationException("AppointmentType", $"Loại lịch hẹn không hợp lệ: {req.AppointmentType}");
 
-            var vetClinic = await _vetClinicRepository.GetByVetClinicIdAsync(req.VetClinicId.Value)
-                ?? throw new NotFoundException("Không tìm thấy bác sĩ.");
+            var vetClinic = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
+                req.VetClinicId.Value,
+                req.ClinicId)
+                ?? throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
 
             var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
 
@@ -94,8 +110,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             await _appointmentRepository.AddAsync(appointment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            var pet = await _petRepository.GetByIdAsync(req.PetId);
-            if (pet != null)
+            try
             {
                 var reminders = await _reminderAutoCreator.CreateReminderFromAppointmentAsync(
                     appointment.Id, req.PetId, command.OwnerUserId,
@@ -106,6 +121,10 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     await _reminderRepository.AddRangeAsync(reminders);
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Appointment {AppointmentId} was booked but reminder creation failed.", appointment.Id);
             }
 
             return new AppointmentResponse

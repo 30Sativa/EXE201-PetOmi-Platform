@@ -1,4 +1,5 @@
 using MediatR;
+using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
 using PetOmiPlatform.Application.Features.Appointment.Query;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
@@ -34,9 +35,21 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             int durationMins = 30;
             if (request.ServiceId.HasValue)
             {
-                var service = await _serviceRepository.GetByIdAsync(request.ServiceId.Value);
-                if (service != null)
-                    durationMins = service.DurationMins;
+                var service = await _serviceRepository.GetByIdAsync(request.ServiceId.Value)
+                    ?? throw new NotFoundException("ClinicService", request.ServiceId.Value);
+                if (service.ClinicId != request.ClinicId || !service.IsActive)
+                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+
+                durationMins = service.DurationMins;
+            }
+
+            if (request.VetClinicId.HasValue)
+            {
+                var vetClinic = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
+                    request.VetClinicId.Value,
+                    request.ClinicId);
+                if (vetClinic == null)
+                    throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
             }
 
             int bufferMins = await _clinicRepository.GetBufferMinsAsync(request.ClinicId);

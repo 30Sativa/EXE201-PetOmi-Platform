@@ -4,6 +4,7 @@ using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Features.MedicalExamination.Command;
 using PetOmiPlatform.Application.Features.MedicalExamination.DTOs.Response;
 using PetOmiPlatform.Application.Features.MedicalExamination.Mappers;
+using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Application.Interfaces;
 
@@ -37,6 +38,9 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
             var appointment = await _appointmentRepository.GetByIdAsync(exam.AppointmentId);
             if (appointment == null || appointment.ClinicId != request.ClinicId)
                 throw new ForbiddenException("Không có quyền truy cập phiếu khám này.");
+
+            if (appointment.Status != AppointmentStatus.CheckedIn)
+                throw new ConflictException("Chi co the hoan tat phieu kham cho lich hen da check-in.");
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.VetUserId, request.ClinicId);
             ClinicRoleGuard.RequireMedicalWriter(staff);

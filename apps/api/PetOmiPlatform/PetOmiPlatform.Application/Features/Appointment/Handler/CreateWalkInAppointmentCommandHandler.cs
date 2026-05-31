@@ -3,6 +3,7 @@ using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
@@ -14,15 +15,24 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
     {
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IClinicRepository _clinicRepository;
+        private readonly IClinicServiceRepository _serviceRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
+        private readonly IPetRepository _petRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateWalkInAppointmentCommandHandler(
             IAppointmentRepository appointmentRepository,
             IClinicRepository clinicRepository,
+            IClinicServiceRepository serviceRepository,
+            IVetClinicRepository vetClinicRepository,
+            IPetRepository petRepository,
             IUnitOfWork unitOfWork)
         {
             _appointmentRepository = appointmentRepository;
             _clinicRepository = clinicRepository;
+            _serviceRepository = serviceRepository;
+            _vetClinicRepository = vetClinicRepository;
+            _petRepository = petRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -35,13 +45,34 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 ?? throw new NotFoundException("Clinic", req.ClinicId);
             clinic.EnsureApproved();
 
+            var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(command.StaffUserId, req.ClinicId);
+            ClinicRoleGuard.RequireActiveStaff(staff);
+
+            var pet = await _petRepository.GetByIdAsync(req.PetId)
+                ?? throw new NotFoundException("Pet", req.PetId);
+            pet.EnsureActive();
+
+            if (req.ServiceId.HasValue)
+            {
+                var service = await _serviceRepository.GetByIdAsync(req.ServiceId.Value)
+                    ?? throw new NotFoundException("ClinicService", req.ServiceId.Value);
+                if (service.ClinicId != req.ClinicId || !service.IsActive)
+                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+            }
+
             if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var apptType))
                 throw new ValidationException("AppointmentType", $"Loại lịch hẹn không hợp lệ: {req.AppointmentType}");
 
             if (req.VetClinicId.HasValue)
             {
-                var hasConflict = await _appointmentRepository.HasConflictAsync(
-                    req.VetClinicId.Value, req.AppointmentDate, req.StartTime, req.EndTime);
+                var vetClinic = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
+                    req.VetClinicId.Value,
+                    req.ClinicId)
+                    ?? throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
+
+                var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
+                var hasConflict = await _appointmentRepository.HasDoctorConflictAcrossClinicsAsync(
+                    allVetClinicIds, req.AppointmentDate, req.StartTime, req.EndTime);
 
                 if (hasConflict)
                     throw new ConflictException("Bác sĩ đã có lịch trong khung giờ này.");

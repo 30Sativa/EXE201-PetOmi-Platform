@@ -14,15 +14,18 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
     {
         private readonly IClinicRepository _clinicRepo;
         private readonly IDoctorScheduleRepository _scheduleRepo;
+        private readonly IVetClinicRepository _vetClinicRepo;
         private readonly IUnitOfWork _uow;
 
         public DeleteDoctorScheduleCommandHandler(
             IClinicRepository clinicRepo,
             IDoctorScheduleRepository scheduleRepo,
+            IVetClinicRepository vetClinicRepo,
             IUnitOfWork uow)
         {
             _clinicRepo = clinicRepo;
             _scheduleRepo = scheduleRepo;
+            _vetClinicRepo = vetClinicRepo;
             _uow = uow;
         }
 
@@ -36,6 +39,10 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
 
             var schedule = await _scheduleRepo.GetByIdAsync(command.ScheduleId)
                 ?? throw new NotFoundException("Không tìm thấy lịch làm việc.");
+
+            var vetClinic = await _vetClinicRepo.GetByVetClinicIdAsync(schedule.VetClinicId);
+            if (vetClinic == null || vetClinic.ClinicId != command.ClinicId)
+                throw new ForbiddenException("Lich lam viec nay khong thuoc phong kham cua ban.");
 
             schedule.Deactivate();
             await _scheduleRepo.UpdateAsync(schedule);

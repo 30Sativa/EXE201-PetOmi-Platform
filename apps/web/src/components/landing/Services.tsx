@@ -43,6 +43,7 @@ export default function Services() {
   return (
     <section ref={ref as React.RefObject<HTMLElement>} id="services" className="py-20 md:py-24">
       <div className="mx-auto w-[calc(100%_-_24px)] max-w-[1200px]">
+        <div id="clinic" className="relative -top-24" aria-hidden="true" />
         <div className="grid gap-5 md:grid-cols-[0.9fr_0.7fr] md:items-end md:justify-between">
           <div className={`transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">Tính năng nổi bật</p>

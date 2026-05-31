@@ -64,6 +64,12 @@ export default function Hero() {
               Bắt đầu miễn phí
               <ArrowUpRight className="size-4" />
             </Link>
+            <Link
+              to="/login"
+              className="inline-flex h-12 items-center justify-center rounded-full border border-po-border bg-white px-6 text-sm font-semibold text-po-text transition hover:-translate-y-0.5 hover:bg-po-surface-muted focus-visible:shadow-[var(--po-focus-ring)] active:translate-y-0 max-[480px]:w-full"
+            >
+              For Clinics
+            </Link>
             <a
               href="#services"
               className="inline-flex h-12 items-center justify-center rounded-full border border-po-border bg-white/80 px-6 text-sm font-semibold text-po-text transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md focus-visible:shadow-[var(--po-focus-ring)] active:translate-y-0 max-[480px]:w-full"

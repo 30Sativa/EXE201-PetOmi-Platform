@@ -163,7 +163,7 @@ export default function ClinicBillingPage() {
           <h2 className="text-xl font-extrabold text-po-text">Thu ngân và công nợ</h2>
           <p className="mt-1 text-sm text-po-text-muted">Theo dõi doanh thu, hóa đơn chưa thu và thao tác thanh toán tại quầy.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2">
           <Input label="Từ ngày" type="date" value={fromDate} onChange={setFromDate} compact />
           <Input label="Đến ngày" type="date" value={toDate} onChange={setToDate} compact />
         </div>
@@ -468,13 +468,13 @@ function Input({
   compact?: boolean
 }) {
   return (
-    <label className={`grid gap-1.5 text-sm font-semibold text-po-text ${compact ? "w-36" : ""}`}>
+    <label className={`grid min-w-0 gap-1.5 text-sm font-semibold text-po-text ${compact ? "w-full sm:w-40" : ""}`}>
       {label}
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+        className="h-11 min-w-0 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
       />
     </label>
   )

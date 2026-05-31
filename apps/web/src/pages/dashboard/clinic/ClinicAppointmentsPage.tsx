@@ -210,9 +210,9 @@ export default function ClinicAppointmentsPage() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="flex-1" />
-        <label className="flex h-11 items-center gap-2 rounded-2xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text-muted">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="w-full lg:flex-1" />
+        <label className="flex h-11 w-fit shrink-0 items-center gap-2 rounded-2xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text-muted">
           Ngày
           <input
             type="date"

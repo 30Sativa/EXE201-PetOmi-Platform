@@ -135,20 +135,28 @@ export default function ClinicDoctorsPage() {
         <p className="mt-1 text-sm text-po-text-muted">Quản lý staff active, vai trò và lịch làm việc trong tuần.</p>
       </div>
 
-      <DashboardSection title="Gán staff" subtitle="Nhập VetProfileId đã tồn tại để thêm bác sĩ hoặc trợ lý vào clinic.">
-        <div className="grid gap-4 md:grid-cols-[1fr_220px_auto]">
-          <Input label="VetProfileId" value={vetProfileId} onChange={setVetProfileId} />
-          <Select label="Vai trò" value={staffRole} onChange={setStaffRole} options={[{ value: "PrimaryVet", label: "PrimaryVet" }, { value: "Assistant", label: "Assistant" }]} />
+      <section className="rounded-[28px] bg-white/88 p-4 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="grid gap-4 xl:grid-cols-[minmax(220px,0.75fr)_minmax(0,1.25fr)] xl:items-end">
+          <div>
+            <h3 className="text-lg font-extrabold text-po-text">Gán staff</h3>
+            <p className="mt-1 max-w-md text-sm leading-6 text-po-text-muted">
+              Nhập VetProfileId đã tồn tại để thêm bác sĩ hoặc trợ lý vào clinic.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
+            <Input label="VetProfileId" value={vetProfileId} onChange={setVetProfileId} />
+            <Select label="Vai trò" value={staffRole} onChange={setStaffRole} options={[{ value: "PrimaryVet", label: "PrimaryVet" }, { value: "Assistant", label: "Assistant" }]} />
           <button
             onClick={() => assignMutation.mutate()}
             disabled={!vetProfileId.trim() || assignMutation.isPending}
-            className="self-end inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
           >
             <UserPlus className="size-4" />
             Gán staff
           </button>
+          </div>
         </div>
-      </DashboardSection>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
         <DashboardSection title={`${doctors.length} staff active`} subtitle="ClinicOwner không thể bị deactivate từ đây.">

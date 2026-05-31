@@ -11,8 +11,8 @@ import { getErrorMessage } from "@/lib/utils"
 import {
   assignClinicStaffApi,
   deleteDoctorScheduleApi,
-  getClinicDoctorsApi,
-  getClinicSchedulesApi,
+  getClinicDoctorsInternalApi,
+  getClinicScheduleApi,
   getMyClinicApi,
   setDoctorScheduleApi,
 } from "@/services/clinic.service"
@@ -69,13 +69,13 @@ export default function ClinicVetsPage() {
 
   const { data: doctors = [], isLoading: loadingDoctors } = useQuery({
     queryKey: ["clinic", "doctors", clinicId],
-    queryFn: () => getClinicDoctorsApi(clinicId),
+    queryFn: () => getClinicDoctorsInternalApi(clinicId),
     enabled: clinicId !== "",
   })
 
   const { data: schedules = [], isLoading: loadingSchedules } = useQuery({
     queryKey: ["clinic", "schedules", clinicId],
-    queryFn: () => getClinicSchedulesApi(clinicId),
+    queryFn: () => getClinicScheduleApi(clinicId),
     enabled: clinicId !== "",
   })
 

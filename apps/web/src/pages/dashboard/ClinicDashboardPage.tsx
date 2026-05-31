@@ -123,8 +123,7 @@ export default function ClinicDashboardPage() {
       <section className="rounded-[32px] bg-white/90 p-5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">Tổng quan vận hành</p>
-            <h2 className="mt-2 text-2xl font-extrabold text-po-text md:text-3xl">{clinic.clinicName}</h2>
+            <h2 className="text-2xl font-extrabold text-po-text md:text-3xl">{clinic.clinicName}</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-po-text-muted">
               Theo dõi lịch khám trong ngày, dòng tiền, công nợ, đối soát SePay và cảnh báo kho.
             </p>

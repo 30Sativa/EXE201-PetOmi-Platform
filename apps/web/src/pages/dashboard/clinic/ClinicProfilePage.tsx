@@ -97,7 +97,7 @@ export default function ClinicProfilePage() {
         appointmentBufferMins: Number(locationForm.appointmentBufferMins) || 15,
       }),
     onSuccess: async () => {
-      toast.success("Đã cập nhật vị trí và buffer lịch hẹn.")
+      toast.success("Đã cập nhật khu vực đặt lịch.")
       await invalidateProfile()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật vị trí clinic.")),
@@ -161,19 +161,22 @@ export default function ClinicProfilePage() {
         </button>
       </DashboardSection>
 
-      <DashboardSection title="Vị trí và buffer booking" subtitle="Latitude/longitude giúp tìm kiếm theo khoảng cách, buffer phút giảm nguy cơ đặt lịch sát nhau.">
+      <DashboardSection title="Khu vực và lịch đặt hẹn" subtitle="Tọa độ giúp owner tìm phòng khám gần họ. Khoảng nghỉ giúp hạn chế các lịch bị đặt sát nhau.">
         <div className="grid gap-4 md:grid-cols-3">
-          <Input label="Latitude" value={locationForm.latitude} onChange={(value) => setLocationForm({ ...locationForm, latitude: value })} />
-          <Input label="Longitude" value={locationForm.longitude} onChange={(value) => setLocationForm({ ...locationForm, longitude: value })} />
-          <Input label="Buffer lịch hẹn (phút)" value={locationForm.appointmentBufferMins} onChange={(value) => setLocationForm({ ...locationForm, appointmentBufferMins: value })} />
+          <Input label="Vĩ độ" value={locationForm.latitude} onChange={(value) => setLocationForm({ ...locationForm, latitude: value })} />
+          <Input label="Kinh độ" value={locationForm.longitude} onChange={(value) => setLocationForm({ ...locationForm, longitude: value })} />
+          <Input label="Khoảng nghỉ giữa lịch (phút)" value={locationForm.appointmentBufferMins} onChange={(value) => setLocationForm({ ...locationForm, appointmentBufferMins: value })} />
         </div>
+        <p className="mt-3 rounded-2xl bg-po-surface-muted px-4 py-3 text-xs font-medium leading-5 text-po-text-muted">
+          Có thể để trống tọa độ nếu chưa cần tìm kiếm theo khoảng cách. Khoảng nghỉ mặc định 15 phút phù hợp cho phần lớn lịch khám.
+        </p>
         <button
           onClick={() => locationMutation.mutate()}
           disabled={locationMutation.isPending}
           className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted disabled:opacity-60"
         >
           <MapPin className="size-4" />
-          {locationMutation.isPending ? "Đang lưu..." : "Cập nhật vị trí"}
+          {locationMutation.isPending ? "Đang lưu..." : "Lưu khu vực đặt lịch"}
         </button>
       </DashboardSection>
     </div>

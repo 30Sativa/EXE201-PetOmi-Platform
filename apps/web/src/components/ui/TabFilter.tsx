@@ -16,7 +16,7 @@ export default function TabFilter<T extends string>({
   return (
     <div
       className={cn(
-        "flex flex-wrap gap-2 rounded-2xl border border-po-border bg-po-surface-muted p-1.5",
+        "flex min-w-0 flex-nowrap gap-2 overflow-x-auto rounded-2xl border border-po-border bg-po-surface-muted p-1.5",
         className,
       )}
       role="tablist"
@@ -28,7 +28,7 @@ export default function TabFilter<T extends string>({
           aria-selected={activeTab === tab.value}
           onClick={() => onChange(tab.value)}
           className={cn(
-            "rounded-xl px-4 py-1.5 text-xs font-semibold transition",
+            "shrink-0 whitespace-nowrap rounded-xl px-4 py-1.5 text-xs font-semibold transition",
             activeTab === tab.value
               ? "bg-white text-po-primary shadow-sm"
               : "text-po-text-muted hover:text-po-text",

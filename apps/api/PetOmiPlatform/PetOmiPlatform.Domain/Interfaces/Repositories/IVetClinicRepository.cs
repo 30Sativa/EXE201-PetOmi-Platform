@@ -12,7 +12,9 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<bool> IsClinicApprovedAsync(Guid clinicId);
         Task<VetClinicDomain?> GetByUserIdAndClinicIdAsync(Guid userId, Guid clinicId);
         Task<VetClinicDomain?> GetByVetClinicIdAsync(Guid vetClinicId);
+        Task<VetClinicDomain?> GetActiveByVetClinicIdAndClinicIdAsync(Guid vetClinicId, Guid clinicId);
         Task<List<Guid>> GetAllVetClinicIdsAsync(Guid vetProfileId);
+        Task UpdateAsync(VetClinicDomain vetClinic);
 
         /// <summary>Lay danh sach bac si active tai clinic (cho owner chon bac si khi dat lich).</summary>
         Task<List<ClinicDoctorDto>> GetClinicDoctorsAsync(Guid clinicId);

@@ -6,6 +6,7 @@ using System;
 namespace PetOmiPlatform.Application.Features.Appointment.Query
 {
     public record GetClinicAppointmentsQuery(
+        Guid RequestUserId,
         Guid ClinicId,
         string? Status,
         DateOnly? Date,

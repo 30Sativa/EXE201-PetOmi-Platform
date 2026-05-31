@@ -21,6 +21,34 @@ export interface AppointmentResponse {
   createdAt: string
 }
 
+export interface CreateGuestWalkInIntakeRequest {
+  clinicId: string
+  ownerFullName: string
+  ownerPhone: string
+  ownerAddress?: string | null
+  petName: string
+  petSpecies: string
+  petBreed?: string | null
+  petGender?: string | null
+  petDateOfBirth?: string | null
+  isPetBirthDateEstimated: boolean
+  vetClinicId?: string | null
+  serviceId?: string | null
+  appointmentDate: string
+  startTime: string
+  endTime: string
+  appointmentType: string
+  notes?: string | null
+}
+
+export interface GuestWalkInIntakeResponse {
+  temporaryOwnerUserId: string
+  temporaryOwnerEmail: string
+  petId: string
+  appointmentId: string
+  appointment: AppointmentResponse
+}
+
 export interface AppointmentListItemResponse {
   appointmentId: string
   petId: string

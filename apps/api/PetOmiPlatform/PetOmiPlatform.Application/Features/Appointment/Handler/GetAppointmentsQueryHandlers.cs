@@ -1,6 +1,7 @@
 using MediatR;
 using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
 namespace PetOmiPlatform.Application.Features.Appointment.Handler
@@ -9,13 +10,24 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         : IRequestHandler<Query.GetClinicAppointmentsQuery, PagedData<AppointmentListItemResponse>>
     {
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
 
-        public GetClinicAppointmentsQueryHandler(IAppointmentRepository appointmentRepository)
-            => _appointmentRepository = appointmentRepository;
+        public GetClinicAppointmentsQueryHandler(
+            IAppointmentRepository appointmentRepository,
+            IVetClinicRepository vetClinicRepository)
+        {
+            _appointmentRepository = appointmentRepository;
+            _vetClinicRepository = vetClinicRepository;
+        }
 
         public async Task<PagedData<AppointmentListItemResponse>> Handle(
             Query.GetClinicAppointmentsQuery request, CancellationToken cancellationToken)
         {
+            var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(
+                request.RequestUserId,
+                request.ClinicId);
+            ClinicRoleGuard.RequireActiveStaff(staff);
+
             var items = await _appointmentRepository.GetByClinicAsync(
                 request.ClinicId, request.Status, request.Date, request.Page, request.PageSize);
 

@@ -28,6 +28,14 @@ import AdminSettingsPage from "@/pages/dashboard/AdminSettingsPage"
 import AdminUsersPage from "@/pages/dashboard/AdminUsersPage"
 import ClinicDashboardPage from "@/pages/dashboard/ClinicDashboardPage"
 import ClinicAppointmentsPage from "@/pages/dashboard/clinic/ClinicAppointmentsPage"
+import ClinicBillingPage from "@/pages/dashboard/clinic/ClinicBillingPage"
+import ClinicDoctorsPage from "@/pages/dashboard/clinic/ClinicDoctorsPage"
+import ClinicInventoryPage from "@/pages/dashboard/clinic/ClinicInventoryPage"
+import ClinicPaymentSettingsPage from "@/pages/dashboard/clinic/ClinicPaymentSettingsPage"
+import ClinicProfilePage from "@/pages/dashboard/clinic/ClinicProfilePage"
+import ClinicReconciliationPage from "@/pages/dashboard/clinic/ClinicReconciliationPage"
+import ClinicServicesPage from "@/pages/dashboard/clinic/ClinicServicesPage"
+import ClinicVisitPage from "@/pages/dashboard/clinic/ClinicVisitPage"
 import OwnerDashboardPage from "@/pages/dashboard/owner/OwnerDashboardPage"
 import OwnerAppointmentsPage from "@/pages/dashboard/owner/OwnerAppointmentsPage"
 import OwnerClinicRegistrationPage from "@/pages/dashboard/owner/OwnerClinicRegistrationPage"
@@ -181,6 +189,38 @@ const router = createBrowserRouter([
           {
             path: "appointments",
             element: <ClinicAppointmentsPage />,
+          },
+          {
+            path: "appointments/:appointmentId/visit",
+            element: <ClinicVisitPage />,
+          },
+          {
+            path: "doctors",
+            element: <ClinicDoctorsPage />,
+          },
+          {
+            path: "services",
+            element: <ClinicServicesPage />,
+          },
+          {
+            path: "inventory",
+            element: <ClinicInventoryPage />,
+          },
+          {
+            path: "billing",
+            element: <ClinicBillingPage />,
+          },
+          {
+            path: "billing/reconciliation",
+            element: <ClinicReconciliationPage />,
+          },
+          {
+            path: "profile",
+            element: <ClinicProfilePage />,
+          },
+          {
+            path: "payments",
+            element: <ClinicPaymentSettingsPage />,
           },
         ],
       },

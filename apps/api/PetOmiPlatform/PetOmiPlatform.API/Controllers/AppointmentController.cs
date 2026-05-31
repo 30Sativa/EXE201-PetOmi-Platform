@@ -11,7 +11,7 @@ using PetOmiPlatform.Application.Features.Appointment.Query;
 namespace PetOmiPlatform.API.Controllers
 {
     /// <summary>
-    /// Appointment management cho Clinic Staff (ClinicOwner, PrimaryVet, Assistant).
+    /// Appointment management for clinic staff (ClinicOwner, PrimaryVet, Assistant).
     /// </summary>
     [Route("api/appointments")]
     [ApiController]
@@ -20,7 +20,7 @@ namespace PetOmiPlatform.API.Controllers
     {
         public AppointmentController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Xem danh sách lịch hẹn của clinic (phân trang, filter theo ngày và status).</summary>
+        /// <summary>Get clinic appointments with pagination and date/status filters.</summary>
         [HttpGet]
         public async Task<IActionResult> GetClinicAppointments(
             [FromQuery] Guid clinicId,
@@ -30,11 +30,11 @@ namespace PetOmiPlatform.API.Controllers
             [FromQuery] int pageSize = 20)
         {
             var result = await Mediator.Send(
-                new GetClinicAppointmentsQuery(clinicId, status, date, page, pageSize));
+                new GetClinicAppointmentsQuery(CurrentUserId, clinicId, status, date, page, pageSize));
             return Ok(BaseResponse<PagedData<AppointmentListItemResponse>>.Ok(result));
         }
 
-        /// <summary>Tạo walk-in appointment cho khách đến trực tiếp.</summary>
+        /// <summary>Create walk-in appointment for an existing pet profile.</summary>
         [HttpPost("walk-in")]
         public async Task<IActionResult> CreateWalkIn([FromBody] CreateWalkInRequest request)
         {
@@ -43,7 +43,16 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
 
-        /// <summary>Xác nhận lịch hẹn (Pending → Confirmed).</summary>
+        /// <summary>Create temporary owner + pet and open a walk-in appointment in one step.</summary>
+        [HttpPost("walk-in/guest-intake")]
+        public async Task<IActionResult> CreateGuestWalkInIntake([FromBody] CreateGuestWalkInIntakeRequest request)
+        {
+            var result = await Mediator.Send(
+                new CreateGuestWalkInIntakeCommand(CurrentUserId, request));
+            return Ok(BaseResponse<GuestWalkInIntakeResponse>.Ok(result));
+        }
+
+        /// <summary>Confirm appointment (Pending to Confirmed).</summary>
         [HttpPost("{appointmentId:guid}/confirm")]
         public async Task<IActionResult> Confirm(Guid appointmentId)
         {
@@ -52,7 +61,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
 
-        /// <summary>Từ chối lịch hẹn (Pending → Rejected) kèm lý do.</summary>
+        /// <summary>Reject appointment (Pending to Rejected) with reason.</summary>
         [HttpPost("{appointmentId:guid}/reject")]
         public async Task<IActionResult> Reject(
             Guid appointmentId,
@@ -63,7 +72,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
 
-        /// <summary>Staff hủy lịch hẹn.</summary>
+        /// <summary>Cancel appointment by clinic staff.</summary>
         [HttpPost("{appointmentId:guid}/cancel")]
         public async Task<IActionResult> Cancel(
             Guid appointmentId,
@@ -74,7 +83,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
 
-        /// <summary>Bác sĩ đánh dấu hoàn thành khám (Confirmed → Completed).</summary>
+        /// <summary>Mark appointment completed (CheckedIn to Completed).</summary>
         [HttpPost("{appointmentId:guid}/complete")]
         public async Task<IActionResult> Complete(Guid appointmentId)
         {
@@ -83,7 +92,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
 
-        /// <summary>Staff đánh dấu owner không đến (Confirmed → NoShow).</summary>
+        /// <summary>Mark owner no-show for confirmed appointment.</summary>
         [HttpPost("{appointmentId:guid}/no-show")]
         public async Task<IActionResult> MarkNoShow(Guid appointmentId)
         {
@@ -92,7 +101,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<AppointmentResponse>.Ok(result));
         }
 
-        /// <summary>Staff tạo emergency appointment (bypass slot check).</summary>
+        /// <summary>Create emergency appointment (bypass slot check).</summary>
         [HttpPost("emergency")]
         public async Task<IActionResult> CreateEmergency([FromBody] CreateEmergencyRequest request)
         {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { CalendarCheck, Check, ChevronLeft, ChevronRight, MapPin, Search, Stethoscope, User, X } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
@@ -11,7 +11,6 @@ import {
   getClinicDoctorsApi,
 } from "@/services/appointments.service"
 import {
-  getMyClinicApi,
   searchClinicsApi,
 } from "@/services/clinic.service"
 import { getPetsApi } from "@/services/pets.service"
@@ -110,16 +109,18 @@ export default function OwnerBookAppointmentModal({
   // Reset on close
   useEffect(() => {
     if (!isOpen) {
-      setStep("clinic")
-      setSelectedClinic(null)
-      setSelectedPet(null)
-      setSelectedDoctor(null)
-      setAppointmentType("")
-      setNotes("")
-      setSelectedDate("")
-      setSelectedSlot(null)
-      setClinicSearch("")
-      setErrorMessage("")
+      queueMicrotask(() => {
+        setStep("clinic")
+        setSelectedClinic(null)
+        setSelectedPet(null)
+        setSelectedDoctor(null)
+        setAppointmentType("")
+        setNotes("")
+        setSelectedDate("")
+        setSelectedSlot(null)
+        setClinicSearch("")
+        setErrorMessage("")
+      })
     }
   }, [isOpen])
 

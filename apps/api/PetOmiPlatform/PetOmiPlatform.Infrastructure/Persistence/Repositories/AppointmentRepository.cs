@@ -108,7 +108,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var query = _context.Appointments.Where(a =>
                 a.VetClinicId == vetClinicId &&
                 a.AppointmentDate == date &&
-                (a.Status == "Pending" || a.Status == "Confirmed") &&
+                (a.Status == "Pending" || a.Status == "Confirmed" || a.Status == "CheckedIn") &&
                 a.StartTime < endTime &&
                 a.EndTime > startTime);
 
@@ -122,18 +122,23 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             List<Guid> allVetClinicIds,
             DateOnly date,
             TimeOnly startTime,
-            TimeOnly endTime)
+            TimeOnly endTime,
+            Guid? excludeId = null)
         {
             if (!allVetClinicIds.Any())
                 return false;
 
-            return await _context.Appointments
+            var query = _context.Appointments
                 .Where(a => allVetClinicIds.Contains(a.VetClinicId ?? Guid.Empty)
                     && a.AppointmentDate == date
-                    && (a.Status == "Pending" || a.Status == "Confirmed")
+                    && (a.Status == "Pending" || a.Status == "Confirmed" || a.Status == "CheckedIn")
                     && a.StartTime < endTime
-                    && a.EndTime > startTime)
-                .AnyAsync();
+                    && a.EndTime > startTime);
+
+            if (excludeId.HasValue)
+                query = query.Where(a => a.AppointmentId != excludeId.Value);
+
+            return await query.AnyAsync();
         }
 
         public async Task<IEnumerable<AppointmentDomain>> GetPendingExpiredAsync(int timeoutMinutes = 30)

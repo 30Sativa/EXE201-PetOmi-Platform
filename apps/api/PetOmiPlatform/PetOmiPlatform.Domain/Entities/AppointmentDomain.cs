@@ -213,8 +213,8 @@ namespace PetOmiPlatform.Domain.Entities
         /// <summary>Hoàn thành lịch hẹn (sau khi khám xong)</summary>
         public void Complete(Guid staffUserId)
         {
-            if (Status != AppointmentStatus.CheckedIn && Status != AppointmentStatus.Confirmed)
-                throw new DomainException($"Chỉ có thể hoàn thành lịch đã xác nhận hoặc check-in. Trạng thái hiện tại: {Status}");
+            if (Status != AppointmentStatus.CheckedIn)
+                throw new DomainException($"Chi co the hoan thanh lich da check-in. Trang thai hien tai: {Status}");
 
             Status = AppointmentStatus.Completed;
             UpdatedAt = DateTime.UtcNow;
@@ -253,6 +253,11 @@ namespace PetOmiPlatform.Domain.Entities
             if (Status == AppointmentStatus.Cancelled)
                 throw new DomainException("Lịch này đã được hủy rồi.");
 
+            if (Status == AppointmentStatus.Rejected ||
+                Status == AppointmentStatus.Expired ||
+                Status == AppointmentStatus.NoShow)
+                throw new DomainException($"Khong the huy lich o trang thai {Status}.");
+
             // Late cancellation rule: hủy trong vòng 2 giờ trước giờ hẹn
             var appointmentDateTime = AppointmentDate.ToDateTime(StartTime, DateTimeKind.Utc);
             var hoursUntilAppt = (appointmentDateTime - DateTime.UtcNow).TotalHours;
@@ -268,8 +273,8 @@ namespace PetOmiPlatform.Domain.Entities
         /// <summary>Bác sĩ hoàn thành khám (Confirmed → Completed)</summary>
         public void Complete()
         {
-            if (Status != AppointmentStatus.Confirmed)
-                throw new DomainException($"Chỉ có thể hoàn thành lịch đã xác nhận. Trạng thái: {Status}");
+            if (Status != AppointmentStatus.CheckedIn)
+                throw new DomainException($"Chi co the hoan thanh lich da check-in. Trang thai hien tai: {Status}");
 
             Status = AppointmentStatus.Completed;
             UpdatedAt = DateTime.UtcNow;
@@ -319,8 +324,8 @@ namespace PetOmiPlatform.Domain.Entities
         /// <summary>Staff đánh dấu chủ pet không đến (Confirmed → NoShow)</summary>
         public void MarkNoShow()
         {
-            if (Status != AppointmentStatus.Confirmed && Status != AppointmentStatus.CheckedIn)
-                throw new DomainException($"Chỉ có thể đánh dấu NoShow khi lịch đã được xác nhận. Trạng thái hiện tại: {Status}");
+            if (Status != AppointmentStatus.Confirmed)
+                throw new DomainException($"Chi co the danh dau NoShow khi lich da duoc xac nhan. Trang thai hien tai: {Status}");
 
             Status = AppointmentStatus.NoShow;
             UpdatedAt = DateTime.UtcNow;

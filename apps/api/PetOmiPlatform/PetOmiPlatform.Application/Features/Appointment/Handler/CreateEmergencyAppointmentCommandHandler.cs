@@ -2,6 +2,7 @@ using MediatR;
 using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
@@ -15,6 +16,7 @@ public class CreateEmergencyAppointmentCommandHandler
     private readonly IClinicServiceRepository _serviceRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IVetClinicRepository _vetClinicRepository;
+    private readonly IPetRepository _petRepository;
     private readonly IUnitOfWork _unitOfWork;
 
     public CreateEmergencyAppointmentCommandHandler(
@@ -22,12 +24,14 @@ public class CreateEmergencyAppointmentCommandHandler
         IClinicServiceRepository serviceRepository,
         IAppointmentRepository appointmentRepository,
         IVetClinicRepository vetClinicRepository,
+        IPetRepository petRepository,
         IUnitOfWork unitOfWork)
     {
         _clinicRepository = clinicRepository;
         _serviceRepository = serviceRepository;
         _appointmentRepository = appointmentRepository;
         _vetClinicRepository = vetClinicRepository;
+        _petRepository = petRepository;
         _unitOfWork = unitOfWork;
     }
 
@@ -40,10 +44,22 @@ public class CreateEmergencyAppointmentCommandHandler
             ?? throw new NotFoundException("Clinic", req.ClinicId);
         clinic.EnsureApproved();
 
-        if (req.VetClinicId.HasValue && !req.ForceConflictOverride)
+        var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(command.StaffUserId, req.ClinicId);
+        ClinicRoleGuard.RequireActiveStaff(staff);
+
+        var pet = await _petRepository.GetByIdAsync(req.PetId)
+            ?? throw new NotFoundException("Pet", req.PetId);
+        pet.EnsureActive();
+
+        VetClinicDomain? vetClinic = null;
+        if (req.VetClinicId.HasValue)
         {
-            var vetClinic = await _vetClinicRepository.GetByVetClinicIdAsync(req.VetClinicId.Value);
-            if (vetClinic != null)
+            vetClinic = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
+                req.VetClinicId.Value,
+                req.ClinicId)
+                ?? throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
+
+            if (!req.ForceConflictOverride)
             {
                 var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
                 var hasConflict = await _appointmentRepository.HasDoctorConflictAcrossClinicsAsync(
@@ -59,8 +75,12 @@ public class CreateEmergencyAppointmentCommandHandler
         if (req.ServiceId.HasValue)
         {
             var service = await _serviceRepository.GetByIdAsync(req.ServiceId.Value);
-            if (service != null)
-                durationMins = service.DurationMins;
+            if (service == null)
+                throw new NotFoundException("ClinicService", req.ServiceId.Value);
+            if (service.ClinicId != req.ClinicId || !service.IsActive)
+                throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+
+            durationMins = service.DurationMins;
         }
 
         var endTime = req.EndTime;

@@ -1,4 +1,16 @@
-import { Bell, CalendarClock, ClipboardPlus, LayoutDashboard, LogOut, Settings, Stethoscope, UsersRound, Wrench } from "lucide-react"
+import {
+  Bell,
+  CalendarClock,
+  ClipboardList,
+  ClipboardPlus,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  PackageSearch,
+  Settings,
+  Stethoscope,
+  Wrench,
+} from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
 import { useAuth } from "@/contexts/AuthContext"
@@ -6,10 +18,13 @@ import { useAuth } from "@/contexts/AuthContext"
 const navItems = [
   { label: "Tổng quan", to: "/dashboard/clinic", icon: LayoutDashboard, exact: true },
   { label: "Lịch hẹn", to: "/dashboard/clinic/appointments", icon: CalendarClock },
-  { label: "Bác sĩ", to: "/dashboard/clinic/vets", icon: Stethoscope },
-  { label: "Bệnh nhân", to: "/dashboard/clinic/patients", icon: UsersRound },
+  { label: "Bác sĩ", to: "/dashboard/clinic/doctors", icon: Stethoscope },
   { label: "Dịch vụ", to: "/dashboard/clinic/services", icon: Wrench },
+  { label: "Kho", to: "/dashboard/clinic/inventory", icon: PackageSearch },
+  { label: "Thu ngân", to: "/dashboard/clinic/billing", icon: CreditCard },
+  { label: "Đối soát", to: "/dashboard/clinic/billing/reconciliation", icon: ClipboardList },
   { label: "Hồ sơ clinic", to: "/dashboard/clinic/profile", icon: ClipboardPlus },
+  { label: "Thanh toán", to: "/dashboard/clinic/payments", icon: Settings },
 ]
 
 export default function ClinicDashboardLayout() {
@@ -33,7 +48,7 @@ export default function ClinicDashboardLayout() {
           </Link>
 
           <div className="rounded-2xl border border-po-border bg-po-primary-soft px-3 py-2 text-xs font-semibold text-po-primary">
-            Clinic
+            Clinic operations
           </div>
 
           <nav className="grid gap-2">
@@ -62,7 +77,7 @@ export default function ClinicDashboardLayout() {
               <Settings className="size-4" />
               Thiết lập nhanh
             </div>
-            <p className="text-xs text-po-text-muted">Cập nhật thông tin clinic, lịch trực và dịch vụ.</p>
+            <p className="text-xs text-po-text-muted">Cập nhật thông tin clinic, lịch trực, dịch vụ và tài khoản nhận tiền.</p>
           </div>
         </aside>
 

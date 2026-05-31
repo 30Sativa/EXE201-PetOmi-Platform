@@ -3,6 +3,7 @@ using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Appointment.Command;
 using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
+using PetOmiPlatform.Application.Features.Clinic.Authorization;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
 namespace PetOmiPlatform.Application.Features.Appointment.Handler
@@ -11,13 +12,16 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         : IRequestHandler<CancelAppointmentCommand, AppointmentResponse>
     {
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CancelAppointmentCommandHandler(
             IAppointmentRepository appointmentRepository,
+            IVetClinicRepository vetClinicRepository,
             IUnitOfWork unitOfWork)
         {
             _appointmentRepository = appointmentRepository;
+            _vetClinicRepository = vetClinicRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -26,6 +30,14 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         {
             var appointment = await _appointmentRepository.GetByIdAsync(command.AppointmentId)
                 ?? throw new NotFoundException("Appointment", command.AppointmentId);
+
+            if (appointment.BookedByUserId != command.UserId_Cancel)
+            {
+                var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(
+                    command.UserId_Cancel,
+                    appointment.ClinicId);
+                ClinicRoleGuard.RequireActiveStaff(staff);
+            }
 
             appointment.Cancel(command.UserId_Cancel, command.Request.Reason);
 

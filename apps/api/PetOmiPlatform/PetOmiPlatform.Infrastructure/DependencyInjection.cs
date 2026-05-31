@@ -146,7 +146,15 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
 
             // Background services
-            services.AddHostedService<BackgroundServices.ReminderProcessorService>();
+            var enableReminderProcessor = string.Equals(
+                configuration["ReminderProcessor:Enabled"],
+                "true",
+                StringComparison.OrdinalIgnoreCase);
+
+            if (enableReminderProcessor)
+            {
+                services.AddHostedService<BackgroundServices.ReminderProcessorService>();
+            }
 
             return services;
         }

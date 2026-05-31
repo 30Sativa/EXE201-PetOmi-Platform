@@ -90,12 +90,37 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entity?.ToDomain();
         }
 
+        public async Task<VetClinicDomain?> GetActiveByVetClinicIdAndClinicIdAsync(Guid vetClinicId, Guid clinicId)
+        {
+            var entity = await _context.VetClinics
+                .FirstOrDefaultAsync(vc =>
+                    vc.VetClinicId == vetClinicId &&
+                    vc.ClinicId == clinicId &&
+                    vc.IsActive);
+            return entity?.ToDomain();
+        }
+
         public async Task<List<Guid>> GetAllVetClinicIdsAsync(Guid vetProfileId)
         {
             return await _context.VetClinics
                 .Where(vc => vc.VetProfileId == vetProfileId && vc.IsActive)
                 .Select(vc => vc.VetClinicId)
                 .ToListAsync();
+        }
+
+        public async Task UpdateAsync(VetClinicDomain vetClinic)
+        {
+            var entity = await _context.VetClinics
+                .FirstOrDefaultAsync(vc => vc.VetClinicId == vetClinic.Id)
+                ?? throw new InvalidOperationException("VetClinic khong ton tai de cap nhat.");
+
+            entity.RoleId = vetClinic.RoleId;
+            entity.IsActive = vetClinic.IsActive;
+            entity.UpdatedAt = vetClinic.UpdatedAt;
+            if (!vetClinic.IsActive && entity.EndDate == null)
+            {
+                entity.EndDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            }
         }
 
         public async Task<List<ClinicDoctorDto>> GetClinicDoctorsAsync(Guid clinicId)

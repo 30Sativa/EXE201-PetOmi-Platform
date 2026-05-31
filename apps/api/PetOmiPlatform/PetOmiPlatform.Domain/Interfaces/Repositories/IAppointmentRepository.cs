@@ -54,7 +54,8 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
             List<Guid> allVetClinicIds,
             DateOnly date,
             TimeOnly startTime,
-            TimeOnly endTime);
+            TimeOnly endTime,
+            Guid? excludeId = null);
 
         /// <summary>Lấy danh sách Pending quá timeout để Hangfire xử lý expire.</summary>
         Task<IEnumerable<AppointmentDomain>> GetPendingExpiredAsync(int timeoutMinutes = 30);

@@ -1,7 +1,6 @@
-﻿using PetOmiPlatform.Domain.Common;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using PetOmiPlatform.Domain.Common;
+using PetOmiPlatform.Domain.Common.Constants;
+using PetOmiPlatform.Domain.Exceptions;
 
 namespace PetOmiPlatform.Domain.Entities
 {
@@ -29,9 +28,14 @@ namespace PetOmiPlatform.Domain.Entities
         }
 
         public static VetClinicDomain Reconstitute(
-            Guid id, Guid vetProfileId, Guid clinicId, Guid roleId,
-            DateOnly startDate, bool isActive,
-            DateTime createdAt, DateTime? updatedAt)
+            Guid id,
+            Guid vetProfileId,
+            Guid clinicId,
+            Guid roleId,
+            DateOnly startDate,
+            bool isActive,
+            DateTime createdAt,
+            DateTime? updatedAt)
         {
             return new VetClinicDomain
             {
@@ -44,6 +48,36 @@ namespace PetOmiPlatform.Domain.Entities
                 CreatedAt = createdAt,
                 UpdatedAt = updatedAt
             };
+        }
+
+        public void ChangeRole(Guid roleId, DateTime changedAtUtc)
+        {
+            if (!IsActive)
+                throw new DomainException("Khong the cap nhat vai tro cho staff da ngung hoat dong.");
+
+            if (roleId != ClinicRoleConstants.PrimaryVetId &&
+                roleId != ClinicRoleConstants.AssistantId)
+            {
+                throw new DomainException("Role staff khong hop le.");
+            }
+
+            if (RoleId == roleId)
+                throw new DomainException("Vai tro moi trung voi vai tro hien tai.");
+
+            RoleId = roleId;
+            UpdatedAt = changedAtUtc;
+        }
+
+        public void Deactivate(DateTime deactivatedAtUtc)
+        {
+            if (!IsActive)
+                throw new DomainException("Staff da ngung hoat dong truoc do.");
+
+            if (RoleId == ClinicRoleConstants.ClinicOwnerId)
+                throw new DomainException("Khong the ngung hoat dong ClinicOwner.");
+
+            IsActive = false;
+            UpdatedAt = deactivatedAtUtc;
         }
     }
 }

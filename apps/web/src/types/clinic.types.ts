@@ -50,6 +50,30 @@ export interface MyClinicResponse {
   updatedAt: string | null
 }
 
+export interface UpdateClinicInfoRequest {
+  clinicName?: string | null
+  address?: string | null
+  phone?: string | null
+  email?: string | null
+  logoUrl?: string | null
+  logoCloudinaryPublicId?: string | null
+  description?: string | null
+  openingHours?: string | null
+}
+
+export interface UpdateClinicLocationRequest {
+  latitude?: number | null
+  longitude?: number | null
+  appointmentBufferMins?: number | null
+}
+
+export interface ClinicLocationResponse {
+  clinicId: string
+  latitude: number | null
+  longitude: number | null
+  appointmentBufferMins: number
+}
+
 export interface ClinicSearchResult {
   clinicId: string
   clinicName: string
@@ -68,4 +92,113 @@ export interface ClinicServiceResponse {
   price: number
   durationMins: number
   isActive: boolean
+}
+
+export interface AddClinicServiceRequest {
+  serviceName: string
+  description?: string | null
+  price: number
+  durationMins: number
+}
+
+export interface UpdateClinicServiceRequest {
+  serviceName?: string | null
+  description?: string | null
+  price?: number | null
+  durationMins?: number | null
+}
+
+export interface ClinicPublicResponse {
+  clinicId: string
+  clinicName: string
+  address: string | null
+  phone: string | null
+  email: string | null
+  logoUrl: string | null
+  description: string | null
+  openingHours: string | null
+  services: ClinicServiceResponse[]
+}
+
+export interface ClinicDoctorListItemResponse {
+  vetClinicId: string
+  vetProfileId: string
+  userId: string
+  fullName: string
+  avatarUrl: string | null
+  specialization: string | null
+  roleName: string
+}
+
+export interface AssignStaffRequest {
+  vetProfileId: string
+  role: "PrimaryVet" | "Assistant" | string
+}
+
+export interface UpdateClinicStaffRoleRequest {
+  role: "PrimaryVet" | "Assistant" | string
+}
+
+export interface DeactivateClinicStaffRequest {
+  reason: string
+}
+
+export interface DoctorScheduleResponse {
+  scheduleId: string
+  vetClinicId: string
+  dayOfWeek: number
+  dayName: string
+  startTime: string
+  endTime: string
+  isActive: boolean
+}
+
+export interface SetDoctorScheduleRequest {
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+}
+
+export interface InventoryItemResponse {
+  itemId: string
+  itemName: string
+  unit: string | null
+  quantity: number
+  lowStockThreshold: number
+  isLowStock: boolean
+  unitPrice: number | null
+  expiryDate: string | null
+  isExpired: boolean
+  isActive: boolean
+}
+
+export interface AddInventoryItemRequest {
+  itemName: string
+  unit?: string | null
+  quantity: number
+  lowStockThreshold: number
+  unitPrice?: number | null
+  expiryDate?: string | null
+}
+
+export interface StockAdjustRequest {
+  amount: number
+  note?: string | null
+}
+
+export interface ClinicSePayAccountResponse {
+  clinicId: string
+  provider: string
+  bankCode: string
+  bankName: string | null
+  accountNumberMasked: string
+  accountName: string | null
+  isActive: boolean
+}
+
+export interface UpsertClinicSePayAccountRequest {
+  bankCode: string
+  accountNumber: string
+  bankName?: string | null
+  accountName?: string | null
 }

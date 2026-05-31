@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react"
-import { CalendarCheck, ChevronLeft, Check, Clock, X } from "lucide-react"
+import { CalendarCheck, Clock, X } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { getErrorMessage } from "@/lib/utils"
-import { useMe } from "@/hooks/useAuthQueries"
 import {
   getAvailableSlotsApi,
   rescheduleAppointmentApi,
@@ -37,9 +36,11 @@ export default function OwnerRescheduleModal({
 
   useEffect(() => {
     if (!isOpen) {
-      setSelectedDate("")
-      setSelectedSlot(null)
-      setErrorMessage("")
+      queueMicrotask(() => {
+        setSelectedDate("")
+        setSelectedSlot(null)
+        setErrorMessage("")
+      })
     }
   }, [isOpen])
 
@@ -56,7 +57,7 @@ export default function OwnerRescheduleModal({
         clinicId: myClinic?.clinicId ?? "",
         date: selectedDate,
       }),
-    enabled: isOpen && myClinic?.clinicId && selectedDate !== "",
+    enabled: Boolean(isOpen && myClinic?.clinicId && selectedDate !== ""),
   })
 
   const rescheduleMutation = useMutation({

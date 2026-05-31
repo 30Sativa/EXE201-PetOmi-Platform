@@ -21,6 +21,10 @@ public partial class Inventory
 
     public DateOnly? ExpiryDate { get; set; }
 
+    public string? ImageUrl { get; set; }
+
+    public string? ImageCloudinaryPublicId { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTime CreatedAt { get; set; }

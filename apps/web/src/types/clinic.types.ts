@@ -18,6 +18,8 @@ export interface CreateClinicRequest {
   licenseNumber?: string | null
   licenseImageUrl?: string | null
   licenseCloudinaryPublicId?: string | null
+  logoUrl?: string | null
+  logoCloudinaryPublicId?: string | null
 }
 
 export interface CreateClinicResponse {
@@ -30,6 +32,8 @@ export interface CreateClinicResponse {
   licenseNumber: string | null
   licenseImageUrl: string | null
   licenseCloudinaryPublicId: string | null
+  logoUrl: string | null
+  logoCloudinaryPublicId: string | null
   status: string
 }
 
@@ -131,7 +135,8 @@ export interface ClinicDoctorListItemResponse {
 }
 
 export interface AssignStaffRequest {
-  vetProfileId: string
+  vetEmail?: string
+  vetProfileId?: string
   role: "PrimaryVet" | "Assistant" | string
 }
 
@@ -168,6 +173,8 @@ export interface InventoryItemResponse {
   isLowStock: boolean
   unitPrice: number | null
   expiryDate: string | null
+  imageUrl: string | null
+  imageCloudinaryPublicId: string | null
   isExpired: boolean
   isActive: boolean
 }
@@ -179,6 +186,8 @@ export interface AddInventoryItemRequest {
   lowStockThreshold: number
   unitPrice?: number | null
   expiryDate?: string | null
+  imageUrl?: string | null
+  imageCloudinaryPublicId?: string | null
 }
 
 export interface StockAdjustRequest {

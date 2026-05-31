@@ -379,6 +379,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.LowStockThreshold).HasDefaultValue(10);
             entity.Property(e => e.Unit).HasMaxLength(50);
             entity.Property(e => e.UnitPrice).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.ImageUrl).HasMaxLength(500);
+            entity.Property(e => e.ImageCloudinaryPublicId).HasMaxLength(500);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Clinic).WithMany(p => p.Inventories)

@@ -176,7 +176,7 @@ export default function ClinicBillingPage() {
         <MetricCard label="Chờ hoàn tiền" value={String(summary?.pendingManualRefundCount ?? 0)} icon={RotateCcw} tone="danger" />
       </div>
 
-      <DashboardSection title="Mở hóa đơn theo lịch hẹn" subtitle="Dùng AppointmentId để tạo hóa đơn tự động, thu tiền mặt, chuyển khoản hoặc tạo QR SePay.">
+      <DashboardSection title="Mở hóa đơn theo lịch hẹn" subtitle="MVP hiện tại bắt buộc hóa đơn gắn với appointment. Với đơn bán lẻ (hạt, phụ kiện), hãy tạo walk-in trước rồi thu ngân trên appointment đó.">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
           <Input label="AppointmentId" value={appointmentInput} onChange={setAppointmentInput} />
           <Input label="Giảm giá" value={discountAmount} onChange={setDiscountAmount} />
@@ -188,6 +188,9 @@ export default function ClinicBillingPage() {
             Tìm hóa đơn
           </button>
         </div>
+        <p className="mt-3 text-xs text-po-text-subtle">
+          Luồng thanh toán: tạo hoặc tìm hóa đơn theo appointment, chọn Tiền mặt/Chuyển khoản hoặc tạo QR SePay, rồi bấm ghi nhận khi đã nhận tiền.
+        </p>
 
         {selectedAppointmentId ? (
           <div className="mt-5 rounded-2xl border border-po-border bg-white p-4">

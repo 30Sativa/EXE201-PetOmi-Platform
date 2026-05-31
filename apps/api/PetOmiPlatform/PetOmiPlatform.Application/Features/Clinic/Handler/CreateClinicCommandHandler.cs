@@ -54,7 +54,9 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 email: command.Request.Email,
                 licenseNumber: command.Request.LicenseNumber,
                 licenseImageUrl: command.Request.LicenseImageUrl,
-                licenseCloudinaryPublicId: command.Request.LicenseCloudinaryPublicId
+                licenseCloudinaryPublicId: command.Request.LicenseCloudinaryPublicId,
+                logoUrl: command.Request.LogoUrl,
+                logoCloudinaryPublicId: command.Request.LogoCloudinaryPublicId
             );
             await _clinicRepository.AddAsync(clinic);
 
@@ -81,6 +83,8 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 LicenseNumber = clinic.LicenseNumber,
                 LicenseImageUrl = clinic.LicenseImageUrl,
                 LicenseCloudinaryPublicId = clinic.LicenseCloudinaryPublicId,
+                LogoUrl = clinic.LogoUrl,
+                LogoCloudinaryPublicId = clinic.LogoCloudinaryPublicId,
                 Status = clinic.Status.ToString()
             };
         }

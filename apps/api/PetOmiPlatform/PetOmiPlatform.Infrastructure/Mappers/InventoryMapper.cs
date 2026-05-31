@@ -16,6 +16,8 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 lowStockThreshold: entity.LowStockThreshold,
                 unitPrice: entity.UnitPrice,
                 expiryDate: entity.ExpiryDate,
+                imageUrl: entity.ImageUrl,
+                imageCloudinaryPublicId: entity.ImageCloudinaryPublicId,
                 isActive: entity.IsActive,
                 createdAt: entity.CreatedAt,
                 updatedAt: entity.UpdatedAt
@@ -34,6 +36,8 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 LowStockThreshold = domain.LowStockThreshold,
                 UnitPrice = domain.UnitPrice,
                 ExpiryDate = domain.ExpiryDate,
+                ImageUrl = domain.ImageUrl,
+                ImageCloudinaryPublicId = domain.ImageCloudinaryPublicId,
                 IsActive = domain.IsActive,
                 CreatedAt = domain.CreatedAt,
                 UpdatedAt = domain.UpdatedAt

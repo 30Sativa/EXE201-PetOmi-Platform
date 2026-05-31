@@ -388,7 +388,7 @@ function ClinicAppointmentCard({
           {canOpenVisit ? (
             <ActionButton icon={Stethoscope} label="Phiếu khám" tone="primarySoft" onClick={onOpenVisit} />
           ) : null}
-          {(isCheckedIn || isConfirmed) ? (
+          {isCheckedIn ? (
             <ActionButton icon={CheckCircle2} label="Hoàn thành" tone="success" onClick={() => onAction("complete")} />
           ) : null}
         </div>

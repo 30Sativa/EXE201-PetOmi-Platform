@@ -1,4 +1,4 @@
-namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
+﻿namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
 {
     public class InventoryItemResponse
     {
@@ -7,10 +7,12 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
         public string? Unit { get; set; }
         public int Quantity { get; set; }
         public int LowStockThreshold { get; set; }
-        public bool IsLowStock { get; set; }         // Cảnh báo hết hàng
+        public bool IsLowStock { get; set; }
         public decimal? UnitPrice { get; set; }
         public DateOnly? ExpiryDate { get; set; }
-        public bool IsExpired { get; set; }          // Cảnh báo hết hạn
+        public string? ImageUrl { get; set; }
+        public string? ImageCloudinaryPublicId { get; set; }
+        public bool IsExpired { get; set; }
         public bool IsActive { get; set; }
     }
 }

@@ -4,6 +4,7 @@ import { PackageSearch, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import ImageUploadField from "@/components/ui/ImageUploadField"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -30,6 +31,8 @@ const emptyForm = {
   lowStockThreshold: "10",
   unitPrice: "",
   expiryDate: "",
+  imageUrl: "",
+  imageCloudinaryPublicId: "",
 }
 
 export default function ClinicInventoryPage() {
@@ -65,6 +68,8 @@ export default function ClinicInventoryPage() {
         lowStockThreshold: Number(form.lowStockThreshold) || 10,
         unitPrice: form.unitPrice ? Number(form.unitPrice) : null,
         expiryDate: form.expiryDate || null,
+        imageUrl: form.imageUrl || null,
+        imageCloudinaryPublicId: form.imageCloudinaryPublicId || null,
       }),
     onSuccess: async () => {
       toast.success("Đã thêm mặt hàng.")
@@ -143,6 +148,23 @@ export default function ClinicInventoryPage() {
           <Input label="Đơn giá" value={form.unitPrice} onChange={(value) => setForm({ ...form, unitPrice: value })} />
           <Input label="Hạn dùng" type="date" value={form.expiryDate} onChange={(value) => setForm({ ...form, expiryDate: value })} />
         </div>
+        <div className="mt-4">
+          <ImageUploadField
+            label="Ảnh sản phẩm"
+            value={form.imageUrl}
+            onChange={(url) =>
+              setForm((current) => ({
+                ...current,
+                imageUrl: url,
+                imageCloudinaryPublicId: url ? current.imageCloudinaryPublicId : "",
+              }))}
+            onUploadComplete={(result) => setForm((current) => ({ ...current, imageCloudinaryPublicId: result.publicId }))}
+            imageType="inventory_item"
+            resourceId={clinicId}
+            previewClassName="h-28 w-28 rounded-2xl border border-po-border object-cover"
+            maxSizeMb={5}
+          />
+        </div>
         <button
           onClick={() => addMutation.mutate()}
           disabled={!canAdd || addMutation.isPending}
@@ -177,6 +199,7 @@ export default function ClinicInventoryPage() {
               <thead>
                 <tr className="border-b border-po-border text-xs uppercase tracking-[0.14em] text-po-text-subtle">
                   <th className="px-4 py-3">Mặt hàng</th>
+                  <th className="px-4 py-3">Ảnh</th>
                   <th className="px-4 py-3">Tồn kho</th>
                   <th className="px-4 py-3">Đơn giá</th>
                   <th className="px-4 py-3">Hạn dùng</th>
@@ -190,6 +213,13 @@ export default function ClinicInventoryPage() {
                     <td className="px-4 py-4">
                       <p className="text-sm font-bold text-po-text">{item.itemName}</p>
                       <p className="text-xs text-po-text-muted">{item.unit ?? "Không có đơn vị"}</p>
+                    </td>
+                    <td className="px-4 py-4">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.itemName} className="h-12 w-12 rounded-xl border border-po-border object-cover" />
+                      ) : (
+                        <span className="text-xs text-po-text-subtle">Chưa có</span>
+                      )}
                     </td>
                     <td className="px-4 py-4 text-sm font-semibold text-po-text">{item.quantity} / {item.lowStockThreshold}</td>
                     <td className="px-4 py-4 text-sm text-po-text-muted">{formatCurrency(item.unitPrice)}</td>

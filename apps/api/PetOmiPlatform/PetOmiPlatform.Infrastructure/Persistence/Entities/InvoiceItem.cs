@@ -23,9 +23,17 @@ public partial class InvoiceItem
 
     public Guid? InventoryItemId { get; set; }
 
+    public Guid? OrderItemId { get; set; }
+
+    public Guid? PrescriptionId { get; set; }
+
     public virtual Inventory? InventoryItem { get; set; }
 
     public virtual Invoice Invoice { get; set; } = null!;
+
+    public virtual OrderItem? OrderItem { get; set; }
+
+    public virtual Prescription? Prescription { get; set; }
 
     public virtual ClinicService? Service { get; set; }
 }

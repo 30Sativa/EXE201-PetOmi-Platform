@@ -54,6 +54,17 @@ namespace PetOmiPlatform.API.Controllers
                 : NotFound(BaseResponse<InvoiceResponse?>.Fail("Khong tim thay hoa don.", 404));
         }
 
+        /// <summary>Lay hoa don theo order ban hang tai quay.</summary>
+        [HttpGet("by-order/{orderId:guid}")]
+        public async Task<IActionResult> GetByOrderId(Guid orderId, [FromQuery] Guid clinicId)
+        {
+            var query = new GetInvoiceByOrderQuery(clinicId, CurrentUserId, orderId);
+            var result = await Mediator.Send(query);
+            return result != null
+                ? Ok(BaseResponse<InvoiceResponse>.Ok(result))
+                : NotFound(BaseResponse<InvoiceResponse?>.Fail("Khong tim thay hoa don.", 404));
+        }
+
         /// <summary>Danh sach hoa don chua thanh toan theo tuoi no (aging) de thu ngan uu tien thu no.</summary>
         /// <remarks>
         /// Tra ve cac hoa don status Unpaid, sap xep theo PendingDays giam dan.

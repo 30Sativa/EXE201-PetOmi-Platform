@@ -35,5 +35,7 @@ public partial class Inventory
 
     public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
 
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
 }

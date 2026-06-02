@@ -10,6 +10,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<InvoiceDomain?> GetByIdAsync(Guid invoiceId);
         Task<InvoiceDomain?> GetByInvoiceCodeAsync(string invoiceCode);
         Task<InvoiceDomain?> GetByAppointmentIdAsync(Guid appointmentId);
+        Task<InvoiceDomain?> GetByOrderIdAsync(Guid orderId);
         Task<InvoiceDomain?> GetByPaymentReferenceAsync(string paymentReference);
         Task<IEnumerable<InvoiceItemDomain>> GetItemsByInvoiceIdAsync(Guid invoiceId);
         Task<IEnumerable<InvoiceDomain>> GetByClinicIdAsync(Guid clinicId, int page, int pageSize);
@@ -20,6 +21,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<IReadOnlyList<InvoiceRevenueDailySummary>> GetPaidRevenueTrendByClinicAsync(Guid clinicId, DateOnly fromDate, DateOnly toDate);
         Task<InvoiceAgingBucketSummary> GetUnpaidAgingBucketSummaryByClinicIdAsync(Guid clinicId);
         Task<bool> HasActiveInvoiceAsync(Guid appointmentId);
+        Task<bool> HasActiveOrderInvoiceAsync(Guid orderId);
         Task UpdateAsync(InvoiceDomain invoice);
     }
 }

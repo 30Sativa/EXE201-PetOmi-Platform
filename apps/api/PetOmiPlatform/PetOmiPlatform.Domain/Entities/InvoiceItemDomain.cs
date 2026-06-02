@@ -14,6 +14,8 @@ namespace PetOmiPlatform.Domain.Entities
         public decimal TotalPrice { get; private set; }     // Quantity * UnitPrice
         public Guid? ServiceId { get; private set; }
         public Guid? InventoryItemId { get; private set; }
+        public Guid? OrderItemId { get; private set; }
+        public Guid? PrescriptionId { get; private set; }
 
         private InvoiceItemDomain() { }
 
@@ -24,7 +26,9 @@ namespace PetOmiPlatform.Domain.Entities
             int quantity,
             decimal unitPrice,
             Guid? serviceId = null,
-            Guid? inventoryItemId = null)
+            Guid? inventoryItemId = null,
+            Guid? orderItemId = null,
+            Guid? prescriptionId = null)
         {
             if (string.IsNullOrWhiteSpace(description))
                 throw new DomainException("Mô tả dòng hóa đơn không được để trống.");
@@ -43,14 +47,16 @@ namespace PetOmiPlatform.Domain.Entities
                 UnitPrice = unitPrice,
                 TotalPrice = quantity * unitPrice,
                 ServiceId = serviceId,
-                InventoryItemId = inventoryItemId
+                InventoryItemId = inventoryItemId,
+                OrderItemId = orderItemId,
+                PrescriptionId = prescriptionId
             };
         }
 
         public static InvoiceItemDomain Reconstitute(
             Guid id, Guid invoiceId, InvoiceItemType itemType,
             string description, int quantity, decimal unitPrice, decimal totalPrice,
-            Guid? serviceId, Guid? inventoryItemId)
+            Guid? serviceId, Guid? inventoryItemId, Guid? orderItemId, Guid? prescriptionId)
         {
             return new InvoiceItemDomain
             {
@@ -62,7 +68,9 @@ namespace PetOmiPlatform.Domain.Entities
                 UnitPrice = unitPrice,
                 TotalPrice = totalPrice,
                 ServiceId = serviceId,
-                InventoryItemId = inventoryItemId
+                InventoryItemId = inventoryItemId,
+                OrderItemId = orderItemId,
+                PrescriptionId = prescriptionId
             };
         }
     }

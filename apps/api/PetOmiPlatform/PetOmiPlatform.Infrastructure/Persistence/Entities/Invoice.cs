@@ -7,13 +7,17 @@ public partial class Invoice
 {
     public Guid InvoiceId { get; set; }
 
-    public Guid AppointmentId { get; set; }
+    public Guid? AppointmentId { get; set; }
+
+    public Guid? OrderId { get; set; }
 
     public Guid? ExaminationId { get; set; }
 
     public Guid ClinicId { get; set; }
 
     public string InvoiceCode { get; set; } = null!;
+
+    public string InvoiceSource { get; set; } = null!;
 
     public decimal TotalAmount { get; set; }
 
@@ -61,13 +65,15 @@ public partial class Invoice
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual Appointment Appointment { get; set; } = null!;
+    public virtual Appointment? Appointment { get; set; }
 
     public virtual Clinic Clinic { get; set; } = null!;
 
     public virtual MedicalExamination? Examination { get; set; }
 
     public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
+
+    public virtual Order? Order { get; set; }
 
     public virtual ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
 }

@@ -19,6 +19,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.Mappers
                 InvoiceId = invoice.Id,
                 InvoiceCode = invoice.InvoiceCode,
                 AppointmentId = invoice.AppointmentId,
+                OrderId = invoice.OrderId,
+                InvoiceSource = invoice.InvoiceSource.ToString(),
                 FinalAmount = invoice.FinalAmount,
                 PaidAmount = invoice.PaidAmount,
                 CancelledAt = invoice.CancelledAt,

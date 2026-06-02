@@ -14,8 +14,10 @@ namespace PetOmiPlatform.Application.Features.Invoice.Mappers
             {
                 Id = invoice.Id,
                 AppointmentId = invoice.AppointmentId,
+                OrderId = invoice.OrderId,
                 ExaminationId = invoice.ExaminationId,
                 ClinicId = invoice.ClinicId,
+                InvoiceSource = invoice.InvoiceSource.ToString(),
                 InvoiceCode = invoice.InvoiceCode,
                 TotalAmount = invoice.TotalAmount,
                 DiscountAmount = invoice.DiscountAmount,
@@ -58,7 +60,9 @@ namespace PetOmiPlatform.Application.Features.Invoice.Mappers
                 UnitPrice = item.UnitPrice,
                 TotalPrice = item.TotalPrice,
                 ServiceId = item.ServiceId,
-                InventoryItemId = item.InventoryItemId
+                InventoryItemId = item.InventoryItemId,
+                OrderItemId = item.OrderItemId,
+                PrescriptionId = item.PrescriptionId
             };
         }
     }

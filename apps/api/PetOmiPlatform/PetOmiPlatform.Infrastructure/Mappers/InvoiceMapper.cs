@@ -10,8 +10,10 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             InvoiceDomain.Reconstitute(
                 id: entity.InvoiceId,
                 appointmentId: entity.AppointmentId,
+                orderId: entity.OrderId,
                 examinationId: entity.ExaminationId,
                 clinicId: entity.ClinicId,
+                invoiceSource: Enum.Parse<InvoiceSource>(entity.InvoiceSource),
                 invoiceCode: entity.InvoiceCode,
                 totalAmount: entity.TotalAmount,
                 discountAmount: entity.DiscountAmount,
@@ -43,8 +45,10 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             {
                 InvoiceId = domain.Id,
                 AppointmentId = domain.AppointmentId,
+                OrderId = domain.OrderId,
                 ExaminationId = domain.ExaminationId,
                 ClinicId = domain.ClinicId,
+                InvoiceSource = domain.InvoiceSource.ToString(),
                 InvoiceCode = domain.InvoiceCode,
                 TotalAmount = domain.TotalAmount,
                 DiscountAmount = domain.DiscountAmount,
@@ -81,7 +85,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 unitPrice: entity.UnitPrice,
                 totalPrice: entity.TotalPrice,
                 serviceId: entity.ServiceId,
-                inventoryItemId: entity.InventoryItemId
+                inventoryItemId: entity.InventoryItemId,
+                orderItemId: entity.OrderItemId,
+                prescriptionId: entity.PrescriptionId
             );
 
         public static InvoiceItem ToEntity(this InvoiceItemDomain domain) =>
@@ -95,7 +101,9 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 UnitPrice = domain.UnitPrice,
                 TotalPrice = domain.TotalPrice,
                 ServiceId = domain.ServiceId,
-                InventoryItemId = domain.InventoryItemId
+                InventoryItemId = domain.InventoryItemId,
+                OrderItemId = domain.OrderItemId,
+                PrescriptionId = domain.PrescriptionId
             };
     }
 }

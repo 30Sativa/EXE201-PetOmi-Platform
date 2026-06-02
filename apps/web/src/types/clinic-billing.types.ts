@@ -1,15 +1,19 @@
 export interface InvoiceItemRequest {
-  itemType: "Service" | "Medication" | "Other" | string
+  itemType: "Service" | "Medication" | "Product" | "Other" | string
   description: string
   quantity: number
   unitPrice: number
   serviceId?: string | null
   inventoryItemId?: string | null
+  orderItemId?: string | null
+  prescriptionId?: string | null
 }
 
 export interface CreateInvoiceRequest {
-  appointmentId: string
+  appointmentId?: string | null
+  orderId?: string | null
   examinationId?: string | null
+  invoiceSource?: "Appointment" | "Order" | "Mixed" | string | null
   totalAmount: number
   discountAmount: number
   notes?: string | null
@@ -17,12 +21,14 @@ export interface CreateInvoiceRequest {
 }
 
 export interface AutoComposeInvoiceRequest {
-  appointmentId: string
+  appointmentId?: string | null
+  orderId?: string | null
   examinationId?: string | null
   discountAmount: number
   notes?: string | null
   includeService: boolean
   includePrescriptions: boolean
+  includeOrderItems?: boolean
 }
 
 export interface InvoiceItemResponse {
@@ -34,13 +40,17 @@ export interface InvoiceItemResponse {
   totalPrice: number
   serviceId: string | null
   inventoryItemId: string | null
+  orderItemId: string | null
+  prescriptionId: string | null
 }
 
 export interface InvoiceResponse {
   id: string
-  appointmentId: string
+  appointmentId: string | null
+  orderId: string | null
   examinationId: string | null
   clinicId: string
+  invoiceSource: string
   invoiceCode: string
   totalAmount: number
   discountAmount: number
@@ -149,8 +159,10 @@ export interface BillingRevenueTrendResponse {
 export interface InvoiceAgingItemResponse {
   invoiceId: string
   invoiceCode: string
-  appointmentId: string
+  appointmentId: string | null
+  orderId: string | null
   clinicId: string
+  invoiceSource: string
   finalAmount: number
   pendingDays: number
   paymentProvider: string
@@ -161,7 +173,9 @@ export interface InvoiceAgingItemResponse {
 export interface PendingManualRefundItemResponse {
   invoiceId: string
   invoiceCode: string
-  appointmentId: string
+  appointmentId: string | null
+  orderId: string | null
+  invoiceSource: string
   finalAmount: number
   paidAmount: number | null
   cancelledAt: string | null
@@ -196,5 +210,52 @@ export interface ManualMatchSePayTransactionRequest {
 
 export interface DismissSePayTransactionRequest {
   reviewNote: string
+}
+
+export interface CreateOrderItemRequest {
+  inventoryItemId: string
+  quantity: number
+  unitPrice?: number | null
+  description?: string | null
+  sourceType?: "Retail" | "Prescription" | string
+  prescriptionId?: string | null
+}
+
+export interface CreateOrderRequest {
+  clinicId: string
+  customerUserId?: string | null
+  petId?: string | null
+  appointmentId?: string | null
+  orderType: "Retail" | "Prescription" | "Mixed" | string
+  notes?: string | null
+  confirmImmediately: boolean
+  items: CreateOrderItemRequest[]
+}
+
+export interface OrderItemResponse {
+  orderItemId: string
+  inventoryItemId: string
+  description: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
+  sourceType: string
+  prescriptionId: string | null
+}
+
+export interface OrderResponse {
+  orderId: string
+  clinicId: string
+  customerUserId: string | null
+  petId: string | null
+  appointmentId: string | null
+  orderType: string
+  status: string
+  totalAmount: number
+  notes: string | null
+  createdAt: string
+  confirmedAt: string | null
+  paidAt: string | null
+  items: OrderItemResponse[]
 }
 

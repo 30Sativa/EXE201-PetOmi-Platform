@@ -6,11 +6,13 @@ import type {
   BillingRevenueTrendResponse,
   CancelInvoiceRequest,
   ConfirmManualRefundRequest,
+  CreateOrderRequest,
   CreateInvoiceRequest,
   DismissSePayTransactionRequest,
   InvoiceAgingItemResponse,
   InvoiceResponse,
   ManualMatchSePayTransactionRequest,
+  OrderResponse,
   PayInvoiceRequest,
   PendingManualRefundItemResponse,
   RequestSePayPaymentRequest,
@@ -51,6 +53,55 @@ export const getInvoiceByAppointmentApi = async (
     if (isNotFound(error)) return null
     throw error
   }
+}
+
+export const getInvoiceByOrderApi = async (
+  clinicId: string,
+  orderId: string,
+): Promise<InvoiceResponse | null> => {
+  try {
+    const response = await api.get(`/invoices/by-order/${orderId}`, { params: { clinicId } })
+    return unwrapResponse<InvoiceResponse>(response)
+  } catch (error) {
+    if (isNotFound(error)) return null
+    throw error
+  }
+}
+
+export const createOrderApi = async (
+  data: CreateOrderRequest,
+): Promise<OrderResponse> => {
+  const response = await api.post("/orders", data)
+  return unwrapResponse<OrderResponse>(response)
+}
+
+export const getOrderApi = async (
+  clinicId: string,
+  orderId: string,
+): Promise<OrderResponse | null> => {
+  try {
+    const response = await api.get(`/orders/${orderId}`, { params: { clinicId } })
+    return unwrapResponse<OrderResponse>(response)
+  } catch (error) {
+    if (isNotFound(error)) return null
+    throw error
+  }
+}
+
+export const confirmOrderApi = async (
+  clinicId: string,
+  orderId: string,
+): Promise<OrderResponse> => {
+  const response = await api.post(`/orders/${orderId}/confirm`, {}, { params: { clinicId } })
+  return unwrapResponse<OrderResponse>(response)
+}
+
+export const cancelOrderApi = async (
+  clinicId: string,
+  orderId: string,
+): Promise<boolean> => {
+  const response = await api.post(`/orders/${orderId}/cancel`, {}, { params: { clinicId } })
+  return unwrapResponse<boolean>(response)
 }
 
 export const createInvoiceApi = async (

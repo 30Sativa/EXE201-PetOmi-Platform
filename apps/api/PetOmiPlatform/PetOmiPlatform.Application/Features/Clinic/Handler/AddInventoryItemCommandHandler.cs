@@ -42,7 +42,9 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 quantity: command.Request.Quantity,
                 lowStockThreshold: command.Request.LowStockThreshold,
                 unitPrice: command.Request.UnitPrice,
-                expiryDate: command.Request.ExpiryDate
+                expiryDate: command.Request.ExpiryDate,
+                imageUrl: command.Request.ImageUrl,
+                imageCloudinaryPublicId: command.Request.ImageCloudinaryPublicId
             );
 
             await _inventoryRepo.AddAsync(item);

@@ -21,6 +21,10 @@ public partial class Inventory
 
     public DateOnly? ExpiryDate { get; set; }
 
+    public string? ImageUrl { get; set; }
+
+    public string? ImageCloudinaryPublicId { get; set; }
+
     public bool IsActive { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -30,6 +34,8 @@ public partial class Inventory
     public virtual Clinic Clinic { get; set; } = null!;
 
     public virtual ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
+
+    public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
 }

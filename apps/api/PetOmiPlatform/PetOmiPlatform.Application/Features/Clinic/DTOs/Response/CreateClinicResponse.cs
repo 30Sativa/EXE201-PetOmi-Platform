@@ -1,4 +1,4 @@
-namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
+﻿namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
 {
     public class CreateClinicResponse
     {
@@ -11,6 +11,8 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
         public string? LicenseNumber { get; set; }
         public string? LicenseImageUrl { get; set; }
         public string? LicenseCloudinaryPublicId { get; set; }
+        public string? LogoUrl { get; set; }
+        public string? LogoCloudinaryPublicId { get; set; }
         public string Status { get; set; } = null!;
     }
 }

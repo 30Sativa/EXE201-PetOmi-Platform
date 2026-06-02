@@ -35,7 +35,7 @@ export default function ClinicDoctorsPage() {
   const queryClient = useQueryClient()
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
   const clinicId = clinic?.clinicId ?? ""
-  const [vetProfileId, setVetProfileId] = useState("")
+  const [vetEmail, setVetEmail] = useState("")
   const [staffRole, setStaffRole] = useState("PrimaryVet")
   const [scheduleTarget, setScheduleTarget] = useState<ClinicDoctorListItemResponse | null>(null)
   const [dayOfWeek, setDayOfWeek] = useState(1)
@@ -62,10 +62,10 @@ export default function ClinicDoctorsPage() {
   }
 
   const assignMutation = useMutation({
-    mutationFn: () => assignClinicStaffApi(clinicId, { vetProfileId, role: staffRole }),
+    mutationFn: () => assignClinicStaffApi(clinicId, { vetEmail: vetEmail.trim(), role: staffRole }),
     onSuccess: async () => {
       toast.success("Đã gán staff vào clinic.")
-      setVetProfileId("")
+      setVetEmail("")
       await invalidate()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể gán staff.")),
@@ -140,15 +140,15 @@ export default function ClinicDoctorsPage() {
           <div>
             <h3 className="text-lg font-extrabold text-po-text">Gán staff</h3>
             <p className="mt-1 max-w-md text-sm leading-6 text-po-text-muted">
-              Nhập VetProfileId đã tồn tại để thêm bác sĩ hoặc trợ lý vào clinic.
+              Nhập email đăng nhập của bác sĩ hoặc trợ lý để thêm vào clinic.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
-            <Input label="VetProfileId" value={vetProfileId} onChange={setVetProfileId} />
+            <Input label="Email nhân sự" value={vetEmail} onChange={setVetEmail} />
             <Select label="Vai trò" value={staffRole} onChange={setStaffRole} options={[{ value: "PrimaryVet", label: "PrimaryVet" }, { value: "Assistant", label: "Assistant" }]} />
           <button
             onClick={() => assignMutation.mutate()}
-            disabled={!vetProfileId.trim() || assignMutation.isPending}
+            disabled={!vetEmail.trim() || assignMutation.isPending}
               className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
           >
             <UserPlus className="size-4" />

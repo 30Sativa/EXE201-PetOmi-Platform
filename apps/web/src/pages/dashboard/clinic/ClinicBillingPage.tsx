@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Banknote, CreditCard, QrCode, ReceiptText, RotateCcw } from "lucide-react"
+import { Banknote, CreditCard, PackageSearch, Plus, QrCode, ReceiptText, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
@@ -14,6 +14,7 @@ import {
   autoComposeInvoiceApi,
   cancelInvoiceApi,
   confirmManualRefundApi,
+  createOrderApi,
   getBillingRevenueTrendApi,
   getBillingSummaryApi,
   getInvoiceByAppointmentApi,
@@ -22,10 +23,19 @@ import {
   payInvoiceApi,
   requestSePayPaymentApi,
 } from "@/services/clinic-billing.service"
+import { getInventoryApi } from "@/services/clinic.service"
 import type { InvoiceResponse, PendingManualRefundItemResponse, SePayPaymentRequestResponse } from "@/types"
 
 const today = new Date().toISOString().slice(0, 10)
 const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+type RetailCartItem = {
+  inventoryItemId: string
+  itemName: string
+  quantity: number
+  unitPrice: number
+  availableQuantity: number
+}
 
 export default function ClinicBillingPage() {
   const queryClient = useQueryClient()
@@ -39,6 +49,11 @@ export default function ClinicBillingPage() {
   const [refundTarget, setRefundTarget] = useState<PendingManualRefundItemResponse | null>(null)
   const [refundNote, setRefundNote] = useState("")
   const [qrRequest, setQrRequest] = useState<SePayPaymentRequestResponse | null>(null)
+  const [selectedInventoryId, setSelectedInventoryId] = useState("")
+  const [retailQuantity, setRetailQuantity] = useState("1")
+  const [retailDiscountAmount, setRetailDiscountAmount] = useState("0")
+  const [retailCart, setRetailCart] = useState<RetailCartItem[]>([])
+  const [retailInvoice, setRetailInvoice] = useState<InvoiceResponse | null>(null)
 
   const summaryQuery = useQuery({
     queryKey: ["clinic", clinicId, "dashboard-summary"],
@@ -64,6 +79,12 @@ export default function ClinicBillingPage() {
     enabled: Boolean(clinicId),
   })
 
+  const inventoryQuery = useQuery({
+    queryKey: ["clinic", clinicId, "inventory"],
+    queryFn: () => getInventoryApi(clinicId),
+    enabled: Boolean(clinicId),
+  })
+
   const invoiceQuery = useQuery({
     queryKey: ["clinic", clinicId, "invoice-by-appointment", selectedAppointmentId],
     queryFn: () => getInvoiceByAppointmentApi(clinicId, selectedAppointmentId),
@@ -77,8 +98,50 @@ export default function ClinicBillingPage() {
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "manual-refunds"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "revenue-trend"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "invoice-by-appointment"] }),
+      queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "inventory"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "reconciliation"] }),
     ])
+  }
+
+  const addRetailItem = () => {
+    const inventoryItem = (inventoryQuery.data ?? []).find((item) => item.itemId === selectedInventoryId)
+    if (!inventoryItem) {
+      toast.error("Chọn mặt hàng trước khi thêm vào đơn.")
+      return
+    }
+
+    const quantity = Math.max(1, Number(retailQuantity) || 1)
+    if (quantity > inventoryItem.quantity) {
+      toast.error(`Tồn kho không đủ. Hiện còn ${inventoryItem.quantity}.`)
+      return
+    }
+
+    setRetailCart((current) => {
+      const existed = current.find((item) => item.inventoryItemId === inventoryItem.itemId)
+      if (existed) {
+        const nextQuantity = existed.quantity + quantity
+        if (nextQuantity > inventoryItem.quantity) {
+          toast.error(`Tồn kho không đủ. Hiện còn ${inventoryItem.quantity}.`)
+          return current
+        }
+        return current.map((item) =>
+          item.inventoryItemId === inventoryItem.itemId
+            ? { ...item, quantity: nextQuantity }
+            : item,
+        )
+      }
+
+      return [
+        ...current,
+        {
+          inventoryItemId: inventoryItem.itemId,
+          itemName: inventoryItem.itemName,
+          quantity,
+          unitPrice: inventoryItem.unitPrice ?? 0,
+          availableQuantity: inventoryItem.quantity,
+        },
+      ]
+    })
   }
 
   const autoComposeMutation = useMutation({
@@ -97,11 +160,50 @@ export default function ClinicBillingPage() {
     onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo hóa đơn.")),
   })
 
+  const createRetailInvoiceMutation = useMutation({
+    mutationFn: async () => {
+      if (retailCart.length === 0) {
+        throw new Error("Đơn bán hàng cần ít nhất 1 mặt hàng.")
+      }
+
+      const order = await createOrderApi({
+        clinicId,
+        orderType: "Retail",
+        notes: "Bán hàng tại quầy",
+        confirmImmediately: true,
+        items: retailCart.map((item) => ({
+          inventoryItemId: item.inventoryItemId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          description: item.itemName,
+          sourceType: "Retail",
+        })),
+      })
+
+      return autoComposeInvoiceApi(clinicId, {
+        orderId: order.orderId,
+        discountAmount: Number(retailDiscountAmount) || 0,
+        notes: "Auto-compose từ đơn bán hàng tại quầy",
+        includeService: false,
+        includePrescriptions: false,
+        includeOrderItems: true,
+      })
+    },
+    onSuccess: async (invoice) => {
+      toast.success("Đã tạo hóa đơn bán hàng tại quầy.")
+      setRetailInvoice(invoice)
+      setRetailCart([])
+      await invalidateBilling()
+    },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo hóa đơn bán hàng.")),
+  })
+
   const payMutation = useMutation({
     mutationFn: ({ invoice, method }: { invoice: InvoiceResponse; method: string }) =>
       payInvoiceApi(clinicId, invoice.id, { paymentMethod: method, paidAmount: invoice.finalAmount }),
     onSuccess: async () => {
       toast.success("Đã ghi nhận thanh toán.")
+      setRetailInvoice(null)
       await invalidateBilling()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể ghi nhận thanh toán.")),
@@ -176,7 +278,7 @@ export default function ClinicBillingPage() {
         <MetricCard label="Chờ hoàn tiền" value={String(summary?.pendingManualRefundCount ?? 0)} icon={RotateCcw} tone="danger" />
       </div>
 
-      <DashboardSection title="Mở hóa đơn theo lịch hẹn" subtitle="Dùng AppointmentId để tạo hóa đơn tự động, thu tiền mặt, chuyển khoản hoặc tạo QR SePay.">
+      <DashboardSection title="Mở hóa đơn theo lịch hẹn" subtitle="MVP hiện tại bắt buộc hóa đơn gắn với appointment. Với đơn bán lẻ (hạt, phụ kiện), hãy tạo walk-in trước rồi thu ngân trên appointment đó.">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
           <Input label="AppointmentId" value={appointmentInput} onChange={setAppointmentInput} />
           <Input label="Giảm giá" value={discountAmount} onChange={setDiscountAmount} />
@@ -188,6 +290,9 @@ export default function ClinicBillingPage() {
             Tìm hóa đơn
           </button>
         </div>
+        <p className="mt-3 text-xs text-po-text-subtle">
+          Luồng thanh toán: tạo hoặc tìm hóa đơn theo appointment, chọn Tiền mặt/Chuyển khoản hoặc tạo QR SePay, rồi bấm ghi nhận khi đã nhận tiền.
+        </p>
 
         {selectedAppointmentId ? (
           <div className="mt-5 rounded-2xl border border-po-border bg-white p-4">
@@ -219,6 +324,96 @@ export default function ClinicBillingPage() {
             )}
           </div>
         ) : null}
+      </DashboardSection>
+
+      <DashboardSection
+        title="Bán hàng tại quầy"
+        subtitle="Dành cho khách mua thuốc, thức ăn hoặc phụ kiện không cần khám. Tạo order trước, sau đó hệ thống sinh invoice từ order."
+      >
+        <div className="grid gap-4">
+          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_140px_auto]">
+            <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+              Mặt hàng trong kho
+              <select
+                value={selectedInventoryId}
+                onChange={(event) => setSelectedInventoryId(event.target.value)}
+                className="h-11 min-w-0 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+              >
+                <option value="">Chọn thuốc / thức ăn / phụ kiện</option>
+                {(inventoryQuery.data ?? []).map((item) => (
+                  <option key={item.itemId} value={item.itemId} disabled={!item.isActive || item.quantity <= 0}>
+                    {item.itemName} · tồn {item.quantity} · {formatCurrency(item.unitPrice)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Input label="Số lượng" value={retailQuantity} onChange={setRetailQuantity} />
+            <button
+              onClick={addRetailItem}
+              disabled={!selectedInventoryId || inventoryQuery.isLoading}
+              className="self-end inline-flex h-11 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+            >
+              <Plus className="size-4" />
+              Thêm
+            </button>
+          </div>
+
+          <div className="grid gap-3 rounded-2xl border border-po-border bg-white p-4">
+            {retailCart.length === 0 ? (
+              <EmptyState icon={PackageSearch} title="Chưa có mặt hàng" description="Chọn mặt hàng trong kho để tạo đơn bán hàng tại quầy." />
+            ) : (
+              retailCart.map((item) => (
+                <div key={item.inventoryItemId} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-po-surface-muted px-4 py-3">
+                  <div>
+                    <p className="text-sm font-bold text-po-text">{item.itemName}</p>
+                    <p className="text-xs text-po-text-muted">
+                      Tồn {item.availableQuantity} · {item.quantity} x {formatCurrency(item.unitPrice)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <p className="text-sm font-extrabold text-po-text">{formatCurrency(item.quantity * item.unitPrice)}</p>
+                    <button
+                      onClick={() => setRetailCart((current) => current.filter((cartItem) => cartItem.inventoryItemId !== item.inventoryItemId))}
+                      className="rounded-full p-2 text-po-danger transition hover:bg-po-danger-soft"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
+            <Input label="Giảm giá" value={retailDiscountAmount} onChange={setRetailDiscountAmount} />
+            <div className="rounded-2xl bg-po-surface-muted px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-po-text-subtle">Tạm tính</p>
+              <p className="mt-1 text-xl font-extrabold text-po-text">
+                {formatCurrency(Math.max(0, retailCart.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0) - (Number(retailDiscountAmount) || 0)))}
+              </p>
+            </div>
+            <button
+              onClick={() => createRetailInvoiceMutation.mutate()}
+              disabled={retailCart.length === 0 || createRetailInvoiceMutation.isPending}
+              className="inline-flex h-11 items-center justify-center rounded-full bg-po-success px-5 text-sm font-semibold text-white transition hover:bg-po-success/90 disabled:opacity-60"
+            >
+              {createRetailInvoiceMutation.isPending ? "Đang tạo..." : "Tạo hóa đơn bán hàng"}
+            </button>
+          </div>
+
+          {retailInvoice ? (
+            <div className="rounded-2xl border border-po-border bg-white p-4">
+              <InvoiceCard
+                invoice={retailInvoice}
+                onPayCash={() => payMutation.mutate({ invoice: retailInvoice, method: "Cash" })}
+                onPayBank={() => payMutation.mutate({ invoice: retailInvoice, method: "BankTransfer" })}
+                onSePay={() => sePayMutation.mutate(retailInvoice)}
+                onCancel={() => cancelMutation.mutate(retailInvoice)}
+                busy={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
+              />
+            </div>
+          ) : null}
+        </div>
       </DashboardSection>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
@@ -270,7 +465,9 @@ export default function ClinicBillingPage() {
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-bold text-po-text">{item.invoiceCode}</p>
-                      <p className="mt-1 text-xs text-po-text-muted">{formatShortId(item.appointmentId)} · {item.pendingDays} ngày</p>
+                      <p className="mt-1 text-xs text-po-text-muted">
+                        {item.appointmentId ? formatShortId(item.appointmentId) : item.orderId ? `Order ${formatShortId(item.orderId)}` : item.invoiceSource} · {item.pendingDays} ngày
+                      </p>
                     </div>
                     <p className="text-sm font-extrabold text-po-warning">{formatCurrency(item.finalAmount)}</p>
                   </div>
@@ -383,6 +580,11 @@ function InvoiceCard({
             <StatusBadge variant={isPaid ? "success" : isCancelled ? "danger" : "warning"} label={invoice.status} />
           </div>
           <p className="mt-1 text-xs text-po-text-muted">{invoice.items.length} dòng · tạo ngày {formatDate(invoice.createdAt)}</p>
+          <p className="mt-1 text-xs text-po-text-subtle">
+            Nguồn: {invoice.invoiceSource}
+            {invoice.appointmentId ? ` · Appointment ${formatShortId(invoice.appointmentId)}` : ""}
+            {invoice.orderId ? ` · Order ${formatShortId(invoice.orderId)}` : ""}
+          </p>
         </div>
         <p className="text-xl font-extrabold text-po-primary">{formatCurrency(invoice.finalAmount)}</p>
       </div>

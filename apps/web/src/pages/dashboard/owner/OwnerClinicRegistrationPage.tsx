@@ -38,6 +38,8 @@ type FormState = {
   licenseNumber: string
   licenseImageUrl: string
   licenseCloudinaryPublicId: string
+  logoUrl: string
+  logoCloudinaryPublicId: string
 }
 
 type FormErrors = Partial<Record<keyof FormState, string>>
@@ -237,6 +239,8 @@ const initialForm: FormState = {
   licenseNumber: "",
   licenseImageUrl: "",
   licenseCloudinaryPublicId: "",
+  logoUrl: "",
+  logoCloudinaryPublicId: "",
 }
 
 function statusVariant(status: string) {
@@ -385,6 +389,8 @@ export default function OwnerClinicRegistrationPage() {
         licenseNumber: toNullable(form.licenseNumber),
         licenseImageUrl: toNullable(form.licenseImageUrl),
         licenseCloudinaryPublicId: toNullable(form.licenseCloudinaryPublicId),
+        logoUrl: toNullable(form.logoUrl),
+        logoCloudinaryPublicId: toNullable(form.logoCloudinaryPublicId),
       }
 
       return createClinicApi(payload)
@@ -444,6 +450,9 @@ export default function OwnerClinicRegistrationPage() {
 
       if (field === "licenseImageUrl" && !value) {
         next.licenseCloudinaryPublicId = ""
+      }
+      if (field === "logoUrl" && !value) {
+        next.logoCloudinaryPublicId = ""
       }
 
       return next
@@ -802,6 +811,30 @@ function ClinicProfileStep({
           {errors.licenseImageUrl ? (
             <p className="text-xs font-semibold leading-5 text-po-danger">{errors.licenseImageUrl}</p>
           ) : null}
+        </div>
+
+        <div className="grid gap-4 rounded-[26px] bg-po-surface-muted/40 p-4 ring-1 ring-po-border/70 md:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-extrabold text-po-text">Ảnh logo phòng khám (không bắt buộc)</p>
+              <p className="mt-1 text-xs leading-5 text-po-text-muted">
+                Nên upload để hiển thị thương hiệu ở trang tìm clinic và dashboard.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-po-text-muted ring-1 ring-po-border/80">
+              <UploadCloud className="size-3.5" />
+              JPG, PNG, WEBP
+            </span>
+          </div>
+          <ImageUploadField
+            value={form.logoUrl}
+            onChange={(url) => onValueChange("logoUrl", url)}
+            onUploadComplete={(result) => onValueChange("logoCloudinaryPublicId", result.publicId)}
+            imageType="clinic_logo"
+            previewClassName="h-32 w-32 rounded-2xl border border-po-border object-cover"
+            maxSizeMb={5}
+            showHelpText={false}
+          />
         </div>
 
         <div className="grid gap-4 rounded-[26px] bg-white p-4 ring-1 ring-po-border/80 md:p-5">

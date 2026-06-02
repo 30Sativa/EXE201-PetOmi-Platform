@@ -16,6 +16,7 @@ export type ImageType =
   | "pet_photo"
   | "clinic_logo"
   | "clinic_license"
+  | "inventory_item"
   | "medical_attachment"
 
 interface UploadResponse {

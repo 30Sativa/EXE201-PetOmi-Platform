@@ -4,6 +4,7 @@ namespace PetOmiPlatform.Domain.Common.Enums
     {
         Service,
         Medication,
+        Product,
         Other
     }
 }

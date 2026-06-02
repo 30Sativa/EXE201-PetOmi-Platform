@@ -7,10 +7,12 @@ namespace PetOmiPlatform.Domain.Entities
 {
     public class InvoiceDomain : BaseEntity
     {
-        public Guid AppointmentId { get; private set; }
+        public Guid? AppointmentId { get; private set; }
+        public Guid? OrderId { get; private set; }
         public Guid? ExaminationId { get; private set; }
         public Guid ClinicId { get; private set; }
         public string InvoiceCode { get; private set; } = string.Empty;
+        public InvoiceSource InvoiceSource { get; private set; }
 
         public decimal TotalAmount { get; private set; }
         public decimal DiscountAmount { get; private set; }
@@ -41,13 +43,17 @@ namespace PetOmiPlatform.Domain.Entities
         private InvoiceDomain() { }
 
         public static InvoiceDomain Create(
-            Guid appointmentId,
+            Guid? appointmentId,
             Guid clinicId,
             decimal totalAmount,
             decimal discountAmount = 0,
             Guid? examinationId = null,
+            Guid? orderId = null,
+            InvoiceSource? invoiceSource = null,
             string? notes = null)
         {
+            if (!appointmentId.HasValue && !orderId.HasValue)
+                throw new DomainException("Hoa don phai gan voi lich kham, don hang hoac ca hai.");
             if (totalAmount < 0)
                 throw new DomainException("Tong tien khong duoc am.");
             if (discountAmount < 0)
@@ -55,12 +61,17 @@ namespace PetOmiPlatform.Domain.Entities
             if (discountAmount > totalAmount)
                 throw new DomainException("Giam gia khong duoc lon hon tong tien.");
 
+            var resolvedSource = invoiceSource ?? ResolveSource(appointmentId, orderId);
+            ValidateSource(resolvedSource, appointmentId, orderId);
+
             return new InvoiceDomain
             {
                 Id = Guid.NewGuid(),
                 AppointmentId = appointmentId,
+                OrderId = orderId,
                 ExaminationId = examinationId,
                 ClinicId = clinicId,
+                InvoiceSource = resolvedSource,
                 InvoiceCode = GenerateInvoiceCode(),
                 TotalAmount = totalAmount,
                 DiscountAmount = discountAmount,
@@ -74,9 +85,11 @@ namespace PetOmiPlatform.Domain.Entities
 
         public static InvoiceDomain Reconstitute(
             Guid id,
-            Guid appointmentId,
+            Guid? appointmentId,
+            Guid? orderId,
             Guid? examinationId,
             Guid clinicId,
+            InvoiceSource invoiceSource,
             string invoiceCode,
             decimal totalAmount,
             decimal discountAmount,
@@ -106,8 +119,10 @@ namespace PetOmiPlatform.Domain.Entities
             {
                 Id = id,
                 AppointmentId = appointmentId,
+                OrderId = orderId,
                 ExaminationId = examinationId,
                 ClinicId = clinicId,
+                InvoiceSource = invoiceSource,
                 InvoiceCode = invoiceCode,
                 TotalAmount = totalAmount,
                 DiscountAmount = discountAmount,
@@ -242,6 +257,25 @@ namespace PetOmiPlatform.Domain.Entities
         {
             var code = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
             return $"INV{DateTime.UtcNow:yyMMdd}{code}";
+        }
+
+        private static InvoiceSource ResolveSource(Guid? appointmentId, Guid? orderId)
+        {
+            if (appointmentId.HasValue && orderId.HasValue)
+                return InvoiceSource.Mixed;
+            if (appointmentId.HasValue)
+                return InvoiceSource.Appointment;
+            return InvoiceSource.Order;
+        }
+
+        private static void ValidateSource(InvoiceSource source, Guid? appointmentId, Guid? orderId)
+        {
+            if (source == InvoiceSource.Appointment && !appointmentId.HasValue)
+                throw new DomainException("Hoa don tu lich kham bat buoc co AppointmentId.");
+            if (source == InvoiceSource.Order && !orderId.HasValue)
+                throw new DomainException("Hoa don tu don hang bat buoc co OrderId.");
+            if (source == InvoiceSource.Mixed && (!appointmentId.HasValue || !orderId.HasValue))
+                throw new DomainException("Hoa don gop bat buoc co ca AppointmentId va OrderId.");
         }
     }
 }

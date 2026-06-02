@@ -52,6 +52,15 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entity?.ToDomain();
         }
 
+        public async Task<InvoiceDomain?> GetByOrderIdAsync(Guid orderId)
+        {
+            var entity = await _context.Invoices
+                .AsNoTracking()
+                .Where(i => i.OrderId == orderId && i.Status != "Cancelled")
+                .FirstOrDefaultAsync();
+            return entity?.ToDomain();
+        }
+
         public async Task<InvoiceDomain?> GetByPaymentReferenceAsync(string paymentReference)
         {
             var entity = await _context.Invoices
@@ -225,6 +234,12 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         {
             return await _context.Invoices
                 .AnyAsync(i => i.AppointmentId == appointmentId && (i.Status == "Unpaid" || i.Status == "Paid"));
+        }
+
+        public async Task<bool> HasActiveOrderInvoiceAsync(Guid orderId)
+        {
+            return await _context.Invoices
+                .AnyAsync(i => i.OrderId == orderId && (i.Status == "Unpaid" || i.Status == "Paid"));
         }
 
         public async Task UpdateAsync(InvoiceDomain invoice)

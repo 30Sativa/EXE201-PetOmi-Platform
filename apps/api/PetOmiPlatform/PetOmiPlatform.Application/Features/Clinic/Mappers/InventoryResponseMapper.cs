@@ -16,6 +16,8 @@ namespace PetOmiPlatform.Application.Features.Clinic.Mappers
             IsLowStock = item.IsLowStock,
             UnitPrice = item.UnitPrice,
             ExpiryDate = item.ExpiryDate,
+            ImageUrl = item.ImageUrl,
+            ImageCloudinaryPublicId = item.ImageCloudinaryPublicId,
             IsExpired = item.IsExpired,
             IsActive = item.IsActive
         };

@@ -23,6 +23,7 @@ namespace PetOmiPlatform.API.Controllers
             ["pet_avatar"] = "pets/{petId}/avatar",
             ["clinic_logo"] = "clinics/{clinicId}/logo",
             ["clinic_license"] = "clinics/{clinicId}/license",
+            ["inventory_item"] = "clinics/{clinicId}/inventory-items",
             ["user_avatar"] = "users/{userId}/avatar",
             ["medical_attachment"] = "medical-records/{petId}/attachments"
         };
@@ -79,6 +80,10 @@ namespace PetOmiPlatform.API.Controllers
                     if (request.ImageType.Equals("clinic_license", StringComparison.OrdinalIgnoreCase))
                     {
                         folder = $"clinics/pending/{userId}/license";
+                    }
+                    else if (request.ImageType.Equals("clinic_logo", StringComparison.OrdinalIgnoreCase))
+                    {
+                        folder = $"clinics/pending/{userId}/logo";
                     }
                     else
                     {

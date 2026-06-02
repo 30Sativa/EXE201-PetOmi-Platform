@@ -115,6 +115,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IMedicalExaminationRepository, MedicalExaminationRepository>();
             services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
             services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IClinicPaymentAccountRepository, ClinicPaymentAccountRepository>();
             services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
             services.AddScoped<ISePayService, SePayService>();

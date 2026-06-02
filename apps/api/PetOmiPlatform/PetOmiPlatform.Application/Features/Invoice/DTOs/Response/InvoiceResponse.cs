@@ -10,14 +10,18 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public decimal TotalPrice { get; set; }
         public Guid? ServiceId { get; set; }
         public Guid? InventoryItemId { get; set; }
+        public Guid? OrderItemId { get; set; }
+        public Guid? PrescriptionId { get; set; }
     }
 
     public class InvoiceResponse
     {
         public Guid Id { get; set; }
-        public Guid AppointmentId { get; set; }
+        public Guid? AppointmentId { get; set; }
+        public Guid? OrderId { get; set; }
         public Guid? ExaminationId { get; set; }
         public Guid ClinicId { get; set; }
+        public string InvoiceSource { get; set; } = string.Empty;
         public string InvoiceCode { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
         public decimal DiscountAmount { get; set; }

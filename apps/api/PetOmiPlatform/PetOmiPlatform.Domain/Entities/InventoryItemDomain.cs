@@ -1,30 +1,39 @@
-using PetOmiPlatform.Domain.Common;
+﻿using PetOmiPlatform.Domain.Common;
 using PetOmiPlatform.Domain.Exceptions;
 
 namespace PetOmiPlatform.Domain.Entities
 {
-    /// <summary>Kho thuốc / vật tư cơ bản của phòng khám — scope MVP.</summary>
+    /// <summary>Clinic inventory items (medication/supplies/products).</summary>
     public class InventoryItemDomain : BaseEntity
     {
         public Guid ClinicId { get; private set; }
         public string ItemName { get; private set; } = null!;
-        public string? Unit { get; private set; }            // "viên", "ml", "lọ"...
-        public int Quantity { get; private set; }            // Tồn kho hiện tại
-        public int LowStockThreshold { get; private set; }  // Ngưỡng cảnh báo hết
+        public string? Unit { get; private set; }
+        public int Quantity { get; private set; }
+        public int LowStockThreshold { get; private set; }
         public decimal? UnitPrice { get; private set; }
-        public DateOnly? ExpiryDate { get; private set; }   // Hạn dùng
+        public DateOnly? ExpiryDate { get; private set; }
+        public string? ImageUrl { get; private set; }
+        public string? ImageCloudinaryPublicId { get; private set; }
         public bool IsActive { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
 
-        // Computed
         public bool IsLowStock => Quantity <= LowStockThreshold;
         public bool IsExpired => ExpiryDate.HasValue && ExpiryDate.Value < DateOnly.FromDateTime(DateTime.UtcNow);
 
         private InventoryItemDomain() { }
 
-        private InventoryItemDomain(Guid clinicId, string itemName, string? unit,
-            int quantity, int lowStockThreshold, decimal? unitPrice, DateOnly? expiryDate)
+        private InventoryItemDomain(
+            Guid clinicId,
+            string itemName,
+            string? unit,
+            int quantity,
+            int lowStockThreshold,
+            decimal? unitPrice,
+            DateOnly? expiryDate,
+            string? imageUrl,
+            string? imageCloudinaryPublicId)
         {
             Id = Guid.NewGuid();
             ClinicId = clinicId;
@@ -34,15 +43,26 @@ namespace PetOmiPlatform.Domain.Entities
             LowStockThreshold = lowStockThreshold;
             UnitPrice = unitPrice;
             ExpiryDate = expiryDate;
+            ImageUrl = imageUrl;
+            ImageCloudinaryPublicId = imageCloudinaryPublicId;
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
         }
 
         public static InventoryItemDomain Reconstitute(
-            Guid id, Guid clinicId, string itemName, string? unit,
-            int quantity, int lowStockThreshold, decimal? unitPrice,
-            DateOnly? expiryDate, bool isActive,
-            DateTime createdAt, DateTime? updatedAt)
+            Guid id,
+            Guid clinicId,
+            string itemName,
+            string? unit,
+            int quantity,
+            int lowStockThreshold,
+            decimal? unitPrice,
+            DateOnly? expiryDate,
+            string? imageUrl,
+            string? imageCloudinaryPublicId,
+            bool isActive,
+            DateTime createdAt,
+            DateTime? updatedAt)
         {
             return new InventoryItemDomain
             {
@@ -54,6 +74,8 @@ namespace PetOmiPlatform.Domain.Entities
                 LowStockThreshold = lowStockThreshold,
                 UnitPrice = unitPrice,
                 ExpiryDate = expiryDate,
+                ImageUrl = imageUrl,
+                ImageCloudinaryPublicId = imageCloudinaryPublicId,
                 IsActive = isActive,
                 CreatedAt = createdAt,
                 UpdatedAt = updatedAt
@@ -61,49 +83,73 @@ namespace PetOmiPlatform.Domain.Entities
         }
 
         public static InventoryItemDomain Create(
-            Guid clinicId, string itemName, string? unit,
-            int quantity, int lowStockThreshold,
-            decimal? unitPrice, DateOnly? expiryDate)
+            Guid clinicId,
+            string itemName,
+            string? unit,
+            int quantity,
+            int lowStockThreshold,
+            decimal? unitPrice,
+            DateOnly? expiryDate,
+            string? imageUrl = null,
+            string? imageCloudinaryPublicId = null)
         {
             if (string.IsNullOrWhiteSpace(itemName))
-                throw new DomainException("Tên vật tư / thuốc không được để trống.");
+                throw new DomainException("Ten vat tu/thuoc khong duoc de trong.");
             if (quantity < 0)
-                throw new DomainException("Số lượng tồn kho không được âm.");
+                throw new DomainException("So luong ton kho khong duoc am.");
             if (lowStockThreshold < 0)
-                throw new DomainException("Ngưỡng cảnh báo không được âm.");
+                throw new DomainException("Nguong canh bao khong duoc am.");
 
-            return new InventoryItemDomain(clinicId, itemName, unit, quantity, lowStockThreshold, unitPrice, expiryDate);
+            return new InventoryItemDomain(
+                clinicId,
+                itemName,
+                unit,
+                quantity,
+                lowStockThreshold,
+                unitPrice,
+                expiryDate,
+                imageUrl,
+                imageCloudinaryPublicId);
         }
 
-        /// <summary>Nhập thêm hàng.</summary>
         public void StockIn(int amount)
         {
-            if (amount <= 0) throw new DomainException("Số lượng nhập phải lớn hơn 0.");
+            if (amount <= 0) throw new DomainException("So luong nhap phai lon hon 0.");
             Quantity += amount;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        /// <summary>Xuất hàng (dùng cho kê đơn).</summary>
         public void StockOut(int amount)
         {
-            if (amount <= 0) throw new DomainException("Số lượng xuất phải lớn hơn 0.");
-            if (amount > Quantity) throw new DomainException($"Tồn kho không đủ. Hiện có: {Quantity}.");
+            if (amount <= 0) throw new DomainException("So luong xuat phai lon hon 0.");
+            if (amount > Quantity) throw new DomainException($"Ton kho khong du. Hien co: {Quantity}.");
             Quantity -= amount;
             UpdatedAt = DateTime.UtcNow;
         }
 
-        public void UpdateInfo(string? itemName, string? unit, int? lowStockThreshold,
-            decimal? unitPrice, DateOnly? expiryDate)
+        public void UpdateInfo(
+            string? itemName,
+            string? unit,
+            int? lowStockThreshold,
+            decimal? unitPrice,
+            DateOnly? expiryDate)
         {
             if (!string.IsNullOrWhiteSpace(itemName)) ItemName = itemName;
             if (unit != null) Unit = unit;
             if (lowStockThreshold.HasValue)
             {
-                if (lowStockThreshold.Value < 0) throw new DomainException("Ngưỡng cảnh báo không được âm.");
+                if (lowStockThreshold.Value < 0) throw new DomainException("Nguong canh bao khong duoc am.");
                 LowStockThreshold = lowStockThreshold.Value;
             }
             if (unitPrice.HasValue) UnitPrice = unitPrice;
             if (expiryDate.HasValue) ExpiryDate = expiryDate;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        public void UpdateImage(string? imageUrl, string? imageCloudinaryPublicId)
+        {
+            ImageUrl = imageUrl;
+            ImageCloudinaryPublicId = imageCloudinaryPublicId;
             UpdatedAt = DateTime.UtcNow;
         }
 

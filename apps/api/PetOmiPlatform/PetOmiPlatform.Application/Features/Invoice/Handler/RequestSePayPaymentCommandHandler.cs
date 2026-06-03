@@ -50,9 +50,12 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             if (account == null)
                 throw new ConflictException("Clinic chua cau hinh tai khoan SePay active.");
 
-            var paymentReference = string.IsNullOrWhiteSpace(request.Payload.PaymentReference)
-                ? invoice.InvoiceCode
-                : request.Payload.PaymentReference.Trim();
+            var paymentReference = await ResolvePaymentReferenceAsync(
+                request.Payload.PaymentReference,
+                invoice.PaymentReference);
+
+            if (!_sePayService.IsValidPaymentReference(paymentReference))
+                throw new BadRequestException("Payment reference phai dung cau truc SePay, vi du POM12345678.");
 
             var qrCodeUrl = _sePayService.BuildQrImageUrl(
                 account.AccountNumber,
@@ -79,6 +82,37 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 BankAccountNo = account.AccountNumber,
                 BankCode = account.BankCode
             };
+        }
+
+        private async Task<string> GenerateUniquePaymentReferenceAsync()
+        {
+            for (var attempt = 0; attempt < 5; attempt++)
+            {
+                var paymentReference = _sePayService.GeneratePaymentReference();
+                var existed = await _invoiceRepository.GetByPaymentReferenceAsync(paymentReference);
+                if (existed == null)
+                {
+                    return paymentReference;
+                }
+            }
+
+            throw new ConflictException("Khong the tao payment reference SePay duy nhat. Vui long thu lai.");
+        }
+
+        private async Task<string> ResolvePaymentReferenceAsync(string? requestedReference, string? existingReference)
+        {
+            if (!string.IsNullOrWhiteSpace(requestedReference))
+            {
+                return requestedReference.Trim().ToUpperInvariant();
+            }
+
+            if (!string.IsNullOrWhiteSpace(existingReference) &&
+                _sePayService.IsValidPaymentReference(existingReference))
+            {
+                return existingReference.Trim().ToUpperInvariant();
+            }
+
+            return await GenerateUniquePaymentReferenceAsync();
         }
     }
 }

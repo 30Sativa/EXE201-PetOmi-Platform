@@ -3,6 +3,8 @@ namespace PetOmiPlatform.Infrastructure.Common.Settings
     public class SePaySettings
     {
         public string QrBaseUrl { get; set; } = "https://qr.sepay.vn/img";
+        public string PaymentReferencePrefix { get; set; } = "POM";
+        public int PaymentReferenceDigits { get; set; } = 8;
         public string? WebhookApiKey { get; set; }
         public string? WebhookSecret { get; set; }
         public bool RequireHmacSignature { get; set; } = false;

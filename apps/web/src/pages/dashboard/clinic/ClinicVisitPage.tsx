@@ -32,6 +32,7 @@ import type {
   ExaminationResponse,
   InvoiceResponse,
   PrescriptionItemResponse,
+  SePayPaymentRequestResponse,
   UpdateExaminationRequest,
 } from "@/types"
 
@@ -110,7 +111,7 @@ export default function ClinicVisitPage() {
   const [discountAmount, setDiscountAmount] = useState("0")
   const [paymentMethod, setPaymentMethod] = useState("Cash")
   const [paidAmount, setPaidAmount] = useState("")
-  const [qrUrl, setQrUrl] = useState("")
+  const [qrRequest, setQrRequest] = useState<SePayPaymentRequestResponse | null>(null)
 
   const examQuery = useQuery({
     queryKey: ["clinic", clinicId, "examination", appointmentId],
@@ -262,7 +263,7 @@ export default function ClinicVisitPage() {
     mutationFn: (invoice: InvoiceResponse) => requestSePayPaymentApi(clinicId, invoice.id),
     onSuccess: async (result) => {
       toast.success("Đã tạo QR SePay.")
-      setQrUrl(result.qrCodeUrl)
+      setQrRequest(result)
       await queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "invoice", appointmentId] })
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo QR SePay.")),
@@ -360,7 +361,7 @@ export default function ClinicVisitPage() {
           <DashboardSection title="Hóa đơn" subtitle="Tạo hóa đơn từ dịch vụ và toa thuốc, sau đó thu tiền hoặc tạo QR SePay.">
             <InvoicePanel
               invoice={invoice}
-              qrUrl={qrUrl}
+              qrRequest={qrRequest}
               discountAmount={discountAmount}
               paymentMethod={paymentMethod}
               paidAmount={paidAmount}
@@ -493,7 +494,7 @@ function PrescriptionList({
 
 function InvoicePanel({
   invoice,
-  qrUrl,
+  qrRequest,
   discountAmount,
   paymentMethod,
   paidAmount,
@@ -509,7 +510,7 @@ function InvoicePanel({
   onRequestQr,
 }: {
   invoice: InvoiceResponse | null
-  qrUrl: string
+  qrRequest: SePayPaymentRequestResponse | null
   discountAmount: string
   paymentMethod: string
   paidAmount: string
@@ -524,6 +525,9 @@ function InvoicePanel({
   onPay: () => void
   onRequestQr: () => void
 }) {
+  const qrUrl = qrRequest?.qrCodeUrl ?? ""
+  const paymentReference = qrRequest?.paymentReference || invoice?.paymentReference
+
   if (isLoading) return <div className="py-6 text-center"><LoadingSpinner /></div>
 
   if (!invoice) {
@@ -594,8 +598,15 @@ function InvoicePanel({
               {isRequestingQr ? "Đang tạo QR..." : "Tạo QR SePay"}
             </button>
           </div>
-          {(qrUrl || invoice.qrCodeUrl) ? (
+          {(qrRequest?.qrCodeUrl || invoice.qrCodeUrl) ? (
+            <>
             <img src={qrUrl || invoice.qrCodeUrl || ""} alt={`QR thanh toán ${invoice.invoiceCode}`} className="mx-auto max-h-72 rounded-2xl bg-white p-3 ring-1 ring-po-border/80" />
+            {paymentReference ? (
+              <p className="mx-auto rounded-2xl bg-po-primary-soft px-4 py-2 font-mono text-base font-extrabold text-po-primary">
+                {paymentReference}
+              </p>
+            ) : null}
+            </>
           ) : null}
         </div>
       ) : (

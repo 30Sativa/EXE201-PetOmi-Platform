@@ -13,6 +13,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
     public class HandleSePayWebhookCommandHandler : IRequestHandler<HandleSePayWebhookCommand, bool>
     {
         private static readonly Regex InvoiceCodeRegex = new(@"INV\d{6}[A-Z0-9]{8}", RegexOptions.Compiled);
+        private static readonly Regex PaymentReferenceRegex = new(@"POM\d{8}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         private readonly IClinicPaymentAccountRepository _clinicPaymentAccountRepository;
         private readonly IAppointmentRepository _appointmentRepository;
@@ -108,16 +109,28 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
         {
             if (!string.IsNullOrWhiteSpace(code))
             {
-                var byReference = await _invoiceRepository.GetByPaymentReferenceAsync(code);
+                var normalizedCode = code.Trim().ToUpperInvariant();
+                var byReference = await _invoiceRepository.GetByPaymentReferenceAsync(normalizedCode);
                 if (byReference != null)
                 {
                     return byReference;
                 }
 
-                var byCode = await _invoiceRepository.GetByInvoiceCodeAsync(code);
+                var byCode = await _invoiceRepository.GetByInvoiceCodeAsync(normalizedCode);
                 if (byCode != null)
                 {
                     return byCode;
+                }
+            }
+
+            var paymentReferenceMatch = PaymentReferenceRegex.Match(content ?? string.Empty);
+            if (paymentReferenceMatch.Success)
+            {
+                var byReference = await _invoiceRepository.GetByPaymentReferenceAsync(
+                    paymentReferenceMatch.Value.ToUpperInvariant());
+                if (byReference != null)
+                {
+                    return byReference;
                 }
             }
 

@@ -543,6 +543,9 @@ export default function ClinicBillingPage() {
             <img src={qrRequest.qrCodeUrl} alt="SePay QR" className="mx-auto size-56 rounded-2xl border border-po-border object-contain p-3" />
             <div>
               <p className="text-sm font-bold text-po-text">{qrRequest.invoiceCode}</p>
+              <p className="mt-2 rounded-2xl bg-po-primary-soft px-4 py-2 font-mono text-base font-extrabold text-po-primary">
+                {qrRequest.paymentReference}
+              </p>
               <p className="mt-1 text-xs text-po-text-muted">{qrRequest.bankCode} · {qrRequest.bankAccountNo}</p>
               <p className="mt-2 text-lg font-extrabold text-po-primary">{formatCurrency(qrRequest.finalAmount)}</p>
             </div>

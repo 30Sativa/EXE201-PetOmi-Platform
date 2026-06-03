@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Banknote, CreditCard, PackageSearch, Plus, QrCode, ReceiptText, RotateCcw, Trash2 } from "lucide-react"
 import { toast } from "sonner"
@@ -15,6 +15,7 @@ import {
   cancelInvoiceApi,
   confirmManualRefundApi,
   createOrderApi,
+  getSePayPaymentStatusApi,
   getBillingRevenueTrendApi,
   getBillingSummaryApi,
   getInvoiceByAppointmentApi,
@@ -24,7 +25,7 @@ import {
   requestSePayPaymentApi,
 } from "@/services/clinic-billing.service"
 import { getInventoryApi } from "@/services/clinic.service"
-import type { InvoiceResponse, PendingManualRefundItemResponse, SePayPaymentRequestResponse } from "@/types"
+import type { InvoiceResponse, PendingManualRefundItemResponse, SePayPaymentRequestResponse, SePayPaymentStatusResponse } from "@/types"
 
 const today = new Date().toISOString().slice(0, 10)
 const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
@@ -219,6 +220,19 @@ export default function ClinicBillingPage() {
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo QR SePay.")),
   })
+
+  const qrStatusQuery = useQuery({
+    queryKey: ["clinic", clinicId, "sepay-payment-status", qrRequest?.invoiceId],
+    queryFn: () => getSePayPaymentStatusApi(clinicId, qrRequest!.invoiceId),
+    enabled: Boolean(clinicId && qrRequest?.invoiceId),
+    refetchInterval: qrRequest ? 3000 : false,
+  })
+
+  useEffect(() => {
+    if (qrStatusQuery.data?.status === "Paid") {
+      void invalidateBilling()
+    }
+  }, [qrStatusQuery.data?.status])
 
   const cancelMutation = useMutation({
     mutationFn: (invoice: InvoiceResponse) =>
@@ -549,9 +563,41 @@ export default function ClinicBillingPage() {
               <p className="mt-1 text-xs text-po-text-muted">{qrRequest.bankCode} · {qrRequest.bankAccountNo}</p>
               <p className="mt-2 text-lg font-extrabold text-po-primary">{formatCurrency(qrRequest.finalAmount)}</p>
             </div>
+            <SePayPaymentStatusPanel status={qrStatusQuery.data} isLoading={qrStatusQuery.isFetching} />
           </div>
         </Modal>
       ) : null}
+    </div>
+  )
+}
+
+function SePayPaymentStatusPanel({
+  status,
+  isLoading,
+}: {
+  status?: SePayPaymentStatusResponse
+  isLoading: boolean
+}) {
+  const effectiveStatus = status?.status ?? "Pending"
+  const tone = {
+    Pending: "border-po-border bg-po-surface-muted text-po-text-muted",
+    Paid: "border-po-success/30 bg-po-success-soft text-po-success",
+    ReceivedUnmatched: "border-po-warning/30 bg-po-warning-soft text-po-warning",
+    AmountMismatch: "border-po-danger/30 bg-po-danger-soft text-po-danger",
+  }[effectiveStatus] ?? "border-po-border bg-po-surface-muted text-po-text-muted"
+
+  const message = status?.message ?? "Dang cho thanh toan..."
+
+  return (
+    <div className={`rounded-2xl border px-4 py-3 text-left ${tone}`}>
+      <p className="text-sm font-extrabold">{message}</p>
+      {status?.receivedAmount != null ? (
+        <p className="mt-1 text-xs font-semibold">
+          Da nhan {formatCurrency(status.receivedAmount)} / can thu {formatCurrency(status.finalAmount)}
+        </p>
+      ) : (
+        <p className="mt-1 text-xs font-semibold">{isLoading ? "Dang kiem tra giao dich..." : "Tu dong kiem tra moi 3 giay."}</p>
+      )}
     </div>
   )
 }

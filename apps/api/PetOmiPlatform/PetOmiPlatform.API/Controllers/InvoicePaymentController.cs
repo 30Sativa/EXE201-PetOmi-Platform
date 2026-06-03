@@ -6,6 +6,7 @@ using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.Invoice.Command;
 using PetOmiPlatform.Application.Features.Invoice.DTOs.Request;
 using PetOmiPlatform.Application.Features.Invoice.DTOs.Response;
+using PetOmiPlatform.Application.Features.Invoice.Query;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -43,6 +44,15 @@ namespace PetOmiPlatform.API.Controllers
             var command = new RequestSePayPaymentCommand(clinicId, CurrentUserId, id, request);
             var result = await Mediator.Send(command);
             return Ok(BaseResponse<SePayPaymentRequestResponse>.Ok(result, "Tao payment request SePay thanh cong."));
+        }
+
+        /// <summary>Lay trang thai thanh toan SePay moi nhat cho popup QR.</summary>
+        [HttpGet("{id:guid}/sepay/payment-status")]
+        public async Task<IActionResult> GetSePayPaymentStatus(Guid id, [FromQuery] Guid clinicId)
+        {
+            var query = new GetSePayPaymentStatusQuery(clinicId, CurrentUserId, id);
+            var result = await Mediator.Send(query);
+            return Ok(BaseResponse<SePayPaymentStatusResponse>.Ok(result));
         }
 
         /// <summary>Xac nhan da hoan tien thu cong cho invoice da huy co RequiresManualRefund=true.</summary>

@@ -17,6 +17,7 @@ import type {
   PendingManualRefundItemResponse,
   RequestSePayPaymentRequest,
   SePayPaymentRequestResponse,
+  SePayPaymentStatusResponse,
   SePayReconciliationItemResponse,
 } from "@/types"
 
@@ -136,6 +137,14 @@ export const requestSePayPaymentApi = async (
 ): Promise<SePayPaymentRequestResponse> => {
   const response = await api.post(`/invoices/${invoiceId}/sepay/payment-request`, data, { params: { clinicId } })
   return unwrapResponse<SePayPaymentRequestResponse>(response)
+}
+
+export const getSePayPaymentStatusApi = async (
+  clinicId: string,
+  invoiceId: string,
+): Promise<SePayPaymentStatusResponse> => {
+  const response = await api.get(`/invoices/${invoiceId}/sepay/payment-status`, { params: { clinicId } })
+  return unwrapResponse<SePayPaymentStatusResponse>(response)
 }
 
 export const cancelInvoiceApi = async (

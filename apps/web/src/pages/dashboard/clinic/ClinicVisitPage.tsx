@@ -13,6 +13,7 @@ import { formatCurrency, formatShortId } from "@/lib/format"
 import { getErrorMessage } from "@/lib/utils"
 import {
   autoComposeInvoiceApi,
+  getSePayPaymentStatusApi,
   getInvoiceByAppointmentApi,
   payInvoiceApi,
   requestSePayPaymentApi,
@@ -33,6 +34,7 @@ import type {
   InvoiceResponse,
   PrescriptionItemResponse,
   SePayPaymentRequestResponse,
+  SePayPaymentStatusResponse,
   UpdateExaminationRequest,
 } from "@/types"
 
@@ -269,6 +271,20 @@ export default function ClinicVisitPage() {
     onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo QR SePay.")),
   })
 
+  const sePayStatusQuery = useQuery({
+    queryKey: ["clinic", clinicId, "sepay-payment-status", qrRequest?.invoiceId],
+    queryFn: () => getSePayPaymentStatusApi(clinicId, qrRequest!.invoiceId),
+    enabled: Boolean(clinicId && qrRequest?.invoiceId),
+    refetchInterval: qrRequest ? 3000 : false,
+  })
+
+  useEffect(() => {
+    if (sePayStatusQuery.data?.status === "Paid") {
+      void queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "invoice", appointmentId] })
+      void queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "dashboard-summary"] })
+    }
+  }, [sePayStatusQuery.data?.status, queryClient, clinicId, appointmentId])
+
   if (isClinicLoading || examQuery.isLoading) {
     return <div className="rounded-[30px] bg-white/88 py-16 text-center ring-1 ring-po-border/80"><LoadingSpinner /></div>
   }
@@ -369,6 +385,8 @@ export default function ClinicVisitPage() {
               isComposing={autoComposeMutation.isPending}
               isPaying={payMutation.isPending}
               isRequestingQr={sePayMutation.isPending}
+              paymentStatus={sePayStatusQuery.data}
+              isCheckingPaymentStatus={sePayStatusQuery.isFetching}
               onDiscountChange={setDiscountAmount}
               onPaymentMethodChange={setPaymentMethod}
               onPaidAmountChange={setPaidAmount}
@@ -502,6 +520,8 @@ function InvoicePanel({
   isComposing,
   isPaying,
   isRequestingQr,
+  paymentStatus,
+  isCheckingPaymentStatus,
   onDiscountChange,
   onPaymentMethodChange,
   onPaidAmountChange,
@@ -518,6 +538,8 @@ function InvoicePanel({
   isComposing: boolean
   isPaying: boolean
   isRequestingQr: boolean
+  paymentStatus?: SePayPaymentStatusResponse
+  isCheckingPaymentStatus: boolean
   onDiscountChange: (value: string) => void
   onPaymentMethodChange: (value: string) => void
   onPaidAmountChange: (value: string) => void
@@ -606,11 +628,43 @@ function InvoicePanel({
                 {paymentReference}
               </p>
             ) : null}
+            <SePayPaymentStatusPanel status={paymentStatus} isLoading={isCheckingPaymentStatus} />
             </>
           ) : null}
         </div>
       ) : (
         <p className="rounded-2xl bg-po-success-soft px-4 py-3 text-sm font-semibold text-po-success">Hóa đơn đã thanh toán.</p>
+      )}
+    </div>
+  )
+}
+
+function SePayPaymentStatusPanel({
+  status,
+  isLoading,
+}: {
+  status?: SePayPaymentStatusResponse
+  isLoading: boolean
+}) {
+  const effectiveStatus = status?.status ?? "Pending"
+  const tone = {
+    Pending: "border-po-border bg-po-surface-muted text-po-text-muted",
+    Paid: "border-po-success/30 bg-po-success-soft text-po-success",
+    ReceivedUnmatched: "border-po-warning/30 bg-po-warning-soft text-po-warning",
+    AmountMismatch: "border-po-danger/30 bg-po-danger-soft text-po-danger",
+  }[effectiveStatus] ?? "border-po-border bg-po-surface-muted text-po-text-muted"
+
+  const message = status?.message ?? "Dang cho thanh toan..."
+
+  return (
+    <div className={`mx-auto w-full max-w-md rounded-2xl border px-4 py-3 text-left ${tone}`}>
+      <p className="text-sm font-extrabold">{message}</p>
+      {status?.receivedAmount != null ? (
+        <p className="mt-1 text-xs font-semibold">
+          Da nhan {formatCurrency(status.receivedAmount)} / can thu {formatCurrency(status.finalAmount)}
+        </p>
+      ) : (
+        <p className="mt-1 text-xs font-semibold">{isLoading ? "Dang kiem tra giao dich..." : "Tu dong kiem tra moi 3 giay."}</p>
       )}
     </div>
   )

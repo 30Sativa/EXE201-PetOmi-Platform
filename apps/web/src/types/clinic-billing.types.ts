@@ -98,6 +98,22 @@ export interface SePayPaymentRequestResponse {
   bankCode: string
 }
 
+export interface SePayPaymentStatusResponse {
+  invoiceId: string
+  invoiceCode: string
+  paymentReference: string | null
+  status: "Pending" | "Paid" | "ReceivedUnmatched" | "AmountMismatch" | string
+  message: string
+  isFinal: boolean
+  finalAmount: number
+  paidAmount: number | null
+  receivedAmount: number | null
+  paymentTransactionId: string | null
+  providerTransactionId: string | null
+  transferContent: string | null
+  transactionDate: string | null
+}
+
 export interface CancelInvoiceRequest {
   cancelReason?: string | null
 }

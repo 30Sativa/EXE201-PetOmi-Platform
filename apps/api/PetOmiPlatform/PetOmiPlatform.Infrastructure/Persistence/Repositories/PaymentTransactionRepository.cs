@@ -75,6 +75,32 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .CountAsync();
         }
 
+        public async Task<IReadOnlyList<PaymentTransactionDomain>> GetRecentByInvoiceOrPaymentReferenceAsync(
+            Guid clinicId,
+            Guid invoiceId,
+            string? paymentReference,
+            int limit)
+        {
+            var normalizedReference = string.IsNullOrWhiteSpace(paymentReference)
+                ? null
+                : paymentReference.Trim();
+
+            var query = _context.PaymentTransactions
+                .Where(x => x.ClinicId == clinicId);
+
+            query = string.IsNullOrWhiteSpace(normalizedReference)
+                ? query.Where(x => x.InvoiceId == invoiceId)
+                : query.Where(x =>
+                    x.InvoiceId == invoiceId ||
+                    (x.TransferContent != null && x.TransferContent.Contains(normalizedReference)));
+
+            return await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(limit)
+                .Select(x => x.ToDomain())
+                .ToListAsync();
+        }
+
         public async Task<IReadOnlyList<PaymentTransactionDomain>> GetRecentByClinicIdAsync(
             Guid clinicId,
             int limit,

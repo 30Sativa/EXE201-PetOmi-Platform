@@ -133,7 +133,8 @@ if (enableSwagger)
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
+app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
+    .ExcludeFromDescription();
 app.UseCors();
 if (!app.Environment.IsDevelopment())
 {

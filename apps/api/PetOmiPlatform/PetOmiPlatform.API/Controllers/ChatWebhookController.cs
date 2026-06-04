@@ -10,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace PetOmiPlatform.API.Controllers;
 
+/// <summary>
+/// Webhook nhận kết quả xử lý AI service cho chat.
+/// </summary>
 [Route("api/chat/webhook")]
 [ApiController]
 public class ChatWebhookController : ControllerBase
@@ -28,6 +31,7 @@ public class ChatWebhookController : ControllerBase
         _webhookSecret = configuration["AiService:WebhookSecret"];
     }
 
+    /// <summary>Nhận AI response, lưu message và broadcast realtime về user.</summary>
     [HttpPost("ai-response")]
     public async Task<IActionResult> AiResponseWebhook([FromBody] AiResponseWebhookRequest request)
     {

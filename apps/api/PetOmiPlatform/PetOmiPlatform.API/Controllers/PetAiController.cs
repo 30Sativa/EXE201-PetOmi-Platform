@@ -6,6 +6,9 @@ using PetOmiPlatform.Application.Features.PetAi.Interfaces;
 
 namespace PetOmiPlatform.API.Controllers;
 
+/// <summary>
+/// Internal API cung cấp dữ liệu pet/chat cho AI service.
+/// </summary>
 [ApiController]
 [Route("internal/ai")]
 [Authorize(Policy = Policies.InternalApiKey)]
@@ -20,6 +23,7 @@ public class PetAiController : ControllerBase
         _logger = logger;
     }
 
+    /// <summary>Lấy ngữ cảnh cơ bản của pet cho AI service.</summary>
     [HttpGet("pets/{id:guid}/basic-context")]
     [ProducesResponseType(typeof(PetBasicContextResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(PetAiErrorResponse), StatusCodes.Status404NotFound)]
@@ -41,6 +45,7 @@ public class PetAiController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Lấy tóm tắt y tế của pet cho AI service.</summary>
     [HttpGet("pets/{id:guid}/medical-summary")]
     [ProducesResponseType(typeof(PetMedicalSummaryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(PetAiErrorResponse), StatusCodes.Status404NotFound)]
@@ -62,6 +67,7 @@ public class PetAiController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Lấy các tin nhắn gần nhất của conversation cho AI service.</summary>
     [HttpGet("conversations/{id:guid}/recent-messages")]
     [ProducesResponseType(typeof(RecentMessagesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(PetAiErrorResponse), StatusCodes.Status404NotFound)]

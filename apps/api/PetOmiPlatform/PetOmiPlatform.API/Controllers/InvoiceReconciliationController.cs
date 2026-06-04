@@ -11,7 +11,7 @@ using PetOmiPlatform.Application.Features.Invoice.Query;
 namespace PetOmiPlatform.API.Controllers
 {
     /// <summary>
-    /// API doi soat giao dich SePay cho thu ngan/staff clinic.
+    /// API đối soát giao dịch SePay cho thu ngân/staff clinic.
     /// </summary>
     [Route("api/invoices/sepay/reconciliation")]
     [ApiController]
@@ -20,10 +20,10 @@ namespace PetOmiPlatform.API.Controllers
     {
         public InvoiceReconciliationController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Lay danh sach giao dich SePay can doi soat cua clinic.</summary>
+        /// <summary>Lấy danh sách giao dịch SePay cần đối soát của clinic.</summary>
         /// <remarks>
-        /// Mac dinh chi lay giao dich chua matched. Dat includeMatched=true de xem lich su da xu ly.
-        /// alertAfterMinutes dung de danh dau giao dich chua doi soat qua nguong can staff uu tien xu ly.
+        /// Mặc định chỉ lấy giao dịch chưa matched. Đặt includeMatched=true để xem lịch sử đã xử lý.
+        /// alertAfterMinutes dùng để đánh dấu giao dịch chưa đối soát quá ngưỡng cần staff ưu tiên xử lý.
         /// </remarks>
         [HttpGet]
         public async Task<IActionResult> GetSePayReconciliation(
@@ -37,8 +37,8 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IReadOnlyList<SePayReconciliationItemResponse>>.Ok(result));
         }
 
-        /// <summary>Gan thu cong mot giao dich SePay vao hoa don cu the.</summary>
-        /// <remarks>Dung khi auto-match khong match duoc nhung staff da xac nhan giao dich hop le.</remarks>
+        /// <summary>Gán thủ công một giao dịch SePay vào hóa đơn cụ thể.</summary>
+        /// <remarks>Dùng khi auto-match không match được nhưng staff đã xác nhận giao dịch hợp lệ.</remarks>
         [HttpPost("{paymentTransactionId:guid}/manual-match")]
         public async Task<IActionResult> ManualMatchSePayTransaction(
             Guid paymentTransactionId,
@@ -52,11 +52,11 @@ namespace PetOmiPlatform.API.Controllers
                 request.InvoiceId,
                 request.ReviewNote);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<bool>.Ok(result, "Manual match giao dich SePay thanh cong."));
+            return Ok(BaseResponse<bool>.Ok(result, "Manual match giao dịch SePay thành công."));
         }
 
-        /// <summary>Danh dau giao dich SePay la da xu ly thu cong va bo qua.</summary>
-        /// <remarks>Bat buoc reviewNote de audit va doi soat cuoi ngay.</remarks>
+        /// <summary>Đánh dấu giao dịch SePay là đã xử lý thủ công và bỏ qua.</summary>
+        /// <remarks>Bắt buộc reviewNote để audit và đối soát cuối ngày.</remarks>
         [HttpPost("{paymentTransactionId:guid}/dismiss")]
         public async Task<IActionResult> DismissSePayTransaction(
             Guid paymentTransactionId,
@@ -69,7 +69,7 @@ namespace PetOmiPlatform.API.Controllers
                 paymentTransactionId,
                 request.ReviewNote);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<bool>.Ok(result, "Da danh dau giao dich SePay la da xu ly thu cong."));
+            return Ok(BaseResponse<bool>.Ok(result, "Đã đánh dấu giao dịch SePay là đã xử lý thủ công."));
         }
     }
 }

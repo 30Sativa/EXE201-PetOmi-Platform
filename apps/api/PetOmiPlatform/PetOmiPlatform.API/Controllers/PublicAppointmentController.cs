@@ -48,7 +48,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<List<AvailableSlotResponse>>.Ok(result));
         }
 
-        /// <summary>lay danh sach bac si active tai clinic (de owner chon bac si khi dat lich).</summary>
+        /// <summary>Lấy danh sách bác sĩ active tại clinic (để owner chọn bác sĩ khi đặt lịch).</summary>
         [HttpGet("doctors")]
         public async Task<IActionResult> GetClinicDoctors([FromQuery] Guid clinicId)
         {

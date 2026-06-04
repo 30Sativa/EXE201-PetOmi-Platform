@@ -8,6 +8,7 @@ using System.Text;
 namespace PetOmiPlatform.Application.Behaviors
 {
     public class TransactionBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : notnull
     {
         private readonly IUnitOfWork _uow;
         private readonly ILogger<TransactionBehavior<TRequest, TResponse>> _logger;

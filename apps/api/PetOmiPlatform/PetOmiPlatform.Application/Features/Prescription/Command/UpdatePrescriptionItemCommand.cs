@@ -8,6 +8,7 @@ namespace PetOmiPlatform.Application.Features.Prescription.Command
     public record UpdatePrescriptionItemCommand(
         Guid ClinicId,
         Guid StaffUserId,
+        Guid ExaminationId,
         Guid PrescriptionId,
         UpdatePrescriptionItemRequest Payload
     ) : IRequest<PrescriptionItemResponse>, IAuditableCommand

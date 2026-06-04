@@ -12,6 +12,9 @@ using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers;
 
+/// <summary>
+/// API quản trị hệ thống dành cho Admin.
+/// </summary>
 [Route("api/admin")]
 [ApiController]
 [Authorize(Policy = Policies.AdminOnly)]
@@ -20,7 +23,7 @@ public class AdminController : BaseController
     public AdminController(IMediator mediator) : base(mediator) { }
 
     /// <summary>
-    /// Tong quan thong ke cho admin dashboard.
+    /// Tổng quan thống kê cho admin dashboard.
     /// </summary>
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
@@ -30,7 +33,7 @@ public class AdminController : BaseController
     }
 
     /// <summary>
-    /// Danh sach canh bao cho trang admin alerts.
+    /// Danh sách cảnh báo cho trang admin alerts.
     /// </summary>
     [HttpGet("alerts")]
     public async Task<IActionResult> GetAlerts([FromQuery] int maxItems = 50)
@@ -40,7 +43,7 @@ public class AdminController : BaseController
     }
 
     /// <summary>
-    /// Danh sach nguoi dung co phan trang, co the loc theo trang thai kich hoat.
+    /// Danh sách người dùng có phân trang, có thể lọc theo trạng thái kích hoạt.
     /// </summary>
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers(
@@ -54,40 +57,40 @@ public class AdminController : BaseController
     }
 
     /// <summary>
-    /// Khoa hoac mo khoa nguoi dung.
+    /// Khóa hoặc mở khóa người dùng.
     /// </summary>
     [HttpPost("users/{userId:guid}/toggle-status")]
     public async Task<IActionResult> ToggleUserStatus(Guid userId, [FromBody] ToggleUserStatusRequest request)
     {
         var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var result = await Mediator.Send(new ToggleUserStatusCommand(adminId, userId, request.IsActive));
-        return Ok(BaseResponse<AdminUserListResponse>.Ok(result, request.IsActive ? "Tai khoan da duoc mo khoa." : "Tai khoan da bi khoa."));
+        return Ok(BaseResponse<AdminUserListResponse>.Ok(result, request.IsActive ? "Tài khoản đã được mở khóa." : "Tài khoản đã bị khóa."));
     }
 
     /// <summary>
-    /// Gan quyen Admin cho nguoi dung.
+    /// Gán quyền Admin cho người dùng.
     /// </summary>
     [HttpPost("users/{userId:guid}/assign-admin")]
     public async Task<IActionResult> AssignAdminRole(Guid userId)
     {
         var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var result = await Mediator.Send(new AssignAdminRoleCommand(adminId, userId));
-        return Ok(BaseResponse<AdminUserListResponse>.Ok(result, "Da gan quyen Admin."));
+        return Ok(BaseResponse<AdminUserListResponse>.Ok(result, "Đã gán quyền Admin."));
     }
 
     /// <summary>
-    /// Thu hoi quyen Admin cua nguoi dung.
+    /// Thu hồi quyền Admin của người dùng.
     /// </summary>
     [HttpPost("users/{userId:guid}/revoke-admin")]
     public async Task<IActionResult> RevokeAdminRole(Guid userId)
     {
         var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var result = await Mediator.Send(new RevokeAdminRoleCommand(adminId, userId));
-        return Ok(BaseResponse<AdminUserListResponse>.Ok(result, "Da thu hoi quyen Admin."));
+        return Ok(BaseResponse<AdminUserListResponse>.Ok(result, "Đã thu hồi quyền Admin."));
     }
 
     /// <summary>
-    /// Lay danh sach audit log voi loc va phan trang.
+    /// Lấy danh sách audit log với bộ lọc và phân trang.
     /// </summary>
     [HttpGet("audit-logs")]
     public async Task<IActionResult> GetAuditLogs(
@@ -105,7 +108,7 @@ public class AdminController : BaseController
     }
 
     /// <summary>
-    /// Lay tat ca cau hinh he thong.
+    /// Lấy tất cả cấu hình hệ thống.
     /// </summary>
     [HttpGet("settings")]
     public async Task<IActionResult> GetSettings()
@@ -115,13 +118,13 @@ public class AdminController : BaseController
     }
 
     /// <summary>
-    /// Cap nhat mot cau hinh he thong.
+    /// Cập nhật một cấu hình hệ thống.
     /// </summary>
     [HttpPut("settings/{key}")]
     public async Task<IActionResult> UpdateSetting(string key, [FromBody] UpdateSettingRequest request)
     {
         var adminId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var result = await Mediator.Send(new UpdateSettingCommand(adminId, key, request.Value));
-        return Ok(BaseResponse<SystemSettingResponse>.Ok(result, "Da cap nhat cau hinh."));
+        return Ok(BaseResponse<SystemSettingResponse>.Ok(result, "Đã cập nhật cấu hình."));
     }
 }

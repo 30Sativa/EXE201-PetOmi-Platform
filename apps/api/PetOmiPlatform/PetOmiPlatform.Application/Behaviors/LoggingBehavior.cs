@@ -7,6 +7,7 @@ using System.Text;
 namespace PetOmiPlatform.Application.Behaviors
 {
     public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : notnull
     {
         private readonly ILogger<TRequest> _logger;
 

@@ -171,17 +171,7 @@ namespace PetOmiPlatform.Infrastructure
             // Services
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
-            services.AddScoped<IPetAccessService, PetAccessService>();
-
-            services.AddScoped<ICloudinaryService, CloudinaryService>();
-            services.AddScoped<IPetAccessService, PetAccessService>();
-
-            services.AddScoped<ICloudinaryService, CloudinaryService>();
-            services.AddScoped<IPetAccessService, PetAccessService>();
             services.AddScoped<IPetAvatarService, PetAvatarService>();
-
-            services.AddScoped<ICloudinaryService, CloudinaryService>();
-            services.AddScoped<IPetAccessService, PetAccessService>();
 
 
             // Reminders

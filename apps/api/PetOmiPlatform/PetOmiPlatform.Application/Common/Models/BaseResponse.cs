@@ -13,7 +13,7 @@ namespace PetOmiPlatform.Application.Common.Models
         public List<string>? Errors { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        public static BaseResponse<T> Ok(T data, string message = "Success")
+        public static BaseResponse<T> Ok(T? data, string message = "Success")
             => new()
             {
                 Success = true,

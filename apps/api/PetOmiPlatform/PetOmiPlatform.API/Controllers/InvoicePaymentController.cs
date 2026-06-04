@@ -11,7 +11,7 @@ using PetOmiPlatform.Application.Features.Invoice.Query;
 namespace PetOmiPlatform.API.Controllers
 {
     /// <summary>
-    /// API thanh toan hoa don: thu tien thu cong, tao QR SePay, xac nhan hoan tien thu cong.
+    /// API thanh toán hóa đơn: thu tiền thủ công, tạo QR SePay, xác nhận hoàn tiền thủ công.
     /// </summary>
     [Route("api/invoices")]
     [ApiController]
@@ -20,21 +20,21 @@ namespace PetOmiPlatform.API.Controllers
     {
         public InvoicePaymentController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Thu tien thu cong cho hoa don (tien mat/chuyen khoan thu cong).</summary>
+        /// <summary>Thu tiền thủ công cho hóa đơn (tiền mặt/chuyển khoản thủ công).</summary>
         /// <remarks>
-        /// MVP rule: chua ho tro partial payment.
-        /// - Neu PaidAmount nho hon FinalAmount: tu choi thanh toan.
-        /// - Neu PaidAmount lon hon FinalAmount: cho phep, luu overpaid de doi soat cuoi ngay.
+        /// MVP rule: chưa hỗ trợ partial payment.
+        /// - Nếu PaidAmount nhỏ hơn FinalAmount: từ chối thanh toán.
+        /// - Nếu PaidAmount lớn hơn FinalAmount: cho phép, lưu overpaid để đối soát cuối ngày.
         /// </remarks>
         [HttpPost("{id:guid}/pay")]
         public async Task<IActionResult> PayInvoice(Guid id, [FromBody] PayInvoiceRequest request, [FromQuery] Guid clinicId)
         {
             var command = new PayInvoiceCommand(clinicId, CurrentUserId, id, request);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<bool>.Ok(result, "Thanh toan hoa don thanh cong."));
+            return Ok(BaseResponse<bool>.Ok(result, "Thanh toán hóa đơn thành công."));
         }
 
-        /// <summary>Tao payment request SePay (QR + transfer reference) cho hoa don unpaid.</summary>
+        /// <summary>Tạo payment request SePay (QR + transfer reference) cho hóa đơn unpaid.</summary>
         [HttpPost("{id:guid}/sepay/payment-request")]
         public async Task<IActionResult> RequestSePayPayment(
             Guid id,
@@ -43,10 +43,10 @@ namespace PetOmiPlatform.API.Controllers
         {
             var command = new RequestSePayPaymentCommand(clinicId, CurrentUserId, id, request);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<SePayPaymentRequestResponse>.Ok(result, "Tao payment request SePay thanh cong."));
+            return Ok(BaseResponse<SePayPaymentRequestResponse>.Ok(result, "Tạo payment request SePay thành công."));
         }
 
-        /// <summary>Lay trang thai thanh toan SePay moi nhat cho popup QR.</summary>
+        /// <summary>Lấy trạng thái thanh toán SePay mới nhất cho popup QR.</summary>
         [HttpGet("{id:guid}/sepay/payment-status")]
         public async Task<IActionResult> GetSePayPaymentStatus(Guid id, [FromQuery] Guid clinicId)
         {
@@ -55,10 +55,10 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<SePayPaymentStatusResponse>.Ok(result));
         }
 
-        /// <summary>Xac nhan da hoan tien thu cong cho invoice da huy co RequiresManualRefund=true.</summary>
+        /// <summary>Xác nhận đã hoàn tiền thủ công cho invoice đã hủy có RequiresManualRefund=true.</summary>
         /// <remarks>
-        /// Dung sau khi thu ngan da chuyen tra tien ngoai he thong cho khach.
-        /// Bat buoc co RefundNote de luu audit va doi soat.
+        /// Dùng sau khi thu ngân đã chuyển trả tiền ngoài hệ thống cho khách.
+        /// Bắt buộc có RefundNote để lưu audit và đối soát.
         /// </remarks>
         [HttpPost("{id:guid}/refund-confirmation")]
         public async Task<IActionResult> ConfirmManualRefund(
@@ -72,7 +72,7 @@ namespace PetOmiPlatform.API.Controllers
                 id,
                 request.RefundNote);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<bool>.Ok(result, "Xac nhan hoan tien thu cong thanh cong."));
+            return Ok(BaseResponse<bool>.Ok(result, "Xác nhận hoàn tiền thủ công thành công."));
         }
     }
 }

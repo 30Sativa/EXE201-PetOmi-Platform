@@ -11,7 +11,7 @@ using PetOmiPlatform.Application.Features.Prescription.Query;
 namespace PetOmiPlatform.API.Controllers
 {
     /// <summary>
-    /// API ke don thuoc theo tung phieu kham.
+    /// API kê đơn thuốc theo từng phiếu khám.
     /// </summary>
     [Route("api/examinations/{examinationId:guid}/prescriptions")]
     [Authorize]
@@ -20,7 +20,7 @@ namespace PetOmiPlatform.API.Controllers
     {
         public PrescriptionController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Them 1 dong thuoc vao don thuoc cua phieu kham.</summary>
+        /// <summary>Thêm một dòng thuốc vào đơn thuốc của phiếu khám.</summary>
         [HttpPost]
         public async Task<IActionResult> AddPrescriptionItem(
             [FromRoute] Guid examinationId,
@@ -29,10 +29,10 @@ namespace PetOmiPlatform.API.Controllers
         {
             var command = new AddPrescriptionItemCommand(clinicId, CurrentUserId, examinationId, request);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<PrescriptionItemResponse>.Ok(result, "Them thuoc vao don thanh cong."));
+            return Ok(BaseResponse<PrescriptionItemResponse>.Ok(result, "Thêm thuốc vào đơn thành công."));
         }
 
-        /// <summary>Lay danh sach thuoc da ke theo phieu kham.</summary>
+        /// <summary>Lấy danh sách thuốc đã kê theo phiếu khám.</summary>
         [HttpGet]
         public async Task<IActionResult> GetByExaminationId(
             [FromRoute] Guid examinationId,
@@ -43,7 +43,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IEnumerable<PrescriptionItemResponse>>.Ok(result));
         }
 
-        /// <summary>Cap nhat thong tin 1 dong thuoc trong don.</summary>
+        /// <summary>Cập nhật thông tin một dòng thuốc trong đơn.</summary>
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdatePrescriptionItem(
             [FromRoute] Guid examinationId,
@@ -51,21 +51,21 @@ namespace PetOmiPlatform.API.Controllers
             [FromBody] UpdatePrescriptionItemRequest request,
             [FromQuery] Guid clinicId)
         {
-            var command = new UpdatePrescriptionItemCommand(clinicId, CurrentUserId, id, request);
+            var command = new UpdatePrescriptionItemCommand(clinicId, CurrentUserId, examinationId, id, request);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<PrescriptionItemResponse>.Ok(result, "Cap nhat thuoc trong don thanh cong."));
+            return Ok(BaseResponse<PrescriptionItemResponse>.Ok(result, "Cập nhật thuốc trong đơn thành công."));
         }
 
-        /// <summary>Xoa 1 dong thuoc khoi don thuoc.</summary>
+        /// <summary>Xóa một dòng thuốc khỏi đơn thuốc.</summary>
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeletePrescriptionItem(
             [FromRoute] Guid examinationId,
             Guid id,
             [FromQuery] Guid clinicId)
         {
-            var command = new DeletePrescriptionItemCommand(clinicId, CurrentUserId, id);
+            var command = new DeletePrescriptionItemCommand(clinicId, CurrentUserId, examinationId, id);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<bool>.Ok(result, "Xoa thuoc khoi don thanh cong."));
+            return Ok(BaseResponse<bool>.Ok(result, "Xóa thuốc khỏi đơn thành công."));
         }
     }
 }

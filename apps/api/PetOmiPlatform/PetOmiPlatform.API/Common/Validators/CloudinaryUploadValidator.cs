@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace PetOmiPlatform.Application.Common.Validators
+namespace PetOmiPlatform.API.Common.Validators
 {
     public class CloudinaryUploadValidator
     {
@@ -31,7 +31,7 @@ namespace PetOmiPlatform.Application.Common.Validators
             var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant() ?? string.Empty;
             if (!AllowedExtensions.Contains(extension))
             {
-                return (false, "Dinh dang file khong duoc ho tro. Chi chap nhan: jpg, jpeg, png, webp.");
+                return (false, "Định dạng file không được hỗ trợ. Chỉ chấp nhận: jpg, jpeg, png, webp.");
             }
 
             if (!AllowedMimeTypes.Contains(file.ContentType))

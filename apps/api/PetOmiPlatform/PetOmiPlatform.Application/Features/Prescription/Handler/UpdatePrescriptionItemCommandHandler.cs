@@ -40,9 +40,12 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
             if (prescription == null)
                 throw new NotFoundException($"Không tìm thấy thuốc kê đơn ID {request.PrescriptionId}");
 
-            var exam = await _examinationRepository.GetByIdAsync(prescription.ExaminationId);
+            if (prescription.ExaminationId != request.ExaminationId)
+                throw new NotFoundException("Không tìm thấy thuốc kê đơn trong phiếu khám này.");
+
+            var exam = await _examinationRepository.GetByIdAsync(request.ExaminationId);
             if (exam == null)
-                throw new NotFoundException($"Khong tim thay phieu kham ID {prescription.ExaminationId}");
+                throw new NotFoundException($"Không tìm thấy phiếu khám ID {request.ExaminationId}");
 
             var appointment = await _appointmentRepository.GetByIdAsync(exam.AppointmentId);
 
@@ -57,7 +60,7 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
                 var item = await _inventoryRepository.GetByIdAsync(request.Payload.InventoryItemId.Value)
                     ?? throw new NotFoundException("InventoryItem", request.Payload.InventoryItemId.Value);
                 if (item.ClinicId != request.ClinicId || !item.IsActive)
-                    throw new ValidationException("InventoryItemId", "Vat tu/thuoc khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("InventoryItemId", "Vật tư/thuốc không thuộc clinic hoặc đã ngừng hoạt động.");
             }
 
             prescription.Update(

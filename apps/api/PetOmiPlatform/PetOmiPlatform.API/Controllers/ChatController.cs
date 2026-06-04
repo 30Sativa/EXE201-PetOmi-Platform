@@ -14,6 +14,9 @@ using System.Threading.Tasks;
 
 namespace PetOmiPlatform.API.Controllers;
 
+/// <summary>
+/// API chat giữa owner và AI assistant.
+/// </summary>
 [Route("api/chat")]
 [ApiController]
 [Authorize]
@@ -23,6 +26,7 @@ public class ChatController : BaseController
     {
     }
 
+    /// <summary>Gửi tin nhắn mới vào cuộc trò chuyện và enqueue xử lý AI nếu cần.</summary>
     [HttpPost("messages")]
     public async Task<IActionResult> SendMessage([FromBody] SendChatMessageRequest request, CancellationToken cancellationToken)
     {
@@ -30,6 +34,7 @@ public class ChatController : BaseController
         return Ok(BaseResponse<SendChatMessageResponse>.Ok(result));
     }
 
+    /// <summary>Hủy tin nhắn đang chờ AI xử lý.</summary>
     [HttpPost("messages/{messageId:guid}/cancel")]
     public async Task<IActionResult> CancelMessage(Guid messageId)
     {
@@ -37,6 +42,7 @@ public class ChatController : BaseController
         return Ok(BaseResponse<bool>.Ok(result));
     }
 
+    /// <summary>Lấy danh sách cuộc trò chuyện của user hiện tại.</summary>
     [HttpGet("conversations")]
     public async Task<IActionResult> GetConversations([FromQuery] int take = 50)
     {
@@ -44,6 +50,7 @@ public class ChatController : BaseController
         return Ok(BaseResponse<List<ChatConversationResponse>>.Ok(result));
     }
 
+    /// <summary>Lấy tin nhắn trong một cuộc trò chuyện của user hiện tại.</summary>
     [HttpGet("conversations/{conversationId:guid}/messages")]
     public async Task<IActionResult> GetMessages(Guid conversationId, [FromQuery] int skip = 0, [FromQuery] int take = 50)
     {

@@ -2,6 +2,8 @@
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using PetOmiPlatform.Application.Behaviors;
+using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Application.Services;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -30,6 +32,8 @@ namespace PetOmiPlatform.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));       // 4. Transaction sau
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(AuditLogBehavior<,>));         // 5. Audit log
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));       // 6. Đo performance
+
+            services.AddScoped<IPetAccessService, PetAccessService>();
 
             return services;
         }

@@ -12,6 +12,10 @@
 *.env
 **/appsettings.Development.json
 
+# PetOmi AI Service local/runtime artifacts
+apps/ai-service/.env*
+apps/ai-service/output/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

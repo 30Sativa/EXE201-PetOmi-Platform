@@ -231,6 +231,7 @@ export default function OwnerChatPage() {
   const [isPetPickerOpen, setIsPetPickerOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
+  const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const petPickerRef = useRef<HTMLDivElement | null>(null)
   const sendAbortControllerRef = useRef<AbortController | null>(null)
   const conversationIdRef = useRef<string | null>(conversationId)
@@ -254,6 +255,14 @@ export default function OwnerChatPage() {
   useEffect(() => {
     conversationIdRef.current = conversationId
   }, [conversationId])
+
+  useEffect(() => {
+    const textarea = inputRef.current
+    if (!textarea) return
+
+    textarea.style.height = "auto"
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 160)}px`
+  }, [input])
 
   const {
     data: history = [],
@@ -515,11 +524,11 @@ export default function OwnerChatPage() {
   }
 
   return (
-    <div className="grid min-h-[calc(100vh-190px)] gap-5 xl:grid-cols-[minmax(0,1fr)_318px]">
-      <section className="flex min-h-[720px] min-w-0 flex-col overflow-hidden rounded-[28px] bg-white/92 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-po-border/80 px-5 py-5">
+    <div className="grid gap-5 xl:h-[calc(100dvh-190px)] xl:min-h-[640px] xl:grid-cols-[minmax(0,1fr)_318px]">
+      <section className="flex min-h-[640px] min-w-0 flex-col overflow-hidden rounded-[24px] bg-white/92 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 xl:min-h-0">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-po-border/80 px-5 py-4">
           <div className="flex min-w-0 items-center gap-4">
-            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary shadow-sm shadow-orange-200">
+            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary shadow-sm shadow-orange-200">
               <Bot className="size-5" />
             </span>
             <div className="min-w-0">
@@ -535,35 +544,25 @@ export default function OwnerChatPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-bold uppercase tracking-[0.08em] ring-1",
+              isConnected
+                ? "bg-po-accent-soft/70 text-po-success ring-po-accent-soft"
+                : "bg-po-surface-muted text-po-text-muted ring-po-border",
+            )}
+          >
             <span
               className={cn(
-                "inline-flex h-9 items-center gap-2 rounded-full px-3 text-xs font-extrabold uppercase tracking-[0.08em] ring-1",
-                isConnected
-                  ? "bg-po-accent-soft text-po-success ring-po-accent-soft"
-                  : "bg-po-surface-muted text-po-text-muted ring-po-border",
+                "size-1.5 rounded-full",
+                isConnected ? "bg-po-success" : "bg-po-text-subtle",
               )}
-            >
-              <span
-                className={cn(
-                  "size-2 rounded-full",
-                  isConnected ? "bg-po-success" : "bg-po-text-subtle",
-                )}
-              />
-              {isConnected ? "Realtime" : "Đang kết nối"}
-            </span>
-            <button
-              type="button"
-              onClick={handleNewConversation}
-              className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
-            >
-              <Sparkles className="size-4" />
-              Chat mới
-            </button>
-          </div>
+            />
+            {isConnected ? "Realtime" : "Đang kết nối"}
+          </span>
         </div>
 
-        <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-gradient-to-b from-white to-po-surface-muted/20 px-4 py-7 sm:px-6">
+        <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-gradient-to-b from-white to-po-surface-muted/20 px-4 py-6 sm:px-6">
           <div className="pointer-events-none absolute bottom-0 left-0 h-40 w-40 opacity-40 [background-image:radial-gradient(var(--po-color-border)_1px,transparent_1px)] [background-size:14px_14px]" />
           {isLoadingHistory ? (
             <div className="grid flex-1 content-center gap-3">
@@ -701,19 +700,20 @@ export default function OwnerChatPage() {
 
           <div className="relative">
             <textarea
+              ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              rows={3}
+              rows={1}
               maxLength={10000}
               placeholder="Nhập câu hỏi cho PetOmi AI..."
-              className="min-h-[82px] w-full resize-none rounded-[22px] border border-po-border bg-white px-4 py-3 pb-11 pr-16 text-sm leading-6 text-po-text outline-none transition placeholder:text-po-text-subtle focus:border-po-primary focus:ring-[var(--po-focus-ring)]"
+              className="max-h-40 min-h-14 w-full resize-none overflow-y-auto rounded-2xl border border-po-border bg-white px-4 py-3 pr-16 text-sm leading-6 text-po-text outline-none transition placeholder:text-po-text-subtle focus:border-po-primary focus:ring-[var(--po-focus-ring)]"
             />
             <button
               type={isAiBusy ? "button" : "submit"}
               onClick={isAiBusy ? stopCurrentResponse : undefined}
               disabled={!isAiBusy && !input.trim()}
               className={cn(
-                "absolute bottom-3 right-3 grid size-11 place-items-center rounded-full text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-0",
+                "absolute bottom-2.5 right-2.5 grid size-10 place-items-center rounded-full text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-0",
                 isAiBusy
                   ? "bg-po-text hover:bg-po-text-muted"
                   : "bg-po-primary hover:bg-po-primary-hover",
@@ -735,7 +735,7 @@ export default function OwnerChatPage() {
         </form>
       </section>
 
-      <aside className="grid h-fit gap-5">
+      <aside className="grid gap-5 xl:min-h-0 xl:grid-rows-[auto_minmax(0,1fr)]">
         <section className="rounded-[24px] bg-white/88 p-5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
           <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-po-text-muted">
             <PawPrint className="size-4 text-po-primary" />
@@ -846,7 +846,7 @@ export default function OwnerChatPage() {
           </div>
         </section>
 
-        <section className="flex min-h-[390px] flex-col overflow-hidden rounded-[24px] bg-white/88 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <section className="flex min-h-[390px] flex-col overflow-hidden rounded-[24px] bg-white/88 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 xl:min-h-0">
           <div className="flex items-center justify-between gap-3 border-b border-po-border/80 px-5 py-4">
             <div className="flex items-center gap-2">
               <History className="size-4 text-po-primary" />
@@ -857,15 +857,16 @@ export default function OwnerChatPage() {
             <button
               type="button"
               onClick={handleNewConversation}
-              className="grid size-9 place-items-center rounded-full bg-po-primary-soft text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
+              className="inline-flex h-9 items-center gap-2 rounded-full bg-po-primary px-3 text-xs font-bold text-white shadow-sm shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
               aria-label="Tạo cuộc trò chuyện mới"
               title="Tạo cuộc trò chuyện mới"
             >
               <Plus className="size-4" />
+              Chat mới
             </button>
           </div>
 
-          <div className="min-h-0 max-h-[430px] flex-1 overflow-y-auto p-3">
+          <div className="min-h-0 flex-1 overflow-y-auto p-3 xl:max-h-none">
             {isLoadingConversations ? (
               <div className="grid gap-2">
                 {Array.from({ length: 4 }).map((_, index) => (

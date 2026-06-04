@@ -1,9 +1,21 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Banknote, CreditCard, PackageSearch, Plus, QrCode, ReceiptText, RotateCcw, Trash2 } from "lucide-react"
+import {
+  Activity,
+  Banknote,
+  CreditCard,
+  PackageSearch,
+  Plus,
+  QrCode,
+  ReceiptText,
+  RotateCcw,
+  Search,
+  ShoppingCart,
+  Trash2,
+  type LucideIcon,
+} from "lucide-react"
 import { toast } from "sonner"
 
-import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -25,7 +37,13 @@ import {
   requestSePayPaymentApi,
 } from "@/services/clinic-billing.service"
 import { getInventoryApi } from "@/services/clinic.service"
-import type { InvoiceResponse, PendingManualRefundItemResponse, SePayPaymentRequestResponse, SePayPaymentStatusResponse } from "@/types"
+import type {
+  InvoiceAgingItemResponse,
+  InvoiceResponse,
+  PendingManualRefundItemResponse,
+  SePayPaymentRequestResponse,
+  SePayPaymentStatusResponse,
+} from "@/types"
 
 const today = new Date().toISOString().slice(0, 10)
 const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
@@ -37,6 +55,8 @@ type RetailCartItem = {
   unitPrice: number
   availableQuantity: number
 }
+
+type BillingWorkspace = "checkout" | "monitor"
 
 export default function ClinicBillingPage() {
   const queryClient = useQueryClient()
@@ -55,6 +75,7 @@ export default function ClinicBillingPage() {
   const [retailDiscountAmount, setRetailDiscountAmount] = useState("0")
   const [retailCart, setRetailCart] = useState<RetailCartItem[]>([])
   const [retailInvoice, setRetailInvoice] = useState<InvoiceResponse | null>(null)
+  const [workspace, setWorkspace] = useState<BillingWorkspace>("checkout")
 
   const summaryQuery = useQuery({
     queryKey: ["clinic", clinicId, "dashboard-summary"],
@@ -272,257 +293,273 @@ export default function ClinicBillingPage() {
   const invoice = invoiceQuery.data
   const points = trendQuery.data?.points ?? []
 
+  const retailSubtotal = retailCart.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  const retailTotal = Math.max(0, retailSubtotal - (Number(retailDiscountAmount) || 0))
+  const unpaidItems = unpaidQuery.data ?? []
+  const refundItems = refundsQuery.data ?? []
+
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-po-text">Thu ngân và công nợ</h2>
-          <p className="mt-1 text-sm text-po-text-muted">Theo dõi doanh thu, hóa đơn chưa thu và thao tác thanh toán tại quầy.</p>
+    <div className="grid gap-4">
+      <section className="overflow-hidden rounded-[26px] bg-white/90 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
+              Quầy thu ngân
+            </p>
+            <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
+              Thu tiền, tạo hóa đơn và xử lý công nợ
+            </h2>
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
+              Tập trung thao tác hằng ngày ở một màn hình, các danh sách dài được giữ trong vùng cuộn riêng.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-end gap-3 lg:justify-end">
+            <div className="inline-flex h-11 rounded-full bg-po-surface-muted p-1 ring-1 ring-po-border/80">
+              <WorkspaceButton active={workspace === "checkout"} icon={ReceiptText} label="Thu tiền" onClick={() => setWorkspace("checkout")} />
+              <WorkspaceButton active={workspace === "monitor"} icon={Activity} label="Theo dõi" onClick={() => setWorkspace("monitor")} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input label="Từ ngày" type="date" value={fromDate} onChange={setFromDate} compact />
+              <Input label="Đến ngày" type="date" value={toDate} onChange={setToDate} compact />
+            </div>
+          </div>
         </div>
-        <div className="grid w-full grid-cols-1 gap-3 sm:w-auto sm:grid-cols-2">
-          <Input label="Từ ngày" type="date" value={fromDate} onChange={setFromDate} compact />
-          <Input label="Đến ngày" type="date" value={toDate} onChange={setToDate} compact />
-        </div>
+      </section>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Doanh thu hôm nay" value={formatCurrency(summary?.todayPaidRevenue)} icon={Banknote} tone="success" compact />
+        <MetricCard label="Hóa đơn chưa thu" value={String(summary?.unpaidInvoiceCount ?? 0)} hint={formatCurrency(summary?.totalUnpaidAmount)} icon={ReceiptText} tone="warning" compact />
+        <MetricCard label="Cần đối soát" value={String(summary?.pendingReconciliationCount ?? 0)} icon={QrCode} tone="info" compact />
+        <MetricCard label="Chờ hoàn tiền" value={String(summary?.pendingManualRefundCount ?? 0)} icon={RotateCcw} tone="danger" compact />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Doanh thu hôm nay" value={formatCurrency(summary?.todayPaidRevenue)} icon={Banknote} tone="success" />
-        <MetricCard label="Hóa đơn chưa thu" value={String(summary?.unpaidInvoiceCount ?? 0)} hint={formatCurrency(summary?.totalUnpaidAmount)} icon={ReceiptText} tone="warning" />
-        <MetricCard label="Cần đối soát" value={String(summary?.pendingReconciliationCount ?? 0)} icon={QrCode} tone="info" />
-        <MetricCard label="Chờ hoàn tiền" value={String(summary?.pendingManualRefundCount ?? 0)} icon={RotateCcw} tone="danger" />
-      </div>
-
-      <DashboardSection title="Mở hóa đơn theo lịch hẹn" subtitle="MVP hiện tại bắt buộc hóa đơn gắn với appointment. Với đơn bán lẻ (hạt, phụ kiện), hãy tạo walk-in trước rồi thu ngân trên appointment đó.">
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto]">
-          <Input label="AppointmentId" value={appointmentInput} onChange={setAppointmentInput} />
-          <Input label="Giảm giá" value={discountAmount} onChange={setDiscountAmount} />
-          <button
-            onClick={() => setSelectedAppointmentId(appointmentInput.trim())}
-            disabled={!appointmentInput.trim()}
-            className="self-end inline-flex h-11 items-center justify-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
-          >
-            Tìm hóa đơn
-          </button>
-        </div>
-        <p className="mt-3 text-xs text-po-text-subtle">
-          Luồng thanh toán: tạo hoặc tìm hóa đơn theo appointment, chọn Tiền mặt/Chuyển khoản hoặc tạo QR SePay, rồi bấm ghi nhận khi đã nhận tiền.
-        </p>
-
-        {selectedAppointmentId ? (
-          <div className="mt-5 rounded-2xl border border-po-border bg-white p-4">
-            {invoiceQuery.isLoading ? (
-              <div className="py-8 text-center"><LoadingSpinner /></div>
-            ) : invoice ? (
-              <InvoiceCard
-                invoice={invoice}
-                onPayCash={() => payMutation.mutate({ invoice, method: "Cash" })}
-                onPayBank={() => payMutation.mutate({ invoice, method: "BankTransfer" })}
-                onSePay={() => sePayMutation.mutate(invoice)}
-                onCancel={() => cancelMutation.mutate(invoice)}
-                busy={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
-              />
-            ) : (
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-bold text-po-text">Chưa có hóa đơn</p>
-                  <p className="mt-1 text-xs text-po-text-muted">Auto-compose sẽ lấy dịch vụ và toa thuốc đã ghi trong buổi khám.</p>
-                </div>
-                <button
-                  onClick={() => autoComposeMutation.mutate()}
-                  disabled={autoComposeMutation.isPending}
-                  className="inline-flex h-10 items-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
-                >
-                  {autoComposeMutation.isPending ? "Đang tạo..." : "Tạo hóa đơn"}
-                </button>
+      {workspace === "checkout" ? (
+        <div className="grid gap-4 xl:h-[calc(100dvh-292px)] xl:min-h-[560px] xl:grid-cols-[minmax(0,1fr)_340px]">
+          <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+            <div className="flex items-center justify-between gap-3 border-b border-po-border/80 px-4 py-3">
+              <div>
+                <h3 className="text-base font-extrabold text-po-text">Thu tiền</h3>
+                <p className="mt-1 text-xs text-po-text-muted">Tìm invoice theo lịch hẹn hoặc tạo hóa đơn bán lẻ.</p>
               </div>
-            )}
-          </div>
-        ) : null}
-      </DashboardSection>
+            </div>
 
-      <DashboardSection
-        title="Bán hàng tại quầy"
-        subtitle="Dành cho khách mua thuốc, thức ăn hoặc phụ kiện không cần khám. Tạo order trước, sau đó hệ thống sinh invoice từ order."
-      >
-        <div className="grid gap-4">
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_140px_auto]">
-            <label className="grid gap-1.5 text-sm font-semibold text-po-text">
-              Mặt hàng trong kho
-              <select
-                value={selectedInventoryId}
-                onChange={(event) => setSelectedInventoryId(event.target.value)}
-                className="h-11 min-w-0 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
-              >
-                <option value="">Chọn thuốc / thức ăn / phụ kiện</option>
-                {(inventoryQuery.data ?? []).map((item) => (
-                  <option key={item.itemId} value={item.itemId} disabled={!item.isActive || item.quantity <= 0}>
-                    {item.itemName} · tồn {item.quantity} · {formatCurrency(item.unitPrice)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Input label="Số lượng" value={retailQuantity} onChange={setRetailQuantity} />
-            <button
-              onClick={addRetailItem}
-              disabled={!selectedInventoryId || inventoryQuery.isLoading}
-              className="self-end inline-flex h-11 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
-            >
-              <Plus className="size-4" />
-              Thêm
-            </button>
-          </div>
-
-          <div className="grid gap-3 rounded-2xl border border-po-border bg-white p-4">
-            {retailCart.length === 0 ? (
-              <EmptyState icon={PackageSearch} title="Chưa có mặt hàng" description="Chọn mặt hàng trong kho để tạo đơn bán hàng tại quầy." />
-            ) : (
-              retailCart.map((item) => (
-                <div key={item.inventoryItemId} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-po-surface-muted px-4 py-3">
+            <div className="grid min-h-0 gap-4 overflow-y-auto p-4">
+              <article className="rounded-[22px] bg-po-surface-muted/45 p-4 ring-1 ring-po-border/70">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/70">
+                    <Search className="size-4" />
+                  </span>
                   <div>
-                    <p className="text-sm font-bold text-po-text">{item.itemName}</p>
-                    <p className="text-xs text-po-text-muted">
-                      Tồn {item.availableQuantity} · {item.quantity} x {formatCurrency(item.unitPrice)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm font-extrabold text-po-text">{formatCurrency(item.quantity * item.unitPrice)}</p>
-                    <button
-                      onClick={() => setRetailCart((current) => current.filter((cartItem) => cartItem.inventoryItemId !== item.inventoryItemId))}
-                      className="rounded-full p-2 text-po-danger transition hover:bg-po-danger-soft"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
+                    <h4 className="text-sm font-extrabold text-po-text">Hóa đơn lịch hẹn</h4>
+                    <p className="text-xs font-medium text-po-text-muted">Auto-compose từ dịch vụ và toa thuốc trong buổi khám.</p>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
 
-          <div className="grid gap-3 md:grid-cols-[180px_1fr_auto] md:items-end">
-            <Input label="Giảm giá" value={retailDiscountAmount} onChange={setRetailDiscountAmount} />
-            <div className="rounded-2xl bg-po-surface-muted px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-po-text-subtle">Tạm tính</p>
-              <p className="mt-1 text-xl font-extrabold text-po-text">
-                {formatCurrency(Math.max(0, retailCart.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0) - (Number(retailDiscountAmount) || 0)))}
-              </p>
-            </div>
-            <button
-              onClick={() => createRetailInvoiceMutation.mutate()}
-              disabled={retailCart.length === 0 || createRetailInvoiceMutation.isPending}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-po-success px-5 text-sm font-semibold text-white transition hover:bg-po-success/90 disabled:opacity-60"
-            >
-              {createRetailInvoiceMutation.isPending ? "Đang tạo..." : "Tạo hóa đơn bán hàng"}
-            </button>
-          </div>
-
-          {retailInvoice ? (
-            <div className="rounded-2xl border border-po-border bg-white p-4">
-              <InvoiceCard
-                invoice={retailInvoice}
-                onPayCash={() => payMutation.mutate({ invoice: retailInvoice, method: "Cash" })}
-                onPayBank={() => payMutation.mutate({ invoice: retailInvoice, method: "BankTransfer" })}
-                onSePay={() => sePayMutation.mutate(retailInvoice)}
-                onCancel={() => cancelMutation.mutate(retailInvoice)}
-                busy={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
-              />
-            </div>
-          ) : null}
-        </div>
-      </DashboardSection>
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
-        <DashboardSection title="Doanh thu theo ngày" subtitle={`${formatDate(trendQuery.data?.fromDate)} - ${formatDate(trendQuery.data?.toDate)}`}>
-          {trendQuery.isLoading ? (
-            <div className="py-12 text-center"><LoadingSpinner /></div>
-          ) : points.length === 0 ? (
-            <EmptyState icon={CreditCard} title="Chưa có doanh thu" description="Khoảng ngày này chưa ghi nhận hóa đơn đã thanh toán." />
-          ) : (
-            <div className="grid gap-2">
-              {points.map((point) => (
-                <div key={point.date} className="grid gap-3 rounded-2xl border border-po-border bg-white p-4 sm:grid-cols-[150px_1fr_auto] sm:items-center">
-                  <div>
-                    <p className="text-sm font-bold text-po-text">{formatDate(point.date)}</p>
-                    <p className="text-xs text-po-text-muted">{point.paidInvoiceCount} hóa đơn</p>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-po-surface-muted">
-                    <div
-                      className="h-full rounded-full bg-po-primary"
-                      style={{ width: `${Math.min(100, (point.revenue / Math.max(1, trendQuery.data?.totalRevenue ?? 1)) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-sm font-extrabold text-po-text">{formatCurrency(point.revenue)}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </DashboardSection>
-
-        <DashboardSection title="Tuổi nợ" subtitle="Ưu tiên xử lý hóa đơn càng lâu ngày càng trước.">
-          <div className="grid gap-3">
-            <AgingRow label="0-7 ngày" bucket={summary?.aging0To7Days} />
-            <AgingRow label="8-30 ngày" bucket={summary?.aging8To30Days} />
-            <AgingRow label="31+ ngày" bucket={summary?.aging31PlusDays} />
-          </div>
-        </DashboardSection>
-      </div>
-
-      <div className="grid gap-6 xl:grid-cols-2">
-        <DashboardSection title="Hóa đơn chưa thu" subtitle="Danh sách rút gọn để nhân viên gọi nhắc hoặc thu tại quầy.">
-          {unpaidQuery.isLoading ? (
-            <div className="py-12 text-center"><LoadingSpinner /></div>
-          ) : (unpaidQuery.data ?? []).length === 0 ? (
-            <EmptyState icon={ReceiptText} title="Không còn nợ" description="Tất cả hóa đơn đã được xử lý." />
-          ) : (
-            <div className="grid gap-2">
-              {(unpaidQuery.data ?? []).map((item) => (
-                <div key={item.invoiceId} className="rounded-2xl border border-po-border bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-po-text">{item.invoiceCode}</p>
-                      <p className="mt-1 text-xs text-po-text-muted">
-                        {item.appointmentId ? formatShortId(item.appointmentId) : item.orderId ? `Order ${formatShortId(item.orderId)}` : item.invoiceSource} · {item.pendingDays} ngày
-                      </p>
-                    </div>
-                    <p className="text-sm font-extrabold text-po-warning">{formatCurrency(item.finalAmount)}</p>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <StatusBadge variant="warning" label={item.paymentProvider} />
-                    {item.paymentReference ? <StatusBadge variant="info" label={item.paymentReference} /> : null}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </DashboardSection>
-
-        <DashboardSection title="Hoàn tiền thủ công" subtitle="Hóa đơn bị hủy sau khi đã thanh toán cần xác nhận hoàn tiền ngoài hệ thống.">
-          {refundsQuery.isLoading ? (
-            <div className="py-12 text-center"><LoadingSpinner /></div>
-          ) : (refundsQuery.data ?? []).length === 0 ? (
-            <EmptyState icon={RotateCcw} title="Không có hoàn tiền chờ xử lý" description="Các hóa đơn cần hoàn tiền sẽ xuất hiện tại đây." />
-          ) : (
-            <div className="grid gap-2">
-              {(refundsQuery.data ?? []).map((item) => (
-                <div key={item.invoiceId} className="rounded-2xl border border-po-border bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-bold text-po-text">{item.invoiceCode}</p>
-                      <p className="mt-1 text-xs text-po-text-muted">{item.cancellationReason ?? "Chưa có lý do hủy"}</p>
-                    </div>
-                    <p className="text-sm font-extrabold text-po-danger">{formatCurrency(item.paidAmount ?? item.finalAmount)}</p>
-                  </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_140px_auto]">
+                  <Input label="AppointmentId" value={appointmentInput} onChange={setAppointmentInput} />
+                  <Input label="Giảm giá" value={discountAmount} onChange={setDiscountAmount} />
                   <button
-                    onClick={() => setRefundTarget(item)}
-                    className="mt-3 inline-flex h-9 items-center rounded-full bg-po-danger-soft px-4 text-xs font-semibold text-po-danger transition hover:bg-po-danger hover:text-white"
+                    onClick={() => setSelectedAppointmentId(appointmentInput.trim())}
+                    disabled={!appointmentInput.trim()}
+                    className="self-end inline-flex h-10 items-center justify-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
                   >
-                    Xác nhận hoàn tiền
+                    Tìm hóa đơn
                   </button>
                 </div>
-              ))}
+
+                {selectedAppointmentId ? (
+                  <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-po-border/70">
+                    {invoiceQuery.isLoading ? (
+                      <div className="py-8 text-center"><LoadingSpinner /></div>
+                    ) : invoice ? (
+                      <InvoiceCard
+                        invoice={invoice}
+                        onPayCash={() => payMutation.mutate({ invoice, method: "Cash" })}
+                        onPayBank={() => payMutation.mutate({ invoice, method: "BankTransfer" })}
+                        onSePay={() => sePayMutation.mutate(invoice)}
+                        onCancel={() => cancelMutation.mutate(invoice)}
+                        busy={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
+                      />
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-bold text-po-text">Chưa có hóa đơn</p>
+                          <p className="mt-1 text-xs text-po-text-muted">Tạo nhanh từ dữ liệu buổi khám hiện tại.</p>
+                        </div>
+                        <button
+                          onClick={() => autoComposeMutation.mutate()}
+                          disabled={autoComposeMutation.isPending}
+                          className="inline-flex h-10 items-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+                        >
+                          {autoComposeMutation.isPending ? "Đang tạo..." : "Tạo hóa đơn"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : null}
+              </article>
+
+              <article className="rounded-[22px] bg-po-surface-muted/45 p-4 ring-1 ring-po-border/70">
+                <div className="flex items-center gap-3">
+                  <span className="grid size-9 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/70">
+                    <ShoppingCart className="size-4" />
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-po-text">Bán hàng tại quầy</h4>
+                    <p className="text-xs font-medium text-po-text-muted">Thuốc, thức ăn hoặc phụ kiện không cần khám.</p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_110px_auto]">
+                  <label className="grid gap-1.5 text-xs font-bold text-po-text">
+                    Mặt hàng trong kho
+                    <select
+                      value={selectedInventoryId}
+                      onChange={(event) => setSelectedInventoryId(event.target.value)}
+                      className="h-10 min-w-0 rounded-2xl border border-po-border bg-white px-3 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+                    >
+                      <option value="">Chọn thuốc / thức ăn / phụ kiện</option>
+                      {(inventoryQuery.data ?? []).map((item) => (
+                        <option key={item.itemId} value={item.itemId} disabled={!item.isActive || item.quantity <= 0}>
+                          {item.itemName} · tồn {item.quantity} · {formatCurrency(item.unitPrice)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Input label="Số lượng" value={retailQuantity} onChange={setRetailQuantity} />
+                  <button
+                    onClick={addRetailItem}
+                    disabled={!selectedInventoryId || inventoryQuery.isLoading}
+                    className="self-end inline-flex h-10 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
+                  >
+                    <Plus className="size-4" />
+                    Thêm
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-3 rounded-2xl bg-white p-4 ring-1 ring-po-border/70">
+                  {retailCart.length === 0 ? (
+                    <EmptyState icon={PackageSearch} title="Chưa có mặt hàng" description="Chọn mặt hàng trong kho để tạo đơn bán hàng tại quầy." className="py-8" />
+                  ) : (
+                    retailCart.map((item) => (
+                      <div key={item.inventoryItemId} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-po-surface-muted px-4 py-3">
+                        <div>
+                          <p className="text-sm font-bold text-po-text">{item.itemName}</p>
+                          <p className="text-xs text-po-text-muted">
+                            Tồn {item.availableQuantity} · {item.quantity} x {formatCurrency(item.unitPrice)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <p className="text-sm font-extrabold text-po-text">{formatCurrency(item.quantity * item.unitPrice)}</p>
+                          <button
+                            onClick={() => setRetailCart((current) => current.filter((cartItem) => cartItem.inventoryItemId !== item.inventoryItemId))}
+                            className="rounded-full p-2 text-po-danger transition hover:bg-po-danger-soft"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-[140px_1fr_auto] md:items-end">
+                  <Input label="Giảm giá" value={retailDiscountAmount} onChange={setRetailDiscountAmount} />
+                  <div className="rounded-2xl bg-white px-4 py-2.5 ring-1 ring-po-border/70">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-po-text-subtle">Tạm tính</p>
+                    <p className="mt-0.5 text-lg font-extrabold text-po-text">{formatCurrency(retailTotal)}</p>
+                  </div>
+                  <button
+                    onClick={() => createRetailInvoiceMutation.mutate()}
+                    disabled={retailCart.length === 0 || createRetailInvoiceMutation.isPending}
+                    className="inline-flex h-10 items-center justify-center rounded-full bg-po-success px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-success/90 disabled:opacity-60 active:translate-y-0"
+                  >
+                    {createRetailInvoiceMutation.isPending ? "Đang tạo..." : "Tạo hóa đơn"}
+                  </button>
+                </div>
+
+                {retailInvoice ? (
+                  <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-po-border/70">
+                    <InvoiceCard
+                      invoice={retailInvoice}
+                      onPayCash={() => payMutation.mutate({ invoice: retailInvoice, method: "Cash" })}
+                      onPayBank={() => payMutation.mutate({ invoice: retailInvoice, method: "BankTransfer" })}
+                      onSePay={() => sePayMutation.mutate(retailInvoice)}
+                      onCancel={() => cancelMutation.mutate(retailInvoice)}
+                      busy={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
+                    />
+                  </div>
+                ) : null}
+              </article>
             </div>
-          )}
-        </DashboardSection>
-      </div>
+          </section>
+
+          <BillingQueue
+            unpaidItems={unpaidItems}
+            refundItems={refundItems}
+            isLoadingUnpaid={unpaidQuery.isLoading}
+            isLoadingRefunds={refundsQuery.isLoading}
+            onRefund={setRefundTarget}
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4 xl:h-[calc(100dvh-292px)] xl:min-h-[560px] xl:grid-cols-[minmax(0,1fr)_340px]">
+          <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+            <div className="flex items-center justify-between gap-3 border-b border-po-border/80 px-4 py-3">
+              <div>
+                <h3 className="text-base font-extrabold text-po-text">Doanh thu theo ngày</h3>
+                <p className="mt-1 text-xs text-po-text-muted">{formatDate(trendQuery.data?.fromDate)} - {formatDate(trendQuery.data?.toDate)}</p>
+              </div>
+              <StatusBadge variant="info" label={`${points.length} ngày`} />
+            </div>
+            <div className="min-h-0 overflow-y-auto p-4">
+              {trendQuery.isLoading ? (
+                <div className="py-12 text-center"><LoadingSpinner /></div>
+              ) : points.length === 0 ? (
+                <EmptyState icon={CreditCard} title="Chưa có doanh thu" description="Khoảng ngày này chưa ghi nhận hóa đơn đã thanh toán." className="py-8" />
+              ) : (
+                <div className="grid gap-2">
+                  {points.map((point) => (
+                    <div key={point.date} className="grid gap-3 rounded-2xl bg-po-surface-muted/60 p-4 sm:grid-cols-[150px_1fr_auto] sm:items-center">
+                      <div>
+                        <p className="text-sm font-bold text-po-text">{formatDate(point.date)}</p>
+                        <p className="text-xs text-po-text-muted">{point.paidInvoiceCount} hóa đơn</p>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-white">
+                        <div
+                          className="h-full rounded-full bg-po-primary"
+                          style={{ width: `${Math.min(100, (point.revenue / Math.max(1, trendQuery.data?.totalRevenue ?? 1)) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-sm font-extrabold text-po-text">{formatCurrency(point.revenue)}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <aside className="grid min-h-0 gap-4 xl:grid-rows-[auto_minmax(0,1fr)]">
+            <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
+              <h3 className="text-base font-extrabold text-po-text">Tuổi nợ</h3>
+              <div className="mt-3 grid gap-2">
+                <AgingRow label="0-7 ngày" bucket={summary?.aging0To7Days} />
+                <AgingRow label="8-30 ngày" bucket={summary?.aging8To30Days} />
+                <AgingRow label="31+ ngày" bucket={summary?.aging31PlusDays} />
+              </div>
+            </section>
+
+            <BillingQueue
+              unpaidItems={unpaidItems}
+              refundItems={refundItems}
+              isLoadingUnpaid={unpaidQuery.isLoading}
+              isLoadingRefunds={refundsQuery.isLoading}
+              onRefund={setRefundTarget}
+            />
+          </aside>
+        </div>
+      )}
 
       {refundTarget ? (
         <Modal title="Xác nhận hoàn tiền" onClose={() => setRefundTarget(null)}>
@@ -655,18 +692,165 @@ function InvoiceCard({
   )
 }
 
+function WorkspaceButton({
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active: boolean
+  icon: LucideIcon
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex h-9 items-center justify-center gap-2 rounded-full px-3.5 text-xs font-bold transition ${
+        active
+          ? "bg-po-primary text-white shadow-sm shadow-orange-200"
+          : "text-po-text-muted hover:bg-white hover:text-po-text"
+      }`}
+    >
+      <Icon className="size-4" />
+      {label}
+    </button>
+  )
+}
+
+function BillingQueue({
+  unpaidItems,
+  refundItems,
+  isLoadingUnpaid,
+  isLoadingRefunds,
+  onRefund,
+}: {
+  unpaidItems: InvoiceAgingItemResponse[]
+  refundItems: PendingManualRefundItemResponse[]
+  isLoadingUnpaid: boolean
+  isLoadingRefunds: boolean
+  onRefund: (item: PendingManualRefundItemResponse) => void
+}) {
+  return (
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+      <div className="border-b border-po-border/80 px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-base font-extrabold text-po-text">Hàng đợi thu ngân</h3>
+            <p className="mt-1 text-xs text-po-text-muted">Các việc cần xử lý trong ca trực.</p>
+          </div>
+          <StatusBadge variant="warning" label={`${unpaidItems.length + refundItems.length} việc`} />
+        </div>
+      </div>
+
+      <div className="grid min-h-0 content-start gap-4 overflow-y-auto p-4">
+        <div>
+          <div className="mb-2.5 flex items-center justify-between gap-3">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-po-text-subtle">
+              Chưa thanh toán
+            </p>
+            <span className="rounded-full bg-po-warning-soft px-2.5 py-1 text-xs font-bold text-po-warning">
+              {unpaidItems.length}
+            </span>
+          </div>
+          {isLoadingUnpaid ? (
+            <div className="rounded-2xl bg-po-surface-muted py-8 text-center">
+              <LoadingSpinner />
+            </div>
+          ) : unpaidItems.length === 0 ? (
+            <EmptyState icon={ReceiptText} title="Không có công nợ" description="Các hóa đơn trong hàng đợi đã được xử lý." className="py-8" />
+          ) : (
+            <div className="grid gap-3">
+              {unpaidItems.map((item) => (
+                <div key={item.invoiceId} className="rounded-2xl bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-po-text">{item.invoiceCode}</p>
+                      <p className="mt-1 text-xs font-medium text-po-text-muted">
+                        {item.invoiceSource}
+                        {item.appointmentId ? ` · lịch ${formatShortId(item.appointmentId)}` : ""}
+                        {item.orderId ? ` · đơn ${formatShortId(item.orderId)}` : ""}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-extrabold text-po-primary">{formatCurrency(item.finalAmount)}</p>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-xs font-bold">
+                    <span className="text-po-text-subtle">{formatDate(item.createdAt)}</span>
+                    <span className="rounded-full bg-white px-2.5 py-1 text-po-warning ring-1 ring-po-border/70">
+                      {item.pendingDays} ngày
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="mb-2.5 flex items-center justify-between gap-3">
+            <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-po-text-subtle">
+              Hoàn tiền thủ công
+            </p>
+            <span className="rounded-full bg-po-danger-soft px-2.5 py-1 text-xs font-bold text-po-danger">
+              {refundItems.length}
+            </span>
+          </div>
+          {isLoadingRefunds ? (
+            <div className="rounded-2xl bg-po-surface-muted py-8 text-center">
+              <LoadingSpinner />
+            </div>
+          ) : refundItems.length === 0 ? (
+            <EmptyState icon={RotateCcw} title="Không có yêu cầu" description="Chưa có hóa đơn hủy cần hoàn tiền thủ công." className="py-8" />
+          ) : (
+            <div className="grid gap-3">
+              {refundItems.map((item) => (
+                <div key={item.invoiceId} className="rounded-2xl bg-po-danger-soft/40 p-4 ring-1 ring-po-danger/15">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-extrabold text-po-text">{item.invoiceCode}</p>
+                      <p className="mt-1 text-xs font-medium text-po-text-muted">
+                        {item.cancellationReason || "Đang chờ xác nhận hoàn tiền"}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-extrabold text-po-danger">
+                      {formatCurrency(item.paidAmount ?? item.finalAmount)}
+                    </p>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="text-xs font-bold text-po-text-subtle">{item.pendingDays} ngày chờ</span>
+                    <button
+                      type="button"
+                      onClick={() => onRefund(item)}
+                      className="inline-flex h-9 items-center rounded-full bg-white px-4 text-xs font-bold text-po-danger ring-1 ring-po-danger/20 transition hover:bg-po-danger hover:text-white"
+                    >
+                      Xác nhận
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function MetricCard({
   label,
   value,
   hint,
   icon: Icon,
   tone,
+  compact,
 }: {
   label: string
   value: string
   hint?: string
-  icon: typeof Banknote
+  icon: LucideIcon
   tone: "success" | "warning" | "danger" | "info"
+  compact?: boolean
 }) {
   const toneClass = {
     success: "bg-po-success-soft text-po-success",
@@ -676,13 +860,15 @@ function MetricCard({
   }[tone]
 
   return (
-    <div className="rounded-[24px] border border-po-border bg-white p-5 shadow-sm">
-      <div className={`mb-4 inline-flex size-10 items-center justify-center rounded-2xl ${toneClass}`}>
+    <div className={`grid min-h-[92px] grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[22px] border border-po-border bg-white shadow-sm ${compact ? "p-4" : "p-5"}`}>
+      <div className={`${compact ? "size-9" : "size-10"} inline-flex items-center justify-center rounded-2xl ${toneClass}`}>
         <Icon className="size-5" />
       </div>
-      <p className="text-sm font-semibold text-po-text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold text-po-text">{value}</p>
-      {hint ? <p className="mt-1 text-xs font-semibold text-po-text-subtle">{hint}</p> : null}
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold text-po-text-muted">{label}</p>
+        <p className={`mt-1 font-extrabold leading-none text-po-text ${compact ? "text-lg" : "text-xl"}`}>{value}</p>
+        {hint ? <p className="mt-1.5 text-xs font-semibold text-po-text-subtle">{hint}</p> : null}
+      </div>
     </div>
   )
 }
@@ -695,9 +881,9 @@ function AgingRow({
   bucket?: { count: number; amount: number }
 }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-po-border bg-white px-4 py-3">
+    <div className="flex items-center justify-between rounded-2xl border border-po-border bg-white px-4 py-2.5">
       <div>
-        <p className="text-sm font-bold text-po-text">{label}</p>
+        <p className="text-xs font-bold text-po-text">{label}</p>
         <p className="text-xs text-po-text-muted">{bucket?.count ?? 0} hóa đơn</p>
       </div>
       <p className="text-sm font-extrabold text-po-text">{formatCurrency(bucket?.amount)}</p>
@@ -719,13 +905,13 @@ function Input({
   compact?: boolean
 }) {
   return (
-    <label className={`grid min-w-0 gap-1.5 text-sm font-semibold text-po-text ${compact ? "w-full sm:w-40" : ""}`}>
+    <label className={`grid min-w-0 gap-1.5 text-xs font-bold text-po-text ${compact ? "w-full sm:w-32" : ""}`}>
       {label}
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 min-w-0 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+        className="h-10 min-w-0 rounded-2xl border border-po-border bg-white px-3 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
       />
     </label>
   )
@@ -737,7 +923,7 @@ function Modal({
   onClose,
 }: {
   title: string
-  children: React.ReactNode
+  children: ReactNode
   onClose: () => void
 }) {
   return (

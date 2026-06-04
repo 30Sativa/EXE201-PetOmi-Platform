@@ -13,7 +13,9 @@ import {
 } from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
+import Avatar from "@/components/ui/Avatar"
 import { useAuth } from "@/contexts/AuthContext"
+import { useProfile } from "@/hooks/useAuthQueries"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -30,8 +32,11 @@ const navItems = [
 ]
 
 export default function OwnerDashboardLayout() {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const { data: profile } = useProfile()
   const navigate = useNavigate()
+  const displayName = profile?.fullName?.trim() || "PetOmi"
+  const accountLabel = user?.email || "Chăm sóc thú cưng"
 
   const handleLogout = async () => {
     await logout()
@@ -46,13 +51,18 @@ export default function OwnerDashboardLayout() {
             to="/dashboard/owner"
             className="flex items-center gap-3 rounded-2xl px-2 py-1.5 text-sm font-extrabold text-po-text no-underline transition hover:bg-po-surface-muted"
           >
-            <span className="grid size-11 place-items-center rounded-2xl bg-po-primary text-white shadow-sm shadow-orange-200">
-              <PawPrint className="size-5" />
-            </span>
-            <span>
-              <span className="block text-base leading-tight">PetOmi</span>
-              <span className="block text-xs font-semibold text-po-text-subtle">
-                Chăm sóc thú cưng
+            <Avatar
+              src={profile?.avatarUrl}
+              alt={displayName}
+              size="md"
+              className="size-11 shrink-0 rounded-2xl ring-2 ring-po-primary-soft"
+            />
+            <span className="min-w-0">
+              <span className="block truncate text-base leading-tight">
+                {displayName}
+              </span>
+              <span className="block truncate text-xs font-semibold text-po-text-subtle">
+                {accountLabel}
               </span>
             </span>
           </Link>

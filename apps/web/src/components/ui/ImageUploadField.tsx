@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Camera, Upload, X } from "lucide-react"
 import { getErrorMessage } from "@/lib/utils"
 import { uploadImageApi, type CloudinaryUploadResult, type ImageType } from "@/services/upload.service"
@@ -64,6 +64,13 @@ export default function ImageUploadField({
   const [error, setError] = useState<string | null>(null)
   const currentPreview = preview ?? value ?? null
 
+  useEffect(() => {
+    queueMicrotask(() => {
+      setPreview(value ?? null)
+      setError(null)
+    })
+  }, [value])
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -84,6 +91,8 @@ export default function ImageUploadField({
         imageType,
         resourceId,
       )
+      URL.revokeObjectURL(objectUrl)
+      setPreview(result.secureUrl)
       onChange(result.secureUrl)
       onUploadComplete?.(result)
     } catch (error) {

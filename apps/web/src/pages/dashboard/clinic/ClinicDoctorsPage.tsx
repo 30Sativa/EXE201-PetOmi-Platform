@@ -1,9 +1,19 @@
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { CalendarPlus, Stethoscope, Trash2, UserPlus } from "lucide-react"
+import {
+  CalendarClock,
+  CalendarPlus,
+  ChevronDown,
+  Clock,
+  Stethoscope,
+  Trash2,
+  UserCheck,
+  UserPlus,
+  Users,
+  type LucideIcon,
+} from "lucide-react"
 import { toast } from "sonner"
 
-import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -19,7 +29,7 @@ import {
   setDoctorScheduleApi,
   updateClinicStaffRoleApi,
 } from "@/services/clinic.service"
-import type { ClinicDoctorListItemResponse } from "@/types"
+import type { ClinicDoctorListItemResponse, DoctorScheduleResponse } from "@/types"
 
 const dayOptions = [
   { value: 1, label: "Thứ 2" },
@@ -30,6 +40,14 @@ const dayOptions = [
   { value: 6, label: "Thứ 7" },
   { value: 0, label: "Chủ nhật" },
 ]
+
+const roleOptions = [
+  { value: "PrimaryVet", label: "Bác sĩ chính" },
+  { value: "Assistant", label: "Trợ lý" },
+]
+
+const roleLabel = (role: string) =>
+  roleOptions.find((option) => option.value === role)?.label ?? role
 
 export default function ClinicDoctorsPage() {
   const queryClient = useQueryClient()
@@ -117,6 +135,19 @@ export default function ClinicDoctorsPage() {
     onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa ca trực.")),
   })
 
+  const doctors = doctorsQuery.data ?? []
+  const schedules = scheduleQuery.data ?? []
+
+  const schedulesByDoctor = useMemo(() => {
+    return schedules.reduce<Record<string, DoctorScheduleResponse[]>>((acc, schedule) => {
+      acc[schedule.vetClinicId] ??= []
+      acc[schedule.vetClinicId].push(schedule)
+      return acc
+    }, {})
+  }, [schedules])
+
+  const selectedDoctorSchedules = scheduleTarget ? schedulesByDoctor[scheduleTarget.vetClinicId] ?? [] : []
+
   if (isClinicLoading) {
     return <div className="rounded-[30px] bg-white/88 py-16 text-center ring-1 ring-po-border/80"><LoadingSpinner /></div>
   }
@@ -125,122 +156,340 @@ export default function ClinicDoctorsPage() {
     return <EmptyState icon={Stethoscope} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi quản lý bác sĩ." />
   }
 
-  const doctors = doctorsQuery.data ?? []
-  const schedules = scheduleQuery.data ?? []
-
   return (
-    <div className="grid gap-6">
-      <div>
-        <h2 className="text-xl font-extrabold text-po-text">Bác sĩ và lịch trực</h2>
-        <p className="mt-1 text-sm text-po-text-muted">Quản lý staff active, vai trò và lịch làm việc trong tuần.</p>
-      </div>
-
-      <section className="rounded-[28px] bg-white/88 p-4 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="grid gap-4 xl:grid-cols-[minmax(220px,0.75fr)_minmax(0,1.25fr)] xl:items-end">
-          <div>
-            <h3 className="text-lg font-extrabold text-po-text">Gán staff</h3>
-            <p className="mt-1 max-w-md text-sm leading-6 text-po-text-muted">
-              Nhập email đăng nhập của bác sĩ hoặc trợ lý để thêm vào clinic.
+    <div className="grid gap-4">
+      <section className="overflow-hidden rounded-[26px] bg-white/90 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
+              Nhân sự clinic
+            </p>
+            <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
+              Bác sĩ, vai trò và lịch trực
+            </h2>
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
+              Quản lý staff và ca làm theo cùng một màn hình để biết ngay ai đang phụ trách lịch nào.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
-            <Input label="Email nhân sự" value={vetEmail} onChange={setVetEmail} />
-            <Select label="Vai trò" value={staffRole} onChange={setStaffRole} options={[{ value: "PrimaryVet", label: "PrimaryVet" }, { value: "Assistant", label: "Assistant" }]} />
-          <button
-            onClick={() => assignMutation.mutate()}
-            disabled={!vetEmail.trim() || assignMutation.isPending}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
-          >
-            <UserPlus className="size-4" />
-            Gán staff
-          </button>
+
+          <div className="grid gap-2 sm:grid-cols-3 lg:w-[470px]">
+            <MetricCard label="Staff active" value={String(doctors.length)} icon={Users} tone="info" />
+            <MetricCard label="Ca trực" value={String(schedules.length)} icon={CalendarClock} tone="success" />
+            <MetricCard label="Đang chọn" value={scheduleTarget ? "1" : "0"} icon={UserCheck} tone="warning" />
           </div>
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
-        <DashboardSection title={`${doctors.length} staff active`} subtitle="ClinicOwner không thể bị deactivate từ đây.">
-          {doctorsQuery.isLoading ? (
-            <div className="py-12 text-center"><LoadingSpinner /></div>
-          ) : doctors.length === 0 ? (
-            <EmptyState icon={Stethoscope} title="Chưa có staff" description="Gán bác sĩ để mở lịch trực và nhận booking." />
-          ) : (
-            <div className="grid gap-3">
-              {doctors.map((doctor) => (
-                <div key={doctor.vetClinicId} className="rounded-2xl border border-po-border bg-white px-4 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold text-po-text">{doctor.fullName}</p>
-                      <p className="mt-1 text-xs text-po-text-muted">{doctor.specialization ?? "Chưa có chuyên môn"} · {formatShortId(doctor.vetClinicId)}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <StatusBadge variant="info" label={doctor.roleName} />
-                        <button onClick={() => setScheduleTarget(doctor)} className="text-xs font-semibold text-po-primary">Chọn lịch trực</button>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => roleMutation.mutate({ vetClinicId: doctor.vetClinicId, role: doctor.roleName === "PrimaryVet" ? "Assistant" : "PrimaryVet" })}
-                        className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:bg-po-primary hover:text-white"
-                      >
-                        Đổi vai trò
-                      </button>
-                      <button
-                        onClick={() => deactivateMutation.mutate(doctor.vetClinicId)}
-                        className="inline-flex h-9 items-center rounded-full bg-po-danger-soft px-4 text-xs font-semibold text-po-danger transition hover:bg-po-danger hover:text-white"
-                      >
-                        Ngưng
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+      <div className="grid gap-4 xl:h-[calc(100dvh-206px)] xl:min-h-[600px] xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-po-border/80 px-4 py-3">
+            <div>
+              <h3 className="text-base font-extrabold text-po-text">Danh sách bác sĩ</h3>
+              <p className="mt-1 text-xs text-po-text-muted">{doctors.length} staff đang active trong clinic.</p>
             </div>
-          )}
-        </DashboardSection>
+            {scheduleTarget ? (
+              <p className="rounded-full bg-po-primary-soft px-3 py-1 text-xs font-bold text-po-primary">
+                Đang chọn {scheduleTarget.fullName}
+              </p>
+            ) : null}
+          </div>
 
-        <DashboardSection
-          title="Lịch trực"
-          subtitle={scheduleTarget ? `Đang chọn ${scheduleTarget.fullName}` : "Chọn một staff để thêm ca trực."}
-        >
-          <div className="grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Select label="Ngày" value={String(dayOfWeek)} onChange={(value) => setDayOfWeek(Number(value))} options={dayOptions.map((day) => ({ value: String(day.value), label: day.label }))} />
-              <Input label="Bắt đầu" type="time" value={startTime} onChange={setStartTime} />
-              <Input label="Kết thúc" type="time" value={endTime} onChange={setEndTime} />
-            </div>
-            <button
-              onClick={() => addScheduleMutation.mutate()}
-              disabled={!scheduleTarget || addScheduleMutation.isPending}
-              className="inline-flex h-10 w-fit items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
-            >
-              <CalendarPlus className="size-4" />
-              Thêm ca trực
-            </button>
-            {scheduleQuery.isLoading ? (
-              <div className="py-8 text-center"><LoadingSpinner /></div>
-            ) : schedules.length === 0 ? (
-              <EmptyState icon={CalendarPlus} title="Chưa có lịch trực" description="Lịch trực sẽ giúp owner chọn slot phù hợp." />
+          <div className="min-h-0 overflow-y-auto p-4">
+            {doctorsQuery.isLoading || scheduleQuery.isLoading ? (
+              <RosterSkeleton />
+            ) : doctors.length === 0 ? (
+              <EmptyState icon={Stethoscope} title="Chưa có staff" description="Gán bác sĩ để mở lịch trực và nhận booking." className="py-14" />
             ) : (
-              <div className="grid gap-2">
-                {schedules.map((schedule) => (
-                  <div key={schedule.scheduleId} className="flex items-center justify-between rounded-2xl border border-po-border bg-white px-4 py-3">
-                    <div>
-                      <p className="text-sm font-bold text-po-text">{schedule.dayName}</p>
-                      <p className="text-xs text-po-text-muted">{formatTime(schedule.startTime)} - {formatTime(schedule.endTime)} · {formatShortId(schedule.vetClinicId)}</p>
-                    </div>
-                    <button
-                      onClick={() => deleteScheduleMutation.mutate({ vetClinicId: schedule.vetClinicId, scheduleId: schedule.scheduleId })}
-                      className="rounded-full p-2 text-po-danger transition hover:bg-po-danger-soft"
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
+              <div className="grid gap-3">
+                {doctors.map((doctor) => (
+                  <DoctorRow
+                    key={doctor.vetClinicId}
+                    doctor={doctor}
+                    schedules={schedulesByDoctor[doctor.vetClinicId] ?? []}
+                    selected={scheduleTarget?.vetClinicId === doctor.vetClinicId}
+                    isBusy={roleMutation.isPending || deactivateMutation.isPending || deleteScheduleMutation.isPending}
+                    onSelect={() => setScheduleTarget(doctor)}
+                    onToggleRole={() =>
+                      roleMutation.mutate({
+                        vetClinicId: doctor.vetClinicId,
+                        role: doctor.roleName === "PrimaryVet" ? "Assistant" : "PrimaryVet",
+                      })
+                    }
+                    onDeactivate={() => deactivateMutation.mutate(doctor.vetClinicId)}
+                  />
                 ))}
               </div>
             )}
           </div>
-        </DashboardSection>
+        </section>
+
+        <aside className="grid min-h-0 gap-4 xl:grid-rows-[auto_minmax(0,1fr)]">
+          <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-base font-extrabold text-po-text">Gán staff</h3>
+                <p className="mt-1 text-xs text-po-text-muted">Dùng email đăng nhập của bác sĩ hoặc trợ lý.</p>
+              </div>
+              <span className="grid size-10 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
+                <UserPlus className="size-5" />
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <Input label="Email nhân sự" value={vetEmail} onChange={setVetEmail} />
+              <Select
+                label="Vai trò"
+                value={staffRole}
+                onChange={setStaffRole}
+                options={roleOptions}
+              />
+            </div>
+
+            <button
+              onClick={() => assignMutation.mutate()}
+              disabled={!vetEmail.trim() || assignMutation.isPending}
+              className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
+            >
+              <UserPlus className="size-4" />
+              {assignMutation.isPending ? "Đang gán..." : "Gán staff"}
+            </button>
+          </section>
+
+          <section className="flex min-h-0 flex-col overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+            <div className="border-b border-po-border/80 px-4 py-3">
+              <h3 className="text-base font-extrabold text-po-text">Lịch trực</h3>
+              <p className="mt-1 text-xs text-po-text-muted">
+                {scheduleTarget ? `Thêm ca cho ${scheduleTarget.fullName}.` : "Chọn bác sĩ ở danh sách bên trái."}
+              </p>
+            </div>
+
+            <div className="grid min-h-0 content-start gap-4 overflow-y-auto p-4">
+              <div className="grid gap-3">
+                <Select
+                  label="Bác sĩ"
+                  value={scheduleTarget?.vetClinicId ?? ""}
+                  onChange={(value) => setScheduleTarget(doctors.find((doctor) => doctor.vetClinicId === value) ?? null)}
+                  options={[
+                    { value: "", label: "Chọn bác sĩ" },
+                    ...doctors.map((doctor) => ({ value: doctor.vetClinicId, label: `${doctor.fullName} · ${roleLabel(doctor.roleName)}` })),
+                  ]}
+                />
+                <div className="grid gap-2">
+                  <Select
+                    label="Ngày"
+                    value={String(dayOfWeek)}
+                    onChange={(value) => setDayOfWeek(Number(value))}
+                    options={dayOptions.map((day) => ({ value: String(day.value), label: day.label }))}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input label="Bắt đầu" type="time" value={startTime} onChange={setStartTime} />
+                    <Input label="Kết thúc" type="time" value={endTime} onChange={setEndTime} />
+                  </div>
+                </div>
+                <button
+                  onClick={() => addScheduleMutation.mutate()}
+                  disabled={!scheduleTarget || addScheduleMutation.isPending}
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
+                >
+                  <CalendarPlus className="size-4" />
+                  {addScheduleMutation.isPending ? "Đang thêm..." : "Thêm ca trực"}
+                </button>
+              </div>
+
+              <div className="grid gap-2">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-po-text-subtle">
+                  Ca của bác sĩ đang chọn
+                </p>
+                {!scheduleTarget ? (
+                  <EmptyState icon={Clock} title="Chưa chọn bác sĩ" description="Chọn một staff để xem ca trực riêng." className="py-8" />
+                ) : selectedDoctorSchedules.length === 0 ? (
+                  <EmptyState icon={CalendarPlus} title="Chưa có ca trực" description="Thêm ca đầu tiên cho bác sĩ này." className="py-8" />
+                ) : (
+                  selectedDoctorSchedules.map((schedule) => (
+                    <SchedulePill
+                      key={schedule.scheduleId}
+                      schedule={schedule}
+                      isDeleting={deleteScheduleMutation.isPending}
+                      onDelete={() =>
+                        deleteScheduleMutation.mutate({
+                          vetClinicId: schedule.vetClinicId,
+                          scheduleId: schedule.scheduleId,
+                        })
+                      }
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+        </aside>
       </div>
+    </div>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string
+  value: string
+  icon: LucideIcon
+  tone: "info" | "success" | "warning"
+}) {
+  const toneClass = {
+    info: "bg-po-primary-soft text-po-primary",
+    success: "bg-po-success-soft text-po-success",
+    warning: "bg-po-warning-soft text-po-warning",
+  }[tone]
+
+  return (
+    <div className="grid min-h-[76px] grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[22px] bg-po-surface-muted/60 p-3 ring-1 ring-po-border/70">
+      <span className={`grid size-9 place-items-center rounded-2xl ${toneClass}`}>
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold text-po-text-muted">{label}</p>
+        <p className="mt-1 text-lg font-extrabold leading-none text-po-text">{value}</p>
+      </div>
+    </div>
+  )
+}
+
+function DoctorRow({
+  doctor,
+  schedules,
+  selected,
+  isBusy,
+  onSelect,
+  onToggleRole,
+  onDeactivate,
+}: {
+  doctor: ClinicDoctorListItemResponse
+  schedules: DoctorScheduleResponse[]
+  selected: boolean
+  isBusy: boolean
+  onSelect: () => void
+  onToggleRole: () => void
+  onDeactivate: () => void
+}) {
+  return (
+    <article className={`grid gap-4 rounded-[22px] p-3 ring-1 transition lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start ${
+      selected
+        ? "bg-po-primary-soft/55 ring-po-primary/30"
+        : "bg-po-surface-muted/45 ring-po-border/70 hover:bg-white hover:shadow-sm hover:shadow-orange-100/70"
+    }`}>
+      <div className="flex min-w-0 gap-3">
+        {doctor.avatarUrl ? (
+          <img src={doctor.avatarUrl} alt={doctor.fullName} className="size-14 shrink-0 rounded-2xl border border-po-border object-cover" />
+        ) : (
+          <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/70">
+            <Stethoscope className="size-5" />
+          </span>
+        )}
+
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <h4 className="truncate text-sm font-extrabold text-po-text">{doctor.fullName}</h4>
+            <StatusBadge variant="info" label={roleLabel(doctor.roleName)} />
+          </div>
+          <p className="mt-1 text-xs font-medium text-po-text-muted">
+            {doctor.specialization ?? "Chưa có chuyên môn"} · {formatShortId(doctor.vetClinicId)}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {schedules.length === 0 ? (
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-po-text-subtle ring-1 ring-po-border/70">
+                Chưa có ca
+              </span>
+            ) : (
+              schedules.slice(0, 4).map((schedule) => (
+                <span key={schedule.scheduleId} className="rounded-full bg-white px-3 py-1 text-xs font-bold text-po-text-muted ring-1 ring-po-border/70">
+                  {schedule.dayName} {formatTime(schedule.startTime)}-{formatTime(schedule.endTime)}
+                </span>
+              ))
+            )}
+            {schedules.length > 4 ? (
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-po-text-subtle ring-1 ring-po-border/70">
+                +{schedules.length - 4} ca
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 lg:justify-end">
+        <button
+          onClick={onSelect}
+          className="inline-flex h-9 items-center rounded-full bg-po-primary px-4 text-xs font-bold text-white transition hover:bg-po-primary-hover active:translate-y-px"
+        >
+          Chọn lịch
+        </button>
+        <button
+          onClick={onToggleRole}
+          disabled={isBusy}
+          className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-bold text-po-primary transition hover:bg-po-primary hover:text-white disabled:opacity-60 active:translate-y-px"
+        >
+          Đổi vai trò
+        </button>
+        <button
+          onClick={onDeactivate}
+          disabled={isBusy}
+          className="inline-flex h-9 items-center rounded-full bg-po-danger-soft px-4 text-xs font-bold text-po-danger transition hover:bg-po-danger hover:text-white disabled:opacity-60 active:translate-y-px"
+        >
+          Ngưng
+        </button>
+      </div>
+    </article>
+  )
+}
+
+function SchedulePill({
+  schedule,
+  isDeleting,
+  onDelete,
+}: {
+  schedule: DoctorScheduleResponse
+  isDeleting: boolean
+  onDelete: () => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-2xl bg-po-surface-muted/60 px-3 py-2.5">
+      <div>
+        <p className="text-sm font-extrabold text-po-text">{schedule.dayName}</p>
+        <p className="mt-0.5 text-xs font-medium text-po-text-muted">
+          {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
+        </p>
+      </div>
+      <button
+        onClick={onDelete}
+        disabled={isDeleting}
+        className="inline-flex size-8 items-center justify-center rounded-full bg-white text-po-danger ring-1 ring-po-border/70 transition hover:bg-po-danger hover:text-white disabled:opacity-60"
+        aria-label={`Xóa ca ${schedule.dayName}`}
+      >
+        <Trash2 className="size-4" />
+      </button>
+    </div>
+  )
+}
+
+function RosterSkeleton() {
+  return (
+    <div className="grid gap-3">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="grid gap-4 rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="flex gap-3">
+            <div className="size-14 animate-pulse rounded-2xl bg-white" />
+            <div className="grid flex-1 gap-2">
+              <div className="h-4 w-40 animate-pulse rounded-full bg-white" />
+              <div className="h-3 w-32 animate-pulse rounded-full bg-white" />
+              <div className="h-7 w-64 animate-pulse rounded-full bg-white" />
+            </div>
+          </div>
+          <div className="h-9 w-48 animate-pulse rounded-full bg-white lg:justify-self-end" />
+        </div>
+      ))}
     </div>
   )
 }
@@ -257,13 +506,15 @@ function Input({
   type?: string
 }) {
   return (
-    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+    <label className="grid min-w-0 gap-1.5 text-xs font-bold text-po-text">
       {label}
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+        className={`h-10 min-w-0 rounded-2xl border border-po-border bg-white px-3 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20 ${
+          type === "time" ? "font-mono tabular-nums" : ""
+        }`}
       />
     </label>
   )
@@ -280,21 +531,42 @@ function Select({
   options: Array<{ value: string; label: string }>
   onChange: (value: string) => void
 }) {
+  const [open, setOpen] = useState(false)
+  const selected = options.find((option) => option.value === value)
+
   return (
-    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
-      {label}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+    <div className="relative grid min-w-0 gap-1.5 text-xs font-bold text-po-text">
+      <span>{label}</span>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex h-10 min-w-0 items-center justify-between gap-2 rounded-2xl border border-po-border bg-white px-3 text-left text-sm font-medium text-po-text outline-none transition hover:border-po-primary/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="min-w-0 truncate">{selected?.label ?? "Chọn"}</span>
+        <ChevronDown className={`size-4 shrink-0 text-po-text-subtle transition ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open ? (
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-po-border bg-white p-1 shadow-xl shadow-orange-200/30">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value)
+                setOpen(false)
+              }}
+              className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                option.value === value
+                  ? "bg-po-primary text-white"
+                  : "text-po-text hover:bg-po-surface-muted"
+              }`}
+            >
+              <span className="truncate">{option.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   )
 }
-

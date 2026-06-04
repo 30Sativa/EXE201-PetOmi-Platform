@@ -4,6 +4,7 @@ import {
   CalendarCheck,
   Check,
   CheckCircle2,
+  ChevronDown,
   Clock,
   LogIn,
   Plus,
@@ -11,12 +12,12 @@ import {
   UserPlus,
   X,
   XCircle,
+  type LucideIcon,
 } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 
-import DashboardSection from "@/components/dashboard/DashboardSection"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
@@ -120,6 +121,9 @@ export default function ClinicAppointmentsPage() {
   })
 
   const appointments = appointmentsQuery.data?.items ?? []
+  const pendingCount = appointments.filter((appointment) => appointment.status.toLowerCase() === "pending").length
+  const checkedInCount = appointments.filter((appointment) => appointment.status.toLowerCase() === "checked-in").length
+  const walkInCount = appointments.filter((appointment) => appointment.isWalkIn).length
 
   const invalidateAppointments = async () => {
     await Promise.all([
@@ -186,69 +190,94 @@ export default function ClinicAppointmentsPage() {
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-po-text">Quản lý lịch hẹn</h2>
-          <p className="mt-1 text-sm text-po-text-muted">Xác nhận, check-in, tiếp nhận walk-in và mở phiếu khám.</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setIsGuestOpen(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-po-primary-hover"
-          >
-            <UserPlus className="size-4" />
-            Khách vãng lai
-          </button>
-          <button
-            onClick={() => setIsEmergencyOpen(true)}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-po-danger px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-po-danger/90"
-          >
-            <AlertTriangle className="size-4" />
-            Cấp cứu
-          </button>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="w-full lg:flex-1" />
-        <label className="flex h-11 w-fit shrink-0 items-center gap-2 rounded-2xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text-muted">
-          Ngày
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(event) => setDateFilter(event.target.value)}
-            className="h-9 rounded-xl border border-po-border bg-white px-2 text-sm font-semibold text-po-text"
-          />
-        </label>
-      </div>
-
-      <DashboardSection
-        title={`${appointments.length} lịch hẹn`}
-        subtitle={dateFilter ? `Ngày ${formatDate(dateFilter)}` : "Không lọc ngày"}
-      >
-        {appointmentsQuery.isLoading ? (
-          <div className="flex justify-center py-12"><LoadingSpinner /></div>
-        ) : appointmentsQuery.error ? (
-          <EmptyState icon={CalendarCheck} title="Không thể tải lịch hẹn" description="Đã xảy ra lỗi. Vui lòng thử lại." />
-        ) : appointments.length === 0 ? (
-          <EmptyState icon={CalendarCheck} title="Không có lịch hẹn" description="Thử đổi bộ lọc hoặc tạo lịch walk-in cho khách tại quầy." />
-        ) : (
-          <div className="grid gap-3">
-            {appointments.map((appointment) => (
-              <ClinicAppointmentCard
-                key={appointment.appointmentId}
-                appointment={appointment}
-                onAction={(type) => {
-                  setReason("")
-                  setActionTarget({ appointment, type })
-                }}
-                onOpenVisit={() => navigate(`/dashboard/clinic/appointments/${appointment.appointmentId}/visit`)}
-              />
-            ))}
+    <div className="grid gap-4">
+      <section className="overflow-hidden rounded-[26px] bg-white/90 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
+              Lịch clinic
+            </p>
+            <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
+              Quản lý lịch hẹn
+            </h2>
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
+              Xác nhận, check-in, tiếp nhận walk-in và mở phiếu khám trong cùng một hàng đợi.
+            </p>
           </div>
-        )}
-      </DashboardSection>
+
+          <div className="grid gap-2 sm:grid-cols-3 lg:w-[480px]">
+            <MetricCard label="Đang hiển thị" value={String(appointments.length)} icon={CalendarCheck} tone="info" />
+            <MetricCard label="Chờ xác nhận" value={String(pendingCount)} icon={Clock} tone="warning" />
+            <MetricCard label="Đã check-in" value={String(checkedInCount)} icon={Stethoscope} tone="success" />
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+        <div className="grid gap-3 border-b border-po-border/80 px-4 py-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="text-base font-extrabold text-po-text">Hàng đợi lịch hẹn</h3>
+              <p className="mt-1 text-xs text-po-text-muted">
+                {dateFilter ? `Ngày ${formatDate(dateFilter)}` : "Không lọc ngày"} · {walkInCount} walk-in
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => setIsGuestOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
+              >
+                <UserPlus className="size-4" />
+                Khách vãng lai
+              </button>
+              <button
+                onClick={() => setIsEmergencyOpen(true)}
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-po-danger px-4 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-po-danger/90 active:translate-y-0"
+              >
+                <AlertTriangle className="size-4" />
+                Cấp cứu
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+            <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="w-full xl:flex-1" />
+            <label className="flex h-10 w-fit shrink-0 items-center gap-2 rounded-full border border-po-border bg-white px-3 text-xs font-bold text-po-text-muted">
+              Ngày
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(event) => setDateFilter(event.target.value)}
+                className="h-8 rounded-xl border border-po-border bg-white px-2 text-sm font-semibold text-po-text outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+              />
+            </label>
+          </div>
+        </div>
+
+        <div className="max-h-[calc(100dvh-330px)] min-h-[360px] overflow-y-auto p-4">
+          {appointmentsQuery.isLoading ? (
+            <AppointmentSkeleton />
+          ) : appointmentsQuery.error ? (
+            <EmptyState icon={CalendarCheck} title="Không thể tải lịch hẹn" description="Đã xảy ra lỗi. Vui lòng thử lại." className="py-14" />
+          ) : appointments.length === 0 ? (
+            <EmptyState icon={CalendarCheck} title="Không có lịch hẹn" description="Thử đổi bộ lọc hoặc tạo lịch walk-in cho khách tại quầy." className="py-14" />
+          ) : (
+            <div className="grid gap-3">
+              {appointments.map((appointment) => (
+                <ClinicAppointmentCard
+                  key={appointment.appointmentId}
+                  appointment={appointment}
+                  onAction={(type) => {
+                    setReason("")
+                    setActionTarget({ appointment, type })
+                  }}
+                  onOpenVisit={() => navigate(`/dashboard/clinic/appointments/${appointment.appointmentId}/visit`)}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       <ConfirmDialog
         isOpen={actionTarget !== null && actionTarget.type !== "reject" && actionTarget.type !== "cancel"}
@@ -345,25 +374,25 @@ function ClinicAppointmentCard({
   const canOpenVisit = isCheckedIn || status === "completed"
 
   return (
-    <div className="rounded-2xl border border-po-border bg-white px-4 py-4">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <article className="rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70 transition hover:bg-white hover:shadow-sm hover:shadow-orange-100/70">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
         <div className="flex items-start gap-3">
-          <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
+          <div className="grid size-12 shrink-0 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/70">
             <CalendarCheck className="size-5" />
           </div>
-          <div>
+          <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-bold text-po-text">Pet {formatShortId(appointment.petId)}</p>
+              <p className="truncate text-sm font-extrabold text-po-text">Pet {formatShortId(appointment.petId)}</p>
               <StatusBadge variant={statusVariant(appointment.status)} label={statusLabel(appointment.status)} />
               {appointment.isWalkIn ? <span className="rounded-full bg-po-accent-soft px-2.5 py-0.5 text-xs font-medium text-po-accent">Walk-in</span> : null}
             </div>
-            <p className="mt-1 text-xs text-po-text-muted">{appointment.appointmentType}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-po-text-subtle">
-              <span className="flex items-center gap-1">
+            <p className="mt-1 text-xs font-medium text-po-text-muted">{appointment.appointmentType}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-po-text-muted">
+              <span className="flex items-center gap-1 rounded-full bg-white px-3 py-1 ring-1 ring-po-border/70">
                 <CalendarCheck className="size-3" />
                 {formatDate(appointment.appointmentDate)}
               </span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 rounded-full bg-white px-3 py-1 ring-1 ring-po-border/70">
                 <Clock className="size-3" />
                 {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
               </span>
@@ -371,7 +400,7 @@ function ClinicAppointmentCard({
           </div>
         </div>
 
-        <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
           {isPending ? (
             <>
               <ActionButton icon={Check} label="Xác nhận" tone="success" onClick={() => onAction("confirm")} />
@@ -393,6 +422,56 @@ function ClinicAppointmentCard({
           ) : null}
         </div>
       </div>
+    </article>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string
+  value: string
+  icon: LucideIcon
+  tone: "info" | "warning" | "success"
+}) {
+  const toneClass = {
+    info: "bg-po-primary-soft text-po-primary",
+    warning: "bg-po-warning-soft text-po-warning",
+    success: "bg-po-success-soft text-po-success",
+  }[tone]
+
+  return (
+    <div className="grid min-h-[76px] grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[22px] bg-po-surface-muted/60 p-3 ring-1 ring-po-border/70">
+      <span className={`grid size-9 place-items-center rounded-2xl ${toneClass}`}>
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold text-po-text-muted">{label}</p>
+        <p className="mt-1 text-lg font-extrabold leading-none text-po-text">{value}</p>
+      </div>
+    </div>
+  )
+}
+
+function AppointmentSkeleton() {
+  return (
+    <div className="grid gap-3">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div key={index} className="grid gap-4 rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70 lg:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="flex gap-3">
+            <div className="size-12 animate-pulse rounded-2xl bg-white" />
+            <div className="grid flex-1 gap-2">
+              <div className="h-4 w-40 animate-pulse rounded-full bg-white" />
+              <div className="h-3 w-28 animate-pulse rounded-full bg-white" />
+              <div className="h-7 w-64 animate-pulse rounded-full bg-white" />
+            </div>
+          </div>
+          <div className="h-8 w-56 animate-pulse rounded-full bg-white lg:justify-self-end" />
+        </div>
+      ))}
     </div>
   )
 }
@@ -711,7 +790,9 @@ function Input({
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+        className={`h-10 rounded-2xl border border-po-border bg-white px-3 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20 ${
+          type === "time" ? "font-mono tabular-nums" : ""
+        }`}
       />
     </label>
   )
@@ -728,20 +809,42 @@ function Select({
   onChange: (value: string) => void
   options: Array<{ value: string; label: string }>
 }) {
+  const [open, setOpen] = useState(false)
+  const selected = options.find((option) => option.value === value)
+
   return (
-    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
-      {label}
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+    <div className="relative grid min-w-0 gap-1.5 text-sm font-semibold text-po-text">
+      <span>{label}</span>
+      <button
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+        className="flex h-10 min-w-0 items-center justify-between gap-2 rounded-2xl border border-po-border bg-white px-3 text-left text-sm font-medium text-po-text outline-none transition hover:border-po-primary/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
       >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <span className="min-w-0 truncate">{selected?.label ?? "Chọn"}</span>
+        <ChevronDown className={`size-4 shrink-0 text-po-text-subtle transition ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open ? (
+        <div className="absolute left-0 right-0 top-full z-40 mt-1 max-h-56 overflow-y-auto rounded-2xl border border-po-border bg-white p-1 shadow-xl shadow-orange-200/30">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => {
+                onChange(option.value)
+                setOpen(false)
+              }}
+              className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                option.value === value
+                  ? "bg-po-primary text-white"
+                  : "text-po-text hover:bg-po-surface-muted"
+              }`}
+            >
+              <span className="truncate">{option.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   )
 }

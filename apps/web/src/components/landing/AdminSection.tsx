@@ -11,17 +11,17 @@ interface AdminHighlight {
 const highlights: AdminHighlight[] = [
   {
     title: "Duyệt phòng khám",
-    description: "Phòng khám đăng ký, admin xác nhận hoặc từ chối rõ ràng, minh bạch.",
+    description: "Xem hồ sơ đăng ký, xác minh thông tin và phản hồi lý do nếu phòng khám chưa đạt.",
     icon: BadgeCheck,
   },
   {
-    title: "Quản lý người dùng",
-    description: "Phân chia vai trò rõ ràng: Chủ nuôi, Bác sĩ và Quản trị — mỗi người chỉ thấy việc của mình.",
+    title: "Phân quyền dễ hiểu",
+    description: "Chủ nuôi, bác sĩ và quản trị viên được dẫn tới đúng khu vực làm việc của mình.",
     icon: UsersRound,
   },
   {
     title: "Bảo mật dữ liệu",
-    description: "Nhật ký hoạt động, tuân thủ GDPR và bảo vệ quyền riêng tư người dùng.",
+    description: "Thông tin thú cưng chỉ được xem và chia sẻ theo quyền được cấp, có lịch sử để kiểm tra khi cần.",
     icon: Lock,
   },
 ]
@@ -35,19 +35,19 @@ export default function AdminSection() {
         <div className={`grid gap-5 transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">Quản trị viên</p>
           <h2 className="max-w-xl text-4xl font-extrabold leading-tight text-po-text md:text-5xl">
-            Tin cậy bắt đầu từ khâu kiểm duyệt.
+            Giữ hệ thống đáng tin từ bước đăng ký.
           </h2>
           <p className="text-base leading-7 text-po-text-muted">
-            Từ duyệt phòng khám mới đến giám sát hoạt động, admin có một bức tranh rõ ràng về ai đang làm gì trong hệ thống.
+            Admin kiểm soát phòng khám mới, tài khoản người dùng và các thao tác quan trọng bằng những bước rõ ràng, dễ theo dõi.
           </p>
           <div className="grid grid-cols-2 gap-3 pt-2">
             <div className="border-l border-po-border pl-4">
-              <p className="text-2xl font-extrabold text-po-text">Role-based</p>
-              <p className="mt-1 text-xs leading-5 text-po-text-muted">quyền theo vai trò</p>
+              <p className="text-2xl font-extrabold text-po-text">Vai trò rõ ràng</p>
+              <p className="mt-1 text-xs leading-5 text-po-text-muted">mỗi người thấy đúng phần việc</p>
             </div>
             <div className="border-l border-po-border pl-4">
-              <p className="text-2xl font-extrabold text-po-text">Audit log</p>
-              <p className="mt-1 text-xs leading-5 text-po-text-muted">theo dõi thao tác</p>
+              <p className="text-2xl font-extrabold text-po-text">Dễ kiểm tra</p>
+              <p className="mt-1 text-xs leading-5 text-po-text-muted">xem lại thao tác khi cần</p>
             </div>
           </div>
         </div>

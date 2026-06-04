@@ -6,7 +6,7 @@ import type { FaqItem } from "@/types"
 const faqItems: FaqItem[] = [
   {
     question: "PetOmi miễn phí hay có thu phí?",
-    answer: "Tư vấn AI và theo dõi hồ sơ thú cưng hoàn toàn miễn phí. Một số tính năng nâng cao dành cho phòng khám có thể có phí trong tương lai.",
+    answer: "PetOmi hiện miễn phí cho chủ nuôi với tư vấn AI, hồ sơ thú cưng và các nhắc lịch cơ bản. Nếu có gói nâng cao cho phòng khám, chi phí sẽ được thông báo rõ trước khi áp dụng.",
   },
   {
     question: "Phòng khám nhận lịch hẹn từ đâu?",
@@ -42,7 +42,7 @@ export default function FAQ() {
             <AccordionItem
               key={item.question}
               value={item.question}
-              className={`rounded-2xl border border-po-border bg-white px-5 transition-all duration-500 hover:shadow-sm ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
+              className={`overflow-hidden rounded-2xl border border-po-border bg-white transition-all duration-500 hover:shadow-sm data-[open]:shadow-sm ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}
               style={{ transitionDelay: `${i * 60}ms` }}
             >
               <AccordionHeader>

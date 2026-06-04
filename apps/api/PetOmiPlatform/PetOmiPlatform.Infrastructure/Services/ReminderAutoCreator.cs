@@ -171,15 +171,7 @@ namespace PetOmiPlatform.Infrastructure.Services
                             createdByUserId: null,
                             title: $"Nhắc uống thuốc: {medicationName}",
                             message: $"Đã đến giờ uống thuốc {medicationName} cho {petName ?? "thú cưng"}. Liều lượng: {dosage}.",
-                            remindAt: remindAt,
-                            repeatRule: ReminderDomain.SerializeRepeatRule(new RepeatRuleModel
-                            {
-                                Type = RepeatType.Daily,
-                                Interval = 1,
-                                TimesPerDay = timesPerDay,
-                                Until = record.EndDate.Value.ToDateTime(TimeOnly.MaxValue)
-                            }),
-                            repeatUntil: record.EndDate.Value.ToDateTime(TimeOnly.MaxValue)
+                            remindAt: remindAt
                         );
                         reminders.Add(reminder);
                     }

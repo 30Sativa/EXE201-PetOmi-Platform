@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System;
 using System.Text.Json;
@@ -50,6 +51,7 @@ namespace PetOmiPlatform.Infrastructure.BackgroundServices
             using var scope = _serviceProvider.CreateScope();
             var reminderRepo = scope.ServiceProvider.GetRequiredService<IReminderRepository>();
             var dispatcher = scope.ServiceProvider.GetRequiredService<INotificationDispatcher>();
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
             var pendingReminders = await reminderRepo.GetPendingRemindersAsync(DateTime.UtcNow, 100);
 
@@ -63,6 +65,7 @@ namespace PetOmiPlatform.Infrastructure.BackgroundServices
 
                     // If has repeat rule, generate next occurrence
                     await GenerateNextOccurrenceAsync(reminder, reminderRepo, ct);
+                    await unitOfWork.SaveChangesAsync(ct);
 
                     _logger.LogInformation("Reminder {Id} sent and marked as sent", reminder.Id);
                 }
@@ -81,13 +84,20 @@ namespace PetOmiPlatform.Infrastructure.BackgroundServices
             if (string.IsNullOrWhiteSpace(reminder.RepeatRule))
                 return;
 
+            if (reminder.SourceType == ReminderSourceType.System
+                && reminder.ReminderType == ReminderType.Medication
+                && string.Equals(reminder.EntityType, "PetMedicalRecord", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
             try
             {
                 var rule = reminder.ParseRepeatRule<RepeatRuleModel>();
                 if (rule == null || rule.Type == RepeatType.None)
                     return;
 
-                DateTime nextRemindAt = CalculateNextRemindAt(reminder.RemindAt, rule);
+                DateTime nextRemindAt = CalculateNextRemindAt(reminder.RemindAt, rule, DateTime.UtcNow);
                 if (nextRemindAt > (reminder.RepeatUntil ?? DateTime.MaxValue))
                     return;
 
@@ -114,15 +124,24 @@ namespace PetOmiPlatform.Infrastructure.BackgroundServices
             }
         }
 
-        private DateTime CalculateNextRemindAt(DateTime currentRemindAt, RepeatRuleModel rule)
+        private DateTime CalculateNextRemindAt(DateTime currentRemindAt, RepeatRuleModel rule, DateTime now)
         {
-            return rule.Type switch
+            var interval = Math.Max(rule.Interval, 1);
+            var nextRemindAt = currentRemindAt;
+
+            do
             {
-                RepeatType.Daily => currentRemindAt.AddDays(rule.Interval),
-                RepeatType.Weekly => currentRemindAt.AddDays(7 * rule.Interval),
-                RepeatType.Monthly => currentRemindAt.AddMonths(rule.Interval),
-                _ => currentRemindAt
-            };
+                nextRemindAt = rule.Type switch
+                {
+                    RepeatType.Daily => nextRemindAt.AddDays(interval),
+                    RepeatType.Weekly => nextRemindAt.AddDays(7 * interval),
+                    RepeatType.Monthly => nextRemindAt.AddMonths(interval),
+                    _ => nextRemindAt
+                };
+            }
+            while (nextRemindAt <= now && rule.Type != RepeatType.None);
+
+            return nextRemindAt;
         }
     }
 }

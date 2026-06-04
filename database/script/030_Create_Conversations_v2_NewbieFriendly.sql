@@ -1,37 +1,59 @@
--- ===================================================================
 -- PET ADVISOR AI - MIGRATION 021
--- Tạo bảng Conversations trong SQL Server Core Backend
--- Lưu phiên chat ở Core Backend, không lưu trong PostgreSQL AI Service
--- Không cache pet metadata; mỗi lần chat AI Service lấy pet context từ Core Backend
--- ===================================================================
+-- Create Conversations in SQL Server core backend.
 
 USE PetOmni_DB;
 GO
 
-CREATE TABLE Conversations (
-    ConversationID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY DEFAULT NEWSEQUENTIALID(), -- Khóa chính GUID của conversation
-    UserID         UNIQUEIDENTIFIER NOT NULL,                                       -- User sở hữu conversation
-    PetID          UNIQUEIDENTIFIER NULL,                                           -- Pet liên quan, NULL nếu chat general
-    Title          NVARCHAR(200)    NULL,                                           -- Tiêu đề ngắn để hiển thị danh sách chat
-    IsActive       BIT              NOT NULL DEFAULT 1,                             -- 1=còn dùng, 0=đã xóa mềm
-    CreatedAt      DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),              -- Thời điểm tạo UTC
-    UpdatedAt      DATETIME2        NOT NULL DEFAULT SYSUTCDATETIME(),              -- Thời điểm có message mới nhất
-    DeletedAt      DATETIME         NULL,                                           -- Thời điểm xóa mềm, NULL nếu chưa xóa
+IF OBJECT_ID('dbo.Conversations', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Conversations (
+        ConversationID UNIQUEIDENTIFIER NOT NULL
+            CONSTRAINT DF_Conversations_ConversationID DEFAULT NEWSEQUENTIALID(),
+        UserID         UNIQUEIDENTIFIER NOT NULL,
+        PetID          UNIQUEIDENTIFIER NULL,
+        Title          NVARCHAR(200)    NULL,
+        IsActive       BIT              NOT NULL
+            CONSTRAINT DF_Conversations_IsActive DEFAULT 1,
+        CreatedAt      DATETIME2        NOT NULL
+            CONSTRAINT DF_Conversations_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt      DATETIME2        NOT NULL
+            CONSTRAINT DF_Conversations_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        DeletedAt      DATETIME         NULL,
 
-    CONSTRAINT FK_Conversations_User
-        FOREIGN KEY (UserID) REFERENCES Users(UserID),                              -- FK tới bảng Users
+        CONSTRAINT FK_Conversations_User
+            FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID),
 
-    CONSTRAINT FK_Conversations_Pet
-        FOREIGN KEY (PetID) REFERENCES Pets(PetID)                                  -- FK tới bảng Pets
-);
+        CONSTRAINT FK_Conversations_Pet
+            FOREIGN KEY (PetID) REFERENCES dbo.Pets(PetID),
+
+        CONSTRAINT PK_Conversations
+            PRIMARY KEY (ConversationID)
+    );
+END
 GO
 
-CREATE INDEX IX_Conversations_User_UpdatedAt
-ON Conversations (UserID, UpdatedAt DESC, CreatedAt DESC)
-WHERE IsActive = 1;                                                                 -- Lấy list conversation còn active theo user
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_Conversations_User_UpdatedAt'
+      AND object_id = OBJECT_ID('dbo.Conversations')
+)
+BEGIN
+    CREATE INDEX IX_Conversations_User_UpdatedAt
+    ON dbo.Conversations (UserID, UpdatedAt DESC, CreatedAt DESC)
+    WHERE IsActive = 1;
+END
 GO
 
-CREATE INDEX IX_Conversations_Pet_UpdatedAt
-ON Conversations (PetID, UpdatedAt DESC, CreatedAt DESC)
-WHERE PetID IS NOT NULL AND IsActive = 1;                                           -- Lấy conversation theo pet
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_Conversations_Pet_UpdatedAt'
+      AND object_id = OBJECT_ID('dbo.Conversations')
+)
+BEGIN
+    CREATE INDEX IX_Conversations_Pet_UpdatedAt
+    ON dbo.Conversations (PetID, UpdatedAt DESC, CreatedAt DESC)
+    WHERE PetID IS NOT NULL AND IsActive = 1;
+END
 GO

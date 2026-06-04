@@ -50,4 +50,5 @@ public partial class Pet
     public virtual ICollection<PetWeightLog> PetWeightLogs { get; set; } = new List<PetWeightLog>();
 
     public virtual ICollection<Reminder> Reminders { get; set; } = new List<Reminder>();
+    public virtual ICollection<Conversation> Conversations { get; set; } = new List<Conversation>();
 }

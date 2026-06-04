@@ -5,5 +5,6 @@
         public const string OwnerOnly = "OwnerOnly";
         public const string AdminOnly = "AdminOnly";
         public const string VetOnly = "VetOnly";
+        public const string InternalApiKey = "InternalApiKey";
     }
 }

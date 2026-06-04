@@ -432,3 +432,7 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# PetOmi AI Service generated crawl artifacts
+apps/ai-service/.env*
+apps/ai-service/output/

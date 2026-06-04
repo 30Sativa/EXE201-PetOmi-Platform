@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Application.Features.PetAi.Interfaces;
 using PetOmiPlatform.Domain.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Domain.Interfaces.Services;
@@ -15,6 +16,8 @@ using PetOmiPlatform.Infrastructure.Common.Settings;
 using PetOmiPlatform.Infrastructure.External;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 using PetOmiPlatform.Infrastructure.Persistence.Repositories;
+using PetOmiPlatform.Infrastructure.Persistence.UnitOfWork;
+using PetOmiPlatform.Infrastructure.Persistence.Repositories.PetAi;
 using PetOmiPlatform.Infrastructure.Persistence.UnitOfWork;
 using PetOmiPlatform.Infrastructure.Security.Jwt;
 using PetOmiPlatform.Infrastructure.Security.PasswordHasher;
@@ -58,6 +61,23 @@ namespace PetOmiPlatform.Infrastructure
                 .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+
+                            if (!string.IsNullOrEmpty(accessToken)
+                                && path.StartsWithSegments("/hubs"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            return Task.CompletedTask;
+                        }
+                    };
+
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer           = true,
@@ -156,6 +176,21 @@ namespace PetOmiPlatform.Infrastructure
             {
                 services.AddHostedService<BackgroundServices.ReminderProcessorService>();
             }
+
+            // AI background worker
+            services.AddSingleton<IAiTaskQueue, BackgroundServices.AiTaskQueue>();
+            services.AddHostedService<BackgroundServices.AiBackgroundService>();
+
+            // AI Service client
+            services.AddHttpClient("AiService");
+            services.AddScoped<IAiServiceClient, AiServiceClient>();
+
+            // Chat repositories
+            services.AddScoped<IConversationRepository, ConversationRepository>();
+            services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
+
+            // Pet AI internal endpoints (for Python AI Service)
+            services.AddScoped<IPetAiRepository, PetAiRepository>();
 
             return services;
         }

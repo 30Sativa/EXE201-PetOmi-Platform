@@ -19,23 +19,35 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         private readonly IGoogleAuthService _googleAuthService;
         private readonly IUserRepository _userRepository;
         private readonly IExternalLoginRepository _externalLoginRepository;
+        private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly IUserSessionRepository _userSessionRepository;
+        private readonly IUserDeviceRepository _userDeviceRepository;
         private readonly IUserRoleRepository _userRoleRepository;
         private readonly IJwtService _jwtService;
+        private readonly ITokenGenerator _tokenGenerator;
         private readonly IUnitOfWork _unitOfWork;
 
         public GoogleLoginCommandHandler(
             IGoogleAuthService googleAuthService,
             IUserRepository userRepository,
             IExternalLoginRepository externalLoginRepository,
+            IRefreshTokenRepository refreshTokenRepository,
+            IUserSessionRepository userSessionRepository,
+            IUserDeviceRepository userDeviceRepository,
             IUserRoleRepository userRoleRepository,
             IJwtService jwtService,
+            ITokenGenerator tokenGenerator,
             IUnitOfWork unitOfWork)
         {
             _googleAuthService = googleAuthService;
             _userRepository = userRepository;
             _externalLoginRepository = externalLoginRepository;
+            _refreshTokenRepository = refreshTokenRepository;
+            _userSessionRepository = userSessionRepository;
+            _userDeviceRepository = userDeviceRepository;
             _userRoleRepository = userRoleRepository;
             _jwtService = jwtService;
+            _tokenGenerator = tokenGenerator;
             _unitOfWork = unitOfWork;
         }
 
@@ -92,6 +104,71 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
+            var userAgent = string.IsNullOrWhiteSpace(command.UserAgent)
+                ? "Unknown"
+                : command.UserAgent;
+            var deviceFingerprint = "google-oauth:" + _tokenGenerator.HashToken(
+                $"{userAgent}|{command.IpAddress ?? "unknown"}");
+
+            var device = await _userDeviceRepository.GetByFingerprintAsync(user.Id, deviceFingerprint);
+
+            if (device != null)
+            {
+                device.EnsureNotBlocked();
+                device.UpdateLastLogin(userAgent);
+                await _userDeviceRepository.UpdateAsync(device);
+            }
+            else
+            {
+                device = UserDeviceDomain.Create(
+                    userId: user.Id,
+                    deviceName: "Google OAuth",
+                    deviceType: "web",
+                    deviceFingerprint: deviceFingerprint,
+                    userAgent: userAgent);
+
+                await _userDeviceRepository.AddAsync(device);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
+            var session = await _userSessionRepository.GetByUserAndDeviceAsync(user.Id, device.Id);
+
+            if (session != null)
+            {
+                if (session.RefreshTokenId.HasValue)
+                {
+                    var oldToken = await _refreshTokenRepository.GetByIdAsync(session.RefreshTokenId.Value);
+                    oldToken?.Revoke();
+                    if (oldToken != null)
+                    {
+                        await _refreshTokenRepository.UpdateAsync(oldToken);
+                    }
+                }
+            }
+            else
+            {
+                session = UserSessionDomain.Create(user.Id, device.Id);
+                await _userSessionRepository.AddAsync(session);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+
+            var refreshTokenRaw = _tokenGenerator.GenerateRefreshToken();
+            var refreshTokenHash = _tokenGenerator.HashToken(refreshTokenRaw);
+            var refreshToken = RefreshTokensDomain.Create(
+                userId: user.Id,
+                tokenHash: refreshTokenHash,
+                deviceId: device.Id,
+                createdByIp: command.IpAddress,
+                userAgent: userAgent);
+
+            await _refreshTokenRepository.AddAsync(refreshToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            session.AssignToken(refreshToken.Id);
+            await _userSessionRepository.UpdateAsync(session);
+            await _userRepository.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             // 4. Generate JWT
             var roles = await _userRoleRepository.GetRolesByUserIdAsync(user.Id);
             var activeRole = AuthRoleResolver.ResolveDefaultActiveRole(roles);
@@ -100,6 +177,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             return new LoginResponse
             {
                 AccessToken = token,
+                RefreshToken = refreshTokenRaw,
                 ActiveRole = activeRole,
                 Roles = roles,
                 UserId = user.Id,

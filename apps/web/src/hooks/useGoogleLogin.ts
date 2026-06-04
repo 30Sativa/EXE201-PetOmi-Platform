@@ -11,6 +11,7 @@ export function useGoogleLogin() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
       if (event.data?.type !== "GOOGLE_AUTH_SUCCESS") return
 
       const {

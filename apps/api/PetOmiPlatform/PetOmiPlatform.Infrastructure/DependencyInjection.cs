@@ -1,7 +1,9 @@
 
 
 
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,7 +20,6 @@ using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 using PetOmiPlatform.Infrastructure.Persistence.Repositories;
 using PetOmiPlatform.Infrastructure.Persistence.UnitOfWork;
 using PetOmiPlatform.Infrastructure.Persistence.Repositories.PetAi;
-using PetOmiPlatform.Infrastructure.Persistence.UnitOfWork;
 using PetOmiPlatform.Infrastructure.Security.Jwt;
 using PetOmiPlatform.Infrastructure.Security.PasswordHasher;
 using PetOmiPlatform.Infrastructure.Security.Token;
@@ -30,6 +31,8 @@ namespace PetOmiPlatform.Infrastructure
 {
     public static class DependencyInjection
     {
+        private const string GoogleExternalCookieScheme = "GoogleExternal";
+
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,
             IConfiguration configuration)
@@ -55,6 +58,8 @@ namespace PetOmiPlatform.Infrastructure
             // Jwt
             var jwtSection = configuration.GetSection("JwtSettings");
             services.Configure<JwtSettings>(jwtSection);
+            var googleSection = configuration.GetSection("Authentication:Google");
+            services.Configure<GoogleAuthSettings>(googleSection);
 
             var jwtSettings = jwtSection.Get<JwtSettings>()!;
             services
@@ -89,6 +94,25 @@ namespace PetOmiPlatform.Infrastructure
                         IssuerSigningKey         = new SymmetricSecurityKey(
                             Encoding.UTF8.GetBytes(jwtSettings.Secret))
                     };
+                })
+                .AddCookie(GoogleExternalCookieScheme, options =>
+                {
+                    options.Cookie.Name = "PetOmi.Google.External";
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+                    options.SlidingExpiration = false;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                })
+                .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
+                {
+                    var googleSettings = googleSection.Get<GoogleAuthSettings>() ?? new GoogleAuthSettings();
+                    options.ClientId = googleSettings.ClientId ?? string.Empty;
+                    options.ClientSecret = googleSettings.ClientSecret ?? string.Empty;
+                    options.CallbackPath = "/api/auth/google/signin";
+                    options.SignInScheme = GoogleExternalCookieScheme;
+                    options.SaveTokens = true;
+                    options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
                 });
 
 

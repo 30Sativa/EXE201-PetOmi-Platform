@@ -134,6 +134,21 @@ export interface ClinicDoctorListItemResponse {
   roleName: string
 }
 
+export interface ClinicPetSearchItemResponse {
+  petId: string
+  ownerUserId: string
+  petName: string
+  species: string
+  breed: string | null
+  gender: string | null
+  avatarUrl: string | null
+  ownerEmail: string
+  ownerFullName: string | null
+  ownerPhone: string | null
+  lastAppointmentDate: string | null
+  lastAppointmentStatus: string | null
+}
+
 export interface AssignStaffRequest {
   vetEmail?: string
   vetProfileId?: string

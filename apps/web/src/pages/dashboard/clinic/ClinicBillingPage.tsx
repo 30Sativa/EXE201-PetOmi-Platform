@@ -20,7 +20,9 @@ import { toast } from "sonner"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { appointmentStatusLabel, appointmentTypeLabel, invoiceSourceLabel, invoiceStatusLabel } from "@/lib/clinicDisplay"
 import { formatCurrency, formatDate, formatShortId, formatTime } from "@/lib/format"
 import { getErrorMessage } from "@/lib/utils"
 import {
@@ -61,12 +63,12 @@ type RetailCartItem = {
 
 const appointmentStatusOptions = [
   { value: "all", label: "Tất cả trạng thái" },
-  { value: "pending", label: "Chờ xác nhận" },
-  { value: "confirmed", label: "Đã xác nhận" },
-  { value: "checked-in", label: "Đã check-in" },
-  { value: "completed", label: "Hoàn tất" },
-  { value: "cancelled", label: "Đã hủy" },
-  { value: "no-show", label: "Không đến" },
+  { value: "Pending", label: "Chờ xác nhận" },
+  { value: "Confirmed", label: "Đã xác nhận" },
+  { value: "CheckedIn", label: "Đã check-in" },
+  { value: "Completed", label: "Hoàn tất" },
+  { value: "Cancelled", label: "Đã hủy" },
+  { value: "NoShow", label: "Không đến" },
 ]
 
 type BillingWorkspace = "checkout" | "monitor"
@@ -80,6 +82,7 @@ export default function ClinicBillingPage() {
   const [appointmentDate, setAppointmentDate] = useState(today)
   const [appointmentStatus, setAppointmentStatus] = useState("all")
   const [appointmentSearch, setAppointmentSearch] = useState("")
+  const debouncedAppointmentSearch = useDebouncedValue(appointmentSearch.trim(), 300)
   const [appointmentDraftId, setAppointmentDraftId] = useState("")
   const [selectedAppointmentId, setSelectedAppointmentId] = useState("")
   const [discountAmount, setDiscountAmount] = useState("0")
@@ -124,13 +127,13 @@ export default function ClinicBillingPage() {
   })
 
   const billingAppointmentsQuery = useQuery({
-    queryKey: ["clinic", clinicId, "billing-appointments", appointmentDate, appointmentStatus, appointmentSearch],
+    queryKey: ["clinic", clinicId, "billing-appointments", appointmentDate, appointmentStatus, debouncedAppointmentSearch],
     queryFn: () =>
       getClinicAppointmentsApi({
         clinicId,
         status: appointmentStatus === "all" ? undefined : appointmentStatus,
         date: appointmentDate || undefined,
-        search: appointmentSearch.trim() || undefined,
+        search: debouncedAppointmentSearch || undefined,
         page: 1,
         pageSize: 100,
       }),
@@ -679,17 +682,17 @@ function SePayPaymentStatusPanel({
     AmountMismatch: "border-po-danger/30 bg-po-danger-soft text-po-danger",
   }[effectiveStatus] ?? "border-po-border bg-po-surface-muted text-po-text-muted"
 
-  const message = status?.message ?? "Dang cho thanh toan..."
+  const message = status?.message ?? "Đang chờ thanh toán..."
 
   return (
     <div className={`rounded-2xl border px-4 py-3 text-left ${tone}`}>
       <p className="text-sm font-extrabold">{message}</p>
       {status?.receivedAmount != null ? (
         <p className="mt-1 text-xs font-semibold">
-          Da nhan {formatCurrency(status.receivedAmount)} / can thu {formatCurrency(status.finalAmount)}
+          Đã nhận {formatCurrency(status.receivedAmount)} / cần thu {formatCurrency(status.finalAmount)}
         </p>
       ) : (
-        <p className="mt-1 text-xs font-semibold">{isLoading ? "Dang kiem tra giao dich..." : "Tu dong kiem tra moi 3 giay."}</p>
+        <p className="mt-1 text-xs font-semibold">{isLoading ? "Đang kiểm tra giao dịch..." : "Tự động kiểm tra mỗi 3 giây."}</p>
       )}
     </div>
   )
@@ -745,13 +748,13 @@ function AppointmentSelect({
         </option>
         {appointments.map((appointment) => (
           <option key={appointment.appointmentId} value={appointment.appointmentId}>
-            {formatTime(appointment.startTime)} - Pet {formatShortId(appointment.petId)} - {appointment.appointmentType} - {appointment.status}
+            {formatTime(appointment.startTime)} - Pet {formatShortId(appointment.petId)} - {appointmentTypeLabel(appointment.appointmentType)} - {appointmentStatusLabel(appointment.status)}
           </option>
         ))}
       </select>
       <span className="flex items-center gap-1 text-[11px] font-medium text-po-text-subtle">
         <CalendarCheck className="size-3" />
-        Backend search theo ngày, trạng thái, pet, owner, dịch vụ hoặc mã lịch.
+        Chọn đúng lịch để lấy dịch vụ và toa thuốc vào hóa đơn.
       </span>
     </label>
   )
@@ -781,13 +784,13 @@ function InvoiceCard({
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-bold text-po-text">{invoice.invoiceCode}</p>
-            <StatusBadge variant={isPaid ? "success" : isCancelled ? "danger" : "warning"} label={invoice.status} />
+            <StatusBadge variant={isPaid ? "success" : isCancelled ? "danger" : "warning"} label={invoiceStatusLabel(invoice.status)} />
           </div>
           <p className="mt-1 text-xs text-po-text-muted">{invoice.items.length} dòng · tạo ngày {formatDate(invoice.createdAt)}</p>
           <p className="mt-1 text-xs text-po-text-subtle">
-            Nguồn: {invoice.invoiceSource}
-            {invoice.appointmentId ? ` · Appointment ${formatShortId(invoice.appointmentId)}` : ""}
-            {invoice.orderId ? ` · Order ${formatShortId(invoice.orderId)}` : ""}
+            Nguồn: {invoiceSourceLabel(invoice.invoiceSource)}
+            {invoice.appointmentId ? ` · Lịch ${formatShortId(invoice.appointmentId)}` : ""}
+            {invoice.orderId ? ` · Đơn hàng ${formatShortId(invoice.orderId)}` : ""}
           </p>
         </div>
         <p className="text-xl font-extrabold text-po-primary">{formatCurrency(invoice.finalAmount)}</p>
@@ -886,7 +889,7 @@ function BillingQueue({
                     <div className="min-w-0">
                       <p className="truncate text-sm font-extrabold text-po-text">{item.invoiceCode}</p>
                       <p className="mt-1 text-xs font-medium text-po-text-muted">
-                        {item.invoiceSource}
+                        {invoiceSourceLabel(item.invoiceSource)}
                         {item.appointmentId ? ` · lịch ${formatShortId(item.appointmentId)}` : ""}
                         {item.orderId ? ` · đơn ${formatShortId(item.orderId)}` : ""}
                       </p>

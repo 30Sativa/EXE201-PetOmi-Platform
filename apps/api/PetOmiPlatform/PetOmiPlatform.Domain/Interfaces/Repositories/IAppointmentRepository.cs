@@ -12,10 +12,11 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
             Guid clinicId,
             string? status,
             DateOnly? date,
+            string? search,
             int page,
             int pageSize);
 
-        Task<int> CountByClinicAsync(Guid clinicId, string? status, DateOnly? date);
+        Task<int> CountByClinicAsync(Guid clinicId, string? status, DateOnly? date, string? search);
 
         /// <summary>Owner xem lịch hẹn của pet/bản thân.</summary>
         Task<IEnumerable<AppointmentDomain>> GetByOwnerAsync(

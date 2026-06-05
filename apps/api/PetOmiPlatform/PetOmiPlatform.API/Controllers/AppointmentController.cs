@@ -26,11 +26,12 @@ namespace PetOmiPlatform.API.Controllers
             [FromQuery] Guid clinicId,
             [FromQuery] string? status,
             [FromQuery] DateOnly? date,
+            [FromQuery] string? search,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 20)
         {
             var result = await Mediator.Send(
-                new GetClinicAppointmentsQuery(CurrentUserId, clinicId, status, date, page, pageSize));
+                new GetClinicAppointmentsQuery(CurrentUserId, clinicId, status, date, search, page, pageSize));
             return Ok(BaseResponse<PagedData<AppointmentListItemResponse>>.Ok(result));
         }
 

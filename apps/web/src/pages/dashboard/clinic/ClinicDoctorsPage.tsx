@@ -31,6 +31,15 @@ const dayOptions = [
   { value: 0, label: "Chủ nhật" },
 ]
 
+const staffRoleOptions = [
+  { value: "PrimaryVet", label: "Bác sĩ chính" },
+  { value: "Assistant", label: "Trợ lý" },
+]
+
+function staffRoleLabel(roleName: string) {
+  return staffRoleOptions.find((role) => role.value === roleName)?.label ?? roleName
+}
+
 export default function ClinicDoctorsPage() {
   const queryClient = useQueryClient()
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
@@ -145,7 +154,7 @@ export default function ClinicDoctorsPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto] sm:items-end">
             <Input label="Email nhân sự" value={vetEmail} onChange={setVetEmail} />
-            <Select label="Vai trò" value={staffRole} onChange={setStaffRole} options={[{ value: "PrimaryVet", label: "PrimaryVet" }, { value: "Assistant", label: "Assistant" }]} />
+            <Select label="Vai trò" value={staffRole} onChange={setStaffRole} options={staffRoleOptions} />
           <button
             onClick={() => assignMutation.mutate()}
             disabled={!vetEmail.trim() || assignMutation.isPending}
@@ -173,7 +182,7 @@ export default function ClinicDoctorsPage() {
                       <p className="text-sm font-bold text-po-text">{doctor.fullName}</p>
                       <p className="mt-1 text-xs text-po-text-muted">{doctor.specialization ?? "Chưa có chuyên môn"} · {formatShortId(doctor.vetClinicId)}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <StatusBadge variant="info" label={doctor.roleName} />
+                        <StatusBadge variant="info" label={staffRoleLabel(doctor.roleName)} />
                         <button onClick={() => setScheduleTarget(doctor)} className="text-xs font-semibold text-po-primary">Chọn lịch trực</button>
                       </div>
                     </div>
@@ -182,7 +191,7 @@ export default function ClinicDoctorsPage() {
                         onClick={() => roleMutation.mutate({ vetClinicId: doctor.vetClinicId, role: doctor.roleName === "PrimaryVet" ? "Assistant" : "PrimaryVet" })}
                         className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:bg-po-primary hover:text-white"
                       >
-                        Đổi vai trò
+                        {doctor.roleName === "PrimaryVet" ? "Chuyển sang trợ lý" : "Chuyển sang bác sĩ chính"}
                       </button>
                       <button
                         onClick={() => deactivateMutation.mutate(doctor.vetClinicId)}

@@ -43,7 +43,8 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             var todayVisitCount = await _appointmentRepository.CountByClinicAsync(
                 request.ClinicId,
                 AppointmentStatus.Completed.ToString(),
-                today);
+                today,
+                search: null);
             var lowStockItemCount = await _inventoryRepository.CountLowStockItemsAsync(request.ClinicId);
 
             return new BillingDashboardSummaryResponse

@@ -12,6 +12,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 EXPOSE 8000
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libxml2 \
+        libxslt1.1 \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN groupadd --system app \
     && useradd --system --gid app --home-dir /app --shell /usr/sbin/nologin app
 
@@ -19,6 +25,13 @@ RUN groupadd --system app \
 # Stage 2: Restore dependencies
 # ============================================================
 FROM base AS restore
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        build-essential \
+        libxml2-dev \
+        libxslt1-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN python -m venv /opt/venv
 

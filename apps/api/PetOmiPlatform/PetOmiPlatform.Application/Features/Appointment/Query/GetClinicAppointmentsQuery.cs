@@ -10,6 +10,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Query
         Guid ClinicId,
         string? Status,
         DateOnly? Date,
+        string? Search,
         int Page,
         int PageSize
     ) : IRequest<PagedData<AppointmentListItemResponse>>;

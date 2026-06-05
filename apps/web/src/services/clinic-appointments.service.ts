@@ -20,6 +20,7 @@ export const getClinicAppointmentsApi = async (params: {
   clinicId: string
   status?: string
   date?: string
+  search?: string
   page?: number
   pageSize?: number
 }): Promise<{ items: AppointmentListItemResponse[]; meta: { page: number; pageSize: number; totalRecords: number } }> => {

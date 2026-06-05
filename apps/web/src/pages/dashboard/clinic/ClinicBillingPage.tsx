@@ -1,8 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react"
+﻿import { useEffect, useState, type ReactNode } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Activity,
   Banknote,
+  CalendarCheck,
   CreditCard,
   PackageSearch,
   Plus,
@@ -20,7 +21,7 @@ import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { useMyClinic } from "@/hooks/useClinicQueries"
-import { formatCurrency, formatDate, formatShortId } from "@/lib/format"
+import { formatCurrency, formatDate, formatShortId, formatTime } from "@/lib/format"
 import { getErrorMessage } from "@/lib/utils"
 import {
   autoComposeInvoiceApi,
@@ -36,8 +37,10 @@ import {
   payInvoiceApi,
   requestSePayPaymentApi,
 } from "@/services/clinic-billing.service"
+import { getClinicAppointmentsApi } from "@/services/clinic-appointments.service"
 import { getInventoryApi } from "@/services/clinic.service"
 import type {
+  AppointmentListItemResponse,
   InvoiceAgingItemResponse,
   InvoiceResponse,
   PendingManualRefundItemResponse,
@@ -56,6 +59,16 @@ type RetailCartItem = {
   availableQuantity: number
 }
 
+const appointmentStatusOptions = [
+  { value: "all", label: "Tất cả trạng thái" },
+  { value: "pending", label: "Chờ xác nhận" },
+  { value: "confirmed", label: "Đã xác nhận" },
+  { value: "checked-in", label: "Đã check-in" },
+  { value: "completed", label: "Hoàn tất" },
+  { value: "cancelled", label: "Đã hủy" },
+  { value: "no-show", label: "Không đến" },
+]
+
 type BillingWorkspace = "checkout" | "monitor"
 
 export default function ClinicBillingPage() {
@@ -64,7 +77,10 @@ export default function ClinicBillingPage() {
   const clinicId = clinic?.clinicId ?? ""
   const [fromDate, setFromDate] = useState(sevenDaysAgo)
   const [toDate, setToDate] = useState(today)
-  const [appointmentInput, setAppointmentInput] = useState("")
+  const [appointmentDate, setAppointmentDate] = useState(today)
+  const [appointmentStatus, setAppointmentStatus] = useState("all")
+  const [appointmentSearch, setAppointmentSearch] = useState("")
+  const [appointmentDraftId, setAppointmentDraftId] = useState("")
   const [selectedAppointmentId, setSelectedAppointmentId] = useState("")
   const [discountAmount, setDiscountAmount] = useState("0")
   const [refundTarget, setRefundTarget] = useState<PendingManualRefundItemResponse | null>(null)
@@ -104,6 +120,20 @@ export default function ClinicBillingPage() {
   const inventoryQuery = useQuery({
     queryKey: ["clinic", clinicId, "inventory"],
     queryFn: () => getInventoryApi(clinicId),
+    enabled: Boolean(clinicId),
+  })
+
+  const billingAppointmentsQuery = useQuery({
+    queryKey: ["clinic", clinicId, "billing-appointments", appointmentDate, appointmentStatus, appointmentSearch],
+    queryFn: () =>
+      getClinicAppointmentsApi({
+        clinicId,
+        status: appointmentStatus === "all" ? undefined : appointmentStatus,
+        date: appointmentDate || undefined,
+        search: appointmentSearch.trim() || undefined,
+        page: 1,
+        pageSize: 100,
+      }),
     enabled: Boolean(clinicId),
   })
 
@@ -292,6 +322,7 @@ export default function ClinicBillingPage() {
   const summary = summaryQuery.data
   const invoice = invoiceQuery.data
   const points = trendQuery.data?.points ?? []
+  const billingAppointments = billingAppointmentsQuery.data?.items ?? []
 
   const retailSubtotal = retailCart.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
   const retailTotal = Math.max(0, retailSubtotal - (Number(retailDiscountAmount) || 0))
@@ -356,15 +387,40 @@ export default function ClinicBillingPage() {
                   </div>
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_140px_auto]">
-                  <Input label="AppointmentId" value={appointmentInput} onChange={setAppointmentInput} />
+                <div className="mt-4 grid gap-3 xl:grid-cols-[170px_190px_minmax(0,1fr)]">
+                  <Input label="Ngày hẹn" type="date" value={appointmentDate} onChange={(value) => {
+                    setAppointmentDate(value)
+                    setAppointmentDraftId("")
+                    setSelectedAppointmentId("")
+                  }} />
+                  <AppointmentStatusSelect
+                    value={appointmentStatus}
+                    onChange={(value) => {
+                      setAppointmentStatus(value)
+                      setAppointmentDraftId("")
+                      setSelectedAppointmentId("")
+                    }}
+                  />
+                  <Input label="Tìm lịch hẹn" value={appointmentSearch} onChange={(value) => {
+                    setAppointmentSearch(value)
+                    setAppointmentDraftId("")
+                  }} />
+                </div>
+
+                <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_140px_auto]">
+                  <AppointmentSelect
+                    value={appointmentDraftId}
+                    appointments={billingAppointments}
+                    isLoading={billingAppointmentsQuery.isLoading}
+                    onChange={setAppointmentDraftId}
+                  />
                   <Input label="Giảm giá" value={discountAmount} onChange={setDiscountAmount} />
                   <button
-                    onClick={() => setSelectedAppointmentId(appointmentInput.trim())}
-                    disabled={!appointmentInput.trim()}
+                    onClick={() => setSelectedAppointmentId(appointmentDraftId)}
+                    disabled={!appointmentDraftId}
                     className="self-end inline-flex h-10 items-center justify-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
                   >
-                    Tìm hóa đơn
+                    Mở hóa đơn
                   </button>
                 </div>
 
@@ -636,6 +692,68 @@ function SePayPaymentStatusPanel({
         <p className="mt-1 text-xs font-semibold">{isLoading ? "Dang kiem tra giao dich..." : "Tu dong kiem tra moi 3 giay."}</p>
       )}
     </div>
+  )
+}
+
+function AppointmentStatusSelect({
+  value,
+  onChange,
+}: {
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5 text-xs font-bold text-po-text">
+      Trạng thái
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-10 min-w-0 rounded-2xl border border-po-border bg-white px-3 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+      >
+        {appointmentStatusOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function AppointmentSelect({
+  value,
+  appointments,
+  isLoading,
+  onChange,
+}: {
+  value: string
+  appointments: AppointmentListItemResponse[]
+  isLoading: boolean
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid min-w-0 gap-1.5 text-xs font-bold text-po-text">
+      Lịch hẹn cần thu
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={isLoading}
+        className="h-10 min-w-0 rounded-2xl border border-po-border bg-white px-3 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
+      >
+        <option value="">
+          {isLoading ? "Đang tải lịch hẹn..." : appointments.length === 0 ? "Không tìm thấy lịch phù hợp" : "Chọn lịch hẹn"}
+        </option>
+        {appointments.map((appointment) => (
+          <option key={appointment.appointmentId} value={appointment.appointmentId}>
+            {formatTime(appointment.startTime)} - Pet {formatShortId(appointment.petId)} - {appointment.appointmentType} - {appointment.status}
+          </option>
+        ))}
+      </select>
+      <span className="flex items-center gap-1 text-[11px] font-medium text-po-text-subtle">
+        <CalendarCheck className="size-3" />
+        Backend search theo ngày, trạng thái, pet, owner, dịch vụ hoặc mã lịch.
+      </span>
+    </label>
   )
 }
 

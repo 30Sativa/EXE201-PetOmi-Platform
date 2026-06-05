@@ -29,10 +29,10 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             ClinicRoleGuard.RequireActiveStaff(staff);
 
             var items = await _appointmentRepository.GetByClinicAsync(
-                request.ClinicId, request.Status, request.Date, request.Page, request.PageSize);
+                request.ClinicId, request.Status, request.Date, request.Search, request.Page, request.PageSize);
 
             var total = await _appointmentRepository.CountByClinicAsync(
-                request.ClinicId, request.Status, request.Date);
+                request.ClinicId, request.Status, request.Date, request.Search);
 
             return new PagedData<AppointmentListItemResponse>
             {

@@ -28,16 +28,9 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         }
 
         public async Task<IEnumerable<AppointmentDomain>> GetByClinicAsync(
-            Guid clinicId, string? status, DateOnly? date, int page, int pageSize)
+            Guid clinicId, string? status, DateOnly? date, string? search, int page, int pageSize)
         {
-            var query = _context.Appointments
-                .Where(a => a.ClinicId == clinicId);
-
-            if (!string.IsNullOrEmpty(status))
-                query = query.Where(a => a.Status == status);
-
-            if (date.HasValue)
-                query = query.Where(a => a.AppointmentDate == date.Value);
+            var query = ApplyClinicAppointmentFilters(clinicId, status, date, search);
 
             return await query
                 .OrderBy(a => a.AppointmentDate)
@@ -48,17 +41,55 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
-        public async Task<int> CountByClinicAsync(Guid clinicId, string? status, DateOnly? date)
+        public async Task<int> CountByClinicAsync(Guid clinicId, string? status, DateOnly? date, string? search)
         {
-            var query = _context.Appointments.Where(a => a.ClinicId == clinicId);
+            return await ApplyClinicAppointmentFilters(clinicId, status, date, search).CountAsync();
+        }
 
-            if (!string.IsNullOrEmpty(status))
+        private IQueryable<global::PetOmiPlatform.Infrastructure.Persistence.Entities.Appointment> ApplyClinicAppointmentFilters(
+            Guid clinicId,
+            string? status,
+            DateOnly? date,
+            string? search)
+        {
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Where(a => a.ClinicId == clinicId);
+
+            if (!string.IsNullOrWhiteSpace(status))
                 query = query.Where(a => a.Status == status);
 
             if (date.HasValue)
                 query = query.Where(a => a.AppointmentDate == date.Value);
 
-            return await query.CountAsync();
+            var keyword = search?.Trim();
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                var like = $"%{keyword}%";
+                var normalizedKeyword = keyword.Replace("-", string.Empty);
+                var normalizedLike = $"%{normalizedKeyword}%";
+                var isWalkInSearch = "walk-in".Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                    || "walkin".Contains(normalizedKeyword, StringComparison.OrdinalIgnoreCase);
+
+                query = query.Where(a =>
+                    EF.Functions.Like(a.AppointmentId.ToString(), like) ||
+                    EF.Functions.Like(a.PetId.ToString(), like) ||
+                    (a.VetClinicId != null && EF.Functions.Like(a.VetClinicId.Value.ToString(), like)) ||
+                    EF.Functions.Like(a.AppointmentId.ToString().Replace("-", string.Empty), normalizedLike) ||
+                    EF.Functions.Like(a.PetId.ToString().Replace("-", string.Empty), normalizedLike) ||
+                    (a.VetClinicId != null && EF.Functions.Like(a.VetClinicId.Value.ToString().Replace("-", string.Empty), normalizedLike)) ||
+                    EF.Functions.Like(a.AppointmentType, like) ||
+                    EF.Functions.Like(a.Status, like) ||
+                    (a.Notes != null && EF.Functions.Like(a.Notes, like)) ||
+                    EF.Functions.Like(a.Pet.Name, like) ||
+                    EF.Functions.Like(a.Pet.Species, like) ||
+                    (a.Pet.Breed != null && EF.Functions.Like(a.Pet.Breed, like)) ||
+                    EF.Functions.Like(a.BookedByUser.Email, like) ||
+                    (a.Service != null && EF.Functions.Like(a.Service.ServiceName, like)) ||
+                    (isWalkInSearch && a.IsWalkIn));
+            }
+
+            return query;
         }
 
         public async Task<IEnumerable<AppointmentDomain>> GetByOwnerAsync(

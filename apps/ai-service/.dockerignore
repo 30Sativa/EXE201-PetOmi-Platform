@@ -1,0 +1,40 @@
+# IDE & editor
+**/.vscode
+**/.idea
+
+# Git
+**/.git
+**/.gitignore
+
+# Python cache/build output
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.coverage
+**/htmlcov
+**/dist
+**/build
+**/*.egg-info
+
+# Local virtual environments
+.venv
+venv
+env
+
+# Secrets and local runtime config
+.env
+.env.*
+
+# Runtime/generated artifacts
+output
+logs
+
+# Non-runtime project files
+docs
+scripts
+app/tests
+*.md

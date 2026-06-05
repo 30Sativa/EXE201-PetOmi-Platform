@@ -18,6 +18,7 @@ interface ImageUploadFieldProps {
   buttonClassName?: string
   showHelpText?: boolean
   onUploadComplete?: (result: CloudinaryUploadResult) => void
+  onUploadStateChange?: (isUploading: boolean) => void
 }
 
 const DEFAULT_MAX_SIZE_MB = 5
@@ -57,6 +58,7 @@ export default function ImageUploadField({
   buttonClassName,
   showHelpText = true,
   onUploadComplete,
+  onUploadStateChange,
 }: ImageUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(value ?? null)
@@ -85,6 +87,7 @@ export default function ImageUploadField({
     setError(null)
 
     setIsUploading(true)
+    onUploadStateChange?.(true)
     try {
       const result: CloudinaryUploadResult = await uploadImageApi(
         file,
@@ -101,6 +104,7 @@ export default function ImageUploadField({
       setPreview(null)
     } finally {
       setIsUploading(false)
+      onUploadStateChange?.(false)
       if (inputRef.current) inputRef.current.value = ""
     }
   }

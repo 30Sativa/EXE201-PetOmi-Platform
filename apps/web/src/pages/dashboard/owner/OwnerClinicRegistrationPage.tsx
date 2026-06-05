@@ -724,6 +724,9 @@ function ClinicProfileStep({
   onChange: (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
   onValueChange: (field: keyof FormState, value: string) => void
 }) {
+  const [isImageUploading, setIsImageUploading] = useState(false)
+  const isSaving = isSubmitting || isImageUploading
+
   return (
     <DashboardSection
       title="Thông tin phòng khám"
@@ -807,6 +810,8 @@ function ClinicProfileStep({
             previewClassName="h-40 w-full rounded-2xl border border-po-border object-cover"
             maxSizeMb={5}
             showHelpText={false}
+            disabled={isSaving}
+            onUploadStateChange={setIsImageUploading}
           />
           {errors.licenseImageUrl ? (
             <p className="text-xs font-semibold leading-5 text-po-danger">{errors.licenseImageUrl}</p>
@@ -834,6 +839,8 @@ function ClinicProfileStep({
             previewClassName="h-32 w-32 rounded-2xl border border-po-border object-cover"
             maxSizeMb={5}
             showHelpText={false}
+            disabled={isSaving}
+            onUploadStateChange={setIsImageUploading}
           />
         </div>
 
@@ -937,7 +944,7 @@ function ClinicProfileStep({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !hasVetProfile}
+              disabled={isSaving || !hasVetProfile}
               className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? "Đang gửi hồ sơ..." : "Gửi hồ sơ phòng khám"}

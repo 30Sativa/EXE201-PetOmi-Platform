@@ -126,6 +126,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
   }
 
   const [form, setForm] = useState<FormState>(initForm)
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false)
 
   useEffect(() => {
     setForm(initForm())
@@ -168,9 +169,10 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
   })
 
   const isLoading = createMutation.isPending || updateMutation.isPending
+  const isSaving = isLoading || isAvatarUploading
 
   const handleClose = () => {
-    if (isLoading) return
+    if (isSaving) return
     setForm(defaultForm)
     onClose()
   }
@@ -279,7 +281,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
             onChange={(e) => setField("name", e.target.value)}
             placeholder="VD: Mochi, Bim, Luna..."
             required
-            disabled={isLoading}
+            disabled={isSaving}
             className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm text-po-text placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
           />
         </div>
@@ -447,6 +449,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
             if (!url) setField("avatarCloudinaryPublicId", "")
           }}
           onUploadComplete={(result) => setField("avatarCloudinaryPublicId", result.publicId)}
+          onUploadStateChange={setIsAvatarUploading}
           imageType="pet_avatar"
           resourceId={pet?.petId}
           disabled={isLoading}
@@ -464,10 +467,10 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
           </button>
           <button
             type="submit"
-            disabled={isLoading || !form.name.trim()}
+            disabled={isSaving || !form.name.trim()}
             className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
           >
-            {isLoading ? "Đang xử lý..." : isEdit ? "Lưu thay đổi" : "Thêm thú cưng"}
+            {isAvatarUploading ? "Dang upload anh..." : isLoading ? "Đang xử lý..." : isEdit ? "Lưu thay đổi" : "Thêm thú cưng"}
           </button>
         </div>
       </form>

@@ -139,3 +139,21 @@ jobs:
       - name: Docker build check
         working-directory: apps/api/PetOmiPlatform
         run: docker build -t dummy-image -f Dockerfile .
+
+  docker-ai:
+    name: Docker build check AI Service
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint AI Service Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: apps/ai-service/Dockerfile
+
+      - name: Docker build check AI Service
+        working-directory: apps/ai-service
+        run: docker build -t dummy-ai-service-image -f Dockerfile .

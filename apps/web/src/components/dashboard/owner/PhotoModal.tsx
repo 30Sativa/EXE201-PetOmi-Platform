@@ -22,6 +22,7 @@ export default function PhotoModal({
 
   const [imageUrl, setImageUrl] = useState("")
   const [cloudinaryPublicId, setCloudinaryPublicId] = useState("")
+  const [isImageUploading, setIsImageUploading] = useState(false)
   const [caption, setCaption] = useState("")
   const [isAvatar, setIsAvatar] = useState(false)
   const [takenAt, setTakenAt] = useState("")
@@ -62,7 +63,7 @@ export default function PhotoModal({
   }
 
   const handleClose = () => {
-    if (mutation.isPending) return
+    if (mutation.isPending || isImageUploading) return
     onClose()
   }
 
@@ -88,7 +89,7 @@ export default function PhotoModal({
           </div>
           <button
             onClick={handleClose}
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || isImageUploading}
             className="shrink-0 rounded-full p-1 text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text disabled:opacity-40"
             aria-label="Đóng"
           >
@@ -106,9 +107,10 @@ export default function PhotoModal({
             if (!url) setCloudinaryPublicId("")
           }}
           onUploadComplete={(result) => setCloudinaryPublicId(result.publicId)}
+          onUploadStateChange={setIsImageUploading}
           imageType="pet_photo"
           resourceId={petId}
-          disabled={mutation.isPending}
+          disabled={mutation.isPending || isImageUploading}
         />
 
         <div className="grid gap-1.5">
@@ -118,7 +120,7 @@ export default function PhotoModal({
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
             placeholder="VD: Mochi ngày sinh nhật"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || isImageUploading}
             className="h-11 w-full rounded-xl border border-po-border bg-white px-4 text-sm focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
           />
         </div>
@@ -171,10 +173,10 @@ export default function PhotoModal({
           </button>
           <button
             type="submit"
-            disabled={mutation.isPending || !imageUrl.trim() || !takenAt.trim()}
+            disabled={mutation.isPending || isImageUploading || !imageUrl.trim() || !takenAt.trim()}
             className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
           >
-            {mutation.isPending ? "Đang tải..." : "Thêm ảnh"}
+            {isImageUploading ? "Dang upload anh..." : mutation.isPending ? "Đang tải..." : "Thêm ảnh"}
           </button>
         </div>
       </form>

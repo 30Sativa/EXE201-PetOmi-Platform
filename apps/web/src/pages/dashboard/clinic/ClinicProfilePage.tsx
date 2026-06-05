@@ -63,6 +63,7 @@ export default function ClinicProfilePage() {
   const clinicId = clinic?.clinicId ?? ""
   const [infoForm, setInfoForm] = useState(emptyInfo)
   const [locationForm, setLocationForm] = useState(emptyLocation)
+  const [isLogoUploading, setIsLogoUploading] = useState(false)
 
   const publicQuery = useQuery({
     queryKey: ["clinic", clinicId, "public"],
@@ -135,6 +136,7 @@ export default function ClinicProfilePage() {
   }
 
   const canSaveInfo = infoForm.clinicName.trim().length > 1
+  const isInfoSaving = infoMutation.isPending || isLogoUploading
   const clinicLogo = infoForm.logoUrl || clinic.logoUrl
 
   return (
@@ -222,6 +224,8 @@ export default function ClinicProfilePage() {
                   logoCloudinaryPublicId: result.publicId,
                 }))
               }
+              onUploadStateChange={setIsLogoUploading}
+              disabled={isInfoSaving}
             />
           </div>
 
@@ -241,7 +245,7 @@ export default function ClinicProfilePage() {
         <div className="mt-5 flex justify-end border-t border-po-border/80 pt-5">
           <button
             onClick={() => infoMutation.mutate()}
-            disabled={!canSaveInfo || infoMutation.isPending}
+            disabled={!canSaveInfo || isInfoSaving}
             className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-sm shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
           >
             <Save className="size-4" />

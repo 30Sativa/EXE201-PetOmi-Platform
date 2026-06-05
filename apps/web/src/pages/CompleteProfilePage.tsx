@@ -1,10 +1,20 @@
 import { useCompleteProfileForm } from "@/hooks"
 import ImageUploadField from "@/components/ui/ImageUploadField"
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { getVietnamCity, VIETNAM_CITY_OPTIONS } from "@/lib/vietnamAddress"
 
 export default function CompleteProfilePage() {
   const { register, handleSubmit, errors, isSubmitting, status, message, onSubmit } = useCompleteProfileForm()
   const [avatarUrl, setAvatarUrl] = useState("")
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false)
+  const [selectedCity, setSelectedCity] = useState("")
+  const [selectedWard, setSelectedWard] = useState("")
+  const currentCity = useMemo(() => getVietnamCity(selectedCity), [selectedCity])
+  const composedAddress = [
+    currentCity?.wards.find((ward) => ward.value === selectedWard)?.label,
+    currentCity?.label,
+  ].filter(Boolean).join(", ")
+  const isSaving = isSubmitting || isAvatarUploading
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
@@ -16,7 +26,12 @@ export default function CompleteProfilePage() {
           </p>
         </div>
 
-        <form className="grid gap-5" onSubmit={handleSubmit((data) => onSubmit(data, avatarUrl))}>
+        <form
+          className="grid gap-5"
+          onSubmit={handleSubmit((data) =>
+            onSubmit({ ...data, address: composedAddress || undefined }, avatarUrl)
+          )}
+        >
           <div className="grid gap-2">
             <label htmlFor="fullName" className="text-sm font-extrabold text-po-text">
               Họ tên <span className="text-po-danger">*</span>
@@ -84,6 +99,49 @@ export default function CompleteProfilePage() {
           </div>
 
           <div className="grid gap-2">
+            <label htmlFor="city" className="text-sm font-extrabold text-po-text">
+              Tỉnh / thành phố
+            </label>
+            <select
+              id="city"
+              value={selectedCity}
+              onChange={(event) => {
+                setSelectedCity(event.target.value)
+                setSelectedWard("")
+              }}
+              disabled={isSaving}
+              className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary disabled:bg-po-surface-muted disabled:text-po-text-subtle"
+            >
+              <option value="">Chọn tỉnh / thành phố</option>
+              {VIETNAM_CITY_OPTIONS.map((city) => (
+                <option key={city.value} value={city.value}>
+                  {city.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor="ward" className="text-sm font-extrabold text-po-text">
+              Phường / xã
+            </label>
+            <select
+              id="ward"
+              value={selectedWard}
+              onChange={(event) => setSelectedWard(event.target.value)}
+              disabled={isSaving || !currentCity}
+              className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary disabled:bg-po-surface-muted disabled:text-po-text-subtle"
+            >
+              <option value="">Chọn phường / xã</option>
+              {currentCity?.wards.map((ward) => (
+                <option key={ward.value} value={ward.value}>
+                  {ward.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="hidden">
             <label htmlFor="address" className="text-sm font-extrabold text-po-text">
               Địa chỉ
             </label>
@@ -104,6 +162,8 @@ export default function CompleteProfilePage() {
             value={avatarUrl}
             onChange={setAvatarUrl}
             imageType="user_avatar"
+            disabled={isSaving}
+            onUploadStateChange={setIsAvatarUploading}
           />
 
           {message && (
@@ -121,7 +181,7 @@ export default function CompleteProfilePage() {
           <button
             className="h-12 w-full rounded-lg bg-po-primary text-[15px] font-extrabold text-white shadow-lg shadow-teal-900/10 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl disabled:translate-y-0 disabled:opacity-60"
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSaving}
           >
             {isSubmitting ? "Đang lưu..." : "Hoàn tất hồ sơ"}
           </button>

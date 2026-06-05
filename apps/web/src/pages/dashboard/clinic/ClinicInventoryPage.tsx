@@ -70,6 +70,7 @@ export default function ClinicInventoryPage() {
   const [filter, setFilter] = useState<Filter>("all")
   const [searchTerm, setSearchTerm] = useState("")
   const [form, setForm] = useState(emptyForm)
+  const [isImageUploading, setIsImageUploading] = useState(false)
   const [stockAction, setStockAction] = useState<StockAction>(null)
   const [stockAmount, setStockAmount] = useState("1")
   const [stockNote, setStockNote] = useState("")
@@ -180,6 +181,7 @@ export default function ClinicInventoryPage() {
   }
 
   const canAdd = form.itemName.trim() && Number(form.quantity) >= 0 && Number(form.lowStockThreshold) >= 0
+  const isAdding = addMutation.isPending || isImageUploading
 
   return (
     <div className="grid gap-4">
@@ -291,12 +293,14 @@ export default function ClinicInventoryPage() {
                 resourceId={clinicId}
                 previewClassName="h-20 w-20 rounded-2xl border border-po-border object-cover"
                 maxSizeMb={5}
+                disabled={isAdding}
+                onUploadStateChange={setIsImageUploading}
               />
             </div>
 
             <button
               onClick={() => addMutation.mutate()}
-              disabled={!canAdd || addMutation.isPending}
+              disabled={!canAdd || isAdding}
               className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
             >
               <Plus className="size-4" />

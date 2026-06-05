@@ -15,6 +15,7 @@ export default function OwnerProfilePage() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
   const [avatarUrl, setAvatarUrl] = useState("")
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false)
   const queryClient = useQueryClient()
   const { user } = useAuth()
 
@@ -74,6 +75,8 @@ export default function OwnerProfilePage() {
     }
   }
 
+  const isSaving = isSubmitting || updateMutation.isPending || isAvatarUploading
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
@@ -109,6 +112,8 @@ export default function OwnerProfilePage() {
               value={avatarUrl}
               onChange={setAvatarUrl}
               imageType="user_avatar"
+              disabled={isSaving}
+              onUploadStateChange={setIsAvatarUploading}
               buttonOnly
               buttonClassName="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
             />
@@ -203,7 +208,7 @@ export default function OwnerProfilePage() {
           <div className="md:col-span-2 flex flex-wrap items-center gap-3 pt-2">
             <button
               type="submit"
-              disabled={isSubmitting || updateMutation.isPending}
+              disabled={isSaving}
               className="inline-flex h-11 items-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
             >
               {isSubmitting || updateMutation.isPending

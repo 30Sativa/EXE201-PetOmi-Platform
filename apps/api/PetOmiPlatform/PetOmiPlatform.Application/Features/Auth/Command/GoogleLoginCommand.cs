@@ -6,7 +6,10 @@ using System.Text;
 
 namespace PetOmiPlatform.Application.Features.Auth.Command
 {
-    public record GoogleLoginCommand(string AccessToken) : IRequest<LoginResponse>
+    public record GoogleLoginCommand(
+        string AccessToken,
+        string? IpAddress,
+        string? UserAgent) : IRequest<LoginResponse>
     {
     }
 }

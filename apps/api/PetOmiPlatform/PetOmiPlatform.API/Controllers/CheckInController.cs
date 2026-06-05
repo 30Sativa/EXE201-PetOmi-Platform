@@ -9,7 +9,7 @@ using PetOmiPlatform.Application.Common.Models;
 namespace PetOmiPlatform.API.Controllers
 {
     /// <summary>
-    /// API check-in lich hen tai quay tiep don.
+    /// API check-in lịch hẹn tại quầy tiếp đón.
     /// </summary>
     [Route("api/appointments")]
     [ApiController]
@@ -18,13 +18,13 @@ namespace PetOmiPlatform.API.Controllers
     {
         public CheckInController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Danh dau owner/pet da den phong kham cho lich hen.</summary>
+        /// <summary>Đánh dấu owner/pet đã đến phòng khám cho lịch hẹn.</summary>
         [HttpPost("{id:guid}/checkin")]
         public async Task<IActionResult> CheckIn(Guid id, [FromQuery] Guid clinicId)
         {
             var command = new CheckInCommand(clinicId, id, CurrentUserId);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<CheckInResponse>.Ok(result, "Check-in thanh cong."));
+            return Ok(BaseResponse<CheckInResponse>.Ok(result, "Check-in thành công."));
         }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.Application.Common.Models;
@@ -19,8 +20,12 @@ namespace PetOmiPlatform.API.Controllers
     [ApiController]
     public class AuthController : BaseController
     {
-        public AuthController(IMediator mediator) : base(mediator)
+        private const string GoogleExternalCookieScheme = "GoogleExternal";
+        private readonly IConfiguration _configuration;
+
+        public AuthController(IMediator mediator, IConfiguration configuration) : base(mediator)
         {
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -153,7 +158,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("google/callback")]
         public async Task<IActionResult> GoogleCallback()
         {
-            var authenticateResult = await HttpContext.AuthenticateAsync("Google");
+            var authenticateResult = await HttpContext.AuthenticateAsync(GoogleExternalCookieScheme);
 
             if (!authenticateResult.Succeeded)
                 throw new UnauthorizedException("Xác thực Google thất bại.");
@@ -161,8 +166,29 @@ namespace PetOmiPlatform.API.Controllers
             var accessToken = authenticateResult.Properties?.GetTokenValue("access_token")
                 ?? throw new UnauthorizedException("Không lấy được access token từ Google.");
 
-            var result = await Mediator.Send(new GoogleLoginCommand(accessToken));
-            return Ok(BaseResponse<LoginResponse>.Ok(result));
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+            var result = await Mediator.Send(new GoogleLoginCommand(accessToken, ipAddress, userAgent));
+
+            await HttpContext.SignOutAsync(GoogleExternalCookieScheme);
+
+            var frontendUrl = (_configuration["FrontendUrl"] ?? "http://localhost:5173").TrimEnd('/');
+            var query = new QueryBuilder
+            {
+                { "accessToken", result.AccessToken },
+                { "refreshToken", result.RefreshToken },
+                { "email", result.Email },
+                { "userId", result.UserId.ToString() },
+                { "activeRole", result.ActiveRole },
+                { "isProfileCompleted", result.IsProfileCompleted.ToString().ToLowerInvariant() }
+            };
+
+            foreach (var role in result.Roles)
+            {
+                query.Add("roles", role);
+            }
+
+            return Redirect($"{frontendUrl}/auth/callback{query.ToQueryString()}");
         }
     }
 }

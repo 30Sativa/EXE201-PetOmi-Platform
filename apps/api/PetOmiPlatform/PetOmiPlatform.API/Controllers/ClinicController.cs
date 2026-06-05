@@ -9,6 +9,9 @@ using PetOmiPlatform.Application.Features.Clinic.DTOs.Response;
 
 namespace PetOmiPlatform.API.Controllers
 {
+    /// <summary>
+    /// API quản lý hồ sơ, nhân sự và dịch vụ của phòng khám.
+    /// </summary>
     [Route("api/clinic")]
     [ApiController]
     [Authorize]
@@ -16,15 +19,15 @@ namespace PetOmiPlatform.API.Controllers
     {
         public ClinicController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Tao phong kham moi o trang thai Pending.</summary>
+        /// <summary>Tạo phòng khám mới ở trạng thái Pending.</summary>
         [HttpPost]
         public async Task<IActionResult> CreateClinic([FromBody] CreateClinicRequest request)
         {
             var result = await Mediator.Send(new CreateClinicCommand(CurrentUserId, request));
-            return Ok(BaseResponse<CreateClinicResponse>.Ok(result, "Dang ky phong kham thanh cong. Vui long cho Admin duyet."));
+            return Ok(BaseResponse<CreateClinicResponse>.Ok(result, "Đăng ký phòng khám thành công. Vui lòng chờ Admin duyệt."));
         }
 
-        /// <summary>Lay thong tin clinic hien tai cua user dang dang nhap.</summary>
+        /// <summary>Lấy thông tin clinic hiện tại của user đang đăng nhập.</summary>
         [HttpGet("my-clinic")]
         public async Task<IActionResult> GetMyClinic()
         {
@@ -32,15 +35,15 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<GetMyClinicResponse?>.Ok(result));
         }
 
-        /// <summary>Gan staff vao phong kham (chi ClinicOwner).</summary>
+        /// <summary>Gán staff vào phòng khám (chỉ ClinicOwner).</summary>
         [HttpPost("{clinicId:guid}/staff")]
         public async Task<IActionResult> AssignStaff(Guid clinicId, [FromBody] AssignStaffRequest request)
         {
             await Mediator.Send(new AssignStaffCommand(CurrentUserId, clinicId, request));
-            return Ok(BaseResponse<object>.Ok(null, "Gan staff thanh cong."));
+            return Ok(BaseResponse<object>.Ok(null, "Gán staff thành công."));
         }
 
-        /// <summary>Cap nhat vai tro staff (PrimaryVet/Assistant), chi ClinicOwner.</summary>
+        /// <summary>Cập nhật vai trò staff (PrimaryVet/Assistant), chỉ ClinicOwner.</summary>
         [HttpPut("{clinicId:guid}/staff/{vetClinicId:guid}/role")]
         public async Task<IActionResult> UpdateStaffRole(
             Guid clinicId,
@@ -48,10 +51,10 @@ namespace PetOmiPlatform.API.Controllers
             [FromBody] UpdateClinicStaffRoleRequest request)
         {
             var result = await Mediator.Send(new UpdateClinicStaffRoleCommand(CurrentUserId, clinicId, vetClinicId, request));
-            return Ok(BaseResponse<bool>.Ok(result, "Cap nhat vai tro staff thanh cong."));
+            return Ok(BaseResponse<bool>.Ok(result, "Cập nhật vai trò staff thành công."));
         }
 
-        /// <summary>Ngung hoat dong staff (soft deactivate), chi ClinicOwner.</summary>
+        /// <summary>Ngừng hoạt động staff (soft deactivate), chỉ ClinicOwner.</summary>
         [HttpPost("{clinicId:guid}/staff/{vetClinicId:guid}/deactivate")]
         public async Task<IActionResult> DeactivateStaff(
             Guid clinicId,
@@ -59,34 +62,34 @@ namespace PetOmiPlatform.API.Controllers
             [FromBody] DeactivateClinicStaffRequest request)
         {
             var result = await Mediator.Send(new DeactivateClinicStaffCommand(CurrentUserId, clinicId, vetClinicId, request));
-            return Ok(BaseResponse<bool>.Ok(result, "Da ngung hoat dong staff."));
+            return Ok(BaseResponse<bool>.Ok(result, "Đã ngừng hoạt động staff."));
         }
 
-        /// <summary>ClinicOwner nop lai ho so sau khi bi Reject.</summary>
+        /// <summary>ClinicOwner nộp lại hồ sơ sau khi bị Reject.</summary>
         [HttpPatch("{clinicId:guid}/resubmit")]
         public async Task<IActionResult> Resubmit(Guid clinicId, [FromBody] ResubmitClinicRequest request)
         {
             var result = await Mediator.Send(new ResubmitClinicCommand(CurrentUserId, clinicId, request));
-            return Ok(BaseResponse<GetMyClinicResponse>.Ok(result, "Da nop lai ho so. Vui long cho Admin duyet."));
+            return Ok(BaseResponse<GetMyClinicResponse>.Ok(result, "Đã nộp lại hồ sơ. Vui lòng chờ Admin duyệt."));
         }
 
-        /// <summary>Cap nhat thong tin phong kham (chi khi Approved).</summary>
+        /// <summary>Cập nhật thông tin phòng khám (chỉ khi Approved).</summary>
         [HttpPut("{clinicId:guid}/info")]
         public async Task<IActionResult> UpdateInfo(Guid clinicId, [FromBody] UpdateClinicInfoRequest request)
         {
             var result = await Mediator.Send(new UpdateClinicInfoCommand(CurrentUserId, clinicId, request));
-            return Ok(BaseResponse<GetMyClinicResponse>.Ok(result, "Cap nhat thong tin phong kham thanh cong."));
+            return Ok(BaseResponse<GetMyClinicResponse>.Ok(result, "Cập nhật thông tin phòng khám thành công."));
         }
 
-        /// <summary>Cap nhat toa do GPS va buffer time cho appointment.</summary>
+        /// <summary>Cập nhật tọa độ GPS và buffer time cho appointment.</summary>
         [HttpPatch("{clinicId:guid}/location")]
         public async Task<IActionResult> UpdateLocation(Guid clinicId, [FromBody] UpdateClinicLocationRequest request)
         {
             var result = await Mediator.Send(new UpdateClinicLocationCommand(CurrentUserId, clinicId, request));
-            return Ok(BaseResponse<ClinicLocationResponse>.Ok(result, "Cap nhat vi tri phong kham thanh cong."));
+            return Ok(BaseResponse<ClinicLocationResponse>.Ok(result, "Cập nhật vị trí phòng khám thành công."));
         }
 
-        /// <summary>Lay public profile cua phong kham va danh sach dich vu dang active.</summary>
+        /// <summary>Lấy public profile của phòng khám và danh sách dịch vụ đang active.</summary>
         [HttpGet("{clinicId:guid}/public")]
         [AllowAnonymous]
         public async Task<IActionResult> GetPublicProfile(Guid clinicId)
@@ -95,7 +98,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<ClinicPublicResponse>.Ok(result));
         }
 
-        /// <summary>Lay danh sach bac si/staff active cua clinic de FE quan ly noi bo.</summary>
+        /// <summary>Lấy danh sách bác sĩ/staff active của clinic để FE quản lý nội bộ.</summary>
         [HttpGet("{clinicId:guid}/doctors")]
         public async Task<IActionResult> GetClinicDoctors(Guid clinicId)
         {
@@ -103,15 +106,15 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IReadOnlyList<ClinicDoctorListItemResponse>>.Ok(result));
         }
 
-        /// <summary>Them dich vu moi vao phong kham.</summary>
+        /// <summary>Thêm dịch vụ mới vào phòng khám.</summary>
         [HttpPost("{clinicId:guid}/services")]
         public async Task<IActionResult> AddService(Guid clinicId, [FromBody] AddClinicServiceRequest request)
         {
             var result = await Mediator.Send(new AddClinicServiceCommand(CurrentUserId, clinicId, request));
-            return Ok(BaseResponse<ClinicServiceResponse>.Ok(result, "Them dich vu thanh cong."));
+            return Ok(BaseResponse<ClinicServiceResponse>.Ok(result, "Thêm dịch vụ thành công."));
         }
 
-        /// <summary>Cap nhat thong tin dich vu.</summary>
+        /// <summary>Cập nhật thông tin dịch vụ.</summary>
         [HttpPut("{clinicId:guid}/services/{serviceId:guid}")]
         public async Task<IActionResult> UpdateService(
             Guid clinicId,
@@ -119,15 +122,15 @@ namespace PetOmiPlatform.API.Controllers
             [FromBody] UpdateClinicServiceRequest request)
         {
             var result = await Mediator.Send(new UpdateClinicServiceCommand(CurrentUserId, clinicId, serviceId, request));
-            return Ok(BaseResponse<ClinicServiceResponse>.Ok(result, "Cap nhat dich vu thanh cong."));
+            return Ok(BaseResponse<ClinicServiceResponse>.Ok(result, "Cập nhật dịch vụ thành công."));
         }
 
-        /// <summary>Xoa mem dich vu (IsActive = false).</summary>
+        /// <summary>Xóa mềm dịch vụ (IsActive = false).</summary>
         [HttpDelete("{clinicId:guid}/services/{serviceId:guid}")]
         public async Task<IActionResult> DeleteService(Guid clinicId, Guid serviceId)
         {
             await Mediator.Send(new DeleteClinicServiceCommand(CurrentUserId, clinicId, serviceId));
-            return Ok(BaseResponse<object>.Ok(null, "Da xoa dich vu."));
+            return Ok(BaseResponse<object>.Ok(null, "Đã xóa dịch vụ."));
         }
     }
 }

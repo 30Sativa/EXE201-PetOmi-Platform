@@ -8,6 +8,7 @@ using System.Text;
 namespace PetOmiPlatform.Application.Behaviors
 {
     public class PerformanceBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, TResponse>
+        where TRequest : notnull
     {
         private readonly Stopwatch _timer;
         private readonly ILogger<TRequest> _logger;

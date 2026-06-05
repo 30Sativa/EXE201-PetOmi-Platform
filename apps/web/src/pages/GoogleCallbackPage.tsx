@@ -1,13 +1,11 @@
 import { useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
-import { useAuth } from "@/contexts/AuthContext"
 import { useGoogleLogin } from "@/hooks"
 
 export default function GoogleCallbackPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { setAuthFromTokens } = useAuth()
   const { handleCallback } = useGoogleLogin()
 
   useEffect(() => {
@@ -20,14 +18,8 @@ export default function GoogleCallbackPage() {
     const isProfileCompleted = searchParams.get("isProfileCompleted") === "true"
 
     if (accessToken && refreshToken) {
-      setAuthFromTokens(accessToken, refreshToken, {
-        userId: userId ?? undefined,
-        email: email ?? undefined,
-        activeRole,
-        roles,
-      })
-
-      handleCallback({
+      const payload = {
+        type: "GOOGLE_AUTH_SUCCESS",
         accessToken,
         refreshToken,
         email: email ?? "",
@@ -35,11 +27,19 @@ export default function GoogleCallbackPage() {
         isProfileCompleted,
         activeRole,
         roles,
-      })
+      }
+
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(payload, window.location.origin)
+        window.close()
+        return
+      }
+
+      handleCallback(payload)
     } else {
       navigate("/login", { replace: true })
     }
-  }, [navigate, searchParams, setAuthFromTokens, handleCallback])
+  }, [navigate, searchParams, handleCallback])
 
   return (
     <div className="flex min-h-screen items-center justify-center">

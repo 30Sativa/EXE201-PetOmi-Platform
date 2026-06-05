@@ -38,6 +38,7 @@ import ClinicServicesPage from "@/pages/dashboard/clinic/ClinicServicesPage"
 import ClinicVisitPage from "@/pages/dashboard/clinic/ClinicVisitPage"
 import OwnerDashboardPage from "@/pages/dashboard/owner/OwnerDashboardPage"
 import OwnerAppointmentsPage from "@/pages/dashboard/owner/OwnerAppointmentsPage"
+import OwnerChatPage from "@/pages/dashboard/owner/OwnerChatPage"
 import OwnerClinicRegistrationPage from "@/pages/dashboard/owner/OwnerClinicRegistrationPage"
 import OwnerHistoryPage from "@/pages/dashboard/owner/OwnerHistoryPage"
 import OwnerNotificationsPage from "@/pages/dashboard/owner/OwnerNotificationsPage"
@@ -137,6 +138,10 @@ const router = createBrowserRouter([
           {
             path: "appointments",
             element: <OwnerAppointmentsPage />,
+          },
+          {
+            path: "chat",
+            element: <OwnerChatPage />,
           },
           {
             path: "register-clinic",

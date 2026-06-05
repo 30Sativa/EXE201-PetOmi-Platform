@@ -96,16 +96,21 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy(Policies.VetOnly, policy =>
         policy.Requirements.Add(new ActiveRoleRequirement(RoleConstants.Vet)));
+
+    options.AddPolicy(Policies.InternalApiKey, policy =>
+        policy.Requirements.Add(new InternalApiKeyRequirement()));
 });
 
-// Authorization handler
+// Authorization handlers
 builder.Services.AddScoped<IAuthorizationHandler, ActiveRoleHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, InternalApiKeyHandler>();
 
 // Infrastructure layer
 builder.Services.AddInfrastructure(builder.Configuration);
 
 // SignalR broadcaster (API layer)
 builder.Services.AddScoped<INotificationBroadcaster, SignalRNotificationBroadcaster>();
+builder.Services.AddScoped<IChatResponseBroadcaster, SignalRChatResponseBroadcaster>();
 
 // =======================
 // BUILD APP
@@ -128,7 +133,8 @@ if (enableSwagger)
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-app.MapGet("/", () => Results.Redirect("/swagger/index.html"));
+app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
+    .ExcludeFromDescription();
 app.UseCors();
 if (!app.Environment.IsDevelopment())
 {
@@ -140,5 +146,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
+app.MapHub<ChatHub>("/hubs/chat");
 
 app.Run();

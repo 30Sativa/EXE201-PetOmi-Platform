@@ -1,9 +1,8 @@
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { AlertTriangle, ClipboardList, Link2Off } from "lucide-react"
+import { AlertTriangle, ClipboardList, Link2Off, ReceiptText, type LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 
-import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -21,6 +20,18 @@ import type { SePayReconciliationItemResponse } from "@/types"
 type Filter = "pending" | "all"
 type MatchTarget = SePayReconciliationItemResponse | null
 type DismissTarget = SePayReconciliationItemResponse | null
+
+const compactNumber = (value: number) =>
+  new Intl.NumberFormat("vi-VN", { maximumFractionDigits: value >= 10 ? 0 : 1 }).format(value)
+
+const formatCompactCurrency = (value?: number | null) => {
+  const amount = value ?? 0
+  const absolute = Math.abs(amount)
+  if (absolute >= 1_000_000_000) return `${compactNumber(amount / 1_000_000_000)} tỷ`
+  if (absolute >= 1_000_000) return `${compactNumber(amount / 1_000_000)} triệu`
+  if (absolute >= 100_000) return `${compactNumber(amount / 1_000)} nghìn`
+  return formatCurrency(amount)
+}
 
 export default function ClinicReconciliationPage() {
   const queryClient = useQueryClient()
@@ -98,100 +109,87 @@ export default function ClinicReconciliationPage() {
   const items = reconciliationQuery.data ?? []
   const needsAttentionCount = items.filter((item) => item.needsAttention).length
   const unmatchedCount = items.filter((item) => !item.invoiceId).length
+  const totalTransfer = items.reduce((sum, item) => sum + item.transferAmount, 0)
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-po-text">Đối soát SePay</h2>
-          <p className="mt-1 text-sm text-po-text-muted">Kiểm tra giao dịch chuyển khoản, match hóa đơn hoặc bỏ qua giao dịch không hợp lệ.</p>
-        </div>
-        <label className="grid w-44 gap-1.5 text-sm font-semibold text-po-text">
-          Cảnh báo sau phút
-          <input
-            value={alertAfterMinutes}
-            onChange={(event) => setAlertAfterMinutes(event.target.value)}
-            className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
-          />
-        </label>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Metric label="Giao dịch đang xem" value={String(items.length)} />
-        <Metric label="Cần chú ý" value={String(needsAttentionCount)} danger />
-        <Metric label="Chưa match hóa đơn" value={String(unmatchedCount)} warning />
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <TabFilter
-          tabs={[
-            { value: "pending", label: "Đang chờ" },
-            { value: "all", label: "Tất cả" },
-          ]}
-          activeTab={filter}
-          onChange={setFilter}
-        />
-        <p className="text-sm font-semibold text-po-text-muted">{items.length} giao dịch</p>
-      </div>
-
-      <DashboardSection title="Danh sách giao dịch" subtitle="Giao dịch không tự match được sẽ cần nhập InvoiceId để xử lý thủ công.">
-        {reconciliationQuery.isLoading ? (
-          <div className="py-12 text-center"><LoadingSpinner /></div>
-        ) : items.length === 0 ? (
-          <EmptyState icon={ClipboardList} title="Không có giao dịch cần xử lý" description="Các giao dịch SePay mới sẽ xuất hiện tại đây." />
-        ) : (
-          <div className="grid gap-3">
-            {items.map((item) => (
-              <div key={item.paymentTransactionId} className="rounded-2xl border border-po-border bg-white p-4">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-bold text-po-text">{item.referenceCode ?? item.providerTransactionId}</p>
-                      <StatusBadge variant={statusVariant(item)} label={item.status} />
-                      {item.needsAttention ? <StatusBadge variant="danger" label="Cần kiểm tra" /> : null}
-                    </div>
-                    <p className="mt-1 text-xs text-po-text-muted">{item.transferContent ?? "Không có nội dung chuyển khoản"}</p>
-                    <p className="mt-2 text-xs text-po-text-subtle">
-                      {formatDate(item.transactionDate, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
-                      {" · "}
-                      chờ {item.pendingMinutes} phút
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-extrabold text-po-text">{formatCurrency(item.transferAmount)}</p>
-                    <p className="text-xs text-po-text-muted">
-                      {item.invoiceCode ? `${item.invoiceCode} · ${formatCurrency(item.invoiceFinalAmount)}` : "Chưa gắn hóa đơn"}
-                    </p>
-                  </div>
-                </div>
-                {item.reviewNote ? <p className="mt-3 rounded-2xl bg-po-surface-muted px-3 py-2 text-xs text-po-text-muted">{item.reviewNote}</p> : null}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => {
-                      setMatchTarget(item)
-                      setInvoiceId(item.invoiceId ?? "")
-                      setReviewNote("")
-                    }}
-                    className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:bg-po-primary hover:text-white"
-                  >
-                    Match thủ công
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDismissTarget(item)
-                      setReviewNote("")
-                    }}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full bg-po-danger-soft px-4 text-xs font-semibold text-po-danger transition hover:bg-po-danger hover:text-white"
-                  >
-                    <Link2Off className="size-3" />
-                    Bỏ qua
-                  </button>
-                </div>
-              </div>
-            ))}
+    <div className="grid gap-4">
+      <section className="overflow-hidden rounded-[26px] bg-white/90 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
+              SePay reconciliation
+            </p>
+            <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
+              Đối soát giao dịch
+            </h2>
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
+              Kiểm tra chuyển khoản, match hóa đơn hoặc bỏ qua giao dịch không hợp lệ.
+            </p>
           </div>
-        )}
-      </DashboardSection>
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:w-[430px]">
+            <MetricCard label="Tổng tiền xem" value={formatCompactCurrency(totalTransfer)} icon={ReceiptText} tone="info" />
+            <MetricCard label="Cần chú ý" value={String(needsAttentionCount)} icon={AlertTriangle} tone="danger" />
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+        <div className="grid gap-3 border-b border-po-border/80 px-4 py-3">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="text-base font-extrabold text-po-text">Danh sách giao dịch</h3>
+              <p className="mt-1 text-xs text-po-text-muted">{items.length} giao dịch · {unmatchedCount} chưa match hóa đơn.</p>
+            </div>
+            <label className="grid w-36 gap-1.5 text-xs font-bold text-po-text">
+              Cảnh báo sau
+              <span className="relative">
+                <input
+                  value={alertAfterMinutes}
+                  onChange={(event) => setAlertAfterMinutes(event.target.value)}
+                  className="h-10 w-full rounded-2xl border border-po-border bg-white px-3 pr-12 text-sm font-medium text-po-text outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-po-text-subtle">phút</span>
+              </span>
+            </label>
+          </div>
+
+          <TabFilter
+            tabs={[
+              { value: "pending", label: "Đang chờ" },
+              { value: "all", label: "Tất cả" },
+            ]}
+            activeTab={filter}
+            onChange={setFilter}
+          />
+        </div>
+
+        <div className="max-h-[calc(100dvh-330px)] min-h-[400px] overflow-y-auto p-4">
+          {reconciliationQuery.isLoading ? (
+            <ReconciliationSkeleton />
+          ) : items.length === 0 ? (
+            <EmptyState icon={ClipboardList} title="Không có giao dịch cần xử lý" description="Các giao dịch SePay mới sẽ xuất hiện tại đây." className="py-14" />
+          ) : (
+            <div className="grid gap-3">
+              {items.map((item) => (
+                <ReconciliationRow
+                  key={item.paymentTransactionId}
+                  item={item}
+                  onMatch={() => {
+                    setMatchTarget(item)
+                    setInvoiceId(item.invoiceId ?? "")
+                    setReviewNote("")
+                  }}
+                  onDismiss={() => {
+                    setDismissTarget(item)
+                    setReviewNote("")
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {matchTarget ? (
         <Modal title="Match giao dịch" onClose={() => setMatchTarget(null)}>
@@ -241,26 +239,112 @@ function statusVariant(item: SePayReconciliationItemResponse) {
   return "warning"
 }
 
-function Metric({ label, value, danger, warning }: { label: string; value: string; danger?: boolean; warning?: boolean }) {
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string
+  value: string
+  icon: LucideIcon
+  tone: "info" | "danger"
+}) {
+  const toneClass = {
+    info: "bg-po-primary-soft text-po-primary",
+    danger: "bg-po-danger-soft text-po-danger",
+  }[tone]
+
   return (
-    <div className="rounded-[24px] border border-po-border bg-white p-5 shadow-sm">
-      <div className={`mb-4 inline-flex size-10 items-center justify-center rounded-2xl ${danger ? "bg-po-danger-soft text-po-danger" : warning ? "bg-po-warning-soft text-po-warning" : "bg-po-primary-soft text-po-primary"}`}>
-        <AlertTriangle className="size-5" />
+    <div className="grid min-h-[76px] grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[22px] bg-po-surface-muted/60 p-3 ring-1 ring-po-border/70">
+      <span className={`grid size-9 place-items-center rounded-2xl ${toneClass}`}>
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold text-po-text-muted">{label}</p>
+        <p className="mt-1 truncate text-lg font-extrabold leading-none text-po-text">{value}</p>
       </div>
-      <p className="text-sm font-semibold text-po-text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-extrabold text-po-text">{value}</p>
+    </div>
+  )
+}
+
+function ReconciliationRow({
+  item,
+  onMatch,
+  onDismiss,
+}: {
+  item: SePayReconciliationItemResponse
+  onMatch: () => void
+  onDismiss: () => void
+}) {
+  return (
+    <article className="rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70 transition hover:bg-white hover:shadow-sm hover:shadow-orange-100/70">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-extrabold text-po-text">{item.referenceCode ?? item.providerTransactionId}</p>
+            <StatusBadge variant={statusVariant(item)} label={item.status} />
+            {item.needsAttention ? <StatusBadge variant="danger" label="Cần kiểm tra" /> : null}
+          </div>
+          <p className="mt-1 truncate text-xs font-medium text-po-text-muted">{item.transferContent ?? "Không có nội dung chuyển khoản"}</p>
+          <p className="mt-2 text-xs font-semibold text-po-text-subtle">
+            {formatDate(item.transactionDate, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            {" · "}
+            chờ {item.pendingMinutes} phút
+          </p>
+          {item.reviewNote ? <p className="mt-3 rounded-2xl bg-white px-3 py-2 text-xs text-po-text-muted ring-1 ring-po-border/70">{item.reviewNote}</p> : null}
+        </div>
+
+        <div className="grid gap-3 lg:min-w-56 lg:justify-items-end">
+          <div className="text-left lg:text-right">
+            <p className="text-lg font-extrabold text-po-text" title={formatCurrency(item.transferAmount)}>{formatCompactCurrency(item.transferAmount)}</p>
+            <p className="mt-1 text-xs text-po-text-muted">
+              {item.invoiceCode ? `${item.invoiceCode} · ${formatCompactCurrency(item.invoiceFinalAmount)}` : "Chưa gắn hóa đơn"}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <button
+              onClick={onMatch}
+              className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-bold text-po-primary transition hover:bg-po-primary hover:text-white active:translate-y-px"
+            >
+              Match thủ công
+            </button>
+            <button
+              onClick={onDismiss}
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-po-danger-soft px-4 text-xs font-bold text-po-danger transition hover:bg-po-danger hover:text-white active:translate-y-px"
+            >
+              <Link2Off className="size-3.5" />
+              Bỏ qua
+            </button>
+          </div>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function ReconciliationSkeleton() {
+  return (
+    <div className="grid gap-3">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70">
+          <div className="h-4 w-44 animate-pulse rounded-full bg-white" />
+          <div className="mt-2 h-3 w-72 animate-pulse rounded-full bg-white" />
+          <div className="mt-3 h-8 w-56 animate-pulse rounded-full bg-white" />
+        </div>
+      ))}
     </div>
   )
 }
 
 function Input({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+    <label className="grid gap-1.5 text-xs font-bold text-po-text">
       {label}
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+        className="h-10 rounded-2xl border border-po-border bg-white px-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
       />
     </label>
   )
@@ -268,13 +352,13 @@ function Input({ label, value, onChange }: { label: string; value: string; onCha
 
 function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   return (
-    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+    <label className="grid gap-1.5 text-xs font-bold text-po-text">
       {label}
       <textarea
         rows={4}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+        className="resize-none rounded-2xl border border-po-border bg-white px-3 py-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
       />
     </label>
   )
@@ -286,7 +370,7 @@ function Modal({
   onClose,
 }: {
   title: string
-  children: React.ReactNode
+  children: ReactNode
   onClose: () => void
 }) {
   return (

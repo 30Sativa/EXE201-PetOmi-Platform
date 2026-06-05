@@ -10,13 +10,13 @@ interface Highlight {
 
 const highlights: Highlight[] = [
   {
-    title: "Cảnh báo khẩn tức thì",
-    description: "Biết khi nào cần theo dõi, khi nào nên đi khám ngay.",
+    title: "Nhận biết dấu hiệu bất thường",
+    description: "Gợi ý bước tiếp theo rõ ràng để bạn không phải tự xoay xở.",
     icon: Sparkles,
   },
   {
-    title: "Lịch khám không rối",
-    description: "Gợi ý phòng khám, khung giờ và thông tin cần gửi trước.",
+    title: "Lịch khám gọn hơn",
+    description: "Gửi trước triệu chứng và hồ sơ để phòng khám chuẩn bị tốt hơn.",
     icon: CalendarCheck,
   },
 ]
@@ -24,7 +24,7 @@ const highlights: Highlight[] = [
 const trustMarks = [
   { value: "24/7", label: "tư vấn triệu chứng" },
   { value: "4.9", label: "điểm hài lòng" },
-  { value: "100+", label: "phòng khám duyệt" },
+  { value: "100+", label: "phòng khám đã duyệt" },
 ]
 
 export default function Hero() {
@@ -51,24 +51,24 @@ export default function Hero() {
             Pet-care cho chủ nuôi bận rộn
           </span>
           <h1 className="mt-5 max-w-[11ch] text-5xl font-extrabold leading-[0.98] text-po-text text-balance max-[480px]:max-w-full sm:text-6xl lg:text-7xl">
-            Chăm sóc thú cưng bớt đoán mò.
+            Hiểu thú cưng hơn từ dấu hiệu nhỏ.
           </h1>
           <p className="mt-6 max-w-xl min-w-0 text-base leading-8 text-po-text-muted md:text-lg">
-            PetOmi giúp bạn đọc dấu hiệu sức khỏe, lưu hồ sơ, đặt lịch phòng khám và chia sẻ thông tin đúng lúc với bác sĩ thú y.
+            PetOmi giúp chủ nuôi ghi lại triệu chứng, lưu hồ sơ, đặt lịch và gửi trước thông tin cần thiết để bác sĩ thú y nắm tình hình nhanh hơn.
           </p>
           <div className={`mt-8 flex w-full flex-wrap items-center gap-3 transition-all duration-700 delay-100 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             <Link
               to="/register"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl focus-visible:shadow-[var(--po-focus-ring)] active:translate-y-0 max-[480px]:w-full"
             >
-              Bắt đầu miễn phí
+              Dùng PetOmi miễn phí
               <ArrowUpRight className="size-4" />
             </Link>
             <Link
               to="/login"
               className="inline-flex h-12 items-center justify-center rounded-full border border-po-border bg-white px-6 text-sm font-semibold text-po-text transition hover:-translate-y-0.5 hover:bg-po-surface-muted focus-visible:shadow-[var(--po-focus-ring)] active:translate-y-0 max-[480px]:w-full"
             >
-              For Clinics
+              Dành cho phòng khám
             </Link>
             <a
               href="#services"
@@ -106,7 +106,7 @@ export default function Hero() {
                 <MessageCircleHeart className="size-5" />
               </span>
               <div>
-                <p className="text-sm font-semibold text-po-text">Gửi trước triệu chứng</p>
+                <p className="text-sm font-semibold text-po-text">Tóm tắt trước buổi khám</p>
                 <p className="text-xs leading-5 text-po-text-muted">Bác sĩ nắm được bối cảnh trước khi thú cưng tới khám.</p>
               </div>
             </div>

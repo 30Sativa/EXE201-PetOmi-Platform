@@ -1,11 +1,9 @@
 using PetOmiPlatform.Application.Exceptions;
+using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 
-namespace PetOmiPlatform.Application.Interfaces
+namespace PetOmiPlatform.Application.Services
 {
     public class PetAccessService : IPetAccessService
     {

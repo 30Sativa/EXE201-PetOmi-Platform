@@ -15,6 +15,7 @@ import {
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
 import { useAuth } from "@/contexts/AuthContext"
+import { useMyClinic } from "@/hooks/useClinicQueries"
 import { cn } from "@/lib/utils"
 
 const navItems = [
@@ -31,7 +32,10 @@ const navItems = [
 
 export default function ClinicDashboardLayout() {
   const { logout } = useAuth()
+  const { data: clinic } = useMyClinic()
   const navigate = useNavigate()
+  const clinicName = clinic?.clinicName?.trim() || "PetOmi"
+  const clinicLogoUrl = clinic?.logoUrl
 
   const handleLogout = async () => {
     await logout()
@@ -46,11 +50,21 @@ export default function ClinicDashboardLayout() {
             to="/dashboard/clinic"
             className="flex items-center gap-3 rounded-2xl px-2 py-1.5 text-sm font-extrabold text-po-text no-underline transition hover:bg-po-surface-muted"
           >
-            <span className="grid size-11 place-items-center rounded-2xl bg-po-primary text-white shadow-sm shadow-orange-200">
-              <Building2 className="size-5" />
+            <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-po-primary-soft text-po-primary ring-2 ring-po-primary-soft">
+              {clinicLogoUrl ? (
+                <img
+                  src={clinicLogoUrl}
+                  alt={clinicName}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <Building2 className="size-5" />
+              )}
             </span>
-            <span>
-              <span className="block text-base leading-tight">PetOmi</span>
+            <span className="min-w-0">
+              <span className="block truncate text-base leading-tight">
+                {clinicName}
+              </span>
               <span className="block text-xs font-semibold text-po-text-subtle">
                 Vận hành phòng khám
               </span>

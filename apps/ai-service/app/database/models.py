@@ -153,7 +153,7 @@ class KnowledgeChunks(Base):
     section_title: Mapped[Optional[str]] = mapped_column(Text)
     chunk_hash: Mapped[Optional[str]] = mapped_column(String(64))
     source_url: Mapped[Optional[str]] = mapped_column(Text)
-    embedding: Mapped[Optional[Any]] = mapped_column(VECTOR(768))
+    embedding: Mapped[Optional[Any]] = mapped_column(VECTOR(1536))
     embedding_model: Mapped[Optional[str]] = mapped_column(Text, server_default=text("'bge-base-en-v1.5'::text"))
     embedding_version: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('1'))
     token_count: Mapped[Optional[int]] = mapped_column(Integer, server_default=text('0'))

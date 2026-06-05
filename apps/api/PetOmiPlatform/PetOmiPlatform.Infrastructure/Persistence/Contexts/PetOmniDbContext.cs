@@ -96,6 +96,9 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<VetProfile> VetProfiles { get; set; }
 
+    public virtual DbSet<Conversation> Conversations { get; set; }
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
 //        => optionsBuilder.UseSqlServer("Data Source=(local);Database=PetOmni_DB;Trusted_Connection=True;TrustServerCertificate=True;");
@@ -1328,6 +1331,62 @@ public partial class PetOmniDbContext : DbContext
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
             entity.HasIndex(e => e.SettingKey).IsUnique();
+        });
+
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.HasKey(e => e.ConversationId).HasName("PK__Conversations__376C63F3A1B2E8D9");
+
+            entity.HasIndex(e => e.UserId);
+
+            entity.Property(e => e.ConversationId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("ConversationID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Title).HasMaxLength(200);
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Conversations)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.Pet).WithMany(p => p.Conversations)
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.ToTable("Messages");
+
+            entity.HasKey(e => e.MessageId).HasName("PK__ChatMessages__3A4F8D2E9C1B7F6A");
+
+            entity.HasIndex(e => e.ConversationId);
+            entity.HasIndex(e => e.CreatedAt);
+
+            entity.Property(e => e.MessageId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("MessageID");
+            entity.Property(e => e.Content).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Intent).HasMaxLength(50);
+            entity.Property(e => e.Model).HasMaxLength(100);
+            entity.Property(e => e.SourcesJson).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.RagUsed).HasDefaultValue(false);
+            entity.Property(e => e.SenderRole).HasMaxLength(20);
+            entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("pending");
+            entity.Property(e => e.UrgencyLevel).HasMaxLength(20);
+            entity.Property(e => e.VetRecommendation).HasMaxLength(20);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.Conversation).WithMany(p => p.ChatMessages)
+                .HasForeignKey(d => d.ConversationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);

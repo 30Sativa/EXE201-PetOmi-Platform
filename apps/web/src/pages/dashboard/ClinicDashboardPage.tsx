@@ -6,12 +6,12 @@ import {
   PackageSearch,
   Receipt,
   WalletCards,
+  type LucideIcon,
 } from "lucide-react"
+import type { ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "react-router-dom"
 
-import DashboardSection from "@/components/dashboard/DashboardSection"
-import StatCard from "@/components/dashboard/StatCard"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -39,6 +39,7 @@ function appointmentStatusVariant(status: string) {
       return "default" as const
   }
 }
+
 function appointmentStatusLabel(status: string) {
   const map: Record<string, string> = {
     pending: "Chờ xác nhận",
@@ -51,6 +52,18 @@ function appointmentStatusLabel(status: string) {
   }
 
   return map[status.toLowerCase()] ?? status
+}
+
+const compactNumber = (value: number) =>
+  new Intl.NumberFormat("vi-VN", { maximumFractionDigits: value >= 10 ? 0 : 1 }).format(value)
+
+const formatCompactCurrency = (value?: number | null) => {
+  const amount = value ?? 0
+  const absolute = Math.abs(amount)
+  if (absolute >= 1_000_000_000) return `${compactNumber(amount / 1_000_000_000)} tỷ`
+  if (absolute >= 1_000_000) return `${compactNumber(amount / 1_000_000)} triệu`
+  if (absolute >= 100_000) return `${compactNumber(amount / 1_000)} nghìn`
+  return formatCurrency(amount)
 }
 
 export default function ClinicDashboardPage() {
@@ -99,6 +112,7 @@ export default function ClinicDashboardPage() {
   const appointments = appointmentsQuery.data?.items ?? []
   const lowStock = lowStockQuery.data ?? []
   const reconciliationItems = reconciliationQuery.data ?? []
+  const actionCount = (summary?.pendingReconciliationCount ?? 0) + (summary?.pendingManualRefundCount ?? 0)
 
   if (isClinicLoading) {
     return (
@@ -119,116 +133,176 @@ export default function ClinicDashboardPage() {
   }
 
   return (
-    <div className="grid gap-6">
-      <section className="rounded-[32px] bg-white/90 p-5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 md:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-extrabold text-po-text md:text-3xl">{clinic.clinicName}</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-po-text-muted">
-              Theo dõi lịch khám trong ngày, dòng tiền, công nợ, đối soát SePay và cảnh báo kho.
+    <div className="grid gap-4">
+      <section className="overflow-hidden rounded-[26px] bg-white/90 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
+              Tổng quan clinic
+            </p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-extrabold leading-tight text-po-text">{clinic.clinicName}</h2>
+              <StatusBadge
+                variant={clinic.status === "Approved" ? "success" : clinic.status === "Rejected" ? "danger" : "warning"}
+                label={clinic.status}
+              />
+            </div>
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
+              Theo dõi lịch trong ngày, dòng tiền, công nợ, đối soát SePay và cảnh báo kho.
             </p>
           </div>
-          <StatusBadge
-            variant={clinic.status === "Approved" ? "success" : clinic.status === "Rejected" ? "danger" : "warning"}
-            label={clinic.status}
-          />
+
+          <div className="grid gap-2 sm:grid-cols-2 lg:w-[430px]">
+            <MetricCard label="Doanh thu hôm nay" value={formatCompactCurrency(summary?.todayPaidRevenue)} icon={WalletCards} tone="success" />
+            <MetricCard label="Cần xử lý" value={String(actionCount)} icon={AlertTriangle} tone="warning" />
+          </div>
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Lượt khám hôm nay"
-          value={String(summary?.todayVisitCount ?? appointments.length)}
-          icon={CalendarClock}
-          hint="Từ lịch hẹn và check-in"
-        />
-        <StatCard
-          label="Doanh thu đã thu hôm nay"
-          value={formatCurrency(summary?.todayPaidRevenue)}
-          icon={WalletCards}
-          hint="Cash, chuyển khoản, SePay"
-        />
-        <StatCard
-          label="Hóa đơn chưa thu"
-          value={String(summary?.unpaidInvoiceCount ?? 0)}
-          icon={Receipt}
-          hint={formatCurrency(summary?.totalUnpaidAmount)}
-        />
-        <StatCard
-          label="Cần xử lý"
-          value={String((summary?.pendingReconciliationCount ?? 0) + (summary?.pendingManualRefundCount ?? 0))}
-          icon={AlertTriangle}
-          hint={`${summary?.pendingReconciliationCount ?? 0} đối soát, ${summary?.pendingManualRefundCount ?? 0} hoàn tiền`}
-        />
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard label="Lượt khám hôm nay" value={String(summary?.todayVisitCount ?? appointments.length)} icon={CalendarClock} tone="info" />
+        <MetricCard label="Hóa đơn chưa thu" value={String(summary?.unpaidInvoiceCount ?? 0)} hint={formatCompactCurrency(summary?.totalUnpaidAmount)} icon={Receipt} tone="warning" />
+        <MetricCard label="Đối soát" value={String(summary?.pendingReconciliationCount ?? 0)} icon={CreditCard} tone="danger" />
+        <MetricCard label="Kho cần xem" value={String(summary?.lowStockItemCount ?? lowStock.length)} icon={PackageSearch} tone="info" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
-        <DashboardSection
-          title="Lịch hôm nay"
-          subtitle="Ưu tiên xác nhận, check-in và mở phiếu khám cho các ca đang xử lý."
-          action={
+      <div className="grid gap-4 xl:h-[calc(100dvh-294px)] xl:min-h-[620px] xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-po-border/80 px-4 py-3">
+            <div>
+              <h3 className="text-base font-extrabold text-po-text">Lịch hôm nay</h3>
+              <p className="mt-1 text-xs text-po-text-muted">Ưu tiên xác nhận, check-in và mở phiếu khám.</p>
+            </div>
             <button
               onClick={() => navigate("/dashboard/clinic/appointments")}
-              className="inline-flex h-10 items-center rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
+              className="inline-flex h-10 items-center rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
             >
               Xem lịch hẹn
             </button>
-          }
-        >
-          {appointmentsQuery.isLoading ? (
-            <div className="py-8 text-center"><LoadingSpinner /></div>
-          ) : appointments.length === 0 ? (
-            <EmptyState icon={CalendarClock} title="Không có lịch hôm nay" description="Các lịch mới sẽ xuất hiện tại đây." />
-          ) : (
-            <div className="grid gap-3">
-              {appointments.map((appointment) => (
-                <AppointmentRow key={appointment.appointmentId} appointment={appointment} />
-              ))}
-            </div>
-          )}
-        </DashboardSection>
+          </div>
 
-        <div className="grid gap-6">
-          <DashboardSection
+          <div className="min-h-0 overflow-y-auto p-4">
+            {appointmentsQuery.isLoading ? (
+              <RowSkeleton />
+            ) : appointments.length === 0 ? (
+              <EmptyState icon={CalendarClock} title="Không có lịch hôm nay" description="Các lịch mới sẽ xuất hiện tại đây." className="py-14" />
+            ) : (
+              <div className="grid gap-3">
+                {appointments.map((appointment) => (
+                  <AppointmentRow key={appointment.appointmentId} appointment={appointment} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <aside className="grid min-h-0 gap-4 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+          <Panel
             title="Cảnh báo kho"
             subtitle={`${summary?.lowStockItemCount ?? lowStock.length} mặt hàng cần kiểm tra.`}
-            action={
-              <button
-                onClick={() => navigate("/dashboard/clinic/inventory")}
-                className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted"
-              >
-                Mở kho
-              </button>
-            }
+            actionLabel="Mở kho"
+            onAction={() => navigate("/dashboard/clinic/inventory")}
           >
             <InventoryWarningList items={lowStock.slice(0, 4)} isLoading={lowStockQuery.isLoading} />
-          </DashboardSection>
+          </Panel>
 
-          <DashboardSection
+          <Panel
             title="Đối soát SePay"
             subtitle="Giao dịch chuyển khoản cần staff kiểm tra."
-            action={
-              <button
-                onClick={() => navigate("/dashboard/clinic/billing/reconciliation")}
-                className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted"
-              >
-                Đối soát
-              </button>
-            }
+            actionLabel="Đối soát"
+            onAction={() => navigate("/dashboard/clinic/billing/reconciliation")}
           >
             <ReconciliationPreview items={reconciliationItems} isLoading={reconciliationQuery.isLoading} />
-          </DashboardSection>
-        </div>
+          </Panel>
+        </aside>
       </div>
 
-      <DashboardSection title="Bucket công nợ" subtitle="Ưu tiên hóa đơn tồn lâu trước khi đóng ngày.">
-        <div className="grid gap-3 md:grid-cols-3">
+      <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h3 className="text-base font-extrabold text-po-text">Bucket công nợ</h3>
+            <p className="mt-1 text-xs text-po-text-muted">Ưu tiên hóa đơn tồn lâu trước khi đóng ngày.</p>
+          </div>
+          <button
+            onClick={() => navigate("/dashboard/clinic/billing")}
+            className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted"
+          >
+            Mở thu ngân
+          </button>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
           <DebtBucket label="0-7 ngày" count={summary?.aging0To7Days.count ?? 0} amount={summary?.aging0To7Days.amount ?? 0} />
           <DebtBucket label="8-30 ngày" count={summary?.aging8To30Days.count ?? 0} amount={summary?.aging8To30Days.amount ?? 0} />
           <DebtBucket label="31+ ngày" count={summary?.aging31PlusDays.count ?? 0} amount={summary?.aging31PlusDays.amount ?? 0} danger />
         </div>
-      </DashboardSection>
+      </section>
     </div>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  hint,
+  icon: Icon,
+  tone,
+}: {
+  label: string
+  value: string
+  hint?: string
+  icon: LucideIcon
+  tone: "info" | "success" | "warning" | "danger"
+}) {
+  const toneClass = {
+    info: "bg-po-primary-soft text-po-primary",
+    success: "bg-po-success-soft text-po-success",
+    warning: "bg-po-warning-soft text-po-warning",
+    danger: "bg-po-danger-soft text-po-danger",
+  }[tone]
+
+  return (
+    <div className="grid min-h-[86px] grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-[22px] bg-white p-4 shadow-sm ring-1 ring-po-border/80">
+      <span className={`grid size-9 place-items-center rounded-2xl ${toneClass}`}>
+        <Icon className="size-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-xs font-bold text-po-text-muted">{label}</p>
+        <p className="mt-1 truncate text-lg font-extrabold leading-none text-po-text" title={value}>{value}</p>
+        {hint ? <p className="mt-1.5 truncate text-xs font-semibold text-po-text-subtle">{hint}</p> : null}
+      </div>
+    </div>
+  )
+}
+
+function Panel({
+  title,
+  subtitle,
+  actionLabel,
+  onAction,
+  children,
+}: {
+  title: string
+  subtitle: string
+  actionLabel: string
+  onAction: () => void
+  children: ReactNode
+}) {
+  return (
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+      <div className="flex items-start justify-between gap-3 border-b border-po-border/80 px-4 py-3">
+        <div>
+          <h3 className="text-base font-extrabold text-po-text">{title}</h3>
+          <p className="mt-1 text-xs text-po-text-muted">{subtitle}</p>
+        </div>
+        <button
+          onClick={onAction}
+          className="inline-flex h-9 shrink-0 items-center rounded-full bg-white px-3 text-xs font-bold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted"
+        >
+          {actionLabel}
+        </button>
+      </div>
+      <div className="min-h-0 overflow-y-auto p-4">{children}</div>
+    </section>
   )
 }
 
@@ -238,24 +312,24 @@ function AppointmentRow({ appointment }: { appointment: AppointmentListItemRespo
   const canOpenVisit = status === "checked-in" || status === "completed"
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-po-border bg-white px-4 py-3">
+    <article className="grid gap-3 rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70 transition hover:bg-white hover:shadow-sm hover:shadow-orange-100/70 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-bold text-po-text">Pet {formatShortId(appointment.petId)}</p>
+          <p className="truncate text-sm font-extrabold text-po-text">Pet {formatShortId(appointment.petId)}</p>
           <StatusBadge variant={appointmentStatusVariant(appointment.status)} label={appointmentStatusLabel(appointment.status)} />
           {appointment.isWalkIn ? <span className="rounded-full bg-po-accent-soft px-2.5 py-0.5 text-xs font-semibold text-po-accent">Walk-in</span> : null}
         </div>
-        <p className="mt-1 text-xs text-po-text-muted">
+        <p className="mt-2 text-xs font-medium text-po-text-muted">
           {appointment.appointmentType} · {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
         </p>
       </div>
       <button
         onClick={() => navigate(canOpenVisit ? `/dashboard/clinic/appointments/${appointment.appointmentId}/visit` : "/dashboard/clinic/appointments")}
-        className="inline-flex h-9 items-center rounded-full bg-po-surface-muted px-4 text-xs font-semibold text-po-text transition hover:bg-po-primary-soft hover:text-po-primary"
+        className="inline-flex h-9 items-center justify-center rounded-full bg-white px-4 text-xs font-bold text-po-text ring-1 ring-po-border/70 transition hover:bg-po-primary hover:text-white"
       >
         {canOpenVisit ? "Mở phiếu khám" : "Xử lý"}
       </button>
-    </div>
+    </article>
   )
 }
 
@@ -266,15 +340,15 @@ function InventoryWarningList({
   items: InventoryItemResponse[]
   isLoading: boolean
 }) {
-  if (isLoading) return <div className="py-6 text-center"><LoadingSpinner /></div>
-  if (items.length === 0) return <EmptyState icon={PackageSearch} title="Kho ổn định" description="Chưa có mặt hàng sắp hết hoặc hết hạn." />
+  if (isLoading) return <RowSkeleton compact />
+  if (items.length === 0) return <EmptyState icon={PackageSearch} title="Kho ổn định" description="Chưa có mặt hàng sắp hết hoặc hết hạn." className="py-8" />
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-2">
       {items.map((item) => (
-        <div key={item.itemId} className="rounded-2xl border border-po-border bg-white px-4 py-3">
+        <div key={item.itemId} className="rounded-2xl bg-po-surface-muted/60 px-3 py-2.5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-bold text-po-text">{item.itemName}</p>
+            <p className="truncate text-sm font-bold text-po-text">{item.itemName}</p>
             <StatusBadge variant={item.isExpired ? "danger" : "warning"} label={item.isExpired ? "Hết hạn" : "Sắp hết"} />
           </div>
           <p className="mt-1 text-xs text-po-text-muted">
@@ -293,15 +367,15 @@ function ReconciliationPreview({
   items: SePayReconciliationItemResponse[]
   isLoading: boolean
 }) {
-  if (isLoading) return <div className="py-6 text-center"><LoadingSpinner /></div>
-  if (items.length === 0) return <EmptyState icon={CreditCard} title="Không có giao dịch treo" description="SePay reconciliation đang sạch." />
+  if (isLoading) return <RowSkeleton compact />
+  if (items.length === 0) return <EmptyState icon={CreditCard} title="Không có giao dịch treo" description="SePay reconciliation đang sạch." className="py-8" />
 
   return (
-    <div className="grid gap-3">
+    <div className="grid gap-2">
       {items.map((item) => (
-        <div key={item.paymentTransactionId} className="rounded-2xl border border-po-border bg-white px-4 py-3">
+        <div key={item.paymentTransactionId} className="rounded-2xl bg-po-surface-muted/60 px-3 py-2.5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-bold text-po-text">{formatCurrency(item.transferAmount)}</p>
+            <p className="text-sm font-extrabold text-po-text">{formatCompactCurrency(item.transferAmount)}</p>
             <StatusBadge variant={item.needsAttention ? "danger" : "warning"} label={item.status} />
           </div>
           <p className="mt-1 truncate text-xs text-po-text-muted">{item.transferContent ?? item.referenceCode ?? "Không có nội dung"}</p>
@@ -323,10 +397,23 @@ function DebtBucket({
   danger?: boolean
 }) {
   return (
-    <div className="rounded-2xl border border-po-border bg-white px-4 py-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-po-text-subtle">{label}</p>
-      <p className={danger ? "mt-3 text-2xl font-extrabold text-po-danger" : "mt-3 text-2xl font-extrabold text-po-text"}>{formatCurrency(amount)}</p>
-      <p className="mt-1 text-sm font-semibold text-po-text-muted">{count} hóa đơn</p>
+    <div className="rounded-2xl bg-po-surface-muted/55 px-4 py-3 ring-1 ring-po-border/70">
+      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-po-text-subtle">{label}</p>
+      <p className={danger ? "mt-2 text-lg font-extrabold text-po-danger" : "mt-2 text-lg font-extrabold text-po-text"}>{formatCompactCurrency(amount)}</p>
+      <p className="mt-1 text-xs font-semibold text-po-text-muted">{count} hóa đơn</p>
+    </div>
+  )
+}
+
+function RowSkeleton({ compact }: { compact?: boolean }) {
+  return (
+    <div className="grid gap-3">
+      {Array.from({ length: compact ? 3 : 5 }).map((_, index) => (
+        <div key={index} className="rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70">
+          <div className="h-4 w-40 animate-pulse rounded-full bg-white" />
+          <div className="mt-2 h-3 w-64 animate-pulse rounded-full bg-white" />
+        </div>
+      ))}
     </div>
   )
 }

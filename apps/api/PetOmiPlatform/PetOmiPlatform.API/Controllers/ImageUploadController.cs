@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetOmiPlatform.API.Common;
+using PetOmiPlatform.API.Common.Validators;
 using PetOmiPlatform.Application.Common.Models;
-using PetOmiPlatform.Application.Common.Validators;
 using PetOmiPlatform.Application.Interfaces;
 using MediatR;
 
 namespace PetOmiPlatform.API.Controllers
 {
+    /// <summary>
+    /// API upload và xóa ảnh dùng Cloudinary.
+    /// </summary>
     [Route("api/images")]
     [ApiController]
     [Authorize]
@@ -39,6 +42,7 @@ namespace PetOmiPlatform.API.Controllers
             _logger = logger;
         }
 
+        /// <summary>Upload ảnh lên Cloudinary theo imageType và resourceId tương ứng.</summary>
         [HttpPost]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(typeof(BaseResponse<CloudinaryUploadResult>), StatusCodes.Status200OK)]
@@ -55,13 +59,13 @@ namespace PetOmiPlatform.API.Controllers
 
             if (string.IsNullOrWhiteSpace(request.ImageType))
             {
-                return BadRequest(BaseResponse<object>.Fail("ImageType la bat buoc."));
+                return BadRequest(BaseResponse<object>.Fail("ImageType là bắt buộc."));
             }
 
             if (!FolderMap.TryGetValue(request.ImageType, out var folderTemplate))
             {
                 return BadRequest(BaseResponse<object>.Fail(
-                    $"ImageType khong hop le. Cac loai duoc ho tro: {string.Join(", ", FolderMap.Keys)}"));
+                    $"ImageType không hợp lệ. Các loại được hỗ trợ: {string.Join(", ", FolderMap.Keys)}"));
             }
 
             var userId = CurrentUserId.ToString();
@@ -70,7 +74,7 @@ namespace PetOmiPlatform.API.Controllers
             if (folderTemplate.Contains("{petId}"))
             {
                 if (string.IsNullOrWhiteSpace(request.ResourceId))
-                    return BadRequest(BaseResponse<object>.Fail($"Voi imageType '{request.ImageType}', resourceId (petId) la bat buoc."));
+                    return BadRequest(BaseResponse<object>.Fail($"Với imageType '{request.ImageType}', resourceId (petId) là bắt buộc."));
                 folder = folderTemplate.Replace("{petId}", request.ResourceId, StringComparison.OrdinalIgnoreCase);
             }
             else if (folderTemplate.Contains("{clinicId}"))
@@ -87,7 +91,7 @@ namespace PetOmiPlatform.API.Controllers
                     }
                     else
                     {
-                        return BadRequest(BaseResponse<object>.Fail($"Voi imageType '{request.ImageType}', resourceId (clinicId) la bat buoc."));
+                        return BadRequest(BaseResponse<object>.Fail($"Với imageType '{request.ImageType}', resourceId (clinicId) là bắt buộc."));
                     }
                 }
                 else
@@ -122,9 +126,10 @@ namespace PetOmiPlatform.API.Controllers
                 "Image uploaded: Type={ImageType}, PublicId={PublicId}, Size={Size}",
                 request.ImageType, result.PublicId, result.FileSizeBytes);
 
-            return Ok(BaseResponse<CloudinaryUploadResult>.Ok(result, "Upload anh thanh cong."));
+            return Ok(BaseResponse<CloudinaryUploadResult>.Ok(result, "Upload ảnh thành công."));
         }
 
+        /// <summary>Xóa ảnh khỏi Cloudinary theo publicId.</summary>
         [HttpDelete]
         [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(BaseResponse<object>), StatusCodes.Status400BadRequest)]
@@ -134,11 +139,11 @@ namespace PetOmiPlatform.API.Controllers
         {
             if (string.IsNullOrWhiteSpace(publicId))
             {
-                return BadRequest(BaseResponse<object>.Fail("publicId la bat buoc."));
+                return BadRequest(BaseResponse<object>.Fail("publicId là bắt buộc."));
             }
 
             await _cloudinaryService.DeleteAsync(publicId, cancellationToken);
-            return Ok(BaseResponse<object>.Ok(null, "Xoa anh thanh cong."));
+            return Ok(BaseResponse<object>.Ok(null, "Xóa ảnh thành công."));
         }
     }
 

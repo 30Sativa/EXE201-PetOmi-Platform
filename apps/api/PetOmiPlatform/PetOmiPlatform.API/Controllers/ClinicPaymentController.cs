@@ -11,7 +11,7 @@ using PetOmiPlatform.Application.Features.ClinicPayment.Query;
 namespace PetOmiPlatform.API.Controllers
 {
     /// <summary>
-    /// API cau hinh tai khoan nhan tien SePay theo tung clinic.
+    /// API cấu hình tài khoản nhận tiền SePay theo từng clinic.
     /// </summary>
     [Route("api/clinic-payments")]
     [ApiController]
@@ -20,7 +20,7 @@ namespace PetOmiPlatform.API.Controllers
     {
         public ClinicPaymentController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Lay cau hinh tai khoan SePay cua clinic (masked account cho role khong duoc sua).</summary>
+        /// <summary>Lấy cấu hình tài khoản SePay của clinic (masked account cho role không được sửa).</summary>
         [HttpGet("{clinicId:guid}/sepay-account")]
         public async Task<IActionResult> GetSePayAccount(Guid clinicId)
         {
@@ -29,11 +29,11 @@ namespace PetOmiPlatform.API.Controllers
 
             return result != null
                 ? Ok(BaseResponse<ClinicSePayAccountResponse>.Ok(result))
-                : NotFound(BaseResponse<ClinicSePayAccountResponse?>.Fail("Clinic chua cau hinh tai khoan SePay.", 404));
+                : NotFound(BaseResponse<ClinicSePayAccountResponse?>.Fail("Clinic chưa cấu hình tài khoản SePay.", 404));
         }
 
-        /// <summary>Tao moi hoac cap nhat tai khoan SePay cua clinic.</summary>
-        /// <remarks>Chi ClinicOwner duoc phep sua cau hinh nhan tien.</remarks>
+        /// <summary>Tạo mới hoặc cập nhật tài khoản SePay của clinic.</summary>
+        /// <remarks>Chỉ ClinicOwner được phép sửa cấu hình nhận tiền.</remarks>
         [HttpPut("{clinicId:guid}/sepay-account")]
         public async Task<IActionResult> UpsertSePayAccount(
             Guid clinicId,
@@ -41,7 +41,7 @@ namespace PetOmiPlatform.API.Controllers
         {
             var command = new UpsertClinicSePayAccountCommand(clinicId, CurrentUserId, request);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<ClinicSePayAccountResponse>.Ok(result, "Cap nhat tai khoan SePay thanh cong."));
+            return Ok(BaseResponse<ClinicSePayAccountResponse>.Ok(result, "Cập nhật tài khoản SePay thành công."));
         }
     }
 }

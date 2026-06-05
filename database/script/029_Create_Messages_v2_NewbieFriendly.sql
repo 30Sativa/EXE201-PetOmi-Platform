@@ -1,53 +1,141 @@
--- ===================================================================
 -- PET ADVISOR AI - MIGRATION 022
--- Tạo bảng Messages trong SQL Server Core Backend
--- Lưu lịch sử chat để frontend/core backend đọc lại
--- Raw request/response và latency breakdown không lưu ở đây, để logging service xử lý
--- ===================================================================
+-- Create Messages in SQL Server core backend.
 
 USE PetOmni_DB;
 GO
 
-CREATE TABLE Messages (
-    MessageID         UNIQUEIDENTIFIER NOT NULL PRIMARY KEY DEFAULT NEWSEQUENTIALID(), -- Khóa chính GUID của message
-    ConversationID    UNIQUEIDENTIFIER NOT NULL,                                       -- Message thuộc conversation nào
-    SenderRole        NVARCHAR(20)     NOT NULL,                                       -- user / assistant / system
-    Content           NVARCHAR(MAX)    NOT NULL,                                       -- Nội dung tin nhắn
-    Intent            NVARCHAR(50)     NULL,                                           -- nutrition / symptom / vaccine / general / emergency
-    UrgencyLevel      NVARCHAR(20)     NULL,                                           -- critical / high / normal
-    VetRecommendation NVARCHAR(20)     NULL,                                           -- urgent / watch / monitor / none
-    RagUsed           BIT              NOT NULL DEFAULT 0,                             -- Assistant có dùng RAG không
-    ChunksUsed        INT              NOT NULL DEFAULT 0,                             -- Số knowledge chunks đưa vào prompt
-    Model             NVARCHAR(100)    NULL,                                           -- Model LLM nếu có gọi GPT
-    TokensInput       INT              NOT NULL DEFAULT 0,                             -- Token input
-    TokensOutput      INT              NOT NULL DEFAULT 0,                             -- Token output
-    CreatedAt         DATETIME         NOT NULL DEFAULT GETUTCDATE(),                  -- Thời điểm tạo message UTC
-    DeletedAt         DATETIME         NULL,                                           -- Thời điểm xóa mềm
-    IsActive          BIT              NOT NULL DEFAULT 1,                             -- 1=còn dùng, 0=đã xóa mềm
+IF OBJECT_ID('dbo.Conversations', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Conversations (
+        ConversationID UNIQUEIDENTIFIER NOT NULL
+            CONSTRAINT DF_Conversations_ConversationID DEFAULT NEWSEQUENTIALID(),
+        UserID         UNIQUEIDENTIFIER NOT NULL,
+        PetID          UNIQUEIDENTIFIER NULL,
+        Title          NVARCHAR(200)    NULL,
+        IsActive       BIT              NOT NULL
+            CONSTRAINT DF_Conversations_IsActive DEFAULT 1,
+        CreatedAt      DATETIME2        NOT NULL
+            CONSTRAINT DF_Conversations_CreatedAt DEFAULT SYSUTCDATETIME(),
+        UpdatedAt      DATETIME2        NOT NULL
+            CONSTRAINT DF_Conversations_UpdatedAt DEFAULT SYSUTCDATETIME(),
+        DeletedAt      DATETIME         NULL,
 
-    CONSTRAINT FK_Messages_Conversation
-        FOREIGN KEY (ConversationID) REFERENCES Conversations(ConversationID),          -- FK tới Conversations
+        CONSTRAINT FK_Conversations_User
+            FOREIGN KEY (UserID) REFERENCES dbo.Users(UserID),
 
-    CONSTRAINT CK_Messages_SenderRole
-        CHECK (SenderRole IN ('user', 'assistant', 'system')),                         -- Chỉ cho 3 role hợp lệ
+        CONSTRAINT FK_Conversations_Pet
+            FOREIGN KEY (PetID) REFERENCES dbo.Pets(PetID),
 
-    CONSTRAINT CK_Messages_Intent
-        CHECK (Intent IS NULL OR Intent IN ('nutrition', 'symptom', 'vaccine', 'general', 'emergency')), -- Intent hợp lệ
-
-    CONSTRAINT CK_Messages_UrgencyLevel
-        CHECK (UrgencyLevel IS NULL OR UrgencyLevel IN ('critical', 'high', 'normal')), -- Urgency hợp lệ
-
-    CONSTRAINT CK_Messages_VetRecommendation
-        CHECK (VetRecommendation IS NULL OR VetRecommendation IN ('urgent', 'watch', 'monitor', 'none')) -- Enum text, không dùng emoji
-);
+        CONSTRAINT PK_Conversations
+            PRIMARY KEY (ConversationID)
+    );
+END
 GO
 
-CREATE INDEX IX_Messages_Conversation_CreatedAt
-ON Messages (ConversationID, CreatedAt DESC)
-WHERE IsActive = 1;                                                                   -- Lấy lịch sử chat mới nhất
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_Conversations_User_UpdatedAt'
+      AND object_id = OBJECT_ID('dbo.Conversations')
+)
+BEGIN
+    CREATE INDEX IX_Conversations_User_UpdatedAt
+    ON dbo.Conversations (UserID, UpdatedAt DESC, CreatedAt DESC)
+    WHERE IsActive = 1;
+END
 GO
 
-CREATE INDEX IX_Messages_Conversation_Role_CreatedAt
-ON Messages (ConversationID, SenderRole, CreatedAt DESC)
-WHERE IsActive = 1;                                                                   -- Lấy message theo role nếu cần
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_Conversations_Pet_UpdatedAt'
+      AND object_id = OBJECT_ID('dbo.Conversations')
+)
+BEGIN
+    CREATE INDEX IX_Conversations_Pet_UpdatedAt
+    ON dbo.Conversations (PetID, UpdatedAt DESC, CreatedAt DESC)
+    WHERE PetID IS NOT NULL AND IsActive = 1;
+END
+GO
+
+IF OBJECT_ID('dbo.Messages', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Messages (
+        MessageID         UNIQUEIDENTIFIER NOT NULL
+            CONSTRAINT DF_Messages_MessageID DEFAULT NEWSEQUENTIALID(),
+        ConversationID    UNIQUEIDENTIFIER NOT NULL,
+        SenderRole        NVARCHAR(20)     NOT NULL,
+        Status            NVARCHAR(20)     NOT NULL
+            CONSTRAINT DF_Messages_Status DEFAULT 'pending',
+        Content           NVARCHAR(MAX)    NOT NULL,
+        Intent            NVARCHAR(50)     NULL,
+        UrgencyLevel      NVARCHAR(20)     NULL,
+        VetRecommendation NVARCHAR(20)     NULL,
+        RagUsed           BIT              NOT NULL
+            CONSTRAINT DF_Messages_RagUsed DEFAULT 0,
+        ChunksUsed        INT              NOT NULL
+            CONSTRAINT DF_Messages_ChunksUsed DEFAULT 0,
+        Model             NVARCHAR(100)    NULL,
+        SourcesJson       NVARCHAR(MAX)    NULL,
+        TokensInput       INT              NOT NULL
+            CONSTRAINT DF_Messages_TokensInput DEFAULT 0,
+        TokensOutput      INT              NOT NULL
+            CONSTRAINT DF_Messages_TokensOutput DEFAULT 0,
+        CreatedAt         DATETIME         NOT NULL
+            CONSTRAINT DF_Messages_CreatedAt DEFAULT GETUTCDATE(),
+        DeletedAt         DATETIME         NULL,
+        IsActive          BIT              NOT NULL
+            CONSTRAINT DF_Messages_IsActive DEFAULT 1,
+
+        CONSTRAINT FK_Messages_Conversation
+            FOREIGN KEY (ConversationID) REFERENCES dbo.Conversations(ConversationID),
+
+        CONSTRAINT CK_Messages_SenderRole
+            CHECK (SenderRole IN ('user', 'assistant', 'system')),
+
+        CONSTRAINT CK_Messages_Status
+            CHECK (Status IN ('pending', 'processing', 'completed', 'failed', 'cancelled')),
+
+        CONSTRAINT CK_Messages_Intent
+            CHECK (Intent IS NULL OR Intent IN (
+                'nutrition', 'symptom', 'vaccine', 'general', 'emergency',
+                'appointment', 'billing', 'grooming', 'training', 'behavior', 'product'
+            )),
+
+        CONSTRAINT CK_Messages_UrgencyLevel
+            CHECK (UrgencyLevel IS NULL OR UrgencyLevel IN ('critical', 'high', 'normal')),
+
+        CONSTRAINT CK_Messages_VetRecommendation
+            CHECK (VetRecommendation IS NULL OR VetRecommendation IN ('urgent', 'watch', 'monitor', 'none')),
+
+        CONSTRAINT PK_Messages
+            PRIMARY KEY (MessageID)
+    );
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_Messages_Conversation_CreatedAt'
+      AND object_id = OBJECT_ID('dbo.Messages')
+)
+BEGIN
+    CREATE INDEX IX_Messages_Conversation_CreatedAt
+    ON dbo.Messages (ConversationID, CreatedAt DESC)
+    WHERE IsActive = 1;
+END
+GO
+
+IF NOT EXISTS (
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = 'IX_Messages_Conversation_Role_CreatedAt'
+      AND object_id = OBJECT_ID('dbo.Messages')
+)
+BEGIN
+    CREATE INDEX IX_Messages_Conversation_Role_CreatedAt
+    ON dbo.Messages (ConversationID, SenderRole, CreatedAt DESC)
+    WHERE IsActive = 1;
+END
 GO

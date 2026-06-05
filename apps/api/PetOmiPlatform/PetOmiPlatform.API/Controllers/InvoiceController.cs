@@ -11,7 +11,7 @@ using PetOmiPlatform.Application.Common.Models;
 namespace PetOmiPlatform.API.Controllers
 {
     /// <summary>
-    /// API hoa don cho staff clinic: tao, xem, bao cao, va huy hoa don.
+    /// API hóa đơn cho staff clinic: tạo, xem, báo cáo và hủy hóa đơn.
     /// </summary>
     [Route("api/invoices")]
     [ApiController]
@@ -20,30 +20,30 @@ namespace PetOmiPlatform.API.Controllers
     {
         public InvoiceController(IMediator mediator) : base(mediator) { }
 
-        /// <summary>Tao hoa don thu cong tu appointment/examination va danh sach items FE gui len.</summary>
+        /// <summary>Tạo hóa đơn thủ công từ appointment/examination và danh sách items FE gửi lên.</summary>
         [HttpPost]
         public async Task<IActionResult> CreateInvoice([FromBody] CreateInvoiceRequest request, [FromQuery] Guid clinicId)
         {
             var command = new CreateInvoiceCommand(clinicId, CurrentUserId, request);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<InvoiceResponse>.Ok(result, "Tao hoa don thanh cong."));
+            return Ok(BaseResponse<InvoiceResponse>.Ok(result, "Tạo hóa đơn thành công."));
         }
 
-        /// <summary>Tao hoa don tu dong tu service cua lich hen va toa thuoc cua phieu kham.</summary>
+        /// <summary>Tạo hóa đơn tự động từ service của lịch hẹn và toa thuốc của phiếu khám.</summary>
         /// <remarks>
-        /// - includeService=true: lay gia dich vu tu appointment.ServiceId.
-        /// - includePrescriptions=true: tao dong medication tu prescriptions (lay don gia tu inventory neu co).
-        /// - Ket qua co truong warnings de FE canh bao thu ngan truoc khi thu tien.
+        /// - includeService=true: lấy giá dịch vụ từ appointment.ServiceId.
+        /// - includePrescriptions=true: tạo dòng medication từ prescriptions (lấy đơn giá từ inventory nếu có).
+        /// - Kết quả có trường warnings để FE cảnh báo thu ngân trước khi thu tiền.
         /// </remarks>
         [HttpPost("auto-compose")]
         public async Task<IActionResult> AutoComposeInvoice([FromBody] AutoComposeInvoiceRequest request, [FromQuery] Guid clinicId)
         {
             var command = new AutoComposeInvoiceCommand(clinicId, CurrentUserId, request);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<InvoiceResponse>.Ok(result, "Tao hoa don tu dong thanh cong."));
+            return Ok(BaseResponse<InvoiceResponse>.Ok(result, "Tạo hóa đơn tự động thành công."));
         }
 
-        /// <summary>Lay hoa don theo appointment de FE bind man hinh kham/thu ngan.</summary>
+        /// <summary>Lấy hóa đơn theo appointment để FE bind màn hình khám/thu ngân.</summary>
         [HttpGet("by-appointment/{appointmentId:guid}")]
         public async Task<IActionResult> GetByAppointmentId(Guid appointmentId, [FromQuery] Guid clinicId)
         {
@@ -51,10 +51,10 @@ namespace PetOmiPlatform.API.Controllers
             var result = await Mediator.Send(query);
             return result != null
                 ? Ok(BaseResponse<InvoiceResponse>.Ok(result))
-                : NotFound(BaseResponse<InvoiceResponse?>.Fail("Khong tim thay hoa don.", 404));
+                : NotFound(BaseResponse<InvoiceResponse?>.Fail("Không tìm thấy hóa đơn.", 404));
         }
 
-        /// <summary>Lay hoa don theo order ban hang tai quay.</summary>
+        /// <summary>Lấy hóa đơn theo order bán hàng tại quầy.</summary>
         [HttpGet("by-order/{orderId:guid}")]
         public async Task<IActionResult> GetByOrderId(Guid orderId, [FromQuery] Guid clinicId)
         {
@@ -62,13 +62,13 @@ namespace PetOmiPlatform.API.Controllers
             var result = await Mediator.Send(query);
             return result != null
                 ? Ok(BaseResponse<InvoiceResponse>.Ok(result))
-                : NotFound(BaseResponse<InvoiceResponse?>.Fail("Khong tim thay hoa don.", 404));
+                : NotFound(BaseResponse<InvoiceResponse?>.Fail("Không tìm thấy hóa đơn.", 404));
         }
 
-        /// <summary>Danh sach hoa don chua thanh toan theo tuoi no (aging) de thu ngan uu tien thu no.</summary>
+        /// <summary>Danh sách hóa đơn chưa thanh toán theo tuổi nợ (aging) để thu ngân ưu tiên thu nợ.</summary>
         /// <remarks>
-        /// Tra ve cac hoa don status Unpaid, sap xep theo PendingDays giam dan.
-        /// Dung minAgeDays de loc hoa don no tu N ngay tro len.
+        /// Trả về các hóa đơn status Unpaid, sắp xếp theo PendingDays giảm dần.
+        /// Dùng minAgeDays để lọc hóa đơn nợ từ N ngày trở lên.
         /// </remarks>
         [HttpGet("unpaid-aging")]
         public async Task<IActionResult> GetUnpaidAgingInvoices(
@@ -82,7 +82,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IReadOnlyList<InvoiceAgingItemResponse>>.Ok(result));
         }
 
-        /// <summary>Tong quan billing cho dashboard FE: no hien tai, doi soat SePay, pending manual refund, bucket cong no, luot kham hom nay, doanh thu hom nay, low-stock.</summary>
+        /// <summary>Tổng quan billing cho dashboard FE: nợ hiện tại, đối soát SePay, pending manual refund, bucket công nợ, lượt khám hôm nay, doanh thu hôm nay, low-stock.</summary>
         [HttpGet("billing-summary")]
         public async Task<IActionResult> GetBillingSummary([FromQuery] Guid clinicId)
         {
@@ -91,12 +91,12 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<BillingDashboardSummaryResponse>.Ok(result));
         }
 
-        /// <summary>Trend doanh thu da thu theo ngay trong khoang thoi gian de FE ve line/bar chart.</summary>
+        /// <summary>Trend doanh thu đã thu theo ngày trong khoảng thời gian để FE vẽ line/bar chart.</summary>
         /// <remarks>
-        /// Mac dinh: neu khong truyen fromDate/toDate thi lay 14 ngay gan nhat (UTC).
-        /// He thong tra du tat ca ngay trong khoang (ngay khong co doanh thu van co point = 0).
-        /// Co breakdown theo payment method: Cash / BankTransfer / SePayBankTransfer.
-        /// Co them so sanh voi ky truoc co cung do dai ngay (PreviousFromDate/PreviousToDate + % change).
+        /// Mặc định: nếu không truyền fromDate/toDate thì lấy 14 ngày gần nhất (UTC).
+        /// Hệ thống trả đủ tất cả ngày trong khoảng (ngày không có doanh thu vẫn có point = 0).
+        /// Có breakdown theo payment method: Cash / BankTransfer / SePayBankTransfer.
+        /// Có thêm so sánh với kỳ trước có cùng độ dài ngày (PreviousFromDate/PreviousToDate + % change).
         /// </remarks>
         [HttpGet("billing-revenue-trend")]
         public async Task<IActionResult> GetBillingRevenueTrend(
@@ -116,7 +116,7 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<BillingRevenueTrendResponse>.Ok(result));
         }
 
-        /// <summary>Danh sach hoa don da huy nhung chua xac nhan hoan tien thu cong.</summary>
+        /// <summary>Danh sách hóa đơn đã hủy nhưng chưa xác nhận hoàn tiền thủ công.</summary>
         [HttpGet("manual-refunds/pending")]
         public async Task<IActionResult> GetPendingManualRefunds(
             [FromQuery] Guid clinicId,
@@ -128,11 +128,11 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<IReadOnlyList<PendingManualRefundItemResponse>>.Ok(result));
         }
 
-        /// <summary>Huy hoa don; neu hoa don da paid thi bat buoc nhap ly do de doi soat hoan tien thu cong.</summary>
+        /// <summary>Hủy hóa đơn; nếu hóa đơn đã paid thì bắt buộc nhập lý do để đối soát hoàn tiền thủ công.</summary>
         /// <remarks>
         /// MVP policy:
-        /// - Khong auto refund tren he thong.
-        /// - Invoice da paid khi huy se duoc danh dau RequiresManualRefund=true de thu ngan xu ly ngoai he thong.
+        /// - Không auto refund trên hệ thống.
+        /// - Invoice đã paid khi hủy sẽ được đánh dấu RequiresManualRefund=true để thu ngân xử lý ngoài hệ thống.
         /// </remarks>
         [HttpPost("{id:guid}/cancel")]
         public async Task<IActionResult> CancelInvoice(
@@ -142,7 +142,7 @@ namespace PetOmiPlatform.API.Controllers
         {
             var command = new CancelInvoiceCommand(clinicId, CurrentUserId, id, request?.CancelReason);
             var result = await Mediator.Send(command);
-            return Ok(BaseResponse<bool>.Ok(result, "Huy hoa don thanh cong."));
+            return Ok(BaseResponse<bool>.Ok(result, "Hủy hóa đơn thành công."));
         }
 
     }

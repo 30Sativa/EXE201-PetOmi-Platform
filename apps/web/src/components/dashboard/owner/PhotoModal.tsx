@@ -21,6 +21,7 @@ export default function PhotoModal({
   const queryClient = useQueryClient()
 
   const [imageUrl, setImageUrl] = useState("")
+  const [cloudinaryPublicId, setCloudinaryPublicId] = useState("")
   const [caption, setCaption] = useState("")
   const [isAvatar, setIsAvatar] = useState(false)
   const [takenAt, setTakenAt] = useState("")
@@ -35,6 +36,7 @@ export default function PhotoModal({
       queryClient.invalidateQueries({ queryKey: ["owner-pets"] })
       toast.success("Thêm ảnh thành công!")
       setImageUrl("")
+      setCloudinaryPublicId("")
       setCaption("")
       setIsAvatar(false)
       setTakenAt("")
@@ -52,6 +54,7 @@ export default function PhotoModal({
     if (!takenAt.trim()) return
     mutation.mutate({
       imageUrl: imageUrl.trim(),
+      cloudinaryPublicId: cloudinaryPublicId.trim() || undefined,
       caption: caption.trim() || undefined,
       isAvatar,
       takenAt: takenAt ? new Date(takenAt).toISOString() : undefined,
@@ -98,7 +101,11 @@ export default function PhotoModal({
         <ImageUploadField
           label="Ảnh"
           value={imageUrl}
-          onChange={setImageUrl}
+          onChange={(url) => {
+            setImageUrl(url)
+            if (!url) setCloudinaryPublicId("")
+          }}
+          onUploadComplete={(result) => setCloudinaryPublicId(result.publicId)}
           imageType="pet_photo"
           resourceId={petId}
           disabled={mutation.isPending}

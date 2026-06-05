@@ -76,6 +76,7 @@ interface FormState {
   isBirthDateEstimated: boolean
   color: string
   avatarUrl: string
+  avatarCloudinaryPublicId: string
 }
 
 const defaultForm: FormState = {
@@ -89,6 +90,7 @@ const defaultForm: FormState = {
   isBirthDateEstimated: false,
   color: "",
   avatarUrl: "",
+  avatarCloudinaryPublicId: "",
 }
 
 function parseDateOnly(dateStr: string | null): string {
@@ -117,6 +119,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
         isBirthDateEstimated: pet.isBirthDateEstimated,
         color: pet.color ?? "",
         avatarUrl: pet.avatarUrl ?? "",
+        avatarCloudinaryPublicId: pet.avatarCloudinaryPublicId ?? "",
       }
     }
     return { ...defaultForm }
@@ -208,6 +211,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
         isBirthDateEstimated: form.isBirthDateEstimated,
         color: form.color.trim() || null,
         avatarUrl: form.avatarUrl.trim() || null,
+        avatarCloudinaryPublicId: form.avatarCloudinaryPublicId.trim() || null,
       }
       updateMutation.mutate(payload)
     } else {
@@ -221,6 +225,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
         isBirthDateEstimated: form.isBirthDateEstimated,
         color: form.color.trim() || undefined,
         avatarUrl: form.avatarUrl.trim() || undefined,
+        avatarCloudinaryPublicId: form.avatarCloudinaryPublicId.trim() || undefined,
       }
       createMutation.mutate(payload)
     }
@@ -437,7 +442,11 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
         <ImageUploadField
           label="Ảnh đại diện"
           value={form.avatarUrl}
-          onChange={(url) => setField("avatarUrl", url)}
+          onChange={(url) => {
+            setField("avatarUrl", url)
+            if (!url) setField("avatarCloudinaryPublicId", "")
+          }}
+          onUploadComplete={(result) => setField("avatarCloudinaryPublicId", result.publicId)}
           imageType="pet_avatar"
           resourceId={pet?.petId}
           disabled={isLoading}

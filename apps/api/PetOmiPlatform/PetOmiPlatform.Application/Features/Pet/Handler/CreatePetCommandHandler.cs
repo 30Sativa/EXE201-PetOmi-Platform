@@ -5,6 +5,7 @@ using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,15 +14,21 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     public class CreatePetCommandHandler : IRequestHandler<CreatePetCommand, PetResponse>
     {
         private readonly IPetRepository _petRepository;
+        private readonly IPetPhotoRepository _petPhotoRepository;
+        private readonly IPetHealthProfileRepository _petHealthProfileRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreatePetCommandHandler(
             IPetRepository petRepository,
+            IPetPhotoRepository petPhotoRepository,
+            IPetHealthProfileRepository petHealthProfileRepository,
             IUserRepository userRepository,
             IUnitOfWork unitOfWork)
         {
             _petRepository = petRepository;
+            _petPhotoRepository = petPhotoRepository;
+            _petHealthProfileRepository = petHealthProfileRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
         }
@@ -46,6 +53,34 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             );
 
             await _petRepository.AddAsync(pet);
+
+            if (!string.IsNullOrWhiteSpace(command.Request.AvatarUrl))
+            {
+                var avatarPhoto = PetPhotoDomain.Create(
+                    petId: pet.Id,
+                    imageUrl: command.Request.AvatarUrl,
+                    cloudinaryPublicId: command.Request.AvatarCloudinaryPublicId,
+                    caption: "Avatar",
+                    isAvatar: true,
+                    takenAt: DateTime.UtcNow);
+
+                await _petPhotoRepository.AddAsync(avatarPhoto);
+            }
+
+            if (!string.IsNullOrWhiteSpace(command.Request.Color)
+                || !string.IsNullOrWhiteSpace(command.Request.IsNeutered))
+            {
+                var healthProfile = PetHealthProfileDomain.Create(
+                    petId: pet.Id,
+                    currentWeightKg: null,
+                    color: command.Request.Color,
+                    isNeutered: command.Request.IsNeutered,
+                    allergies: null,
+                    chronicConditions: null,
+                    microchipNumber: null);
+
+                await _petHealthProfileRepository.AddAsync(healthProfile);
+            }
 
             // 3. Lưu vào DB
             await _unitOfWork.SaveChangesAsync(cancellationToken);

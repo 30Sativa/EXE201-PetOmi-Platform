@@ -3,6 +3,7 @@ using PetOmiPlatform.Application.Exceptions;
 using PetOmiPlatform.Application.Features.Pet.Command;
 using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
+using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,17 +13,20 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
     public class UpdatePetCommandHandler : IRequestHandler<UpdatePetCommand, PetResponse>
     {
         private readonly IPetRepository _petRepository;
+        private readonly IPetHealthProfileRepository _petHealthProfileRepository;
         private readonly ICloudinaryService _cloudinaryService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPetAccessService _accessService;
 
         public UpdatePetCommandHandler(
             IPetRepository petRepository,
+            IPetHealthProfileRepository petHealthProfileRepository,
             ICloudinaryService cloudinaryService,
             IUnitOfWork unitOfWork,
             IPetAccessService accessService)
         {
             _petRepository = petRepository;
+            _petHealthProfileRepository = petHealthProfileRepository;
             _cloudinaryService = cloudinaryService;
             _unitOfWork = unitOfWork;
             _accessService = accessService;
@@ -56,6 +60,38 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             );
 
             await _petRepository.UpdateAsync(pet);
+
+            if (!string.IsNullOrWhiteSpace(command.Request.Color)
+                || !string.IsNullOrWhiteSpace(command.Request.IsNeutered))
+            {
+                var healthProfile = await _petHealthProfileRepository.GetByPetIdAsync(command.PetId);
+                if (healthProfile == null)
+                {
+                    healthProfile = PetHealthProfileDomain.Create(
+                        petId: command.PetId,
+                        currentWeightKg: null,
+                        color: command.Request.Color,
+                        isNeutered: command.Request.IsNeutered,
+                        allergies: null,
+                        chronicConditions: null,
+                        microchipNumber: null);
+
+                    await _petHealthProfileRepository.AddAsync(healthProfile);
+                }
+                else
+                {
+                    healthProfile.UpdateHealthInfo(
+                        currentWeightKg: null,
+                        color: command.Request.Color,
+                        isNeutered: command.Request.IsNeutered,
+                        allergies: null,
+                        chronicConditions: null,
+                        microchipNumber: null);
+
+                    await _petHealthProfileRepository.UpdateAsync(healthProfile);
+                }
+            }
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             if (!string.IsNullOrWhiteSpace(oldAvatarPublicId))

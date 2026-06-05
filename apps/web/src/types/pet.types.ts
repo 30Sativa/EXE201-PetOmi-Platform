@@ -11,6 +11,7 @@ export interface PetResponse {
   dateOfBirth: string | null  // DateOnly ISO string: "2023-01-15"
   isBirthDateEstimated: boolean
   avatarUrl: string | null
+  avatarCloudinaryPublicId: string | null
   color: string | null
   createdAt: string
   updatedAt: string | null
@@ -25,6 +26,7 @@ export interface CreatePetRequest {
   dateOfBirth?: string  // DateOnly ISO: "2023-01-15"
   isBirthDateEstimated: boolean
   avatarUrl?: string
+  avatarCloudinaryPublicId?: string
   color?: string
 }
 
@@ -37,6 +39,7 @@ export interface UpdatePetRequest {
   dateOfBirth?: string | null
   isBirthDateEstimated?: boolean
   avatarUrl?: string | null
+  avatarCloudinaryPublicId?: string | null
   color?: string | null
 }
 
@@ -154,6 +157,7 @@ export interface PetPhotoResponse {
 
 export interface CreatePetPhotoRequest {
   imageUrl: string
+  cloudinaryPublicId?: string
   caption?: string
   isAvatar: boolean
   takenAt?: string

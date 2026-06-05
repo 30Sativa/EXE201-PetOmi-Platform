@@ -1,4 +1,4 @@
-// Review related types (mocked - no owner-specific review endpoint)
+// Review related types reserved for the owner review API.
 
 export interface OwnerReviewItem {
   clinicId: string

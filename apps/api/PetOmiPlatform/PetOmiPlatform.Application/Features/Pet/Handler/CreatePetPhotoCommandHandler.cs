@@ -56,6 +56,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                     command.PetId,
                     command.Request.ImageUrl,
                     command.Request.CloudinaryPublicId,
+                    photo.Id,
                     cancellationToken);
             }
 

@@ -46,13 +46,6 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             if (photo.PetId != command.PetId)
                 throw new NotFoundException("Ảnh không thuộc về thú cưng này.");
 
-            var currentAvatar = await _photoRepository.GetAvatarAsync(command.PetId);
-            if (currentAvatar != null)
-            {
-                currentAvatar.RemoveAvatar();
-                await _photoRepository.UpdateAsync(currentAvatar);
-            }
-
             photo.SetAsAvatar();
             await _photoRepository.UpdateAsync(photo);
 
@@ -60,6 +53,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 command.PetId,
                 photo.ImageUrl,
                 photo.CloudinaryPublicId,
+                photo.Id,
                 cancellationToken);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);

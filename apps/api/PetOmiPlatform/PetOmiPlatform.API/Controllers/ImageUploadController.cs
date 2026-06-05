@@ -74,8 +74,20 @@ namespace PetOmiPlatform.API.Controllers
             if (folderTemplate.Contains("{petId}"))
             {
                 if (string.IsNullOrWhiteSpace(request.ResourceId))
-                    return BadRequest(BaseResponse<object>.Fail($"Với imageType '{request.ImageType}', resourceId (petId) là bắt buộc."));
-                folder = folderTemplate.Replace("{petId}", request.ResourceId, StringComparison.OrdinalIgnoreCase);
+                {
+                    if (request.ImageType.Equals("pet_avatar", StringComparison.OrdinalIgnoreCase))
+                    {
+                        folder = $"pets/pending/{userId}/avatar";
+                    }
+                    else
+                    {
+                        return BadRequest(BaseResponse<object>.Fail($"Với imageType '{request.ImageType}', resourceId (petId) là bắt buộc."));
+                    }
+                }
+                else
+                {
+                    folder = folderTemplate.Replace("{petId}", request.ResourceId, StringComparison.OrdinalIgnoreCase);
+                }
             }
             else if (folderTemplate.Contains("{clinicId}"))
             {

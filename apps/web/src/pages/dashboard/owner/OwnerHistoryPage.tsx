@@ -1,16 +1,25 @@
 import { useState } from "react"
 import { ClipboardList } from "lucide-react"
+import { useQueries, useQuery } from "@tanstack/react-query"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import TabFilter from "@/components/ui/TabFilter"
-import { useQuery } from "@tanstack/react-query"
 import { getOwnerAppointmentsApi } from "@/services/appointments.service"
-import { getPetsApi } from "@/services/pets.service"
+import { getPetMedicalRecordsApi, getPetsApi } from "@/services/pets.service"
 
 type StatusFilter = "all" | "completed" | "cancelled"
+
+interface HistoryItem {
+  id: string
+  clinicName: string
+  diagnosis: string
+  date: string
+  petName: string
+  status: "completed" | "cancelled"
+}
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Tất cả" },
@@ -30,107 +39,75 @@ const formatDate = (dateStr: string) => {
   }
 }
 
-// Mock medical records — backend chưa expose API riêng cho owner
-const mockMedicalRecords = [
-  {
-    clinicName: "PetOmi Clinic Q2",
-    diagnosis: "Viêm da nhẹ",
-    date: "2026-05-02",
-    petName: "Mochi",
-  },
-  {
-    clinicName: "Happy Vet Center",
-    diagnosis: "Tiêm phòng định kỳ",
-    date: "2026-03-12",
-    petName: "Bim",
-  },
-  {
-    clinicName: "Sunrise Vet",
-    diagnosis: "Kiểm tra tổng quát",
-    date: "2026-02-28",
-    petName: "Lily",
-  },
-  {
-    clinicName: "PetOmi Clinic Q2",
-    diagnosis: "Tẩy giun",
-    date: "2026-01-15",
-    petName: "Mochi",
-  },
-]
-
 export default function OwnerHistoryPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
 
-  const { data: appointments, isLoading } = useQuery({
+  const { data: appointments, isLoading: isAppointmentsLoading } = useQuery({
     queryKey: ["owner-appointments"],
     queryFn: () => getOwnerAppointmentsApi(),
   })
 
-  const { data: pets } = useQuery({
+  const { data: pets, isLoading: isPetsLoading } = useQuery({
     queryKey: ["owner-pets"],
     queryFn: getPetsApi,
   })
 
-  const completedOrCancelled = (appointments ?? []).filter(
-    (a) =>
-      a.status.toLowerCase() === "completed" ||
-      a.status.toLowerCase() === "cancelled",
-  )
+  const medicalRecordQueries = useQueries({
+    queries: (pets ?? []).map((pet) => ({
+      queryKey: ["pet-medical-records", pet.petId],
+      queryFn: () => getPetMedicalRecordsApi(pet.petId),
+    })),
+  })
 
-  const filtered =
-    statusFilter === "all"
-      ? completedOrCancelled
-      : completedOrCancelled.filter((a) =>
-          statusFilter === "completed"
-            ? a.status.toLowerCase() === "completed"
-            : a.status.toLowerCase() === "cancelled",
-        )
+  const isMedicalRecordsLoading = medicalRecordQueries.some((query) => query.isLoading)
+  const isLoading = isAppointmentsLoading || isPetsLoading || isMedicalRecordsLoading
 
   const getPetName = (petId: string) =>
-    pets?.find((p) => p.petId === petId)?.name ?? "Không rõ"
+    pets?.find((pet) => pet.petId === petId)?.name ?? "Không rõ"
 
-  // Combine real appointments with mock records for richer history
+  const medicalHistory: HistoryItem[] = medicalRecordQueries.flatMap((query, index) => {
+    const pet = pets?.[index]
+    return (query.data ?? []).map((record) => ({
+      id: `record-${record.medicalRecordId}`,
+      clinicName: record.clinicName?.trim() || "Không rõ",
+      diagnosis: record.title,
+      date: record.recordDate,
+      petName: pet?.name ?? getPetName(record.petId),
+      status: "completed" as const,
+    }))
+  })
+
+  const cancelledAppointments: HistoryItem[] = (appointments ?? [])
+    .filter((appointment) => appointment.status.toLowerCase() === "cancelled")
+    .map((appointment) => ({
+      id: `appointment-${appointment.appointmentId}`,
+      clinicName: "Phòng khám",
+      diagnosis: appointment.appointmentType,
+      date: appointment.appointmentDate,
+      petName: getPetName(appointment.petId),
+      status: "cancelled" as const,
+    }))
+
   const allHistory = [
-    ...filtered.map((appt) => ({
-      id: appt.appointmentId,
-      clinicName: "Phòng khám", // API chưa trả clinic name
-      diagnosis: appt.appointmentType,
-      date: appt.appointmentDate,
-      petName: getPetName(appt.petId),
-      status: appt.status.toLowerCase() === "completed" ? "completed" : "cancelled",
-      isMock: false,
-    })),
-    ...(statusFilter !== "cancelled"
-      ? mockMedicalRecords.map((r, i) => ({
-          id: `mock-${i}`,
-          clinicName: r.clinicName,
-          diagnosis: r.diagnosis,
-          date: r.date,
-          petName: r.petName,
-          status: "completed" as const,
-          isMock: true,
-        }))
-      : []),
+    ...(statusFilter !== "cancelled" ? medicalHistory : []),
+    ...(statusFilter !== "completed" ? cancelledAppointments : []),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
     <div className="grid gap-6">
-      {/* Header */}
       <div>
         <h2 className="text-xl font-extrabold text-po-text">Lịch sử khám</h2>
         <p className="mt-1 text-sm text-po-text-muted">
-          Xem lại các lần khám đã hoàn thành và đã hủy.
+          Xem lại các lần khám đã hoàn thành và lịch đã hủy.
         </p>
       </div>
 
-      {/* Filters */}
       <TabFilter
         tabs={statusFilters}
         activeTab={statusFilter}
         onChange={setStatusFilter}
       />
 
-      {/* History List */}
       <DashboardSection title={`${allHistory.length} bản ghi`}>
         {isLoading ? (
           <div className="flex justify-center py-12">

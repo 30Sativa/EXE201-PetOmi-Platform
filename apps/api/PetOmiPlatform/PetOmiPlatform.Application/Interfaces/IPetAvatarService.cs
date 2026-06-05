@@ -6,6 +6,7 @@ namespace PetOmiPlatform.Application.Interfaces
             Guid petId,
             string? newAvatarUrl,
             string? newCloudinaryPublicId,
+            Guid? selectedPhotoId = null,
             CancellationToken cancellationToken = default);
     }
 }

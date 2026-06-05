@@ -21,48 +21,48 @@ interface PetModalProps {
 
 const BREED_DATA: Record<string, { vi: string; en?: string }[]> = {
   Dog: [
-    { vi: "Chưa rõ giống", en: "Mixed Breed" },
+    { vi: "Chưa rõ giống (Mixed Breed)", en: "Mixed Breed" },
     { vi: "Chó ta (Mongrel)", en: "Mongrel" },
-    { vi: "Alaska Malamute", en: "Alaska Malamute" },
-    { vi: "Beagle", en: "Beagle" },
-    { vi: "Corgi", en: "Corgi" },
-    { vi: "Dachshund (Lạp xưởng)", en: "Dachshund" },
-    { vi: "Golden Retriever", en: "Golden Retriever" },
-    { vi: "Husky", en: "Husky" },
-    { vi: "Labrador", en: "Labrador" },
-    { vi: "Phốc Sóc", en: "Pomeranian" },
-    { vi: "Poodle", en: "Poodle" },
-    { vi: "Rottweiler", en: "Rottweiler" },
-    { vi: "Shiba Inu", en: "Shiba Inu" },
-    { vi: "Xoáy (Chow Chow)", en: "Chow Chow" },
-    { vi: "Bulldog", en: "Bulldog" },
-    { vi: "German Shepherd (Chó Becgie)", en: "German Shepherd" },
-    { vi: "Border Collie", en: "Border Collie" },
-    { vi: "Cavalier King Charles", en: "Cavalier King Charles" },
+    { vi: "Chó Alaska (Alaska Malamute)", en: "Alaska Malamute" },
+    { vi: "Chó Beagle (Beagle)", en: "Beagle" },
+    { vi: "Chó Corgi (Corgi)", en: "Corgi" },
+    { vi: "Chó lạp xưởng (Dachshund)", en: "Dachshund" },
+    { vi: "Chó tha mồi vàng (Golden Retriever)", en: "Golden Retriever" },
+    { vi: "Chó Husky (Husky)", en: "Husky" },
+    { vi: "Chó Labrador (Labrador)", en: "Labrador" },
+    { vi: "Chó Phốc Sóc (Pomeranian)", en: "Pomeranian" },
+    { vi: "Chó Poodle (Poodle)", en: "Poodle" },
+    { vi: "Chó Rottweiler (Rottweiler)", en: "Rottweiler" },
+    { vi: "Chó Shiba Inu (Shiba Inu)", en: "Shiba Inu" },
+    { vi: "Chó Chow Chow (Chow Chow)", en: "Chow Chow" },
+    { vi: "Chó Bulldog (Bulldog)", en: "Bulldog" },
+    { vi: "Chó Becgie Đức (German Shepherd)", en: "German Shepherd" },
+    { vi: "Chó Border Collie (Border Collie)", en: "Border Collie" },
+    { vi: "Chó Cavalier King Charles (Cavalier King Charles)", en: "Cavalier King Charles" },
     { vi: "Khác", en: "Other" },
   ],
   Cat: [
-    { vi: "Chưa rõ giống", en: "Mixed Breed" },
+    { vi: "Chưa rõ giống (Mixed Breed)", en: "Mixed Breed" },
     { vi: "Mèo ta (Mongrel)", en: "Mongrel" },
-    { vi: "British Shorthair", en: "British Shorthair" },
-    { vi: "Persian (Mèo Ba Tư)", en: "Persian" },
-    { vi: "Siamese (Mèo Xiêm)", en: "Siamese" },
-    { vi: "Ragdoll", en: "Ragdoll" },
-    { vi: "Maine Coon", en: "Maine Coon" },
-    { vi: "Bengal", en: "Bengal" },
-    { vi: "Scottish Fold", en: "Scottish Fold" },
-    { vi: "Sphynx", en: "Sphynx" },
-    { vi: "Russian Blue", en: "Russian Blue" },
-    { vi: "Abyssinian", en: "Abyssinian" },
-    { vi: "Birman (Thần Vận)", en: "Birman" },
-    { vi: "Norwegian Forest", en: "Norwegian Forest" },
+    { vi: "Mèo Anh lông ngắn (British Shorthair)", en: "British Shorthair" },
+    { vi: "Mèo Ba Tư (Persian)", en: "Persian" },
+    { vi: "Mèo Xiêm (Siamese)", en: "Siamese" },
+    { vi: "Mèo Ragdoll (Ragdoll)", en: "Ragdoll" },
+    { vi: "Mèo Maine Coon (Maine Coon)", en: "Maine Coon" },
+    { vi: "Mèo Bengal (Bengal)", en: "Bengal" },
+    { vi: "Mèo tai cụp Scotland (Scottish Fold)", en: "Scottish Fold" },
+    { vi: "Mèo không lông Sphynx (Sphynx)", en: "Sphynx" },
+    { vi: "Mèo Nga xanh (Russian Blue)", en: "Russian Blue" },
+    { vi: "Mèo Abyssinian (Abyssinian)", en: "Abyssinian" },
+    { vi: "Mèo Thần Miến (Birman)", en: "Birman" },
+    { vi: "Mèo rừng Na Uy (Norwegian Forest)", en: "Norwegian Forest" },
     { vi: "Khác", en: "Other" },
   ],
 }
 
 const SPECIES_OPTIONS = [
-  { value: "Dog", vi: "🐶 Chó", emoji: "🐶" },
-  { value: "Cat", vi: "🐱 Mèo", emoji: "🐱" },
+  { value: "Dog", vi: "Chó" },
+  { value: "Cat", vi: "Mèo" },
 ]
 
 interface FormState {
@@ -109,7 +109,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
       return {
         name: pet.name,
         species: pet.species,
-        breed: found ? breed : "Khác",
+        breed: found ? found.vi : "Khác",
         breedCustom: found ? "" : breed,
         gender: pet.gender ?? "",
         isNeutered: pet.isNeutered ?? "",
@@ -180,6 +180,15 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
+  const setSpecies = (species: string) => {
+    setForm((prev) => ({
+      ...prev,
+      species,
+      breed: "",
+      breedCustom: "",
+    }))
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim()) return
@@ -219,7 +228,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
 
   if (!isOpen) return null
 
-  const breeds = BREED_DATA[form.species] ?? [{ vi: "Chưa rõ giống", en: "Mixed Breed" }]
+  const breeds = BREED_DATA[form.species] ?? [{ vi: "Chưa rõ giống (Mixed Breed)", en: "Mixed Breed" }]
 
   return (
     <dialog
@@ -280,7 +289,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => setField("species", opt.value)}
+                onClick={() => setSpecies(opt.value)}
                 disabled={isLoading}
                 className={cn(
                   "flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-semibold transition",
@@ -290,8 +299,7 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
                   isLoading && "opacity-60",
                 )}
               >
-                <span>{opt.emoji}</span>
-                {opt.vi.replace(/^[🐶🐱]\s/, "")}
+                {opt.vi}
               </button>
             ))}
           </div>

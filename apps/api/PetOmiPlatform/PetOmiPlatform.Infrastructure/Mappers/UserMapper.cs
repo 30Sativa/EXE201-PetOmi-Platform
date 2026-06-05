@@ -36,7 +36,7 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 UserId = domain.Id,
                 Email = domain.Email.Value,
                 NormalizedEmail = domain.Email.NormalizedValue,
-                PasswordHash = domain.PasswordHash.Value,
+                PasswordHash = domain.PasswordHash?.Value,
                 EmailVerified = domain.EmailVerified,
                 FailedLoginAttempts = domain.FailedLoginAttempts,
                 IsProfileCompleted = domain.IsProfileCompleted,

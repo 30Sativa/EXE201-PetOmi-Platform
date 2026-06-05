@@ -11,7 +11,7 @@ namespace PetOmiPlatform.Domain.Entities
     public class UserDomain : BaseEntity
     {
         public Email Email { get; private set; }
-        public PasswordHash PasswordHash { get; private set; }
+        public PasswordHash? PasswordHash { get; private set; }
 
         public bool EmailVerified { get; private set; }
         public int FailedLoginAttempts { get; private set; }
@@ -46,7 +46,7 @@ namespace PetOmiPlatform.Domain.Entities
         public static UserDomain Reconstitute(
             Guid id,
             string email,
-            string passwordHash,
+            string? passwordHash,
             bool emailVerified,
             int failedLoginAttempts,
             bool isProfileCompleted,

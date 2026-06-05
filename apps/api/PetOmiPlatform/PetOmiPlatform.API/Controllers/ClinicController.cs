@@ -107,6 +107,17 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         /// <summary>Thêm dịch vụ mới vào phòng khám.</summary>
+        /// <summary>Tim pet da tung co lich tai clinic de tao walk-in/cap cuu cho ho so co san.</summary>
+        [HttpGet("{clinicId:guid}/pets/search")]
+        public async Task<IActionResult> SearchClinicPets(
+            Guid clinicId,
+            [FromQuery] string? search,
+            [FromQuery] int limit = 20)
+        {
+            var result = await Mediator.Send(new SearchClinicPetsQuery(CurrentUserId, clinicId, search, limit));
+            return Ok(BaseResponse<IReadOnlyList<ClinicPetSearchItemResponse>>.Ok(result));
+        }
+
         [HttpPost("{clinicId:guid}/services")]
         public async Task<IActionResult> AddService(Guid clinicId, [FromBody] AddClinicServiceRequest request)
         {

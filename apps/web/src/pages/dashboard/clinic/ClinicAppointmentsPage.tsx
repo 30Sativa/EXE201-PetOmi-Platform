@@ -23,7 +23,9 @@ import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import TabFilter from "@/components/ui/TabFilter"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { appointmentStatusKey, appointmentStatusLabel, appointmentTypeLabel, petSpeciesLabel, staffRoleLabel } from "@/lib/clinicDisplay"
 import { cn, getErrorMessage } from "@/lib/utils"
 import { formatDate, formatShortId, formatTime, todayDateInput } from "@/lib/format"
 import {
@@ -37,20 +39,20 @@ import {
   noShowAppointmentApi,
   rejectAppointmentApi,
 } from "@/services/clinic-appointments.service"
-import { getClinicDoctorsInternalApi, getClinicPublicApi } from "@/services/clinic.service"
-import type { AppointmentListItemResponse, CreateGuestWalkInIntakeRequest } from "@/types"
+import { getClinicDoctorsInternalApi, getClinicPublicApi, searchClinicPetsApi } from "@/services/clinic.service"
+import type { AppointmentListItemResponse, ClinicPetSearchItemResponse, CreateGuestWalkInIntakeRequest } from "@/types"
 
-type StatusFilter = "all" | "pending" | "confirmed" | "checked-in" | "completed" | "cancelled" | "no-show"
+type StatusFilter = "all" | "Pending" | "Confirmed" | "CheckedIn" | "Completed" | "Cancelled" | "NoShow"
 type ActionType = "confirm" | "reject" | "check-in" | "complete" | "no-show" | "cancel"
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
   { value: "all", label: "Tất cả" },
-  { value: "pending", label: "Chờ xác nhận" },
-  { value: "confirmed", label: "Đã xác nhận" },
-  { value: "checked-in", label: "Đã check-in" },
-  { value: "completed", label: "Hoàn thành" },
-  { value: "cancelled", label: "Đã hủy" },
-  { value: "no-show", label: "Không đến" },
+  { value: "Pending", label: "Chờ xác nhận" },
+  { value: "Confirmed", label: "Đã xác nhận" },
+  { value: "CheckedIn", label: "Đã check-in" },
+  { value: "Completed", label: "Hoàn thành" },
+  { value: "Cancelled", label: "Đã hủy" },
+  { value: "NoShow", label: "Không đến" },
 ]
 
 const appointmentTypes = [
@@ -63,36 +65,21 @@ const appointmentTypes = [
 ]
 
 function statusVariant(status: string) {
-  switch (status.toLowerCase()) {
+  switch (appointmentStatusKey(status)) {
     case "pending":
       return "pending" as const
     case "confirmed":
-    case "checked-in":
+    case "checkedin":
       return "confirmed" as const
     case "completed":
       return "completed" as const
     case "cancelled":
     case "rejected":
-    case "no-show":
+    case "noshow":
       return "cancelled" as const
     default:
       return "default" as const
   }
-}
-
-function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    pending: "Chờ xác nhận",
-    confirmed: "Đã xác nhận",
-    "checked-in": "Đã check-in",
-    completed: "Hoàn thành",
-    cancelled: "Đã hủy",
-    rejected: "Bị từ chối",
-    "no-show": "Không đến",
-    expired: "Hết hạn",
-  }
-
-  return map[status.toLowerCase()] ?? status
 }
 
 export default function ClinicAppointmentsPage() {
@@ -100,29 +87,32 @@ export default function ClinicAppointmentsPage() {
   const queryClient = useQueryClient()
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
   const clinicId = clinic?.clinicId ?? ""
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending")
   const [dateFilter, setDateFilter] = useState(todayDateInput())
+  const [searchFilter, setSearchFilter] = useState("")
+  const debouncedSearchFilter = useDebouncedValue(searchFilter.trim(), 300)
   const [actionTarget, setActionTarget] = useState<{ appointment: AppointmentListItemResponse; type: ActionType } | null>(null)
   const [reason, setReason] = useState("")
   const [isGuestOpen, setIsGuestOpen] = useState(false)
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false)
 
   const appointmentsQuery = useQuery({
-    queryKey: ["clinic", clinicId, "appointments", statusFilter, dateFilter],
+    queryKey: ["clinic", clinicId, "appointments", statusFilter, dateFilter, debouncedSearchFilter],
     queryFn: () =>
       getClinicAppointmentsApi({
         clinicId,
         status: statusFilter === "all" ? undefined : statusFilter,
         date: dateFilter || undefined,
+        search: debouncedSearchFilter || undefined,
         page: 1,
-        pageSize: 50,
+        pageSize: 100,
       }),
     enabled: Boolean(clinicId),
   })
 
   const appointments = appointmentsQuery.data?.items ?? []
-  const pendingCount = appointments.filter((appointment) => appointment.status.toLowerCase() === "pending").length
-  const checkedInCount = appointments.filter((appointment) => appointment.status.toLowerCase() === "checked-in").length
+  const pendingCount = appointments.filter((appointment) => appointmentStatusKey(appointment.status) === "pending").length
+  const checkedInCount = appointments.filter((appointment) => appointmentStatusKey(appointment.status) === "checkedin").length
   const walkInCount = appointments.filter((appointment) => appointment.isWalkIn).length
 
   const invalidateAppointments = async () => {
@@ -242,15 +232,23 @@ export default function ClinicAppointmentsPage() {
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
             <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="w-full xl:flex-1" />
-            <label className="flex h-10 w-fit shrink-0 items-center gap-2 rounded-full border border-po-border bg-white px-3 text-xs font-bold text-po-text-muted">
-              Ngày
+            <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto] xl:w-[520px]">
               <input
-                type="date"
-                value={dateFilter}
-                onChange={(event) => setDateFilter(event.target.value)}
-                className="h-8 rounded-xl border border-po-border bg-white px-2 text-sm font-semibold text-po-text outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+                value={searchFilter}
+                onChange={(event) => setSearchFilter(event.target.value)}
+                placeholder="Tìm pet, owner, dịch vụ hoặc mã lịch"
+                className="h-10 min-w-0 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
               />
-            </label>
+              <label className="flex h-10 w-fit shrink-0 items-center gap-2 rounded-full border border-po-border bg-white px-3 text-xs font-bold text-po-text-muted">
+                Ngày
+                <input
+                  type="date"
+                  value={dateFilter}
+                  onChange={(event) => setDateFilter(event.target.value)}
+                  className="h-8 rounded-xl border border-po-border bg-white px-2 text-sm font-semibold text-po-text outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+                />
+              </label>
+            </div>
           </div>
         </div>
 
@@ -367,10 +365,10 @@ function ClinicAppointmentCard({
   onAction: (type: ActionType) => void
   onOpenVisit: () => void
 }) {
-  const status = appointment.status.toLowerCase()
+  const status = appointmentStatusKey(appointment.status)
   const isPending = status === "pending"
   const isConfirmed = status === "confirmed"
-  const isCheckedIn = status === "checked-in"
+  const isCheckedIn = status === "checkedin"
   const canOpenVisit = isCheckedIn || status === "completed"
 
   return (
@@ -383,10 +381,10 @@ function ClinicAppointmentCard({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="truncate text-sm font-extrabold text-po-text">Pet {formatShortId(appointment.petId)}</p>
-              <StatusBadge variant={statusVariant(appointment.status)} label={statusLabel(appointment.status)} />
+              <StatusBadge variant={statusVariant(appointment.status)} label={appointmentStatusLabel(appointment.status)} />
               {appointment.isWalkIn ? <span className="rounded-full bg-po-accent-soft px-2.5 py-0.5 text-xs font-medium text-po-accent">Walk-in</span> : null}
             </div>
-            <p className="mt-1 text-xs font-medium text-po-text-muted">{appointment.appointmentType}</p>
+            <p className="mt-1 text-xs font-medium text-po-text-muted">{appointmentTypeLabel(appointment.appointmentType)}</p>
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-po-text-muted">
               <span className="flex items-center gap-1 rounded-full bg-white px-3 py-1 ring-1 ring-po-border/70">
                 <CalendarCheck className="size-3" />
@@ -626,7 +624,7 @@ function GuestWalkInModal({
             <Input label="Giống" value={form.petBreed ?? ""} onChange={(value) => update("petBreed", value)} />
             <Select label="Giới tính" value={form.petGender ?? "Unknown"} onChange={(value) => update("petGender", value)} options={[{ value: "Male", label: "Đực" }, { value: "Female", label: "Cái" }, { value: "Unknown", label: "Chưa rõ" }]} />
             <Input label="Ngày sinh pet" type="date" value={form.petDateOfBirth ?? ""} onChange={(value) => update("petDateOfBirth", value)} />
-            <Select label="Bác sĩ" value={form.vetClinicId ?? ""} onChange={(value) => update("vetClinicId", value)} options={[{ value: "", label: "Chọn sau" }, ...(doctors ?? []).map((doctor) => ({ value: doctor.vetClinicId, label: `${doctor.fullName} · ${doctor.roleName}` }))]} />
+            <Select label="Bác sĩ" value={form.vetClinicId ?? ""} onChange={(value) => update("vetClinicId", value)} options={[{ value: "", label: "Chọn sau" }, ...(doctors ?? []).map((doctor) => ({ value: doctor.vetClinicId, label: `${doctor.fullName} · ${staffRoleLabel(doctor.roleName)}` }))]} />
             <Select label="Dịch vụ" value={form.serviceId ?? ""} onChange={(value) => update("serviceId", value)} options={[{ value: "", label: "Chưa chọn dịch vụ" }, ...(publicProfile?.services ?? []).map((service) => ({ value: service.serviceId, label: service.serviceName }))]} />
             <Input label="Ngày hẹn" type="date" value={form.appointmentDate} onChange={(value) => update("appointmentDate", value)} required />
             <div className="grid grid-cols-2 gap-3">
@@ -704,15 +702,29 @@ function EmergencyModal({
   onClose: () => void
   onDone: () => Promise<void>
 }) {
-  const [petId, setPetId] = useState("")
+  const [petSearch, setPetSearch] = useState("")
+  const [selectedPetId, setSelectedPetId] = useState("")
   const [notes, setNotes] = useState("")
+  const debouncedPetSearch = useDebouncedValue(petSearch.trim(), 300)
+
+  const petsQuery = useQuery({
+    queryKey: ["clinic", clinicId, "pet-search", debouncedPetSearch],
+    queryFn: () => searchClinicPetsApi(clinicId, {
+      search: debouncedPetSearch || undefined,
+      limit: 20,
+    }),
+    enabled: isOpen && Boolean(clinicId),
+  })
+
+  const pets = petsQuery.data ?? []
+  const selectedPet = pets.find((pet) => pet.petId === selectedPetId) ?? null
 
   const mutation = useMutation({
     mutationFn: () => {
       const now = new Date()
       return createEmergencyAppointmentApi({
         clinicId,
-        petId,
+        petId: selectedPetId,
         appointmentDate: now.toISOString().slice(0, 10),
         startTime: now.toTimeString().slice(0, 5),
         endTime: new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5),
@@ -721,7 +733,8 @@ function EmergencyModal({
     },
     onSuccess: async () => {
       toast.success("Đã tạo lịch cấp cứu.")
-      setPetId("")
+      setPetSearch("")
+      setSelectedPetId("")
       setNotes("")
       await onDone()
       onClose()
@@ -740,11 +753,21 @@ function EmergencyModal({
           </span>
           <div>
             <h3 className="text-lg font-extrabold text-po-text">Tạo lịch cấp cứu</h3>
-            <p className="mt-1 text-sm text-po-text-muted">Dùng cho pet đã có hồ sơ. Khách mới nên dùng tiếp nhận vãng lai.</p>
+            <p className="mt-1 text-sm text-po-text-muted">Tìm pet đã từng có lịch tại clinic. Khách mới nên dùng tiếp nhận vãng lai.</p>
           </div>
         </div>
         <div className="mt-5 grid gap-4">
-          <Input label="Pet ID" value={petId} onChange={setPetId} required />
+          <Input label="Tìm pet hoặc owner" value={petSearch} onChange={(value) => {
+            setPetSearch(value)
+            setSelectedPetId("")
+          }} />
+          <PetSearchSelect
+            value={selectedPetId}
+            pets={pets}
+            isLoading={petsQuery.isLoading || petsQuery.isFetching}
+            onChange={setSelectedPetId}
+          />
+          {selectedPet ? <SelectedPetSummary pet={selectedPet} /> : null}
           <label className="grid gap-1.5 text-sm font-semibold text-po-text">
             Ghi chú
             <textarea
@@ -759,12 +782,79 @@ function EmergencyModal({
           <button onClick={onClose} className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted">Hủy</button>
           <button
             onClick={() => mutation.mutate()}
-            disabled={!petId.trim() || mutation.isPending}
+            disabled={!selectedPetId || mutation.isPending}
             className="inline-flex h-10 items-center rounded-full bg-po-danger px-5 text-sm font-semibold text-white transition hover:bg-po-danger/90 disabled:opacity-60"
           >
             {mutation.isPending ? "Đang tạo..." : "Tạo cấp cứu"}
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function PetSearchSelect({
+  value,
+  pets,
+  isLoading,
+  onChange,
+}: {
+  value: string
+  pets: ClinicPetSearchItemResponse[]
+  isLoading: boolean
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+      Pet cần cấp cứu
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={isLoading}
+        className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
+      >
+        <option value="">
+          {isLoading ? "Đang tìm pet..." : pets.length === 0 ? "Không tìm thấy pet phù hợp" : "Chọn pet"}
+        </option>
+        {pets.map((pet) => (
+          <option key={pet.petId} value={pet.petId}>
+            {pet.petName} - {petSpeciesLabel(pet.species)}
+            {pet.breed ? ` ${pet.breed}` : ""}
+            {" - "}
+            {pet.ownerFullName || pet.ownerPhone || pet.ownerEmail}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function SelectedPetSummary({ pet }: { pet: ClinicPetSearchItemResponse }) {
+  return (
+    <div className="flex items-start gap-3 rounded-2xl bg-po-surface-muted/70 p-3 ring-1 ring-po-border/70">
+      {pet.avatarUrl ? (
+        <img src={pet.avatarUrl} alt={pet.petName} className="size-11 shrink-0 rounded-2xl object-cover" />
+      ) : (
+        <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-po-danger ring-1 ring-po-border/70">
+          <AlertTriangle className="size-5" />
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="truncate text-sm font-extrabold text-po-text">{pet.petName}</p>
+        <p className="mt-1 text-xs font-medium text-po-text-muted">
+          {petSpeciesLabel(pet.species)}
+          {pet.breed ? ` · ${pet.breed}` : ""}
+          {pet.gender ? ` · ${pet.gender}` : ""}
+        </p>
+        <p className="mt-1 truncate text-xs text-po-text-subtle">
+          Owner: {pet.ownerFullName || pet.ownerPhone || pet.ownerEmail}
+        </p>
+        {pet.lastAppointmentDate ? (
+          <p className="mt-1 text-xs text-po-text-subtle">
+            Lần gần nhất: {formatDate(pet.lastAppointmentDate)}
+            {pet.lastAppointmentStatus ? ` · ${appointmentStatusLabel(pet.lastAppointmentStatus)}` : ""}
+          </p>
+        ) : null}
       </div>
     </div>
   )

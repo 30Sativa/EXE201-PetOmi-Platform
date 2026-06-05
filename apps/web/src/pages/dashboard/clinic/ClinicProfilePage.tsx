@@ -21,6 +21,7 @@ import ImageUploadField from "@/components/ui/ImageUploadField"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { clinicStatusLabel } from "@/lib/clinicDisplay"
 import { formatDate } from "@/lib/format"
 import { cn, getErrorMessage } from "@/lib/utils"
 import {
@@ -167,7 +168,7 @@ export default function ClinicProfilePage() {
 
           <div className="grid gap-2 rounded-2xl bg-po-surface-muted/70 px-4 py-3 text-sm ring-1 ring-po-border/70 sm:min-w-56">
             <div className="flex items-center justify-between gap-3">
-              <StatusBadge variant={clinic.status === "Approved" ? "success" : "warning"} label={clinic.status} />
+              <StatusBadge variant={clinic.status === "Approved" ? "success" : "warning"} label={clinicStatusLabel(clinic.status)} />
               <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-po-text-subtle">
                 <CalendarDays className="size-3.5" />
                 {formatDate(clinic.createdAt)}

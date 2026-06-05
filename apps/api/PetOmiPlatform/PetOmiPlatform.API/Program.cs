@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.OpenApi.Models;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.API.Common.Authorization;
@@ -25,6 +26,15 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
     });
 builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // CORS
 builder.Services.AddCors(options =>
@@ -123,6 +133,7 @@ var app = builder.Build();
 // =======================
 
 app.UseMiddleware<ExceptionMiddleware>();
+app.UseForwardedHeaders();
 
 // Swagger — bật khi Development hoặc EnableSwagger=true trong config
 var enableSwagger = app.Environment.IsDevelopment()

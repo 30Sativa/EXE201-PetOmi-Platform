@@ -6,6 +6,7 @@ import type {
   ClinicSearchResult,
   ClinicDoctorListItemResponse,
   ClinicLocationResponse,
+  ClinicPetSearchItemResponse,
   ClinicPublicResponse,
   ClinicServiceResponse,
   ClinicSePayAccountResponse,
@@ -91,6 +92,14 @@ export const getClinicDoctorsInternalApi = async (
 ): Promise<ClinicDoctorListItemResponse[]> => {
   const response = await api.get(`/clinic/${clinicId}/doctors`)
   return unwrapResponse<ClinicDoctorListItemResponse[]>(response)
+}
+
+export const searchClinicPetsApi = async (
+  clinicId: string,
+  params?: { search?: string; limit?: number },
+): Promise<ClinicPetSearchItemResponse[]> => {
+  const response = await api.get(`/clinic/${clinicId}/pets/search`, { params })
+  return unwrapResponse<ClinicPetSearchItemResponse[]>(response)
 }
 
 export const assignClinicStaffApi = async (

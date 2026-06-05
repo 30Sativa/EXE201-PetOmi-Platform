@@ -8,6 +8,7 @@ import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import TabFilter from "@/components/ui/TabFilter"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { sePayReconciliationStatusLabel } from "@/lib/clinicDisplay"
 import { formatCurrency, formatDate, formatShortId } from "@/lib/format"
 import { getErrorMessage } from "@/lib/utils"
 import {
@@ -195,7 +196,7 @@ export default function ClinicReconciliationPage() {
         <Modal title="Match giao dịch" onClose={() => setMatchTarget(null)}>
           <p className="text-sm text-po-text-muted">{formatCurrency(matchTarget.transferAmount)} · {matchTarget.referenceCode ?? formatShortId(matchTarget.paymentTransactionId)}</p>
           <div className="mt-4 grid gap-4">
-            <Input label="InvoiceId" value={invoiceId} onChange={setInvoiceId} />
+            <Input label="Mã hóa đơn nội bộ" value={invoiceId} onChange={setInvoiceId} />
             <Textarea label="Ghi chú review" value={reviewNote} onChange={setReviewNote} />
           </div>
           <div className="mt-5 flex justify-end gap-3">
@@ -283,7 +284,7 @@ function ReconciliationRow({
         <div className="min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <p className="truncate text-sm font-extrabold text-po-text">{item.referenceCode ?? item.providerTransactionId}</p>
-            <StatusBadge variant={statusVariant(item)} label={item.status} />
+            <StatusBadge variant={statusVariant(item)} label={sePayReconciliationStatusLabel(item.status)} />
             {item.needsAttention ? <StatusBadge variant="danger" label="Cần kiểm tra" /> : null}
           </div>
           <p className="mt-1 truncate text-xs font-medium text-po-text-muted">{item.transferContent ?? "Không có nội dung chuyển khoản"}</p>

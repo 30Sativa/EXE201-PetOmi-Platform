@@ -1,3 +1,4 @@
+using PetOmiPlatform.Domain.Common.Models;
 using PetOmiPlatform.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,8 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
 
         // Lấy danh sách tất cả pet còn hoạt động của 1 owner
         Task<List<PetDomain>> GetByOwnerIdAsync(Guid ownerUserId);
+
+        Task<List<ClinicPetSearchResult>> SearchByClinicAsync(Guid clinicId, string? search, int limit);
 
         // Thêm pet mới
         Task AddAsync(PetDomain pet);

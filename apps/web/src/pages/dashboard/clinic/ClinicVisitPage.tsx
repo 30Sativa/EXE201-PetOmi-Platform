@@ -9,6 +9,7 @@ import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { examinationStatusLabel, invoiceStatusLabel } from "@/lib/clinicDisplay"
 import { formatCurrency, formatShortId } from "@/lib/format"
 import { getErrorMessage } from "@/lib/utils"
 import {
@@ -310,7 +311,7 @@ export default function ClinicVisitPage() {
           <h2 className="mt-3 text-xl font-extrabold text-po-text">Phiếu khám {formatShortId(appointmentId)}</h2>
           <p className="mt-1 text-sm text-po-text-muted">SOAP, toa thuốc, hóa đơn và thanh toán trong một màn hình.</p>
         </div>
-        {exam ? <StatusBadge variant={exam.status === "Completed" ? "success" : "info"} label={exam.status} /> : <StatusBadge variant="warning" label="Chưa có phiếu" />}
+        {exam ? <StatusBadge variant={exam.status === "Completed" ? "success" : "info"} label={examinationStatusLabel(exam.status)} /> : <StatusBadge variant="warning" label="Chưa có phiếu" />}
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
@@ -578,7 +579,7 @@ function InvoicePanel({
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-po-text-subtle">Mã hóa đơn</p>
             <p className="mt-1 text-lg font-extrabold text-po-text">{invoice.invoiceCode}</p>
           </div>
-          <StatusBadge variant={isPaid ? "success" : "warning"} label={invoice.status} />
+          <StatusBadge variant={isPaid ? "success" : "warning"} label={invoiceStatusLabel(invoice.status)} />
         </div>
         <p className="mt-4 text-3xl font-extrabold text-po-text">{formatCurrency(invoice.finalAmount)}</p>
         {invoice.warnings.length > 0 ? (
@@ -654,17 +655,17 @@ function SePayPaymentStatusPanel({
     AmountMismatch: "border-po-danger/30 bg-po-danger-soft text-po-danger",
   }[effectiveStatus] ?? "border-po-border bg-po-surface-muted text-po-text-muted"
 
-  const message = status?.message ?? "Dang cho thanh toan..."
+  const message = status?.message ?? "Đang chờ thanh toán..."
 
   return (
     <div className={`mx-auto w-full max-w-md rounded-2xl border px-4 py-3 text-left ${tone}`}>
       <p className="text-sm font-extrabold">{message}</p>
       {status?.receivedAmount != null ? (
         <p className="mt-1 text-xs font-semibold">
-          Da nhan {formatCurrency(status.receivedAmount)} / can thu {formatCurrency(status.finalAmount)}
+          Đã nhận {formatCurrency(status.receivedAmount)} / cần thu {formatCurrency(status.finalAmount)}
         </p>
       ) : (
-        <p className="mt-1 text-xs font-semibold">{isLoading ? "Dang kiem tra giao dich..." : "Tu dong kiem tra moi 3 giay."}</p>
+        <p className="mt-1 text-xs font-semibold">{isLoading ? "Đang kiểm tra giao dịch..." : "Tự động kiểm tra mỗi 3 giây."}</p>
       )}
     </div>
   )

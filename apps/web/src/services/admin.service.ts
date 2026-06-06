@@ -2,6 +2,7 @@ import { api } from "@/lib/axios"
 import type {
   AdminAlertsResponse,
   AdminDashboardResponse,
+  AdminRolesResponse,
   AdminUserListResponse,
   AuditLogItemResponse,
   ClinicListItemResponse,
@@ -24,6 +25,11 @@ export const getAdminDashboardApi = async (): Promise<AdminDashboardResponse> =>
   return unwrapResponse<AdminDashboardResponse>(response)
 }
 
+export const getAdminRolesApi = async (): Promise<AdminRolesResponse> => {
+  const response = await api.get("/admin/roles")
+  return unwrapResponse<AdminRolesResponse>(response)
+}
+
 // --- Clinics ---
 export const getAdminClinicsApi = async (params?: {
   status?: string
@@ -44,6 +50,7 @@ export const getAdminClinicsApi = async (params?: {
 export const getAdminUsersApi = async (params?: {
   search?: string
   isActive?: boolean
+  role?: string
   page?: number
   pageSize?: number
 }): Promise<PagedData<AdminUserListResponse>> => {
@@ -51,6 +58,7 @@ export const getAdminUsersApi = async (params?: {
     params: {
       search: params?.search || undefined,
       isActive: params?.isActive ?? undefined,
+      role: params?.role || undefined,
       page: params?.page ?? 1,
       pageSize: params?.pageSize ?? 10,
     },

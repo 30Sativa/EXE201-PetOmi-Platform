@@ -143,7 +143,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         }
 
         public async Task<(List<UserDomain> Items, int TotalCount)> GetAdminPagedAsync(
-            string? search, bool? isActive, int page, int pageSize)
+            string? search, bool? isActive, string? role, int page, int pageSize)
         {
             var query = _context.Users.AsNoTracking().AsQueryable();
 
@@ -157,6 +157,12 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
             if (isActive.HasValue)
                 query = query.Where(u => u.IsActive == isActive.Value);
+
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                var roleTerm = role.Trim();
+                query = query.Where(u => u.UserRoles.Any(ur => ur.Role!.RoleName == roleTerm));
+            }
 
             var total = await query.CountAsync();
 

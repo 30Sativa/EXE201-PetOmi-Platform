@@ -1,6 +1,9 @@
 import {
   BadgeCheck,
+  Bot,
   Building2,
+  Database,
+  MessageCircle,
   ShieldCheck,
   Sparkles,
   TrendingUp,
@@ -66,6 +69,16 @@ function formatDateTime(dateStr: string) {
   } catch {
     return dateStr
   }
+}
+
+function formatNumber(value?: number) {
+  return new Intl.NumberFormat("vi-VN").format(value ?? 0)
+}
+
+function formatPercent(value?: number) {
+  return `${new Intl.NumberFormat("vi-VN", {
+    maximumFractionDigits: 1,
+  }).format(value ?? 0)}%`
 }
 
 function statusVariant(status: string) {
@@ -141,6 +154,8 @@ export default function AdminDashboardPage() {
   const summary = dashboard?.summary
   const userStats = dashboard?.userStats
   const clinicStats = dashboard?.clinicStats
+  const aiStats = dashboard?.aiStats
+  const aiIntentStats = dashboard?.aiIntentStats ?? []
   const pendingCount = clinicStats?.pending ?? getPagedTotal(pendingClinics)
 
   const systemSignals = [
@@ -183,17 +198,24 @@ export default function AdminDashboardPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={() => navigate("/dashboard/admin/clinics")}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0 max-[480px]:w-full"
               >
                 <BadgeCheck className="size-4" />
                 Mở danh sách duyệt
               </button>
               <button
                 onClick={() => navigate("/dashboard/admin/users")}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0 max-[480px]:w-full"
               >
                 <UsersRound className="size-4" />
                 Quản lý người dùng
+              </button>
+              <button
+                onClick={() => navigate("/dashboard/admin/ai")}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-white px-5 text-sm font-semibold text-po-primary ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 max-[480px]:w-full"
+              >
+                <Bot className="size-4" />
+                Xem AI monitor
               </button>
             </div>
 
@@ -259,6 +281,132 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
+      <DashboardSection
+        title="AI / RAG intelligence"
+        subtitle="Phân tích hoạt động chatbot, mức dùng RAG và intent nổi bật từ dữ liệu ChatMessages."
+        action={
+          <button
+            onClick={() => navigate("/dashboard/admin/ai")}
+            className="inline-flex h-9 items-center justify-center rounded-2xl bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0 max-[420px]:w-full"
+          >
+            Mở AI monitor
+          </button>
+        }
+      >
+        {dashLoading ? (
+          <div className="flex justify-center py-8">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <StatCard
+                label="AI responses 7 ngày"
+                value={formatNumber(aiStats?.aiResponsesLast7Days)}
+                icon={Bot}
+                hint={`${formatNumber(aiStats?.totalAiResponses)} phản hồi tổng`}
+              />
+              <StatCard
+                label="Tỷ lệ dùng RAG"
+                value={formatPercent(aiStats?.ragUsageRate)}
+                icon={Database}
+                hint={`${formatNumber(aiStats?.ragResponsesLast7Days)} phản hồi RAG / 7 ngày`}
+              />
+              <StatCard
+                label="Nguồn trích dẫn"
+                value={formatNumber(aiStats?.sourceBackedResponsesLast7Days)}
+                icon={MessageCircle}
+                hint={`${formatNumber(aiStats?.averageChunksUsedLast7Days)} chunks trung bình`}
+              />
+              <StatCard
+                label="AI lỗi 7 ngày"
+                value={formatNumber(aiStats?.failedResponsesLast7Days)}
+                icon={TrendingUp}
+                hint={`${formatNumber(aiStats?.totalTokensLast7Days)} tokens đã dùng`}
+              />
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+              <div className="rounded-[26px] bg-po-surface-muted/70 p-5 ring-1 ring-po-border/70">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-po-text">Top intent 30 ngày</p>
+                    <p className="mt-1 text-xs leading-5 text-po-text-muted">
+                      Nhóm câu hỏi AI nhận nhiều nhất, kèm số lần có RAG.
+                    </p>
+                  </div>
+                  <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/80">
+                    <Bot className="size-4" />
+                  </span>
+                </div>
+
+                {aiIntentStats.length === 0 ? (
+                  <EmptyState
+                    icon={Bot}
+                    title="Chưa có dữ liệu intent"
+                    description="Khi chatbot xử lý câu hỏi, intent và RAG usage sẽ hiện ở đây."
+                  />
+                ) : (
+                  <div className="mt-4 grid gap-3">
+                    {aiIntentStats.map((item) => {
+                      const maxCount = Math.max(...aiIntentStats.map((intent) => intent.count), 1)
+                      const width = `${Math.max(8, Math.round((item.count / maxCount) * 100))}%`
+
+                      return (
+                        <div key={item.intent} className="rounded-2xl bg-white/80 p-4 ring-1 ring-po-border/70">
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold capitalize text-po-text">{item.intent}</p>
+                            <p className="text-xs font-semibold text-po-primary">
+                              {formatNumber(item.count)} lượt
+                            </p>
+                          </div>
+                          <div className="mt-3 h-2 overflow-hidden rounded-2xl bg-po-primary-soft">
+                            <div className="h-full rounded-2xl bg-po-primary" style={{ width }} />
+                          </div>
+                          <p className="mt-2 text-xs text-po-text-muted">
+                            {formatNumber(item.ragCount)} lượt dùng RAG
+                          </p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid content-start gap-3">
+                {[
+                  {
+                    label: "Hội thoại có AI",
+                    value: formatNumber(aiStats?.activeConversationsLast7Days),
+                    detail: "Conversation có phát sinh message trong 7 ngày.",
+                  },
+                  {
+                    label: "RAG responses tổng",
+                    value: formatNumber(aiStats?.ragResponses),
+                    detail: "Tổng phản hồi AI đã đánh dấu RagUsed.",
+                  },
+                  {
+                    label: "Tokens 7 ngày",
+                    value: formatNumber(aiStats?.totalTokensLast7Days),
+                    detail: "Tổng input + output tokens do backend lưu lại.",
+                  },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-[22px] bg-white/85 p-4 ring-1 ring-po-border/80">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-po-text">{item.label}</p>
+                        <p className="mt-1 text-xs leading-5 text-po-text-muted">{item.detail}</p>
+                      </div>
+                      <StatusBadge variant="info" label={item.value} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </DashboardSection>
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
         <DashboardSection
           title="Hồ sơ phòng khám chờ duyệt"
@@ -266,7 +414,7 @@ export default function AdminDashboardPage() {
           action={
             <button
               onClick={() => navigate("/dashboard/admin/clinics")}
-              className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
+              className="inline-flex h-9 items-center rounded-2xl bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
             >
               Xem tất cả
             </button>
@@ -325,7 +473,7 @@ export default function AdminDashboardPage() {
           action={
             <button
               onClick={() => navigate("/dashboard/admin/users")}
-              className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
+              className="inline-flex h-9 items-center rounded-2xl bg-po-primary-soft px-4 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
             >
               Xem người dùng
             </button>
@@ -350,7 +498,7 @@ export default function AdminDashboardPage() {
                     <p className="text-sm font-semibold text-po-text">{role.name}</p>
                     <p className="mt-0.5 text-xs text-po-text-muted">{role.permissions}</p>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-po-primary ring-1 ring-po-border/80">
+                  <span className="rounded-2xl bg-white px-3 py-1 text-xs font-semibold text-po-primary ring-1 ring-po-border/80">
                     {role.users} users
                   </span>
                 </div>
@@ -444,7 +592,7 @@ function ClinicReviewRow({
       <div className="flex flex-wrap gap-2 md:justify-end">
         <button
           onClick={onReview}
-          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
+          className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white active:translate-y-0"
         >
           Xem hồ sơ
         </button>

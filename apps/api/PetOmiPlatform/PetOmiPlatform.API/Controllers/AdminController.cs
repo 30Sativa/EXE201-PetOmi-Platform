@@ -43,16 +43,27 @@ public class AdminController : BaseController
     }
 
     /// <summary>
+    /// Danh sách role global, role phòng khám và ma trận quyền hiện tại.
+    /// </summary>
+    [HttpGet("roles")]
+    public async Task<IActionResult> GetRoles()
+    {
+        var result = await Mediator.Send(new GetAdminRolesQuery());
+        return Ok(BaseResponse<AdminRolesResponse>.Ok(result));
+    }
+
+    /// <summary>
     /// Danh sách người dùng có phân trang, có thể lọc theo trạng thái kích hoạt.
     /// </summary>
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers(
         [FromQuery] string? search,
         [FromQuery] bool? isActive,
+        [FromQuery] string? role,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20)
     {
-        var result = await Mediator.Send(new GetAdminUsersQuery(search, isActive, page, pageSize));
+        var result = await Mediator.Send(new GetAdminUsersQuery(search, isActive, role, page, pageSize));
         return Ok(BaseResponse<PagedData<AdminUserListResponse>>.Ok(result));
     }
 

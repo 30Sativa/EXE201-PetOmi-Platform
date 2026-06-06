@@ -1,33 +1,41 @@
-﻿import {
+import {
   Activity,
-  Bell,
   BadgeCheck,
+  Bell,
+  Bot,
   KeyRound,
   LayoutDashboard,
   LogOut,
   Settings,
   ShieldAlert,
-  ShieldCheck,
+  UserCircle,
   UsersRound,
 } from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
+import Avatar from "@/components/ui/Avatar"
 import { useAuth } from "@/contexts/AuthContext"
+import { useProfile } from "@/hooks/useAuthQueries"
 import { cn } from "@/lib/utils"
 
 const navItems = [
   { label: "Tổng quan", to: "/dashboard/admin", icon: LayoutDashboard, exact: true },
+  { label: "AI monitor", to: "/dashboard/admin/ai", icon: Bot },
   { label: "Duyệt phòng khám", to: "/dashboard/admin/clinics", icon: BadgeCheck },
   { label: "Người dùng", to: "/dashboard/admin/users", icon: UsersRound },
-  { label: "Roles", to: "/dashboard/admin/roles", icon: KeyRound },
+  { label: "Vai trò", to: "/dashboard/admin/roles", icon: KeyRound },
   { label: "Cảnh báo", to: "/dashboard/admin/alerts", icon: ShieldAlert },
   { label: "Nhật ký", to: "/dashboard/admin/audit-logs", icon: Activity },
   { label: "Cài đặt", to: "/dashboard/admin/settings", icon: Settings },
+  { label: "Hồ sơ", to: "/dashboard/admin/profile", icon: UserCircle },
 ]
 
 export default function AdminDashboardLayout() {
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const { data: profile } = useProfile()
   const navigate = useNavigate()
+  const displayName = profile?.fullName?.trim() || "PetOmi"
+  const accountLabel = user?.email || "Admin console"
 
   const handleLogout = async () => {
     await logout()
@@ -42,13 +50,19 @@ export default function AdminDashboardLayout() {
             to="/dashboard/admin"
             className="flex items-center gap-3 rounded-2xl px-2 py-1.5 text-sm font-extrabold text-po-text no-underline transition hover:bg-po-surface-muted"
           >
-            <span className="grid size-11 place-items-center rounded-2xl bg-po-primary text-white shadow-sm shadow-orange-200">
-              <ShieldCheck className="size-5" />
-            </span>
-            <span>
-              <span className="block text-base leading-tight">PetOmi</span>
-              <span className="block text-xs font-semibold text-po-text-subtle">
-                Admin console
+            <Avatar
+              src={profile?.avatarUrl}
+              alt={displayName}
+              size="md"
+              shape="square"
+              className="size-11 shrink-0 ring-2 ring-po-primary-soft"
+            />
+            <span className="min-w-0">
+              <span className="block truncate text-base leading-tight">
+                {displayName}
+              </span>
+              <span className="block truncate text-xs font-semibold text-po-text-subtle">
+                {accountLabel}
               </span>
             </span>
           </Link>
@@ -79,20 +93,30 @@ export default function AdminDashboardLayout() {
           <header className="flex flex-wrap items-center justify-between gap-4 rounded-[30px] bg-white/78 px-4 py-4 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 backdrop-blur sm:px-5">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-po-text-subtle">
-                Admin workspace
+                Quản trị hệ thống
               </p>
               <h1 className="mt-1 text-2xl font-extrabold leading-tight text-po-text md:text-3xl">
-                Dashboard quản trị
+                Quản lý PetOmi
               </h1>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-po-text-muted shadow-sm ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:text-po-text hover:shadow-md">
+              <NavLink
+                to="/dashboard/admin/alerts"
+                className={({ isActive }) =>
+                  cn(
+                    "inline-flex h-10 items-center gap-2 rounded-2xl bg-white px-4 text-sm font-semibold shadow-sm ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md",
+                    isActive
+                      ? "border-po-primary text-po-primary"
+                      : "text-po-text-muted hover:text-po-text",
+                  )
+                }
+              >
                 <Bell className="size-4" />
                 Thông báo
-              </button>
+              </NavLink>
               <button
                 onClick={handleLogout}
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0"
+                className="inline-flex h-10 items-center gap-2 rounded-2xl bg-po-primary px-4 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0"
               >
                 <LogOut className="size-4" />
                 Đăng xuất
@@ -112,7 +136,7 @@ export default function AdminDashboardLayout() {
                   end={item.exact}
                   className={({ isActive }) =>
                     cn(
-                      "inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition",
+                      "inline-flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold transition",
                       isActive
                         ? "bg-po-primary text-white shadow-sm shadow-orange-200/40"
                         : "bg-po-surface-muted text-po-text-muted hover:text-po-text",
@@ -134,4 +158,3 @@ export default function AdminDashboardLayout() {
     </div>
   )
 }
-

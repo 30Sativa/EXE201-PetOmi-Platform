@@ -30,17 +30,9 @@ public class GetAdminAlertsQueryHandler : IRequestHandler<GetAdminAlertsQuery, A
     {
         var maxItems = Math.Clamp(request.MaxItems, 1, 100);
 
-        var pendingClinicsTask = _clinicRepository.GetByStatusAsync("Pending", 1, maxItems);
-        var inactiveUsersTask = _userRepository.GetAdminPagedAsync(null, false, 1, maxItems);
-        var unverifiedCandidatesTask = _userRepository.GetAdminPagedAsync(null, null, 1, Math.Max(maxItems * 4, 100));
-
-        var highCountTask = _clinicRepository.CountByStatusAsync("Pending");
-        var mediumCountTask = _userRepository.CountByIsActiveAsync(false);
-        var lowCountTask = _userRepository.CountByEmailVerifiedAsync(false);
-
-        var pendingClinics = (await pendingClinicsTask).ToList();
-        var (inactiveUsers, _) = await inactiveUsersTask;
-        var (unverifiedCandidates, _) = await unverifiedCandidatesTask;
+        var pendingClinics = (await _clinicRepository.GetByStatusAsync("Pending", 1, maxItems)).ToList();
+        var (inactiveUsers, _) = await _userRepository.GetAdminPagedAsync(null, false, 1, maxItems);
+        var (unverifiedCandidates, _) = await _userRepository.GetAdminPagedAsync(null, null, 1, Math.Max(maxItems * 4, 100));
 
         var inactiveUserDtos = await BuildUserDtosAsync(inactiveUsers);
         var unverifiedUsers = unverifiedCandidates.Where(u => !u.EmailVerified).Take(maxItems).ToList();
@@ -90,9 +82,9 @@ public class GetAdminAlertsQueryHandler : IRequestHandler<GetAdminAlertsQuery, A
             });
         }
 
-        var highCount = await highCountTask;
-        var mediumCount = await mediumCountTask;
-        var lowCount = await lowCountTask;
+        var highCount = await _clinicRepository.CountByStatusAsync("Pending");
+        var mediumCount = await _userRepository.CountByIsActiveAsync(false);
+        var lowCount = await _userRepository.CountByEmailVerifiedAsync(false);
 
         return new AdminAlertsResponse
         {

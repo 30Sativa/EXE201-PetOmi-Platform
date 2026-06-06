@@ -25,7 +25,7 @@ public class GetAdminUsersQueryHandler : IRequestHandler<GetAdminUsersQuery, Pag
     public async Task<PagedData<AdminUserListResponse>> Handle(GetAdminUsersQuery request, CancellationToken cancellationToken)
     {
         var (users, total) = await _userRepository.GetAdminPagedAsync(
-            request.Search, request.IsActive, request.Page, request.PageSize);
+            request.Search, request.IsActive, request.Role, request.Page, request.PageSize);
 
         var items = new List<AdminUserListResponse>();
 

@@ -22,7 +22,6 @@ import {
   approveClinicApi,
   rejectClinicApi,
 } from "@/services/admin.service"
-import { cn } from "@/lib/utils"
 import type { ClinicListItemResponse, PagedData } from "@/types"
 
 function getPagedItems<T>(paged?: PagedData<T>) {
@@ -46,9 +45,6 @@ function formatDate(dateStr: string) {
 }
 
 type StatusFilter = "Pending" | "Approved" | "Rejected"
-
-const actionButtonClass =
-  "inline-flex h-9 min-w-[104px] items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold transition hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
 
 function clinicStatusLabel(status: string) {
   switch (status) {
@@ -162,12 +158,12 @@ export default function AdminClinicsPage() {
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-full bg-white ring-1 ring-po-border/80 p-1 gap-1">
+        <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl bg-white p-1 ring-1 ring-po-border/80">
           {statusTabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => { setStatusFilter(tab.value); setPage(1) }}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
+              className={`shrink-0 whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-semibold transition ${
                 statusFilter === tab.value
                   ? "bg-po-primary text-white"
                   : `${tab.color} hover:bg-po-surface-muted`
@@ -180,26 +176,57 @@ export default function AdminClinicsPage() {
       </div>
 
       <div className="overflow-hidden rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left">
+        <div className="grid gap-3 p-3 md:hidden">
+          {isLoading ? (
+            <div className="py-14 text-center">
+              <LoadingSpinner />
+            </div>
+          ) : items.length === 0 ? (
+            <EmptyState
+              icon={BadgeCheck}
+              title={`Không có phòng khám nào ${statusFilter === "Pending" ? "chờ duyệt" : statusFilter === "Approved" ? "đã duyệt" : "bị từ chối"}`}
+              description={
+                statusFilter === "Pending"
+                  ? "Tất cả phòng khám đã được xử lý."
+                  : "Thử chọn trạng thái khác."
+              }
+            />
+          ) : (
+            items.map((clinic) => (
+              <ClinicMobileCard
+                key={clinic.clinicId}
+                clinic={clinic}
+                isApprovePending={approveMutation.isPending}
+                isRejectPending={rejectMutation.isPending}
+                onDetail={() => setDetailClinic(clinic)}
+                onApprove={() => setApproveTarget(clinic)}
+                onReject={() => setRejectTarget(clinic)}
+                onPreviewLicense={() => setLicensePreviewClinic(clinic)}
+              />
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full text-left">
             <thead>
               <tr className="border-b border-po-border/60">
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle w-full min-w-[180px]">
                   Phòng khám
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[140px]">
                   Liên hệ
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[130px]">
                   Giấy phép
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[100px]">
                   Trạng thái
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[90px]">
                   Ngày đăng ký
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[200px]">
                   Hành động
                 </th>
               </tr>
@@ -233,7 +260,7 @@ export default function AdminClinicsPage() {
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-10 shrink-0 place-items-center rounded-full bg-po-primary-soft text-po-primary text-sm font-bold">
+                        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary text-sm font-bold">
                           {clinic.clinicName[0].toUpperCase()}
                         </div>
                         <div className="min-w-0">
@@ -261,10 +288,10 @@ export default function AdminClinicsPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 shrink-0 w-[140px]">
                       <div className="space-y-1">
                         {clinic.email && (
-                          <p className="text-xs text-po-text-muted truncate max-w-[160px]">
+                          <p className="text-xs text-po-text-muted truncate max-w-[140px]">
                             {clinic.email}
                           </p>
                         )}
@@ -276,7 +303,7 @@ export default function AdminClinicsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 shrink-0 w-[130px]">
                       {clinic.licenseNumber ? (
                         <div className="space-y-1">
                           <span className="inline-flex items-center gap-1 text-po-success text-xs">
@@ -301,29 +328,27 @@ export default function AdminClinicsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 shrink-0 w-[100px]">
                       <StatusBadge
                         variant={clinicStatusVariant(clinic.status)}
                         label={clinicStatusLabel(clinic.status)}
+                        className="whitespace-nowrap"
                       />
                       {clinic.rejectedReason && (
-                        <p className="mt-1 max-w-[180px] truncate text-[10px] text-po-text-muted">
+                        <p className="mt-1 max-w-[100px] truncate text-[10px] text-po-text-muted">
                           Lý do: {clinic.rejectedReason}
                         </p>
                       )}
                     </td>
-                    <td className="px-5 py-4 text-sm text-po-text-muted whitespace-nowrap">
+                    <td className="px-5 py-4 text-sm text-po-text-muted whitespace-nowrap shrink-0 w-[90px]">
                       {formatDate(clinic.createdAt)}
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="grid w-[116px] gap-2">
+                    <td className="px-5 py-4 shrink-0 w-[200px]">
+                      <div className="flex flex-wrap gap-1.5 sm:flex-row sm:items-center sm:gap-1.5">
                         <button
                           type="button"
                           onClick={() => setDetailClinic(clinic)}
-                          className={cn(
-                            actionButtonClass,
-                            "bg-po-surface-muted text-po-text ring-1 ring-po-border/70 hover:bg-white hover:shadow-sm",
-                          )}
+                          className="inline-flex shrink-0 items-center justify-center gap-1.5 h-9 rounded-2xl px-3 text-xs font-semibold bg-po-surface-muted text-po-text ring-1 ring-po-border/70 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-sm"
                           title="Xem chi tiết"
                         >
                           <Eye className="size-3.5" />
@@ -336,10 +361,7 @@ export default function AdminClinicsPage() {
                               type="button"
                               onClick={() => setApproveTarget(clinic)}
                               disabled={approveMutation.isPending}
-                              className={cn(
-                                actionButtonClass,
-                                "bg-po-success-soft text-po-success hover:bg-po-success hover:text-white hover:shadow-sm",
-                              )}
+                              className="inline-flex shrink-0 items-center justify-center gap-1.5 h-9 rounded-2xl px-3 text-xs font-semibold bg-po-success-soft text-po-success transition hover:-translate-y-0.5 hover:bg-po-success hover:text-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Duyệt phòng khám"
                             >
                               <CheckCircle2 className="size-3.5" />
@@ -350,10 +372,7 @@ export default function AdminClinicsPage() {
                               type="button"
                               onClick={() => setRejectTarget(clinic)}
                               disabled={rejectMutation.isPending}
-                              className={cn(
-                                actionButtonClass,
-                                "bg-po-danger-soft text-po-danger hover:bg-po-danger hover:text-white hover:shadow-sm",
-                              )}
+                              className="inline-flex shrink-0 items-center justify-center gap-1.5 h-9 rounded-2xl px-3 text-xs font-semibold bg-po-danger-soft text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                               title="Từ chối phòng khám"
                             >
                               <XCircle className="size-3.5" />
@@ -379,7 +398,7 @@ export default function AdminClinicsPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Trước
               </button>
@@ -398,7 +417,7 @@ export default function AdminClinicsPage() {
                   <button
                     key={pageNum}
                     onClick={() => setPage(pageNum)}
-                    className={`inline-flex size-9 items-center justify-center rounded-full text-xs font-semibold transition ${
+                    className={`inline-flex size-9 items-center justify-center rounded-2xl text-xs font-semibold transition ${
                       page === pageNum
                         ? "bg-po-primary text-white shadow-md"
                         : "bg-white text-po-text-muted ring-1 ring-po-border/80 hover:-translate-y-0.5 hover:shadow-md"
@@ -411,7 +430,7 @@ export default function AdminClinicsPage() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Sau
               </button>
@@ -486,6 +505,103 @@ function HeroMetric({
   )
 }
 
+function ClinicMobileCard({
+  clinic,
+  isApprovePending,
+  isRejectPending,
+  onDetail,
+  onApprove,
+  onReject,
+  onPreviewLicense,
+}: {
+  clinic: ClinicListItemResponse
+  isApprovePending: boolean
+  isRejectPending: boolean
+  onDetail: () => void
+  onApprove: () => void
+  onReject: () => void
+  onPreviewLicense: () => void
+}) {
+  return (
+    <article className="rounded-[24px] bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-sm font-extrabold text-po-primary ring-1 ring-po-border/80">
+          {clinic.clinicName[0]?.toUpperCase() ?? "C"}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="truncate text-sm font-extrabold text-po-text">
+                {clinic.clinicName}
+              </h3>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-po-text-muted">
+                {clinic.address ?? "Chưa có địa chỉ"}
+              </p>
+            </div>
+            <StatusBadge
+              variant={clinicStatusVariant(clinic.status)}
+              label={clinicStatusLabel(clinic.status)}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 rounded-2xl bg-white/70 p-3 text-xs text-po-text-muted ring-1 ring-po-border/60">
+        <span>Email: {clinic.email ?? "Chưa có"}</span>
+        <span>Điện thoại: {clinic.phone ?? "Chưa có"}</span>
+        <span>Số giấy phép: {clinic.licenseNumber ?? "Chưa có"}</span>
+        <span>Ngày đăng ký: {formatDate(clinic.createdAt)}</span>
+        {clinic.rejectedReason ? <span>Lý do: {clinic.rejectedReason}</span> : null}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onDetail}
+          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-white px-3 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-sm"
+        >
+          <Eye className="size-3.5" />
+          Chi tiết
+        </button>
+
+        {clinic.licenseImageUrl ? (
+          <button
+            type="button"
+            onClick={onPreviewLicense}
+            className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white"
+          >
+            <Eye className="size-3.5" />
+            Ảnh phép
+          </button>
+        ) : null}
+
+        {clinic.status === "Pending" ? (
+          <>
+            <button
+              type="button"
+              onClick={onApprove}
+              disabled={isApprovePending}
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-success-soft px-3 text-xs font-semibold text-po-success transition hover:-translate-y-0.5 hover:bg-po-success hover:text-white disabled:opacity-50"
+            >
+              <CheckCircle2 className="size-3.5" />
+              Duyệt
+            </button>
+            <button
+              type="button"
+              onClick={onReject}
+              disabled={isRejectPending}
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-danger-soft px-3 text-xs font-semibold text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white disabled:opacity-50"
+            >
+              <XCircle className="size-3.5" />
+              Từ chối
+            </button>
+          </>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
 function ClinicDetailModal({
   clinic,
   onClose,
@@ -518,7 +634,7 @@ function ClinicDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-po-surface-muted text-po-text-muted transition hover:bg-po-border/50 hover:text-po-text"
+            className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-surface-muted text-po-text-muted transition hover:bg-po-border/50 hover:text-po-text"
             aria-label="Đóng chi tiết phòng khám"
           >
             <X className="size-4" />
@@ -620,7 +736,7 @@ function LicenseImageModal({
           <button
             type="button"
             onClick={onClose}
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-po-surface-muted text-po-text-muted transition hover:bg-po-border/50 hover:text-po-text"
+            className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-surface-muted text-po-text-muted transition hover:bg-po-border/50 hover:text-po-text"
             aria-label="Đóng ảnh giấy phép"
           >
             <X className="size-4" />

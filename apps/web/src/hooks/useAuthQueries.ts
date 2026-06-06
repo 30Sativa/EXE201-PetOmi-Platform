@@ -42,10 +42,11 @@ export function useProfile() {
   })
 }
 
-export function useMe() {
+export function useMe(enabled = true) {
   return useQuery<GetCurrentUserResponse, Error>({
     queryKey: ["auth", "me"],
     queryFn: () => getMeApi(),
+    enabled,
     retry: false,
     staleTime: 5 * 60 * 1000,
   })

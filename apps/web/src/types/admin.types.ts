@@ -35,6 +35,19 @@ export interface AdminUserStats {
   admins: number
 }
 
+export interface AdminAiStats {
+  totalAiResponses: number
+  aiResponsesLast7Days: number
+  ragResponses: number
+  ragResponsesLast7Days: number
+  ragUsageRate: number
+  failedResponsesLast7Days: number
+  activeConversationsLast7Days: number
+  averageChunksUsedLast7Days: number
+  sourceBackedResponsesLast7Days: number
+  totalTokensLast7Days: number
+}
+
 export interface ClinicTrendItem {
   date: string
   count: number
@@ -45,12 +58,49 @@ export interface UserTrendItem {
   count: number
 }
 
+export interface AiIntentStatItem {
+  intent: string
+  count: number
+  ragCount: number
+}
+
 export interface AdminDashboardResponse {
   summary: AdminStatsSummary
   clinicStats: AdminClinicStats
   userStats: AdminUserStats
+  aiStats: AdminAiStats
   clinicTrend: ClinicTrendItem[]
   userTrend: UserTrendItem[]
+  aiIntentStats: AiIntentStatItem[]
+}
+
+// Admin Roles
+export interface AdminRoleStatsResponse {
+  globalRoleCount: number
+  clinicRoleCount: number
+  totalPermissions: number
+  assignedGlobalUsers: number
+  assignedClinicStaff: number
+}
+
+export interface AdminPermissionItemResponse {
+  permissionId: string
+  permissionName: string
+  description: string | null
+}
+
+export interface AdminRoleItemResponse {
+  roleId: string
+  roleName: string
+  scope: "global" | "clinic"
+  assignedCount: number
+  permissions: AdminPermissionItemResponse[]
+}
+
+export interface AdminRolesResponse {
+  stats: AdminRoleStatsResponse
+  globalRoles: AdminRoleItemResponse[]
+  clinicRoles: AdminRoleItemResponse[]
 }
 
 // Admin Users

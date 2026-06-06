@@ -1,11 +1,17 @@
 ﻿import { useState } from "react"
 import {
   ArrowLeftRight,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Crown,
   Plus,
   Search,
   ShieldCheck,
   ShieldOff,
+  Clock3,
   UsersRound,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -58,7 +64,7 @@ export default function AdminRolesPage() {
   const [search, setSearch] = useState("")
   const [roleTab, setRoleTab] = useState<RoleTab>("all")
   const [page, setPage] = useState(1)
-  const pageSize = 10
+  const [pageSize, setPageSize] = useState(10)
 
   const [assignTarget, setAssignTarget] = useState<AdminUserListResponse | null>(null)
   const [revokeTarget, setRevokeTarget] = useState<AdminUserListResponse | null>(null)
@@ -103,6 +109,9 @@ export default function AdminRolesPage() {
 
   const meta = data?.meta ?? data?.Meta
   const totalPages = meta?.totalPages ?? 1
+  const totalRecords = meta?.totalRecords ?? filteredItems.length
+  const startRecord = totalRecords === 0 ? 0 : (page - 1) * pageSize + 1
+  const endRecord = Math.min(page * pageSize, totalRecords)
 
   const roleTabs: { label: string; value: RoleTab }[] = [
     { label: "Tất cả", value: "all" },
@@ -210,7 +219,7 @@ export default function AdminRolesPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+      <div className="overflow-hidden rounded-[30px] bg-white/95 shadow-[0_12px_40px_rgba(15,23,42,0.06)] ring-1 ring-[#F3E8D8]">
         <div className="grid gap-3 p-3 md:hidden">
           {isLoading ? (
             <div className="py-14 text-center">
@@ -241,27 +250,42 @@ export default function AdminRolesPage() {
         </div>
 
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full text-left">
+          <table className="w-full min-w-[1040px] table-fixed text-left">
             <thead>
-              <tr className="border-b border-po-border/60">
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle w-full min-w-[200px]">
-                  Người dùng
+              <tr className="border-b border-[#F1E3D2] bg-gradient-to-b from-[#FFFCF8] to-[#FFF9F2]">
+                <th className="w-[340px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-8 place-items-center rounded-full bg-[#F5F7FA] text-po-text-subtle ring-1 ring-[#EAEFF5]">
+                      <UsersRound className="size-4" />
+                    </span>
+                    <span>Người dùng</span>
+                  </div>
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[90px]">
+                <th className="w-[120px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle text-center">
                   Trạng thái
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[120px]">
+                <th className="w-[150px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle text-center">
                   Quyền hiện tại
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[90px]">
-                  Ngày tạo
+                <th className="w-[140px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="grid size-7 place-items-center rounded-full bg-[#F5F7FA] text-po-text-subtle ring-1 ring-[#EAEFF5]">
+                      <CalendarDays className="size-4" />
+                    </span>
+                    <span>Ngày tạo</span>
+                  </div>
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[180px]">
-                  Hành động
+                <th className="w-[180px] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <span className="grid size-7 place-items-center rounded-full bg-[#F5F7FA] text-po-text-subtle ring-1 ring-[#EAEFF5]">
+                      <Clock3 className="size-4" />
+                    </span>
+                    <span>Hành động</span>
+                  </div>
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-po-border/50">
+            <tbody className="divide-y divide-[#F4E8D9]">
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="py-16 text-center">
@@ -286,36 +310,36 @@ export default function AdminRolesPage() {
                 filteredItems.map((user) => (
                   <tr
                     key={user.userId}
-                    className="group transition hover:bg-po-surface-muted/40"
+                    className="group transition hover:bg-[#FFF9F2]"
                   >
-                    <td className="px-5 py-4">
+                    <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary text-sm font-bold">
+                        <div className="grid size-11 shrink-0 place-items-center rounded-full bg-[#FFE4BF] text-[#B96A00] text-sm font-extrabold ring-1 ring-[#FFD8A0]">
                           {user.fullName ? user.fullName[0].toUpperCase() : user.email[0].toUpperCase()}
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-po-text">
+                          <p className="truncate text-sm font-bold text-po-text">
                             {user.fullName ?? "Chưa có tên"}
                           </p>
                           <p className="truncate text-xs text-po-text-muted">{user.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4 shrink-0 w-[90px]">
+                    <td className="px-4 py-4 text-center">
                       <StatusBadge
                         variant={user.isActive ? "success" : "danger"}
                         label={user.isActive ? "Hoạt động" : "Bị khóa"}
-                        className="whitespace-nowrap"
+                        className="whitespace-nowrap px-3 py-1 text-[11px] font-bold"
                       />
                     </td>
-                    <td className="px-5 py-4 shrink-0 w-[120px]">
-                      <div className="flex flex-wrap gap-1.5 max-w-[120px]">
+                    <td className="px-4 py-4 text-center">
+                      <div className="flex max-w-[150px] flex-wrap justify-center gap-1.5">
                         {user.roles.length > 0 ? (
                           user.roles.map((role) => (
                             <span
                               key={role}
-                              className={`inline-flex shrink-0 items-center gap-1 rounded-2xl px-2.5 py-0.5 text-[10px] font-semibold whitespace-nowrap ${
-                                ROLE_COLORS[role] ?? "bg-po-surface-muted text-po-text-muted"
+                              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold whitespace-nowrap ${
+                                ROLE_COLORS[role] ?? "bg-[#F6EFE6] text-po-text-muted"
                               }`}
                             >
                               {role === "Admin" && <ShieldCheck className="size-2.5" />}
@@ -332,29 +356,29 @@ export default function AdminRolesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-sm text-po-text-muted whitespace-nowrap shrink-0 w-[90px]">
+                    <td className="px-4 py-4 text-center text-sm text-po-text-muted whitespace-nowrap">
                       {formatDate(user.createdAt)}
                     </td>
-                    <td className="px-5 py-4 shrink-0 w-[180px]">
-                      <div className="flex flex-wrap gap-1.5 sm:flex-row sm:items-center sm:gap-1.5">
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1.5">
                         {!user.roles.includes("Admin") ? (
                           <button
                             onClick={() => setAssignTarget(user)}
                             disabled={assignMutation.isPending}
-                            className="inline-flex shrink-0 items-center gap-1.5 h-8 rounded-2xl px-2.5 text-xs font-semibold bg-po-primary-soft text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white"
+                            className="inline-flex h-8 min-w-[98px] shrink-0 items-center justify-center gap-1 rounded-full border border-[#FFD39A] bg-[#FFF6EA] px-2.5 text-[11px] font-semibold text-[#F59E0B] transition hover:-translate-y-0.5 hover:bg-[#F59E0B] hover:text-white"
                             title="Gán quyền Admin"
                           >
-                            <Plus className="size-3.5" />
+                            <Plus className="size-3" />
                             Gán Admin
                           </button>
                         ) : (
                           <button
                             onClick={() => setRevokeTarget(user)}
                             disabled={revokeMutation.isPending}
-                            className="inline-flex shrink-0 items-center gap-1.5 h-8 rounded-2xl px-2.5 text-xs font-semibold bg-po-danger-soft text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white"
+                            className="inline-flex h-8 min-w-[98px] shrink-0 items-center justify-center gap-1 rounded-full border border-[#FFB8B8] bg-[#FFF1F1] px-2.5 text-[11px] font-semibold text-[#FF4D4F] transition hover:-translate-y-0.5 hover:bg-[#FF4D4F] hover:text-white"
                             title="Thu hồi quyền Admin"
                           >
-                            <ShieldOff className="size-3.5" />
+                            <ShieldOff className="size-3" />
                             Thu hồi
                           </button>
                         )}
@@ -368,49 +392,70 @@ export default function AdminRolesPage() {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-4 border-t border-po-border/60 px-5 py-4">
-            <p className="text-xs text-po-text-muted">
-              Trang {meta?.pageNumber ?? page} / {totalPages} — {meta?.totalRecords ?? 0} kết quả
+          <div className="flex flex-col gap-4 border-t border-[#F3E8D8] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-po-text-muted">
+              <label className="inline-flex items-center gap-2">
+                <span className="font-medium text-po-text-muted">Hiển thị</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value))
+                    setPage(1)
+                  }}
+                  className="h-9 rounded-xl border border-[#E8D9C7] bg-white px-3 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary/40"
+                >
+                  {[10, 20, 50].map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <span className="font-medium text-po-text-muted">kết quả mỗi trang</span>
+            </div>
+
+            <p className="text-sm font-medium text-po-text-muted">
+              {totalRecords === 0 ? "0 kết quả" : `${startRecord} - ${endRecord} của ${totalRecords} kết quả`}
             </p>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2 self-end lg:self-auto">
+              <button
+                onClick={() => setPage(1)}
+                disabled={page <= 1}
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang đầu"
+              >
+                <ChevronsLeft className="size-4" />
+              </button>
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang trước"
               >
-                Trước
+                <ChevronLeft className="size-4" />
               </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum: number
-                if (totalPages <= 5) {
-                  pageNum = i + 1
-                } else if (page <= 3) {
-                  pageNum = i + 1
-                } else if (page >= totalPages - 2) {
-                  pageNum = totalPages - 4 + i
-                } else {
-                  pageNum = page - 2 + i
-                }
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    className={`inline-flex size-9 items-center justify-center rounded-2xl text-xs font-semibold transition ${
-                      page === pageNum
-                        ? "bg-po-primary text-white shadow-md"
-                        : "bg-white text-po-text-muted ring-1 ring-po-border/80 hover:-translate-y-0.5 hover:shadow-md"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              })}
+              <button
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-[#F6D6A8] text-[#9A5C00] shadow-sm ring-1 ring-[#F0C98B]"
+                aria-current="page"
+              >
+                {page}
+              </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang sau"
               >
-                Sau
+                <ChevronRight className="size-4" />
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={page >= totalPages}
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang cuối"
+              >
+                <ChevronsRight className="size-4" />
               </button>
             </div>
           </div>

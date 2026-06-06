@@ -53,10 +53,10 @@ function formatRelative(dateStr: string): string {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return "Vua xong"
-    if (diffMins < 60) return `${diffMins} phut truoc`
-    if (diffHours < 24) return `${diffHours} gio truoc`
-    if (diffDays < 7) return `${diffDays} ngay truoc`
+    if (diffMins < 1) return "Vừa xong"
+    if (diffMins < 60) return `${diffMins} phút trước`
+    if (diffHours < 24) return `${diffHours} giờ trước`
+    if (diffDays < 7) return `${diffDays} ngày trước`
     return formatDate(dateStr)
   } catch {
     return dateStr
@@ -147,17 +147,18 @@ export default function AdminAlertsPage() {
   }
 
   const severityTabs: { label: string; value: "all" | AdminAlertSeverity; count?: number }[] = [
-    { label: "Tat ca", value: "all", count: stats.total },
-    { label: "Nguy hiem", value: "high", count: stats.high },
-    { label: "Can chu y", value: "medium", count: stats.medium },
-    { label: "Thap", value: "low", count: stats.low },
+    { label: "Tất cả", value: "all", count: stats.total },
+    { label: "Nguy hiểm", value: "high", count: stats.high },
+    { label: "Cần chú ý", value: "medium", count: stats.medium },
+    { label: "Thấp", value: "low", count: stats.low },
   ]
 
   const typeTabs: { label: string; value: "all" | AlertItem["type"] }[] = [
-    { label: "Tat ca loai", value: "all" },
+    { label: "Tất cả loại", value: "all" },
     { label: "Clinic", value: "pending_clinic" },
-    { label: "Tai khoan", value: "inactive_user" },
-    { label: "Chua xac thuc", value: "unverified_user" },
+    { label: "Tài khoản", value: "inactive_user" },
+    { label: "Chưa xác thực", value: "unverified_user" },
+    { label: "Hệ thống", value: "system" },
   ]
 
   return (
@@ -168,34 +169,34 @@ export default function AdminAlertsPage() {
             Admin alerts center
           </p>
           <h2 className="mt-4 text-3xl font-extrabold leading-tight md:text-4xl">
-            Trung tam canh bao
+            Trung tâm cảnh báo
           </h2>
           <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted">
-            Theo doi cac thong bao, yeu cau cho duyet va hanh dong can xu ly nhanh.
-            Uu tien cac canh bao muc cao truoc.
+            Theo dõi các thông báo, yêu cầu chờ duyệt và hành động cần xử lý nhanh.
+            Ưu tiên các cảnh báo mức cao trước.
           </p>
 
           <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <HeroMetric
-              label="Tong canh bao"
+              label="Tổng cảnh báo"
               value={String(stats.total)}
               variant="primary"
               icon={ShieldAlert}
             />
             <HeroMetric
-              label="Nguy hiem"
+              label="Nguy hiểm"
               value={String(stats.high)}
               variant="danger"
               icon={AlertCircle}
             />
             <HeroMetric
-              label="Can chu y"
+              label="Cần chú ý"
               value={String(stats.medium)}
               variant="warning"
               icon={AlertTriangle}
             />
             <HeroMetric
-              label="Thap"
+              label="Thấp"
               value={String(stats.low)}
               variant="muted"
               icon={Bell}
@@ -205,12 +206,12 @@ export default function AdminAlertsPage() {
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-full bg-white ring-1 ring-po-border/80 p-1 gap-1">
+        <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl bg-white p-1 ring-1 ring-po-border/80">
           {severityTabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilterSeverity(tab.value)}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition ${
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-semibold transition ${
                 filterSeverity === tab.value
                   ? "bg-po-primary text-white"
                   : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text"
@@ -219,7 +220,7 @@ export default function AdminAlertsPage() {
               {tab.label}
               {tab.count !== undefined && tab.count > 0 && (
                 <span
-                  className={`inline-flex size-5 items-center justify-center rounded-full text-[10px] font-bold ${
+                  className={`inline-flex size-5 items-center justify-center rounded-2xl text-[10px] font-bold ${
                     filterSeverity === tab.value
                       ? "bg-white/20 text-white"
                       : tab.value === "high"
@@ -236,12 +237,12 @@ export default function AdminAlertsPage() {
           ))}
         </div>
 
-        <div className="flex rounded-full bg-white ring-1 ring-po-border/80 p-1 gap-1">
+        <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl bg-white p-1 ring-1 ring-po-border/80">
           {typeTabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilterType(tab.value)}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
+              className={`shrink-0 whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-semibold transition ${
                 filterType === tab.value
                   ? "bg-po-primary text-white"
                   : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text"
@@ -262,8 +263,8 @@ export default function AdminAlertsPage() {
           <div className="rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
             <EmptyState
               icon={BellOff}
-              title="Khong co canh bao nao"
-              description="He thong hien tai khong co thong bao hay hanh dong can xu ly."
+              title="Không có cảnh báo nào"
+              description="Hệ thống hiện tại không có thông báo hay hành động cần xử lý."
             />
           </div>
         ) : (
@@ -286,9 +287,9 @@ export default function AdminAlertsPage() {
           if (!approveTarget) return
           approveMutation.mutate(approveTarget.clinicId)
         }}
-        title="Duyet phong kham?"
-        description={`Ban chac chan muon duyet phong kham "${approveTarget?.clinicName}"?`}
-        confirmLabel="Duyet"
+        title="Duyệt phòng khám?"
+        description={`Bạn chắc chắn muốn duyệt phòng khám "${approveTarget?.clinicName}"?`}
+        confirmLabel="Duyệt"
         variant="primary"
         isLoading={approveMutation.isPending}
       />
@@ -300,9 +301,9 @@ export default function AdminAlertsPage() {
           if (!rejectTarget) return
           rejectMutation.mutate({ clinicId: rejectTarget.clinicId, reason })
         }}
-        title="Tu choi phong kham?"
-        description={`Ban muon tu choi phong kham "${rejectTarget?.clinicName}".`}
-        confirmLabel="Tu choi"
+        title="Từ chối phòng khám?"
+        description={`Bạn muốn từ chối phòng khám "${rejectTarget?.clinicName}".`}
+        confirmLabel="Từ chối"
         isLoading={rejectMutation.isPending}
       />
 
@@ -313,9 +314,9 @@ export default function AdminAlertsPage() {
           if (!activateTarget) return
           activateMutation.mutate({ userId: activateTarget.userId, isActive: true })
         }}
-        title="Mo khoa tai khoan?"
-        description={`Mo khoa tai khoan "${activateTarget?.fullName ?? activateTarget?.email}" de ho co the dang nhap tro lai.`}
-        confirmLabel="Mo khoa"
+        title="Mở khóa tài khoản?"
+        description={`Mở khóa tài khoản "${activateTarget?.fullName ?? activateTarget?.email}" để họ có thể đăng nhập trở lại.`}
+        confirmLabel="Mở khóa"
         variant="primary"
         isLoading={activateMutation.isPending}
       />
@@ -344,9 +345,9 @@ function AlertCard({
             : "shadow-orange-200/5 ring-po-border/60"
       }`}
     >
-      <div className="flex items-start gap-4 p-5">
+      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start">
         <div
-          className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-full ${
+          className={`mt-0.5 grid size-10 shrink-0 place-items-center rounded-2xl ${
             alert.severity === "high"
               ? "bg-po-danger-soft text-po-danger"
               : alert.severity === "medium"
@@ -358,14 +359,14 @@ function AlertCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <h3 className="text-sm font-bold text-po-text">{alert.title}</h3>
               <p className="mt-1 text-xs text-po-text-muted">{alert.description}</p>
             </div>
-            <div className="shrink-0 text-right">
+            <div className="shrink-0 sm:text-right">
               <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+                className={`inline-flex items-center gap-1 rounded-2xl px-2.5 py-0.5 text-[10px] font-semibold ${
                   alert.severity === "high"
                     ? "bg-po-danger-soft text-po-danger"
                     : alert.severity === "medium"
@@ -374,12 +375,12 @@ function AlertCard({
                 }`}
               >
                 {alert.severity === "high"
-                  ? "Nguy hiem"
+                  ? "Nguy hiểm"
                   : alert.severity === "medium"
-                    ? "Can chu y"
-                    : "Thap"}
+                    ? "Cần chú ý"
+                    : "Thấp"}
               </span>
-              <p className="mt-1 flex items-center gap-1 text-[10px] text-po-text-muted">
+              <p className="mt-1 flex items-center gap-1 text-[10px] text-po-text-muted sm:justify-end">
                 <Clock className="size-3" />
                 {formatRelative(alert.timestamp)}
               </p>
@@ -396,23 +397,23 @@ function AlertCard({
               ) : (
                 <span className="inline-flex items-center gap-1 text-po-warning text-xs">
                   <AlertCircle className="size-3" />
-                  Chua co GPLX
+                  Chưa có GPLX
                 </span>
               )}
-              <div className="ml-auto flex flex-wrap gap-2">
+              <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
                 <button
                   onClick={() => onApproveClinic(alert.clinic!)}
-                  className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-success-soft text-po-success transition hover:-translate-y-0.5 hover:bg-po-success hover:text-white"
+                  className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-success-soft px-3 text-xs font-semibold text-po-success transition hover:-translate-y-0.5 hover:bg-po-success hover:text-white sm:flex-none"
                 >
                   <CheckCircle2 className="size-3.5" />
-                  Duyet
+                  Duyệt
                 </button>
                 <button
                   onClick={() => onRejectClinic(alert.clinic!)}
-                  className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-danger-soft text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white"
+                  className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-danger-soft px-3 text-xs font-semibold text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white sm:flex-none"
                 >
                   <XCircle className="size-3.5" />
-                  Tu choi
+                  Từ chối
                 </button>
               </div>
             </div>
@@ -422,15 +423,15 @@ function AlertCard({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5 text-xs text-po-text-muted">
                 <UserCheck className="size-3" />
-                <span>Tai khoan bi khoa</span>
+                <span>Tài khoản bị khóa</span>
               </div>
-              <div className="ml-auto flex flex-wrap gap-2">
+              <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">
                 <button
                   onClick={() => onActivateUser(alert.user!)}
-                  className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-primary-soft text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white"
+                  className="inline-flex h-8 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white sm:flex-none"
                 >
                   <UserCheck className="size-3.5" />
-                  Mo khoa
+                  Mở khóa
                 </button>
               </div>
             </div>
@@ -440,7 +441,7 @@ function AlertCard({
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5 text-xs text-po-warning">
                 <AlertTriangle className="size-3" />
-                <span>Email chua xac thuc</span>
+                <span>Email chưa xác thực</span>
               </div>
             </div>
           )}

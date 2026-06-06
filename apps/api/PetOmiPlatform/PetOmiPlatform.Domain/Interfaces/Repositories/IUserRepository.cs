@@ -32,5 +32,5 @@ public interface IUserRepository
 
     Task<List<Guid>> GetUserIdsByRoleAsync(string roleName);
 
-    Task<(List<UserDomain> Items, int TotalCount)> GetAdminPagedAsync(string? search, bool? isActive, int page, int pageSize);
+    Task<(List<UserDomain> Items, int TotalCount)> GetAdminPagedAsync(string? search, bool? isActive, string? role, int page, int pageSize);
 }

@@ -21,9 +21,11 @@ import SetPasswordPage from "@/pages/SetPasswordPage"
 import VerifyEmailPage from "@/pages/VerifyEmailPage"
 
 import AdminDashboardPage from "@/pages/dashboard/AdminDashboardPage"
+import AdminAiPage from "@/pages/dashboard/AdminAiPage"
 import AdminAlertsPage from "@/pages/dashboard/AdminAlertsPage"
 import AdminAuditLogsPage from "@/pages/dashboard/AdminAuditLogsPage"
 import AdminClinicsPage from "@/pages/dashboard/AdminClinicsPage"
+import AdminProfilePage from "@/pages/dashboard/AdminProfilePage"
 import AdminRolesPage from "@/pages/dashboard/AdminRolesPage"
 import AdminSettingsPage from "@/pages/dashboard/AdminSettingsPage"
 import AdminUsersPage from "@/pages/dashboard/AdminUsersPage"
@@ -254,6 +256,10 @@ const router = createBrowserRouter([
             element: <AdminDashboardPage />,
           },
           {
+            path: "ai",
+            element: <AdminAiPage />,
+          },
+          {
             path: "clinics",
             element: <AdminClinicsPage />,
           },
@@ -276,6 +282,10 @@ const router = createBrowserRouter([
           {
             path: "settings",
             element: <AdminSettingsPage />,
+          },
+          {
+            path: "profile",
+            element: <AdminProfilePage />,
           },
         ],
       },

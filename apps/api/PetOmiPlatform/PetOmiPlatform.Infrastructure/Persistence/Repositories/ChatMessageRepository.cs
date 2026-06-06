@@ -72,6 +72,76 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             );
         }
 
+        public async Task<ChatAiDashboardStats> GetAiDashboardStatsAsync(DateTime fromUtc)
+        {
+            var aiMessages = _context.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.IsActive && m.SenderRole == "AI");
+
+            var aiMessagesSince = aiMessages.Where(m => m.CreatedAt >= fromUtc);
+
+            var totalAiResponses = await aiMessages.CountAsync();
+            var aiResponsesSince = await aiMessagesSince.CountAsync();
+            var ragResponses = await aiMessages.CountAsync(m => m.RagUsed);
+            var ragResponsesSince = await aiMessagesSince.CountAsync(m => m.RagUsed);
+            var failedResponsesSince = await aiMessagesSince.CountAsync(m => m.Status == "Failed");
+            var activeConversationsSince = await _context.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.IsActive && m.CreatedAt >= fromUtc)
+                .Select(m => m.ConversationId)
+                .Distinct()
+                .CountAsync();
+
+            var averageChunksUsedSince = await aiMessagesSince
+                .Select(m => (decimal?)m.ChunksUsed)
+                .AverageAsync() ?? 0;
+
+            var sourceBackedResponsesSince = await aiMessagesSince.CountAsync(m =>
+                m.SourcesJson != null &&
+                m.SourcesJson != "" &&
+                m.SourcesJson != "[]");
+
+            var totalTokensSince = await aiMessagesSince.SumAsync(m => m.TokensInput + m.TokensOutput);
+
+            return new ChatAiDashboardStats
+            {
+                TotalAiResponses = totalAiResponses,
+                AiResponsesSince = aiResponsesSince,
+                RagResponses = ragResponses,
+                RagResponsesSince = ragResponsesSince,
+                FailedResponsesSince = failedResponsesSince,
+                ActiveConversationsSince = activeConversationsSince,
+                AverageChunksUsedSince = Math.Round(averageChunksUsedSince, 1),
+                SourceBackedResponsesSince = sourceBackedResponsesSince,
+                TotalTokensSince = totalTokensSince
+            };
+        }
+
+        public async Task<List<ChatIntentDashboardStats>> GetIntentDashboardStatsAsync(DateTime fromUtc, int take = 5)
+        {
+            take = Math.Clamp(take, 1, 20);
+
+            return await _context.ChatMessages
+                .AsNoTracking()
+                .Where(m =>
+                    m.IsActive &&
+                    m.SenderRole == "AI" &&
+                    m.CreatedAt >= fromUtc &&
+                    m.Intent != null &&
+                    m.Intent != "")
+                .GroupBy(m => m.Intent!)
+                .Select(group => new ChatIntentDashboardStats
+                {
+                    Intent = group.Key,
+                    Count = group.Count(),
+                    RagCount = group.Count(m => m.RagUsed)
+                })
+                .OrderByDescending(item => item.Count)
+                .ThenBy(item => item.Intent)
+                .Take(take)
+                .ToListAsync();
+        }
+
         public async Task AddAsync(ChatMessageDomain message)
         {
             await _context.ChatMessages.AddAsync(message.ToEntity());

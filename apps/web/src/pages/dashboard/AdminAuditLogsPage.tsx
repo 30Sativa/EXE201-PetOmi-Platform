@@ -4,7 +4,12 @@ import {
   AlertCircle,
   ArrowUpDown,
   CheckCircle2,
+  CalendarDays,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Clock,
   Filter,
   Globe,
@@ -98,11 +103,11 @@ export default function AdminAuditLogsPage() {
   const [category, setCategory] = useState<CategoryFilter>("all")
   const [action, setAction] = useState("")
   const [page, setPage] = useState(1)
-  const pageSize = 20
+  const [pageSize, setPageSize] = useState(20)
   const [showFilters, setShowFilters] = useState(false)
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin", "audit-logs", category, action, page],
+    queryKey: ["admin", "audit-logs", category, action, page, pageSize],
     queryFn: () =>
       getAuditLogsApi({
         category: category === "all" ? undefined : category,
@@ -117,6 +122,9 @@ export default function AdminAuditLogsPage() {
   const items = getPagedItems<AuditLogItemResponse>(data as PagedData<AuditLogItemResponse>)
   const meta = getPagedMeta(data)
   const totalPages = (meta as { totalPages?: number })?.totalPages ?? 1
+  const totalRecords = (meta as { totalRecords?: number })?.totalRecords ?? items.length
+  const startRecord = totalRecords === 0 ? 0 : (page - 1) * pageSize + 1
+  const endRecord = Math.min(page * pageSize, totalRecords)
 
   const categoryTabs: { value: CategoryFilter; label: string; icon: React.ElementType }[] = [
     { value: "all", label: "Tất cả", icon: LayoutDashboard },
@@ -178,12 +186,12 @@ export default function AdminAuditLogsPage() {
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-2xl bg-white ring-1 ring-po-border/80 p-1 gap-1 overflow-x-auto">
+        <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl bg-white p-1 ring-1 ring-po-border/80">
           {categoryTabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => { setCategory(tab.value); setPage(1) }}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-semibold transition whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 rounded-2xl px-4 py-2 text-xs font-semibold transition whitespace-nowrap ${
                 category === tab.value
                   ? "bg-po-primary text-white"
                   : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text"
@@ -216,7 +224,7 @@ export default function AdminAuditLogsPage() {
             <select
               value={action}
               onChange={(e) => { setAction(e.target.value); setPage(1) }}
-              className="h-9 rounded-2xl bg-po-surface-muted/50 px-4 text-xs text-po-text ring-1 ring-po-border/60 focus:outline-none focus:ring-2 focus:ring-po-primary/40"
+              className="h-9 rounded-xl border border-[#E8D9C7] bg-white px-3 text-xs font-semibold text-po-text outline-none transition focus:border-po-primary/40"
             >
               <option value="">Tất cả hành động</option>
               {uniqueActions.map((a) => (
@@ -237,7 +245,7 @@ export default function AdminAuditLogsPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+      <div className="overflow-hidden rounded-[30px] bg-white/95 shadow-[0_12px_40px_rgba(15,23,42,0.06)] ring-1 ring-[#F3E8D8]">
         <div className="grid gap-3 p-3 md:hidden">
           {isLoading ? (
             <div className="py-14 text-center">
@@ -255,30 +263,35 @@ export default function AdminAuditLogsPage() {
         </div>
 
         <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[900px] text-left">
+          <table className="w-full min-w-[1020px] table-fixed text-left">
             <thead>
-              <tr className="border-b border-po-border/60">
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
-                  Thời gian
+              <tr className="border-b border-[#F1E3D2] bg-gradient-to-b from-[#FFFCF8] to-[#FFF9F2]">
+                <th className="w-[180px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-8 place-items-center rounded-full bg-[#F5F7FA] text-po-text-subtle ring-1 ring-[#EAEFF5]">
+                      <CalendarDays className="size-4" />
+                    </span>
+                    <span>Thời gian</span>
+                  </div>
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[220px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   Hành động
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[140px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   Danh mục
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[220px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   Người thực hiện
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[120px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   Mức độ
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[140px] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   Địa chỉ IP
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-po-border/50">
+            <tbody className="divide-y divide-[#F4E8D9]">
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="py-16 text-center">
@@ -317,11 +330,11 @@ export default function AdminAuditLogsPage() {
                   return (
                     <tr
                       key={log.AuditLogId}
-                      className="group transition hover:bg-po-surface-muted/40"
+                        className="group transition hover:bg-[#FFF9F2]"
                     >
-                      <td className="px-5 py-4">
-                        <div className="space-y-0.5">
-                          <p className="text-sm text-po-text whitespace-nowrap">
+                        <td className="px-4 py-4">
+                          <div className="space-y-0.5">
+                            <p className="text-sm font-semibold text-po-text whitespace-nowrap">
                             {formatDate(log.CreatedAt)}
                           </p>
                           <p className="text-[10px] text-po-text-muted">
@@ -329,7 +342,7 @@ export default function AdminAuditLogsPage() {
                           </p>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                         <div className="flex items-center gap-2">
                           <ActionIcon className={`size-4 shrink-0 ${actionMeta.color}`} />
                           <span className={`text-sm font-semibold ${actionMeta.color}`}>
@@ -337,7 +350,7 @@ export default function AdminAuditLogsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                         <div className="flex items-center gap-1.5">
                           <CategoryIcon className={`size-3.5 shrink-0 ${categoryMeta.color}`} />
                           <span className={`text-xs font-semibold ${categoryMeta.color}`}>
@@ -345,18 +358,18 @@ export default function AdminAuditLogsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                        <td className="px-4 py-4">
                         {log.UserEmail ? (
                           <div className="flex items-center gap-2">
-                            <div className="grid size-8 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary text-xs font-bold">
+                              <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#FFE4BF] text-[#B96A00] text-xs font-extrabold ring-1 ring-[#FFD8A0]">
                               {log.UserEmail[0].toUpperCase()}
                             </div>
-                            <div>
-                              <p className="text-xs font-semibold text-po-text">
+                            <div className="min-w-0">
+                                <p className="truncate text-xs font-bold text-po-text">
                                 {log.UserEmail}
                               </p>
                               {log.UserId && (
-                                <p className="text-[10px] text-po-text-muted font-mono">
+                                  <p className="text-[10px] font-mono text-po-text-muted">
                                   {log.UserId.slice(0, 8)}
                                 </p>
                               )}
@@ -366,13 +379,13 @@ export default function AdminAuditLogsPage() {
                           <span className="text-xs text-po-text-muted italic">Hệ thống</span>
                         )}
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-4 py-4">
                         <span className={`text-xs font-semibold ${severityMeta.color}`}>
                           {severityMeta.label}
                         </span>
                       </td>
-                      <td className="px-5 py-4">
-                        <span className="text-xs text-po-text-muted font-mono">
+                      <td className="px-4 py-4">
+                        <span className="text-[11px] font-mono text-po-text-muted">
                           {log.IpAddress ?? "—"}
                         </span>
                       </td>
@@ -385,44 +398,70 @@ export default function AdminAuditLogsPage() {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between gap-4 border-t border-po-border/60 px-5 py-4">
-            <p className="text-xs text-po-text-muted">
-              Trang {page} / {totalPages} — {(meta as { totalRecords?: number })?.totalRecords ?? 0} kết quả
+          <div className="flex flex-col gap-4 border-t border-[#F3E8D8] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-po-text-muted">
+              <label className="inline-flex items-center gap-2">
+                <span className="font-medium text-po-text-muted">Hiển thị</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value))
+                    setPage(1)
+                  }}
+                  className="h-9 rounded-xl border border-[#E8D9C7] bg-white px-3 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary/40"
+                >
+                  {[10, 20, 50].map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <span className="font-medium text-po-text-muted">kết quả mỗi trang</span>
+            </div>
+
+            <p className="text-sm font-medium text-po-text-muted">
+              {totalRecords === 0 ? "0 kết quả" : `${startRecord} - ${endRecord} của ${totalRecords} kết quả`}
             </p>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2 self-end lg:self-auto">
+              <button
+                onClick={() => setPage(1)}
+                disabled={page <= 1}
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang đầu"
+              >
+                <ChevronsLeft className="size-4" />
+              </button>
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang trước"
               >
-                Trước
+                <ChevronLeft className="size-4" />
               </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNum: number
-                if (totalPages <= 5) pageNum = i + 1
-                else if (page <= 3) pageNum = i + 1
-                else if (page >= totalPages - 2) pageNum = totalPages - 4 + i
-                else pageNum = page - 2 + i
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setPage(pageNum)}
-                    className={`inline-flex size-9 items-center justify-center rounded-2xl text-xs font-semibold transition ${
-                      page === pageNum
-                        ? "bg-po-primary text-white shadow-md"
-                        : "bg-white text-po-text-muted ring-1 ring-po-border/80 hover:-translate-y-0.5 hover:shadow-md"
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              })}
+              <button
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-[#F6D6A8] text-[#9A5C00] shadow-sm ring-1 ring-[#F0C98B]"
+                aria-current="page"
+              >
+                {page}
+              </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang sau"
               >
-                Sau
+                <ChevronRight className="size-4" />
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={page >= totalPages}
+                className="inline-flex size-9 items-center justify-center rounded-xl bg-white text-po-text-muted ring-1 ring-[#E8D9C7] transition hover:-translate-y-0.5 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="Trang cuối"
+              >
+                <ChevronsRight className="size-4" />
               </button>
             </div>
           </div>

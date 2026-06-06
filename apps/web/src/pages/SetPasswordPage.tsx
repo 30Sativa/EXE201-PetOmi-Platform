@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { Eye, EyeOff, KeyRound } from "lucide-react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { useQueryClient } from "@tanstack/react-query"
 
 import FormStatusMessage from "@/components/ui/FormStatusMessage"
 import { setPasswordApi } from "@/services/auth.service"
@@ -22,6 +23,7 @@ function getSafeNextPath(next: string | null) {
 
 export default function SetPasswordPage() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const nextPath = useMemo(
     () => getSafeNextPath(searchParams.get("next")),
@@ -51,9 +53,16 @@ export default function SetPasswordPage() {
 
     try {
       await setPasswordApi(data)
+      queryClient.setQueryData(["auth", "me"], (current: unknown) => {
+        if (current && typeof current === "object") {
+          return { ...current, hasPassword: true }
+        }
+
+        return current
+      })
       navigate(nextPath, { replace: true })
     } catch (err) {
-      setMessage(getErrorMessage(err, "Khong the thiet lap mat khau. Vui long thu lai."))
+      setMessage(getErrorMessage(err, "Không thể thiết lập mật khẩu. Vui lòng thử lại."))
     } finally {
       setIsSubmitting(false)
     }
@@ -71,24 +80,24 @@ export default function SetPasswordPage() {
               Google sign-in
             </span>
             <h1 className="mt-2 max-w-full break-words text-3xl font-extrabold leading-tight text-po-text">
-              Thiet lap mat khau
+              Thiết lập mật khẩu
             </h1>
             <p className="mt-2 max-w-full break-words text-sm leading-6 text-po-text-muted">
-              Tao mat khau de lan sau ban co the dang nhap bang email va mat khau.
+              Tạo mật khẩu để lần sau bạn có thể đăng nhập bằng email và mật khẩu.
             </p>
           </div>
 
           <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-2">
               <label htmlFor="set-password" className="text-sm font-semibold text-po-text">
-                Mat khau <span className="text-po-danger">*</span>
+                Mật khẩu <span className="text-po-danger">*</span>
               </label>
               <div className="relative">
                 <input
                   id="set-password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="new-password"
-                  placeholder="Toi thieu 6 ky tu"
+                  placeholder="Tối thiểu 6 ký tự"
                   className={`${fieldClass} pr-12`}
                   {...register("newPassword")}
                 />
@@ -96,7 +105,7 @@ export default function SetPasswordPage() {
                   type="button"
                   className="absolute right-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-xl text-po-text-muted transition hover:bg-white hover:text-po-text"
                   onClick={() => setShowPassword((p) => !p)}
-                  aria-label={showPassword ? "An mat khau" : "Hien mat khau"}
+                  aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                 >
                   {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
@@ -110,14 +119,14 @@ export default function SetPasswordPage() {
 
             <div className="grid gap-2">
               <label htmlFor="set-confirm-password" className="text-sm font-semibold text-po-text">
-                Xac nhan mat khau <span className="text-po-danger">*</span>
+                Xác nhận mật khẩu <span className="text-po-danger">*</span>
               </label>
               <div className="relative">
                 <input
                   id="set-confirm-password"
                   type={showConfirm ? "text" : "password"}
                   autoComplete="new-password"
-                  placeholder="Nhap lai mat khau"
+                  placeholder="Nhập lại mật khẩu"
                   className={`${fieldClass} pr-12`}
                   {...register("confirmPassword")}
                 />
@@ -125,7 +134,7 @@ export default function SetPasswordPage() {
                   type="button"
                   className="absolute right-3 top-1/2 grid size-9 -translate-y-1/2 place-items-center rounded-xl text-po-text-muted transition hover:bg-white hover:text-po-text"
                   onClick={() => setShowConfirm((p) => !p)}
-                  aria-label={showConfirm ? "An mat khau" : "Hien mat khau"}
+                  aria-label={showConfirm ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                 >
                   {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
@@ -140,7 +149,7 @@ export default function SetPasswordPage() {
             {message ? (
               <FormStatusMessage
                 status="error"
-                title="Chua the thiet lap mat khau"
+                title="Chưa thể thiết lập mật khẩu"
                 message={message}
               />
             ) : null}
@@ -150,7 +159,7 @@ export default function SetPasswordPage() {
               disabled={isSubmitting}
               className="h-12 w-full rounded-full bg-po-primary text-[15px] font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl disabled:translate-y-0 disabled:opacity-60"
             >
-              {isSubmitting ? "Dang xu ly..." : "Luu mat khau"}
+              {isSubmitting ? "Đang xử lý..." : "Lưu mật khẩu"}
             </button>
           </form>
         </div>

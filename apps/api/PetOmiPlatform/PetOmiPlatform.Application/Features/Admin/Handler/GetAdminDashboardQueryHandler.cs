@@ -10,15 +10,18 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
     private readonly IClinicRepository _clinicRepository;
     private readonly IUserRepository _userRepository;
     private readonly IAppointmentRepository _appointmentRepository;
+    private readonly IChatMessageRepository _chatMessageRepository;
 
     public GetAdminDashboardQueryHandler(
         IClinicRepository clinicRepository,
         IUserRepository userRepository,
-        IAppointmentRepository appointmentRepository)
+        IAppointmentRepository appointmentRepository,
+        IChatMessageRepository chatMessageRepository)
     {
         _clinicRepository = clinicRepository;
         _userRepository = userRepository;
         _appointmentRepository = appointmentRepository;
+        _chatMessageRepository = chatMessageRepository;
     }
 
     public async Task<AdminDashboardResponse> Handle(GetAdminDashboardQuery request, CancellationToken cancellationToken)
@@ -42,6 +45,13 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
         userCountByRole.TryGetValue("Admin", out var admins);
 
         var totalAppointments = await _appointmentRepository.CountAllAsync();
+        var aiStatsWindowStartUtc = DateTime.UtcNow.AddDays(-7);
+        var aiIntentWindowStartUtc = DateTime.UtcNow.AddDays(-30);
+        var aiDashboardStats = await _chatMessageRepository.GetAiDashboardStatsAsync(aiStatsWindowStartUtc);
+        var aiIntentStats = await _chatMessageRepository.GetIntentDashboardStatsAsync(aiIntentWindowStartUtc);
+        var ragUsageRate = aiDashboardStats.AiResponsesSince == 0
+            ? 0
+            : Math.Round((decimal)aiDashboardStats.RagResponsesSince / aiDashboardStats.AiResponsesSince * 100, 1);
 
         return new AdminDashboardResponse
         {
@@ -66,8 +76,27 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
                 Vets = vets,
                 Admins = admins
             },
+            AiStats = new AdminAiStats
+            {
+                TotalAiResponses = aiDashboardStats.TotalAiResponses,
+                AiResponsesLast7Days = aiDashboardStats.AiResponsesSince,
+                RagResponses = aiDashboardStats.RagResponses,
+                RagResponsesLast7Days = aiDashboardStats.RagResponsesSince,
+                RagUsageRate = ragUsageRate,
+                FailedResponsesLast7Days = aiDashboardStats.FailedResponsesSince,
+                ActiveConversationsLast7Days = aiDashboardStats.ActiveConversationsSince,
+                AverageChunksUsedLast7Days = aiDashboardStats.AverageChunksUsedSince,
+                SourceBackedResponsesLast7Days = aiDashboardStats.SourceBackedResponsesSince,
+                TotalTokensLast7Days = aiDashboardStats.TotalTokensSince
+            },
             ClinicTrend = clinicTrend.Select(kv => new ClinicTrendItem { Date = kv.Key, Count = kv.Value }).ToList(),
-            UserTrend = userTrend.Select(kv => new UserTrendItem { Date = kv.Key, Count = kv.Value }).ToList()
+            UserTrend = userTrend.Select(kv => new UserTrendItem { Date = kv.Key, Count = kv.Value }).ToList(),
+            AiIntentStats = aiIntentStats.Select(item => new AiIntentStatItem
+            {
+                Intent = item.Intent,
+                Count = item.Count,
+                RagCount = item.RagCount
+            }).ToList()
         };
     }
 }

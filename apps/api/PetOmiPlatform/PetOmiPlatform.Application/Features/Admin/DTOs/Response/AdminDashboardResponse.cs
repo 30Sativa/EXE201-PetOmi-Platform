@@ -5,8 +5,10 @@ public class AdminDashboardResponse
     public AdminStatsSummary Summary { get; set; } = new();
     public AdminClinicStats ClinicStats { get; set; } = new();
     public AdminUserStats UserStats { get; set; } = new();
+    public AdminAiStats AiStats { get; set; } = new();
     public List<ClinicTrendItem> ClinicTrend { get; set; } = new();
     public List<UserTrendItem> UserTrend { get; set; } = new();
+    public List<AiIntentStatItem> AiIntentStats { get; set; } = new();
 }
 
 public class AdminStatsSummary
@@ -33,6 +35,20 @@ public class AdminUserStats
     public int Admins { get; set; }
 }
 
+public class AdminAiStats
+{
+    public int TotalAiResponses { get; set; }
+    public int AiResponsesLast7Days { get; set; }
+    public int RagResponses { get; set; }
+    public int RagResponsesLast7Days { get; set; }
+    public decimal RagUsageRate { get; set; }
+    public int FailedResponsesLast7Days { get; set; }
+    public int ActiveConversationsLast7Days { get; set; }
+    public decimal AverageChunksUsedLast7Days { get; set; }
+    public int SourceBackedResponsesLast7Days { get; set; }
+    public int TotalTokensLast7Days { get; set; }
+}
+
 public class ClinicTrendItem
 {
     public string Date { get; set; } = string.Empty;
@@ -43,4 +59,11 @@ public class UserTrendItem
 {
     public string Date { get; set; } = string.Empty;
     public int Count { get; set; }
+}
+
+public class AiIntentStatItem
+{
+    public string Intent { get; set; } = string.Empty;
+    public int Count { get; set; }
+    public int RagCount { get; set; }
 }

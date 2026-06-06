@@ -173,6 +173,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<IPetAvatarService, PetAvatarService>();
+            services.AddScoped<IPetCodeGenerator, PetCodeGenerator>();
 
 
             // Reminders

@@ -5,6 +5,7 @@ using PetOmiPlatform.Application.Features.Pet.DTOs.Response;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
+using PetOmiPlatform.Domain.Interfaces.Services;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
         private readonly IPetPhotoRepository _petPhotoRepository;
         private readonly IPetHealthProfileRepository _petHealthProfileRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IPetCodeGenerator _petCodeGenerator;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreatePetCommandHandler(
@@ -24,12 +26,14 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             IPetPhotoRepository petPhotoRepository,
             IPetHealthProfileRepository petHealthProfileRepository,
             IUserRepository userRepository,
+            IPetCodeGenerator petCodeGenerator,
             IUnitOfWork unitOfWork)
         {
             _petRepository = petRepository;
             _petPhotoRepository = petPhotoRepository;
             _petHealthProfileRepository = petHealthProfileRepository;
             _userRepository = userRepository;
+            _petCodeGenerator = petCodeGenerator;
             _unitOfWork = unitOfWork;
         }
 
@@ -40,8 +44,11 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 ?? throw new NotFoundException("Người dùng không tồn tại.");
 
             // 2. Tạo hồ sơ pet mới — domain tự gán ID và CreatedAt
+            var publicPetCode = await GenerateUniquePublicPetCodeAsync();
+
             var pet = PetDomain.Create(
                 ownerUserId: command.UserId,
+                publicPetCode: publicPetCode,
                 name: command.Request.Name,
                 species: command.Request.Species,
                 breed: command.Request.Breed,
@@ -90,6 +97,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             {
                 PetId = pet.Id,
                 OwnerUserId = pet.OwnerUserId,
+                PublicPetCode = pet.PublicPetCode,
                 Name = pet.Name,
                 Species = pet.Species,
                 Breed = pet.Breed,
@@ -101,6 +109,18 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 CreatedAt = pet.CreatedAt,
                 UpdatedAt = pet.UpdatedAt
             };
+        }
+
+        private async Task<string> GenerateUniquePublicPetCodeAsync()
+        {
+            for (var attempt = 0; attempt < 10; attempt++)
+            {
+                var code = _petCodeGenerator.GeneratePublicPetCode();
+                if (!await _petRepository.PublicPetCodeExistsAsync(code))
+                    return code;
+            }
+
+            throw new ConflictException("Khong the tao ma dinh danh thu cung. Vui long thu lai.");
         }
     }
 }

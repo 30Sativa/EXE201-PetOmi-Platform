@@ -766,6 +766,7 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Name).HasMaxLength(100);
             entity.Property(e => e.OwnerUserId).HasColumnName("OwnerUserID");
+            entity.Property(e => e.PublicPetCode).HasMaxLength(20);
             entity.Property(e => e.Species).HasMaxLength(50);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
 

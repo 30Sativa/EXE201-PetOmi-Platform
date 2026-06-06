@@ -55,7 +55,8 @@ export default function OwnerDashboardLayout() {
               src={profile?.avatarUrl}
               alt={displayName}
               size="md"
-              className="size-11 shrink-0 rounded-2xl ring-2 ring-po-primary-soft"
+              shape="square"
+              className="size-11 shrink-0 ring-2 ring-po-primary-soft"
             />
             <span className="min-w-0">
               <span className="block truncate text-base leading-tight">

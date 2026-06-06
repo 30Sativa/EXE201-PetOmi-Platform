@@ -5,6 +5,7 @@ interface AvatarProps {
   alt: string
   fallback?: string
   size?: "sm" | "md" | "lg" | "xl"
+  shape?: "circle" | "square"
   className?: string
 }
 
@@ -26,6 +27,7 @@ export default function Avatar({
   alt,
   fallback,
   size = "md",
+  shape = "circle",
   className,
 }: AvatarProps) {
   const initials = fallback ?? getInitials(alt)
@@ -34,7 +36,8 @@ export default function Avatar({
     return (
       <div
         className={cn(
-          "flex items-center justify-center rounded-full bg-po-primary-soft font-bold text-po-primary",
+          "flex items-center justify-center bg-po-primary-soft font-bold text-po-primary",
+          shape === "circle" ? "rounded-full" : "rounded-2xl",
           sizeClasses[size],
           className,
         )}
@@ -50,7 +53,8 @@ export default function Avatar({
       src={src}
       alt={alt}
       className={cn(
-        "rounded-full object-cover",
+        "object-cover",
+        shape === "circle" ? "rounded-full" : "rounded-2xl",
         sizeClasses[size],
         className,
       )}

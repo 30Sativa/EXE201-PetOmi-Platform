@@ -10,16 +10,18 @@ import {
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
+import DashboardSection from "@/components/dashboard/DashboardSection"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import EmptyState from "@/components/ui/EmptyState"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import {
+  getAdminRolesApi,
   getAdminUsersApi,
   assignAdminRoleApi,
   revokeAdminRoleApi,
 } from "@/services/admin.service"
-import type { AdminUserListResponse, PagedData } from "@/types"
+import type { AdminRoleItemResponse, AdminUserListResponse, PagedData } from "@/types"
 
 function getPagedItems<T>(paged?: PagedData<T>) {
   return paged?.items ?? paged?.Items ?? []
@@ -68,6 +70,12 @@ export default function AdminRolesPage() {
     staleTime: 30 * 1000,
   })
 
+  const { data: roleCatalog, isLoading: rolesLoading } = useQuery({
+    queryKey: ["admin", "role-catalog"],
+    queryFn: getAdminRolesApi,
+    staleTime: 60 * 1000,
+  })
+
   const assignMutation = useMutation({
     mutationFn: (userId: string) => assignAdminRoleApi(userId),
     onSuccess: () => {
@@ -104,9 +112,9 @@ export default function AdminRolesPage() {
   ]
 
   const roleStats = {
-    admin: allItems.filter((u) => u.roles.includes("Admin")).length,
-    owner: allItems.filter((u) => u.roles.includes("Owner")).length,
-    vet: allItems.filter((u) => u.roles.includes("Vet")).length,
+    global: roleCatalog?.stats.globalRoleCount ?? allItems.filter((u) => u.roles.includes("Admin")).length,
+    clinic: roleCatalog?.stats.clinicRoleCount ?? allItems.filter((u) => u.roles.includes("Vet")).length,
+    permissions: roleCatalog?.stats.totalPermissions ?? 0,
   }
 
   return (
@@ -126,20 +134,20 @@ export default function AdminRolesPage() {
 
           <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
             <HeroMetric
-              label="Admin"
-              value={String(roleStats.admin)}
+              label="Vai trò global"
+              value={String(roleStats.global)}
               icon={ShieldCheck}
               variant="primary"
             />
             <HeroMetric
-              label="Owner"
-              value={String(roleStats.owner)}
+              label="Vai trò clinic"
+              value={String(roleStats.clinic)}
               icon={Crown}
               variant="success"
             />
             <HeroMetric
-              label="Bác sĩ (Vet)"
-              value={String(roleStats.vet)}
+              label="Permissions"
+              value={String(roleStats.permissions)}
               icon={UsersRound}
               variant="warning"
             />
@@ -147,8 +155,31 @@ export default function AdminRolesPage() {
         </div>
       </section>
 
+      <DashboardSection
+        title="Role matrix backend"
+        subtitle="Danh sách role và permission đang được backend trả về, tách rõ global scope và clinic scope."
+      >
+        {rolesLoading ? (
+          <div className="py-10 text-center">
+            <LoadingSpinner />
+          </div>
+        ) : !roleCatalog ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="Chưa có dữ liệu role"
+            description="Không đọc được role catalog từ backend."
+            className="rounded-[24px] bg-po-surface-muted/60"
+          />
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RoleCatalogColumn title="Global roles" roles={roleCatalog.globalRoles} />
+            <RoleCatalogColumn title="Clinic roles" roles={roleCatalog.clinicRoles} />
+          </div>
+        )}
+      </DashboardSection>
+
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative min-w-[220px] flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-po-text-muted pointer-events-none" />
           <input
             type="text"
@@ -158,16 +189,16 @@ export default function AdminRolesPage() {
               setSearch(e.target.value)
               setPage(1)
             }}
-            className="w-full h-11 pl-10 pr-4 rounded-full bg-white text-sm text-po-text ring-1 ring-po-border/80 placeholder:text-po-text-muted/70 focus:outline-none focus:ring-2 focus:ring-po-primary/40 transition"
+            className="w-full h-11 pl-10 pr-4 rounded-2xl bg-white text-sm text-po-text ring-1 ring-po-border/80 placeholder:text-po-text-muted/70 focus:outline-none focus:ring-2 focus:ring-po-primary/40 transition"
           />
         </div>
 
-        <div className="flex rounded-full bg-white ring-1 ring-po-border/80 p-1 gap-1">
+        <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl bg-white p-1 ring-1 ring-po-border/80">
           {roleTabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => { setRoleTab(tab.value); setPage(1) }}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition ${
+              className={`shrink-0 whitespace-nowrap rounded-2xl px-4 py-2 text-xs font-semibold transition ${
                 roleTab === tab.value
                   ? "bg-po-primary text-white"
                   : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text"
@@ -180,23 +211,52 @@ export default function AdminRolesPage() {
       </div>
 
       <div className="overflow-hidden rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px] text-left">
+        <div className="grid gap-3 p-3 md:hidden">
+          {isLoading ? (
+            <div className="py-14 text-center">
+              <LoadingSpinner />
+            </div>
+          ) : filteredItems.length === 0 ? (
+            <EmptyState
+              icon={ShieldCheck}
+              title="Không có người dùng"
+              description={
+                search
+                  ? "Thử lại từ khóa khác"
+                  : "Chưa có người dùng nào trong hệ thống"
+              }
+            />
+          ) : (
+            filteredItems.map((user) => (
+              <RoleUserMobileCard
+                key={user.userId}
+                user={user}
+                isAssignPending={assignMutation.isPending}
+                isRevokePending={revokeMutation.isPending}
+                onAssign={() => setAssignTarget(user)}
+                onRevoke={() => setRevokeTarget(user)}
+              />
+            ))
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full text-left">
             <thead>
               <tr className="border-b border-po-border/60">
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle w-full min-w-[200px]">
                   Người dùng
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[90px]">
                   Trạng thái
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[120px]">
                   Quyền hiện tại
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[90px]">
                   Ngày tạo
                 </th>
-                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle shrink-0 w-[180px]">
                   Hành động
                 </th>
               </tr>
@@ -230,7 +290,7 @@ export default function AdminRolesPage() {
                   >
                     <td className="px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="grid size-10 shrink-0 place-items-center rounded-full bg-po-primary-soft text-po-primary text-sm font-bold">
+                        <div className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary text-sm font-bold">
                           {user.fullName ? user.fullName[0].toUpperCase() : user.email[0].toUpperCase()}
                         </div>
                         <div className="min-w-0">
@@ -241,19 +301,20 @@ export default function AdminRolesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-4">
+                    <td className="px-5 py-4 shrink-0 w-[90px]">
                       <StatusBadge
                         variant={user.isActive ? "success" : "danger"}
                         label={user.isActive ? "Hoạt động" : "Bị khóa"}
+                        className="whitespace-nowrap"
                       />
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-1.5">
+                    <td className="px-5 py-4 shrink-0 w-[120px]">
+                      <div className="flex flex-wrap gap-1.5 max-w-[120px]">
                         {user.roles.length > 0 ? (
                           user.roles.map((role) => (
                             <span
                               key={role}
-                              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+                              className={`inline-flex shrink-0 items-center gap-1 rounded-2xl px-2.5 py-0.5 text-[10px] font-semibold whitespace-nowrap ${
                                 ROLE_COLORS[role] ?? "bg-po-surface-muted text-po-text-muted"
                               }`}
                             >
@@ -271,16 +332,16 @@ export default function AdminRolesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-sm text-po-text-muted whitespace-nowrap">
+                    <td className="px-5 py-4 text-sm text-po-text-muted whitespace-nowrap shrink-0 w-[90px]">
                       {formatDate(user.createdAt)}
                     </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap items-center gap-2">
+                    <td className="px-5 py-4 shrink-0 w-[180px]">
+                      <div className="flex flex-wrap gap-1.5 sm:flex-row sm:items-center sm:gap-1.5">
                         {!user.roles.includes("Admin") ? (
                           <button
                             onClick={() => setAssignTarget(user)}
                             disabled={assignMutation.isPending}
-                            className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-primary-soft text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white"
+                            className="inline-flex shrink-0 items-center gap-1.5 h-8 rounded-2xl px-2.5 text-xs font-semibold bg-po-primary-soft text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white"
                             title="Gán quyền Admin"
                           >
                             <Plus className="size-3.5" />
@@ -290,7 +351,7 @@ export default function AdminRolesPage() {
                           <button
                             onClick={() => setRevokeTarget(user)}
                             disabled={revokeMutation.isPending}
-                            className="inline-flex items-center gap-1.5 h-8 rounded-full px-3 text-xs font-semibold bg-po-danger-soft text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white"
+                            className="inline-flex shrink-0 items-center gap-1.5 h-8 rounded-2xl px-2.5 text-xs font-semibold bg-po-danger-soft text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white"
                             title="Thu hồi quyền Admin"
                           >
                             <ShieldOff className="size-3.5" />
@@ -308,14 +369,14 @@ export default function AdminRolesPage() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-between gap-4 border-t border-po-border/60 px-5 py-4">
-            <p className="text-xs text-text-muted">
+            <p className="text-xs text-po-text-muted">
               Trang {meta?.pageNumber ?? page} / {totalPages} — {meta?.totalRecords ?? 0} kết quả
             </p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Trước
               </button>
@@ -334,7 +395,7 @@ export default function AdminRolesPage() {
                   <button
                     key={pageNum}
                     onClick={() => setPage(pageNum)}
-                    className={`inline-flex size-9 items-center justify-center rounded-full text-xs font-semibold transition ${
+                    className={`inline-flex size-9 items-center justify-center rounded-2xl text-xs font-semibold transition ${
                       page === pageNum
                         ? "bg-po-primary text-white shadow-md"
                         : "bg-white text-po-text-muted ring-1 ring-po-border/80 hover:-translate-y-0.5 hover:shadow-md"
@@ -347,7 +408,7 @@ export default function AdminRolesPage() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Sau
               </button>
@@ -417,3 +478,155 @@ function HeroMetric({
   )
 }
 
+function RoleCatalogColumn({
+  title,
+  roles,
+}: {
+  title: string
+  roles: AdminRoleItemResponse[]
+}) {
+  return (
+    <div className="grid content-start gap-3 rounded-[24px] bg-po-surface-muted/60 p-3 ring-1 ring-po-border/70">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h3 className="text-sm font-extrabold text-po-text">{title}</h3>
+        <StatusBadge variant="info" label={`${roles.length} roles`} />
+      </div>
+      {roles.length === 0 ? (
+        <EmptyState
+          icon={ShieldCheck}
+          title="Chưa có role"
+          description="Backend chưa trả role trong nhóm này."
+          className="rounded-[20px] bg-white/70 py-8"
+        />
+      ) : (
+        roles.map((role) => <RoleDefinitionCard key={role.roleId} role={role} />)
+      )}
+    </div>
+  )
+}
+
+function RoleDefinitionCard({ role }: { role: AdminRoleItemResponse }) {
+  const visiblePermissions = role.permissions.slice(0, 4)
+  const hiddenCount = Math.max(0, role.permissions.length - visiblePermissions.length)
+
+  return (
+    <article className="rounded-[22px] bg-white/82 p-4 ring-1 ring-po-border/70">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h4 className="truncate text-sm font-extrabold text-po-text">{role.roleName}</h4>
+          <p className="mt-1 text-xs text-po-text-muted">
+            {role.assignedCount} người đang dùng role này
+          </p>
+        </div>
+        <StatusBadge
+          variant={role.scope === "global" ? "info" : "warning"}
+          label={role.scope === "global" ? "Global" : "Clinic"}
+        />
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {visiblePermissions.map((permission) => (
+          <span
+            key={permission.permissionId}
+            className="inline-flex max-w-full items-center rounded-2xl bg-po-surface-muted px-2.5 py-1 text-[10px] font-semibold text-po-text-muted"
+            title={permission.description ?? permission.permissionName}
+          >
+            <span className="truncate">{permission.permissionName}</span>
+          </span>
+        ))}
+        {hiddenCount > 0 ? (
+          <span className="inline-flex rounded-2xl bg-po-primary-soft px-2.5 py-1 text-[10px] font-semibold text-po-primary">
+            +{hiddenCount} quyền
+          </span>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
+function RoleUserMobileCard({
+  user,
+  isAssignPending,
+  isRevokePending,
+  onAssign,
+  onRevoke,
+}: {
+  user: AdminUserListResponse
+  isAssignPending: boolean
+  isRevokePending: boolean
+  onAssign: () => void
+  onRevoke: () => void
+}) {
+  return (
+    <article className="rounded-[24px] bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-white text-sm font-extrabold text-po-primary ring-1 ring-po-border/80">
+          {user.fullName ? user.fullName[0].toUpperCase() : user.email[0].toUpperCase()}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="truncate text-sm font-extrabold text-po-text">
+                {user.fullName ?? "Chưa có tên"}
+              </h3>
+              <p className="mt-1 truncate text-xs text-po-text-muted">{user.email}</p>
+            </div>
+            <StatusBadge
+              variant={user.isActive ? "success" : "danger"}
+              label={user.isActive ? "Hoạt động" : "Bị khóa"}
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {user.roles.length > 0 ? (
+              user.roles.map((role) => (
+                <span
+                  key={role}
+                  className={`inline-flex items-center gap-1 rounded-2xl px-2.5 py-0.5 text-[10px] font-semibold ${
+                    ROLE_COLORS[role] ?? "bg-white text-po-text-muted ring-1 ring-po-border/70"
+                  }`}
+                >
+                  {role === "Admin" && <ShieldCheck className="size-2.5" />}
+                  {role === "Owner" && <Crown className="size-2.5" />}
+                  {role === "Vet" && <UsersRound className="size-2.5" />}
+                  {ROLE_LABELS[role] ?? role}
+                </span>
+              ))
+            ) : (
+              <span className="text-xs text-po-text-muted">Chưa có quyền</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 rounded-2xl bg-white/70 p-3 text-xs text-po-text-muted ring-1 ring-po-border/60">
+        <span>Ngày tạo: {formatDate(user.createdAt)}</span>
+        <span>Profile: {user.isProfileCompleted ? "Hoàn thành" : "Chưa hoàn thành"}</span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {!user.roles.includes("Admin") ? (
+          <button
+            type="button"
+            onClick={onAssign}
+            disabled={isAssignPending}
+            className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white disabled:opacity-50"
+          >
+            <Plus className="size-3.5" />
+            Gán Admin
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onRevoke}
+            disabled={isRevokePending}
+            className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-danger-soft px-3 text-xs font-semibold text-po-danger transition hover:-translate-y-0.5 hover:bg-po-danger hover:text-white disabled:opacity-50"
+          >
+            <ShieldOff className="size-3.5" />
+            Thu hồi
+          </button>
+        )}
+      </div>
+    </article>
+  )
+}

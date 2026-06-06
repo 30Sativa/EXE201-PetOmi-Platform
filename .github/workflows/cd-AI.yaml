@@ -53,11 +53,11 @@ jobs:
 
             cd ~/petomi-ai
 
-            docker compose pull ai-service
-            docker compose up -d ai-service
+            docker compose pull petomi-ai-service
+            docker compose up -d petomi-ai-service
 
             docker compose ps
-            docker logs --tail=80 ai-service
+            docker logs --tail=80 petomi-ai-service
 
             docker image prune -f
 

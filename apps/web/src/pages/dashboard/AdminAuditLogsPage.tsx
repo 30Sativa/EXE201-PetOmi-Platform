@@ -178,12 +178,12 @@ export default function AdminAuditLogsPage() {
       </section>
 
       <div className="flex flex-wrap items-center gap-3">
-        <div className="flex rounded-full bg-white ring-1 ring-po-border/80 p-1 gap-1 overflow-x-auto">
+        <div className="flex rounded-2xl bg-white ring-1 ring-po-border/80 p-1 gap-1 overflow-x-auto">
           {categoryTabs.map((tab) => (
             <button
               key={tab.value}
               onClick={() => { setCategory(tab.value); setPage(1) }}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-semibold transition whitespace-nowrap ${
                 category === tab.value
                   ? "bg-po-primary text-white"
                   : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text"
@@ -197,7 +197,7 @@ export default function AdminAuditLogsPage() {
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className={`inline-flex items-center gap-2 h-10 rounded-full px-4 text-xs font-semibold transition ${
+          className={`inline-flex items-center gap-2 h-10 rounded-2xl px-4 text-xs font-semibold transition ${
             showFilters || action
               ? "bg-po-primary text-white"
               : "bg-white text-po-text-muted ring-1 ring-po-border/80 hover:bg-po-surface-muted"
@@ -216,7 +216,7 @@ export default function AdminAuditLogsPage() {
             <select
               value={action}
               onChange={(e) => { setAction(e.target.value); setPage(1) }}
-              className="h-9 rounded-full bg-po-surface-muted/50 px-4 text-xs text-po-text ring-1 ring-po-border/60 focus:outline-none focus:ring-2 focus:ring-po-primary/40"
+              className="h-9 rounded-2xl bg-po-surface-muted/50 px-4 text-xs text-po-text ring-1 ring-po-border/60 focus:outline-none focus:ring-2 focus:ring-po-primary/40"
             >
               <option value="">Tất cả hành động</option>
               {uniqueActions.map((a) => (
@@ -228,7 +228,7 @@ export default function AdminAuditLogsPage() {
           {action && (
             <button
               onClick={() => { setAction(""); setPage(1) }}
-              className="inline-flex items-center gap-1 h-9 px-3 rounded-full text-xs font-semibold bg-po-surface-muted text-po-text-muted hover:text-po-text transition"
+              className="inline-flex items-center gap-1 h-9 px-3 rounded-2xl text-xs font-semibold bg-po-surface-muted text-po-text-muted hover:text-po-text transition"
             >
               <X className="size-3" />
               Xóa lọc
@@ -238,7 +238,23 @@ export default function AdminAuditLogsPage() {
       )}
 
       <div className="overflow-hidden rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="overflow-x-auto">
+        <div className="grid gap-3 p-3 md:hidden">
+          {isLoading ? (
+            <div className="py-14 text-center">
+              <LoadingSpinner />
+            </div>
+          ) : items.length === 0 ? (
+            <EmptyState
+              icon={Activity}
+              title="Không có bản ghi nào"
+              description="Chưa có hành động nào được ghi lại trong hệ thống."
+            />
+          ) : (
+            items.map((log) => <AuditMobileCard key={log.AuditLogId} log={log} />)
+          )}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[900px] text-left">
             <thead>
               <tr className="border-b border-po-border/60">
@@ -332,7 +348,7 @@ export default function AdminAuditLogsPage() {
                       <td className="px-5 py-4">
                         {log.UserEmail ? (
                           <div className="flex items-center gap-2">
-                            <div className="grid size-8 shrink-0 place-items-center rounded-full bg-po-primary-soft text-po-primary text-xs font-bold">
+                            <div className="grid size-8 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary text-xs font-bold">
                               {log.UserEmail[0].toUpperCase()}
                             </div>
                             <div>
@@ -377,7 +393,7 @@ export default function AdminAuditLogsPage() {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Trước
               </button>
@@ -391,7 +407,7 @@ export default function AdminAuditLogsPage() {
                   <button
                     key={pageNum}
                     onClick={() => setPage(pageNum)}
-                    className={`inline-flex size-9 items-center justify-center rounded-full text-xs font-semibold transition ${
+                    className={`inline-flex size-9 items-center justify-center rounded-2xl text-xs font-semibold transition ${
                       page === pageNum
                         ? "bg-po-primary text-white shadow-md"
                         : "bg-white text-po-text-muted ring-1 ring-po-border/80 hover:-translate-y-0.5 hover:shadow-md"
@@ -404,7 +420,7 @@ export default function AdminAuditLogsPage() {
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-white px-4 text-xs font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Sau
               </button>
@@ -436,3 +452,56 @@ function HeroMetric({
   )
 }
 
+function AuditMobileCard({ log }: { log: AuditLogItemResponse }) {
+  const actionMeta = ACTION_META[log.Action] ?? {
+    label: log.Action,
+    icon: Activity,
+    color: "text-po-text-muted",
+  }
+  const categoryMeta = CATEGORY_META[log.Category] ?? {
+    label: log.Category,
+    icon: Globe,
+    color: "text-po-text-muted",
+  }
+  const severityMeta = SEVERITY_META[log.Severity] ?? {
+    label: log.Severity,
+    color: "text-po-text-muted",
+  }
+  const ActionIcon = actionMeta.icon
+  const CategoryIcon = categoryMeta.icon
+
+  return (
+    <article className="rounded-[24px] bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70">
+      <div className="flex items-start gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white ring-1 ring-po-border/80">
+          <ActionIcon className={`size-4 ${actionMeta.color}`} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className={`text-sm font-extrabold ${actionMeta.color}`}>
+                {actionMeta.label}
+              </h3>
+              <p className="mt-1 text-xs text-po-text-muted">
+                {formatDate(log.CreatedAt)} · {formatRelative(log.CreatedAt)}
+              </p>
+            </div>
+            <span className={`text-xs font-bold ${severityMeta.color}`}>
+              {severityMeta.label}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-2 rounded-2xl bg-white/70 p-3 text-xs text-po-text-muted ring-1 ring-po-border/60">
+        <div className="flex items-center gap-1.5">
+          <CategoryIcon className={`size-3.5 shrink-0 ${categoryMeta.color}`} />
+          <span className={`font-semibold ${categoryMeta.color}`}>{categoryMeta.label}</span>
+        </div>
+        <span>Người thực hiện: {log.UserEmail ?? "Hệ thống"}</span>
+        {log.UserId ? <span className="font-mono">UserId: {log.UserId.slice(0, 8)}</span> : null}
+        <span className="font-mono">IP: {log.IpAddress ?? "-"}</span>
+      </div>
+    </article>
+  )
+}

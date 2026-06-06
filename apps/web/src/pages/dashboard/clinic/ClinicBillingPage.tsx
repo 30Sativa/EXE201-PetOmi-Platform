@@ -344,7 +344,7 @@ export default function ClinicBillingPage() {
               Thu tiền, tạo hóa đơn và xử lý công nợ
             </h2>
             <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
-              Tập trung thao tác hằng ngày ở một màn hình, các danh sách dài được giữ trong vùng cuộn riêng.
+              Tập trung thao tác hằng ngày, theo dõi hóa đơn và xử lý công nợ trong cùng một luồng.
             </p>
           </div>
 
@@ -369,7 +369,7 @@ export default function ClinicBillingPage() {
       </div>
 
       {workspace === "checkout" ? (
-        <div className="grid gap-4 xl:h-[calc(100dvh-292px)] xl:min-h-[560px] xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
           <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
             <div className="flex items-center justify-between gap-3 border-b border-po-border/80 px-4 py-3">
               <div>
@@ -378,7 +378,7 @@ export default function ClinicBillingPage() {
               </div>
             </div>
 
-            <div className="grid min-h-0 gap-4 overflow-y-auto p-4">
+            <div className="grid gap-4 p-4">
               <article className="rounded-[22px] bg-po-surface-muted/45 p-4 ring-1 ring-po-border/70">
                 <div className="flex items-center gap-3">
                   <span className="grid size-9 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/70">
@@ -563,7 +563,7 @@ export default function ClinicBillingPage() {
           />
         </div>
       ) : (
-        <div className="grid gap-4 xl:h-[calc(100dvh-292px)] xl:min-h-[560px] xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
           <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
             <div className="flex items-center justify-between gap-3 border-b border-po-border/80 px-4 py-3">
               <div>
@@ -572,7 +572,7 @@ export default function ClinicBillingPage() {
               </div>
               <StatusBadge variant="info" label={`${points.length} ngày`} />
             </div>
-            <div className="min-h-0 overflow-y-auto p-4">
+            <div className="p-4">
               {trendQuery.isLoading ? (
                 <div className="py-12 text-center"><LoadingSpinner /></div>
               ) : points.length === 0 ? (
@@ -599,7 +599,7 @@ export default function ClinicBillingPage() {
             </div>
           </section>
 
-          <aside className="grid min-h-0 gap-4 xl:grid-rows-[auto_minmax(0,1fr)]">
+          <aside className="grid gap-4">
             <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
               <h3 className="text-base font-extrabold text-po-text">Tuổi nợ</h3>
               <div className="mt-3 grid gap-2">
@@ -854,7 +854,7 @@ function BillingQueue({
   onRefund: (item: PendingManualRefundItemResponse) => void
 }) {
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
+    <section className="flex flex-col overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
       <div className="border-b border-po-border/80 px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -865,7 +865,7 @@ function BillingQueue({
         </div>
       </div>
 
-      <div className="grid min-h-0 content-start gap-4 overflow-y-auto p-4">
+      <div className="grid content-start gap-4 p-4">
         <div>
           <div className="mb-2.5 flex items-center justify-between gap-3">
             <p className="text-[11px] font-extrabold uppercase tracking-[0.12em] text-po-text-subtle">

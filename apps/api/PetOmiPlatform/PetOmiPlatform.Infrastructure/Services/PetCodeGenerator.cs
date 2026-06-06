@@ -12,6 +12,11 @@ namespace PetOmiPlatform.Infrastructure.Services
             return $"PO-{NextSegment()}-{NextSegment()}";
         }
 
+        public string GenerateHealthShareCode()
+        {
+            return $"HLT-{NextSegment()}-{NextSegment()}";
+        }
+
         private static string NextSegment()
         {
             return new string(Enumerable.Range(0, 3)

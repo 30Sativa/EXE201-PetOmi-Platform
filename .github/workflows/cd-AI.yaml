@@ -57,7 +57,7 @@ jobs:
             docker compose up -d ai-service
 
             docker compose ps
-            docker logs --tail=80 petomi-ai
+            docker logs --tail=80 ai-service
 
             docker image prune -f
 

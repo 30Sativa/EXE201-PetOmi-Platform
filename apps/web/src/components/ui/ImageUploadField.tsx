@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
-import { Camera, Upload, X } from "lucide-react"
+import { Camera, FileText, Upload, X } from "lucide-react"
+
 import { getErrorMessage } from "@/lib/utils"
 import { uploadImageApi, type CloudinaryUploadResult, type ImageType } from "@/services/upload.service"
 
@@ -17,6 +18,9 @@ interface ImageUploadFieldProps {
   buttonLabel?: string
   buttonClassName?: string
   showHelpText?: boolean
+  helpText?: string
+  emptyLabel?: string
+  replaceLabel?: string
   onUploadComplete?: (result: CloudinaryUploadResult) => void
   onUploadStateChange?: (isUploading: boolean) => void
 }
@@ -24,7 +28,7 @@ interface ImageUploadFieldProps {
 const DEFAULT_MAX_SIZE_MB = 5
 
 function getUploadErrorMessage(error: unknown, imageType: ImageType) {
-  const message = getErrorMessage(error, "Upload thất bại. Vui lòng thử lại.")
+  const message = getErrorMessage(error, "Upload that bai. Vui long thu lai.")
   const normalized = message.toLowerCase()
 
   if (
@@ -34,10 +38,10 @@ function getUploadErrorMessage(error: unknown, imageType: ImageType) {
     normalized.includes("imagetype")
   ) {
     if (imageType === "clinic_license") {
-      return "Chưa thể upload ảnh giấy phép. Vui lòng tải lại trang hoặc thử lại sau khi hệ thống cập nhật."
+      return "Chua the upload file giay phep. Vui long tai lai trang hoac thu lai sau."
     }
 
-    return "Chưa thể upload ảnh do thiếu thông tin liên kết. Vui lòng thử lại sau."
+    return "Chua the upload file do thieu thong tin lien ket. Vui long thu lai sau."
   }
 
   return message
@@ -57,18 +61,27 @@ export default function ImageUploadField({
   buttonLabel,
   buttonClassName,
   showHelpText = true,
+  helpText,
+  emptyLabel,
+  replaceLabel,
   onUploadComplete,
   onUploadStateChange,
 }: ImageUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(value ?? null)
+  const [previewFormat, setPreviewFormat] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const currentPreview = preview ?? value ?? null
+  const isPdfPreview = previewFormat === "pdf" || currentPreview?.toLowerCase().includes(".pdf")
+  const uploadHelpText = helpText ?? `JPG, PNG, WEBP, toi da ${maxSizeMb}MB`
+  const uploadLabel = emptyLabel ?? "Tai file len"
+  const replaceText = replaceLabel ?? "Thay file"
 
   useEffect(() => {
     queueMicrotask(() => {
       setPreview(value ?? null)
+      setPreviewFormat(value?.toLowerCase().includes(".pdf") ? "pdf" : null)
       setError(null)
     })
   }, [value])
@@ -78,12 +91,14 @@ export default function ImageUploadField({
     if (!file) return
 
     if (file.size > maxSizeMb * 1024 * 1024) {
-      setError(`Dung lượng tối đa là ${maxSizeMb}MB.`)
+      setError(`Dung luong toi da la ${maxSizeMb}MB.`)
       return
     }
 
     const objectUrl = URL.createObjectURL(file)
+    const selectedFormat = file.type === "application/pdf" ? "pdf" : null
     setPreview(objectUrl)
+    setPreviewFormat(selectedFormat)
     setError(null)
 
     setIsUploading(true)
@@ -96,12 +111,14 @@ export default function ImageUploadField({
       )
       URL.revokeObjectURL(objectUrl)
       setPreview(result.secureUrl)
+      setPreviewFormat(result.format?.toLowerCase() ?? selectedFormat)
       onChange(result.secureUrl)
       onUploadComplete?.(result)
     } catch (error) {
       setError(getUploadErrorMessage(error, imageType))
       URL.revokeObjectURL(objectUrl)
       setPreview(null)
+      setPreviewFormat(null)
     } finally {
       setIsUploading(false)
       onUploadStateChange?.(false)
@@ -111,6 +128,7 @@ export default function ImageUploadField({
 
   const handleRemove = () => {
     setPreview(null)
+    setPreviewFormat(null)
     setError(null)
     onChange("")
     if (inputRef.current) inputRef.current.value = ""
@@ -120,12 +138,20 @@ export default function ImageUploadField({
     inputRef.current?.click()
   }
 
+  const fileInput = (
+    <input
+      ref={inputRef}
+      type="file"
+      accept={accept}
+      onChange={handleFileChange}
+      className="hidden"
+    />
+  )
+
   if (buttonOnly) {
     return (
       <div className="grid gap-1.5">
-        {label && (
-          <span className="text-sm font-semibold text-po-text">{label}</span>
-        )}
+        {label && <span className="text-sm font-semibold text-po-text">{label}</span>}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -136,12 +162,12 @@ export default function ImageUploadField({
             {isUploading ? (
               <>
                 <Upload className="size-4 animate-pulse" />
-                Đang upload...
+                Dang upload...
               </>
             ) : (
               <>
                 <Camera className="size-4" />
-                {buttonLabel ?? (currentPreview ? "Thay ảnh" : "Tải ảnh lên")}
+                {buttonLabel ?? (currentPreview ? replaceText : uploadLabel)}
               </>
             )}
           </button>
@@ -153,25 +179,13 @@ export default function ImageUploadField({
               className="inline-flex h-10 items-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-danger transition hover:bg-po-danger-soft disabled:opacity-60"
             >
               <X className="size-4" />
-              Xóa
+              Xoa
             </button>
           )}
         </div>
-        {error && (
-          <p className="text-xs text-po-danger">{error}</p>
-        )}
-        {showHelpText && (
-          <p className="text-xs text-po-text-subtle">
-            JPG, PNG, WEBP, tối đa {maxSizeMb}MB
-          </p>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept={accept}
-          onChange={handleFileChange}
-          className="hidden"
-        />
+        {error && <p className="text-xs text-po-danger">{error}</p>}
+        {showHelpText && <p className="text-xs text-po-text-subtle">{uploadHelpText}</p>}
+        {fileInput}
       </div>
     )
   }
@@ -179,16 +193,26 @@ export default function ImageUploadField({
   if (currentPreview) {
     return (
       <div className="grid gap-1.5">
-        {label && (
-          <span className="text-sm font-semibold text-po-text">{label}</span>
-        )}
+        {label && <span className="text-sm font-semibold text-po-text">{label}</span>}
         <div className="relative inline-block w-full">
-          <img
-            src={currentPreview}
-            alt="Preview"
-            className={previewClassName ?? "h-24 w-full rounded-xl border border-po-border object-cover"}
-            onError={() => setError("Không thể tải ảnh.")}
-          />
+          {isPdfPreview ? (
+            <a
+              href={currentPreview}
+              target="_blank"
+              rel="noreferrer"
+              className={previewClassName ?? "flex h-24 w-full items-center justify-center gap-2 rounded-xl border border-po-border bg-white text-sm font-semibold text-po-primary"}
+            >
+              <FileText className="size-5" />
+              PDF da upload
+            </a>
+          ) : (
+            <img
+              src={currentPreview}
+              alt="Preview"
+              className={previewClassName ?? "h-24 w-full rounded-xl border border-po-border object-cover"}
+              onError={() => setError("Khong the tai file preview.")}
+            />
+          )}
           {!disabled && (
             <div className="mt-2 flex gap-2">
               <button
@@ -198,7 +222,7 @@ export default function ImageUploadField({
                 className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border bg-white px-3 text-xs font-semibold text-po-text transition hover:bg-po-surface-muted disabled:opacity-60"
               >
                 <Camera className="size-3" />
-                Thay ảnh
+                {replaceText}
               </button>
               <button
                 type="button"
@@ -207,33 +231,21 @@ export default function ImageUploadField({
                 className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border bg-white px-3 text-xs font-semibold text-po-danger transition hover:bg-po-danger-soft disabled:opacity-60"
               >
                 <X className="size-3" />
-                Xóa
+                Xoa
               </button>
             </div>
           )}
         </div>
-        {isUploading && (
-          <p className="text-xs text-po-text-muted">Đang upload...</p>
-        )}
-        {error && (
-          <p className="text-xs text-po-danger">{error}</p>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept={accept}
-          onChange={handleFileChange}
-          className="hidden"
-        />
+        {isUploading && <p className="text-xs text-po-text-muted">Dang upload...</p>}
+        {error && <p className="text-xs text-po-danger">{error}</p>}
+        {fileInput}
       </div>
     )
   }
 
   return (
     <div className="grid gap-1.5">
-      {label && (
-        <span className="text-sm font-semibold text-po-text">{label}</span>
-      )}
+      {label && <span className="text-sm font-semibold text-po-text">{label}</span>}
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
@@ -243,28 +255,18 @@ export default function ImageUploadField({
         {isUploading ? (
           <>
             <Upload className="size-4 animate-pulse" />
-            Đang upload...
+            Dang upload...
           </>
         ) : (
           <>
             <Camera className="size-4" />
-            Tải ảnh lên
+            {uploadLabel}
           </>
         )}
       </button>
-      {error && (
-        <p className="text-xs text-po-danger">{error}</p>
-      )}
-      <p className="text-xs text-po-text-subtle">
-        JPG, PNG, WEBP, tối đa {maxSizeMb}MB
-      </p>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={accept}
-        onChange={handleFileChange}
-        className="hidden"
-      />
+      {error && <p className="text-xs text-po-danger">{error}</p>}
+      {showHelpText && <p className="text-xs text-po-text-subtle">{uploadHelpText}</p>}
+      {fileInput}
     </div>
   )
 }

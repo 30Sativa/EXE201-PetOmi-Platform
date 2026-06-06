@@ -14,5 +14,6 @@ namespace PetOmiPlatform.Application.Interfaces
     {
         public required string Folder { get; set; }
         public required string PublicId { get; set; }
+        public bool IsRawFile { get; set; }
     }
 }

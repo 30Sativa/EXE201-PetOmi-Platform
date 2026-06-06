@@ -34,6 +34,39 @@ public class CloudinaryService : ICloudinaryService
         CloudinaryUploadOptions options,
         CancellationToken cancellationToken = default)
     {
+        if (options.IsRawFile)
+        {
+            var rawUploadParams = new RawUploadParams
+            {
+                File = new FileDescription(fileName, fileStream),
+                Folder = options.Folder,
+                PublicId = options.PublicId,
+                Overwrite = true
+            };
+
+            var rawResult = await _cloudinary.UploadAsync(rawUploadParams, "raw", cancellationToken);
+
+            if (rawResult.Error != null)
+            {
+                _logger.LogError("Cloudinary raw upload failed: {Error}", rawResult.Error.Message);
+                throw new InvalidOperationException($"Upload file that bai: {rawResult.Error.Message}");
+            }
+
+            _logger.LogInformation(
+                "Cloudinary raw upload success: PublicId={PublicId}, Url={Url}",
+                rawResult.PublicId, rawResult.SecureUrl);
+
+            return new CloudinaryUploadResult
+            {
+                SecureUrl = rawResult.SecureUrl.ToString(),
+                PublicId = rawResult.PublicId,
+                FileSizeBytes = rawResult.Bytes,
+                Format = rawResult.Format,
+                Width = 0,
+                Height = 0
+            };
+        }
+
         var uploadParams = new ImageUploadParams
         {
             File = new FileDescription(fileName, fileStream),

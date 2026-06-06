@@ -5,6 +5,7 @@ import {
   Calendar,
   CheckCircle2,
   Eye,
+  FileText,
   MapPin,
   Phone,
   X,
@@ -43,6 +44,10 @@ function formatDate(dateStr: string) {
   } catch {
     return dateStr
   }
+}
+
+function isPdfUrl(url?: string | null) {
+  return Boolean(url?.toLowerCase().includes(".pdf"))
 }
 
 type StatusFilter = "Pending" | "Approved" | "Rejected"
@@ -649,14 +654,21 @@ function ClinicDetailModal({
                   onClick={() => onPreviewLicense(clinic)}
                   className="mt-3 block w-full overflow-hidden rounded-2xl bg-po-surface-muted text-left ring-1 ring-po-border/70 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <img
-                    src={clinic.licenseImageUrl}
-                    alt={`Giấy phép phòng khám ${clinic.clinicName}`}
-                    className="h-48 w-full object-cover"
-                  />
+                  {isPdfUrl(clinic.licenseImageUrl) ? (
+                    <span className="flex h-48 w-full flex-col items-center justify-center gap-2 bg-white text-po-primary">
+                      <FileText className="size-8" />
+                      <span className="text-xs font-semibold">PDF giấy phép</span>
+                    </span>
+                  ) : (
+                    <img
+                      src={clinic.licenseImageUrl}
+                      alt={`Giấy phép phòng khám ${clinic.clinicName}`}
+                      className="h-48 w-full object-cover"
+                    />
+                  )}
                   <span className="flex items-center justify-center gap-1.5 px-3 py-3 text-xs font-semibold text-po-primary">
-                    <Eye className="size-3.5" />
-                    Xem ảnh lớn
+                    {isPdfUrl(clinic.licenseImageUrl) ? <FileText className="size-3.5" /> : <Eye className="size-3.5" />}
+                    {isPdfUrl(clinic.licenseImageUrl) ? "Mở PDF" : "Xem ảnh lớn"}
                   </span>
                 </button>
               ) : (
@@ -707,11 +719,29 @@ function LicenseImageModal({
           </button>
         </div>
         <div className="bg-po-surface-muted/60 p-4">
-          <img
-            src={clinic.licenseImageUrl}
-            alt={`Giấy phép phòng khám ${clinic.clinicName}`}
-            className="mx-auto max-h-[72vh] w-auto rounded-2xl bg-white object-contain shadow-sm ring-1 ring-po-border/80"
-          />
+          {isPdfUrl(clinic.licenseImageUrl) ? (
+            <div className="grid gap-3">
+              <iframe
+                src={clinic.licenseImageUrl}
+                title={`Giấy phép phòng khám ${clinic.clinicName}`}
+                className="h-[72vh] w-full rounded-2xl bg-white shadow-sm ring-1 ring-po-border/80"
+              />
+              <a
+                href={clinic.licenseImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex justify-self-center rounded-2xl bg-po-primary px-4 py-2 text-xs font-semibold text-white transition hover:bg-po-primary-hover"
+              >
+                Mở PDF trong tab mới
+              </a>
+            </div>
+          ) : (
+            <img
+              src={clinic.licenseImageUrl}
+              alt={`Giấy phép phòng khám ${clinic.clinicName}`}
+              className="mx-auto max-h-[72vh] w-auto rounded-2xl bg-white object-contain shadow-sm ring-1 ring-po-border/80"
+            />
+          )}
         </div>
       </section>
     </div>

@@ -320,7 +320,7 @@ export default function OwnerClinicRegistrationPage() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(initialForm)
   const [formErrors, setFormErrors] = useState<FormErrors>({})
-  const [activeStep, setActiveStep] = useState<StepKey>("vet")
+  const [activeStep, setActiveStep] = useState<StepKey>("clinic")
   const [localVetProfileCreated, setLocalVetProfileCreated] = useState(false)
   const [message, setMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
@@ -333,7 +333,7 @@ export default function OwnerClinicRegistrationPage() {
   })
 
   const hasVetProfile = Boolean(me?.vetProfile) || localVetProfileCreated
-  const visibleStep = hasVetProfile ? "clinic" : activeStep
+  const visibleStep = activeStep
 
   const selectedProvince = findProvince(form.provinceCode)
   const selectedDistrict = findDistrict(form.provinceCode, form.districtCode)
@@ -550,11 +550,12 @@ export default function OwnerClinicRegistrationPage() {
         <FlowStep
           icon={Stethoscope}
           title="1. Hồ sơ bác sĩ"
-          text={hasVetProfile ? "Đã có hồ sơ chuyên môn" : "Tạo hồ sơ từ thông tin hành nghề"}
+          text={hasVetProfile ? "Đã có hồ sơ chuyên môn" : "Tự tạo khi gửi hồ sơ"}
           active={!myClinic && visibleStep === "vet"}
           done={hasVetProfile}
+          disabled
           onClick={() => {
-            if (!hasVetProfile) setActiveStep("vet")
+            setActiveStep("clinic")
           }}
         />
         <FlowStep
@@ -563,9 +564,8 @@ export default function OwnerClinicRegistrationPage() {
           text={myClinic ? "Đã gửi hồ sơ phòng khám" : "Nhập thông tin để admin review"}
           active={!myClinic && visibleStep === "clinic"}
           done={Boolean(myClinic)}
-          disabled={!hasVetProfile}
           onClick={() => {
-            if (hasVetProfile) setActiveStep("clinic")
+            setActiveStep("clinic")
           }}
         />
         <FlowStep
@@ -605,7 +605,7 @@ export default function OwnerClinicRegistrationPage() {
           districtOptions={selectedProvince?.districts ?? []}
           wardOptions={selectedDistrict?.wards ?? []}
           composedAddress={composeAddress(form)}
-          onBack={() => setActiveStep("vet")}
+          onBack={() => setActiveStep("clinic")}
           onCancel={() => navigate("/dashboard/owner")}
           onSubmit={handleClinicSubmit}
           onChange={updateField}
@@ -746,10 +746,13 @@ function ClinicProfileStep({
       <form onSubmit={onSubmit} className="grid gap-5">
         <div className="flex flex-wrap items-center gap-3 rounded-[24px] bg-po-success-soft px-4 py-3 text-sm text-po-success ring-1 ring-po-success/15">
           <CheckCircle2 className="size-5 shrink-0" />
-          <span className="font-semibold">
+          <span className="hidden">
             {hasVetProfile
               ? "Hồ sơ bác sĩ đã sẵn sàng. Bạn có thể gửi thông tin phòng khám."
               : "Bạn cần tạo hồ sơ bác sĩ trước khi gửi phòng khám."}
+          </span>
+          <span className="font-semibold">
+            Ban co the upload anh hoac PDF chung chi/giay phep roi gui ho so phong kham ngay.
           </span>
         </div>
 
@@ -799,7 +802,7 @@ function ClinicProfileStep({
             </div>
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-po-text-muted ring-1 ring-po-border/80">
               <UploadCloud className="size-3.5" />
-              JPG, PNG, WEBP
+              JPG, PNG, WEBP, PDF
             </span>
           </div>
           <ImageUploadField
@@ -807,9 +810,12 @@ function ClinicProfileStep({
             onChange={(url) => onValueChange("licenseImageUrl", url)}
             onUploadComplete={(result) => onValueChange("licenseCloudinaryPublicId", result.publicId)}
             imageType="clinic_license"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            emptyLabel="Upload anh/PDF chung chi"
+            replaceLabel="Thay anh/PDF"
+            helpText="JPG, PNG, WEBP hoac PDF, toi da 5MB"
             previewClassName="h-40 w-full rounded-2xl border border-po-border object-cover"
             maxSizeMb={5}
-            showHelpText={false}
             disabled={isSaving}
             onUploadStateChange={setIsImageUploading}
           />
@@ -929,8 +935,8 @@ function ClinicProfileStep({
           <button
             type="button"
             onClick={onBack}
-            className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={hasVetProfile}
+            className="hidden h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
+            disabled
           >
             Quay lại hồ sơ bác sĩ
           </button>
@@ -944,7 +950,7 @@ function ClinicProfileStep({
             </button>
             <button
               type="submit"
-              disabled={isSaving || !hasVetProfile}
+              disabled={isSaving}
               className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? "Đang gửi hồ sơ..." : "Gửi hồ sơ phòng khám"}

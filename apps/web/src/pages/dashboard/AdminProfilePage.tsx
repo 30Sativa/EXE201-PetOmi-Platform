@@ -12,6 +12,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import Avatar from "@/components/ui/Avatar"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import { useAuth } from "@/contexts/AuthContext"
@@ -124,55 +125,47 @@ export default function AdminProfilePage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <div className="p-6 md:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-              Admin profile
-            </p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-extrabold leading-[1.08] md:text-5xl">
-              Hồ sơ quản trị và thông tin liên hệ.
-            </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-po-text-muted md:text-base md:leading-8">
-              Giữ thông tin admin rõ ràng để audit, thông báo hệ thống và các thao tác nhạy cảm
-              luôn có người chịu trách nhiệm.
-            </p>
+      <section className="overflow-hidden rounded-[30px] bg-white/90 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <Avatar
+              src={profile?.avatarUrl}
+              alt={profile?.fullName ?? user?.email ?? "Admin"}
+              fallback={initials}
+              size="lg"
+              shape="square"
+              className="size-16 shrink-0 rounded-[22px] ring-1 ring-po-border/80"
+            />
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-po-text-subtle">
+                Admin profile
+              </p>
+              <h2 className="mt-1 truncate text-2xl font-extrabold leading-tight text-po-text">
+                {profile?.fullName || "Admin PetOmi"}
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-po-text-muted">
+                Quản lý thông tin liên hệ dùng cho audit, thông báo hệ thống và các thao tác nhạy cảm.
+              </p>
+            </div>
           </div>
 
-          <div className="flex min-h-[240px] flex-col justify-end bg-[radial-gradient(circle_at_20%_22%,rgba(245,158,11,0.18),transparent_34%),linear-gradient(135deg,#fff7ed,#f6fffb)] p-5">
-            <div className="rounded-[26px] bg-white/88 p-4 shadow-xl shadow-orange-200/20 ring-1 ring-po-border/70 backdrop-blur">
-              <div className="flex min-w-0 items-center gap-3">
-                {profile?.avatarUrl ? (
-                  <img
-                    src={profile.avatarUrl}
-                    alt={profile.fullName ?? "Admin"}
-                    className="size-16 shrink-0 rounded-[24px] object-cover ring-2 ring-white"
-                  />
-                ) : (
-                  <span className="grid size-16 shrink-0 place-items-center rounded-[24px] bg-po-primary text-xl font-extrabold text-white ring-2 ring-white">
-                    {initials}
-                  </span>
-                )}
-                <div className="min-w-0">
-                  <h3 className="truncate text-lg font-extrabold text-po-text">
-                    {profile?.fullName || "Admin PetOmi"}
-                  </h3>
-                  <p className="truncate text-sm font-medium text-po-text-muted">
-                    {user?.email ?? "Chưa có email"}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(user?.roles?.length ? user.roles : [user?.activeRole ?? "Admin"]).map((role) => (
-                      <StatusBadge key={role} variant="info" label={role} />
-                    ))}
-                  </div>
-                </div>
-              </div>
+          <div className="grid gap-2 rounded-2xl bg-po-surface-muted/70 px-4 py-3 text-sm ring-1 ring-po-border/70 sm:min-w-64">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {(user?.roles?.length ? user.roles : [user?.activeRole ?? "Admin"]).map((role) => (
+                <StatusBadge key={role} variant="info" label={role} />
+              ))}
             </div>
+            <p className="truncate text-xs font-semibold text-po-text-muted">
+              {user?.email ?? "Chưa có email"}
+            </p>
+            <p className="text-xs font-semibold text-po-text-subtle">
+              Tham gia: {formatDate(profile?.createdAt)}
+            </p>
           </div>
         </div>
       </section>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <DashboardSection
           title="Thông tin cá nhân"
           subtitle="Các trường này dùng cho hồ sơ admin và log vận hành nội bộ."
@@ -238,7 +231,7 @@ export default function AdminProfilePage() {
               <button
                 type="submit"
                 disabled={updateMutation.isPending}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/35 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:translate-y-0 disabled:opacity-60 max-[420px]:w-full"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/35 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:translate-y-0 disabled:opacity-60 max-[420px]:w-full"
               >
                 <Save className="size-4" />
                 {updateMutation.isPending ? "Đang lưu..." : "Lưu thay đổi"}
@@ -290,7 +283,7 @@ function InfoRow({
   value: string
 }) {
   return (
-    <div className="flex min-w-0 items-start gap-3 rounded-[20px] bg-po-surface-muted/70 p-3 ring-1 ring-po-border/70">
+    <div className="flex min-w-0 items-start gap-3 rounded-2xl bg-po-surface-muted/70 p-3 ring-1 ring-po-border/70">
       <span className="grid size-9 shrink-0 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/80">
         <Icon className="size-4" />
       </span>

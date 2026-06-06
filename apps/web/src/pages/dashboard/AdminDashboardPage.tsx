@@ -181,9 +181,9 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="grid gap-5 md:gap-6">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="p-6 md:p-8">
+      <section className="admin-page-hero">
+        <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="admin-page-hero-body">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
               Admin command center
             </p>
@@ -219,18 +219,18 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
+            <div className="hero-metrics grid max-w-2xl gap-3 sm:grid-cols-3">
               <HeroMetric label="Phòng khám chờ" value={String(pendingCount)} />
               <HeroMetric label="Cảnh báo cao" value={String(highAlerts)} />
               <HeroMetric label="Admin" value={String(userStats?.admins ?? 0)} />
             </div>
           </div>
 
-          <div className="relative min-h-[260px] overflow-hidden bg-[radial-gradient(circle_at_20%_20%,rgba(255,122,26,0.22),transparent_32%),linear-gradient(135deg,#fff7ed,#f6fffb)] lg:min-h-full">
-            <div className="absolute right-8 top-8 grid size-28 place-items-center rounded-[32px] bg-white/70 text-po-primary shadow-xl shadow-orange-200/30 ring-1 ring-po-border/70 backdrop-blur">
-              <ShieldCheck className="size-12" />
+          <div className="relative min-h-[168px] overflow-hidden bg-po-surface-muted/45 lg:min-h-full">
+            <div className="absolute right-5 top-5 grid size-16 place-items-center rounded-[20px] bg-white/78 text-po-primary shadow-sm shadow-orange-200/20 ring-1 ring-po-border/70 backdrop-blur">
+              <ShieldCheck className="size-8" />
             </div>
-            <div className="absolute bottom-5 left-5 right-5 rounded-[24px] bg-white/[0.9] p-4 text-po-text shadow-xl backdrop-blur">
+            <div className="absolute bottom-5 left-5 right-5 rounded-[18px] bg-white/[0.9] p-3 text-po-text shadow-sm backdrop-blur">
               <div className="flex items-center gap-2 text-sm font-semibold">
                 <Sparkles className="size-4 text-po-primary" />
                 Admin review mode

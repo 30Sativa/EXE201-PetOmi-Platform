@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
+import AdminPageHeader from "@/components/dashboard/AdminPageHeader"
 import DashboardSection from "@/components/dashboard/DashboardSection"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
@@ -128,41 +129,17 @@ export default function AdminRolesPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="p-6 md:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-            Admin role management
-          </p>
-          <h2 className="mt-4 text-3xl font-extrabold leading-tight md:text-4xl">
-            Quản lý quyền truy cập
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted">
-            Gán hoặc thu hồi quyền Admin, theo dõi những người dùng có quyền Owner và Vet trên hệ
-            thống. Chỉ Admin/SuperAdmin mới có thể thực hiện thao tác này.
-          </p>
-
-          <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
-            <HeroMetric
-              label="Vai trò global"
-              value={String(roleStats.global)}
-              icon={ShieldCheck}
-              variant="primary"
-            />
-            <HeroMetric
-              label="Vai trò clinic"
-              value={String(roleStats.clinic)}
-              icon={Crown}
-              variant="success"
-            />
-            <HeroMetric
-              label="Permissions"
-              value={String(roleStats.permissions)}
-              icon={UsersRound}
-              variant="warning"
-            />
-          </div>
-        </div>
-      </section>
+      <AdminPageHeader
+        kicker="Admin role management"
+        title="Quản lý quyền truy cập"
+        description="Gán, thu hồi quyền và theo dõi role catalog đang được backend trả về."
+        icon={ShieldCheck}
+        metrics={[
+          { label: "Vai trò global", value: String(roleStats.global), icon: ShieldCheck },
+          { label: "Vai trò clinic", value: String(roleStats.clinic), icon: Crown, tone: "success" },
+          { label: "Permissions", value: String(roleStats.permissions), icon: UsersRound, tone: "warning" },
+        ]}
+      />
 
       <DashboardSection
         title="Role matrix backend"
@@ -219,7 +196,7 @@ export default function AdminRolesPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[30px] bg-white/95 shadow-[0_12px_40px_rgba(15,23,42,0.06)] ring-1 ring-[#F3E8D8]">
+      <div className="admin-table-shell">
         <div className="grid gap-3 p-3 md:hidden">
           {isLoading ? (
             <div className="py-14 text-center">
@@ -249,8 +226,8 @@ export default function AdminRolesPage() {
           )}
         </div>
 
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[1040px] table-fixed text-left">
+        <div className="admin-table-scroll hidden md:block">
+          <table className="admin-table min-w-[1040px]">
             <thead>
               <tr className="border-b border-[#F1E3D2] bg-gradient-to-b from-[#FFFCF8] to-[#FFF9F2]">
                 <th className="w-[340px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
@@ -489,36 +466,6 @@ export default function AdminRolesPage() {
         variant="danger"
         isLoading={revokeMutation.isPending}
       />
-    </div>
-  )
-}
-
-function HeroMetric({
-  label,
-  value,
-  icon: Icon,
-  variant,
-}: {
-  label: string
-  value: string
-  icon: React.ElementType
-  variant?: "primary" | "success" | "warning"
-}) {
-  const colorMap = {
-    primary: "text-po-primary",
-    success: "text-po-success",
-    warning: "text-po-warning",
-  }
-
-  return (
-    <div className="rounded-2xl bg-po-surface-muted/75 p-4 ring-1 ring-po-border/70">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className={`size-4 ${variant ? colorMap[variant] : "text-po-text"}`} />
-        <p className={`text-2xl font-extrabold tabular-nums ${variant ? colorMap[variant] : "text-po-text"}`}>
-          {value}
-        </p>
-      </div>
-      <p className="text-xs leading-5 text-po-text-muted">{label}</p>
     </div>
   )
 }

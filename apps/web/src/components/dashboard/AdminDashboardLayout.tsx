@@ -104,7 +104,7 @@ export default function AdminDashboardLayout() {
                 to="/dashboard/admin/alerts"
                 className={({ isActive }) =>
                   cn(
-                    "inline-flex h-10 items-center gap-2 rounded-2xl bg-white px-4 text-sm font-semibold shadow-sm ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md",
+                    "inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold shadow-sm ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:shadow-md",
                     isActive
                       ? "border-po-primary text-po-primary"
                       : "text-po-text-muted hover:text-po-text",
@@ -116,7 +116,7 @@ export default function AdminDashboardLayout() {
               </NavLink>
               <button
                 onClick={handleLogout}
-                className="inline-flex h-10 items-center gap-2 rounded-2xl bg-po-primary px-4 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0"
+                className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0"
               >
                 <LogOut className="size-4" />
                 Đăng xuất
@@ -136,7 +136,7 @@ export default function AdminDashboardLayout() {
                   end={item.exact}
                   className={({ isActive }) =>
                     cn(
-                      "inline-flex shrink-0 items-center gap-2 rounded-2xl px-3 py-2 text-xs font-semibold transition",
+                      "inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition",
                       isActive
                         ? "bg-po-primary text-white shadow-sm shadow-orange-200/40"
                         : "bg-po-surface-muted text-po-text-muted hover:text-po-text",

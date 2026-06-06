@@ -185,8 +185,8 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="p-6 md:p-8">
+      <section className="admin-page-hero">
+        <div className="admin-page-hero-body">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
             Admin system configuration
           </p>

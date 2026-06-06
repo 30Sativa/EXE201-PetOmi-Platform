@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
+import AdminPageHeader from "@/components/dashboard/AdminPageHeader"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import EmptyState from "@/components/ui/EmptyState"
@@ -103,32 +104,17 @@ export default function AdminUsersPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="p-6 md:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-            Admin user management
-          </p>
-          <h2 className="mt-4 text-3xl font-extrabold leading-tight md:text-4xl">
-            Quản lý người dùng
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted">
-            Khóa/mở khóa tài khoản, gán quyền Admin cho người dùng. Theo dõi trạng thái
-            và hoạt động của từng tài khoản.
-          </p>
-
-          <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
-            <HeroMetric label="Tổng người dùng" value={String(meta?.totalRecords ?? 0)} />
-            <HeroMetric
-              label="Đang hoạt động"
-              value={String(items.filter((u) => u.isActive).length)}
-            />
-            <HeroMetric
-              label="Bị khóa"
-              value={String(items.filter((u) => !u.isActive).length)}
-            />
-          </div>
-        </div>
-      </section>
+      <AdminPageHeader
+        kicker="Admin user management"
+        title="Quản lý người dùng"
+        description="Theo dõi tài khoản, trạng thái hoạt động và thao tác phân quyền admin."
+        icon={UsersRound}
+        metrics={[
+          { label: "Tổng người dùng", value: String(meta?.totalRecords ?? 0), icon: UsersRound },
+          { label: "Đang hoạt động", value: String(items.filter((u) => u.isActive).length), icon: CheckCircle2, tone: "success" },
+          { label: "Bị khóa", value: String(items.filter((u) => !u.isActive).length), icon: Ban, tone: "danger" },
+        ]}
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[220px] flex-1">
@@ -162,7 +148,7 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[30px] bg-white/95 shadow-[0_12px_40px_rgba(15,23,42,0.06)] ring-1 ring-[#F3E8D8]">
+      <div className="admin-table-shell">
         <div className="grid gap-3 p-3 md:hidden">
           {isLoading ? (
             <div className="py-14 text-center">
@@ -190,8 +176,8 @@ export default function AdminUsersPage() {
           )}
         </div>
 
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[1040px] table-fixed text-left">
+        <div className="admin-table-scroll hidden md:block">
+          <table className="admin-table min-w-[1040px]">
             <thead>
               <tr className="border-b border-[#F1E3D2] bg-gradient-to-b from-[#FFFCF8] to-[#FFF9F2]">
                 <th className="w-[320px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
@@ -478,15 +464,6 @@ export default function AdminUsersPage() {
         variant="primary"
         isLoading={assignMutation.isPending}
       />
-    </div>
-  )
-}
-
-function HeroMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl bg-po-surface-muted/75 p-4 ring-1 ring-po-border/70">
-      <p className="text-2xl font-extrabold tabular-nums">{value}</p>
-      <p className="mt-1 text-xs leading-5 text-po-text-muted">{label}</p>
     </div>
   )
 }

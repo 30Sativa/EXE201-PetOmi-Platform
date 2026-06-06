@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
+import AdminPageHeader from "@/components/dashboard/AdminPageHeader"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import EmptyState from "@/components/ui/EmptyState"
@@ -118,44 +119,32 @@ export default function AdminClinicsPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="p-6 md:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-            Quản lý duyệt phòng khám
-          </p>
-          <h2 className="mt-4 text-3xl font-extrabold leading-tight md:text-4xl">
-            Duyệt phòng khám
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted">
-            Xem xét, duyệt hoặc từ chối yêu cầu đăng ký phòng khám thú y. Kiểm tra giấy phép và
-            thông tin trước khi chấp nhận.
-          </p>
-
-          <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
-            <HeroMetric
-              label="Chờ duyệt"
-              value={String(
-                statusFilter === "Pending" ? meta?.totalRecords ?? 0 : items.filter((c) => c.status === "Pending").length,
-              )}
-              variant="warning"
-            />
-            <HeroMetric
-              label="Đã duyệt"
-              value={String(
-                statusFilter === "Approved" ? meta?.totalRecords ?? 0 : items.filter((c) => c.status === "Approved").length,
-              )}
-              variant="success"
-            />
-            <HeroMetric
-              label="Từ chối"
-              value={String(
-                statusFilter === "Rejected" ? meta?.totalRecords ?? 0 : items.filter((c) => c.status === "Rejected").length,
-              )}
-              variant="danger"
-            />
-          </div>
-        </div>
-      </section>
+      <AdminPageHeader
+        kicker="Quản lý duyệt phòng khám"
+        title="Duyệt phòng khám"
+        description="Xem xét hồ sơ đăng ký, giấy phép và trạng thái xử lý của phòng khám."
+        icon={BadgeCheck}
+        metrics={[
+          {
+            label: "Chờ duyệt",
+            value: String(statusFilter === "Pending" ? meta?.totalRecords ?? 0 : items.filter((c) => c.status === "Pending").length),
+            icon: AlertCircle,
+            tone: "warning",
+          },
+          {
+            label: "Đã duyệt",
+            value: String(statusFilter === "Approved" ? meta?.totalRecords ?? 0 : items.filter((c) => c.status === "Approved").length),
+            icon: CheckCircle2,
+            tone: "success",
+          },
+          {
+            label: "Từ chối",
+            value: String(statusFilter === "Rejected" ? meta?.totalRecords ?? 0 : items.filter((c) => c.status === "Rejected").length),
+            icon: XCircle,
+            tone: "danger",
+          },
+        ]}
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex max-w-full gap-1 overflow-x-auto rounded-2xl bg-white p-1 ring-1 ring-po-border/80">
@@ -175,7 +164,7 @@ export default function AdminClinicsPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+      <div className="admin-table-shell">
         <div className="grid gap-3 p-3 md:hidden">
           {isLoading ? (
             <div className="py-14 text-center">
@@ -207,8 +196,8 @@ export default function AdminClinicsPage() {
           )}
         </div>
 
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full text-left">
+        <div className="admin-table-scroll hidden md:block">
+          <table className="admin-table min-w-[1040px]">
             <thead>
               <tr className="border-b border-po-border/60">
                 <th className="px-5 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle w-full min-w-[180px]">
@@ -476,31 +465,6 @@ export default function AdminClinicsPage() {
         clinic={licensePreviewClinic}
         onClose={() => setLicensePreviewClinic(null)}
       />
-    </div>
-  )
-}
-
-function HeroMetric({
-  label,
-  value,
-  variant,
-}: {
-  label: string
-  value: string
-  variant?: "warning" | "success" | "danger"
-}) {
-  const colorMap = {
-    warning: "text-po-warning",
-    success: "text-po-success",
-    danger: "text-po-danger",
-  }
-
-  return (
-    <div className="rounded-2xl bg-po-surface-muted/75 p-4 ring-1 ring-po-border/70">
-      <p className={`text-2xl font-extrabold tabular-nums ${variant ? colorMap[variant] : "text-po-text"}`}>
-        {value}
-      </p>
-      <p className="mt-1 text-xs leading-5 text-po-text-muted">{label}</p>
     </div>
   )
 }

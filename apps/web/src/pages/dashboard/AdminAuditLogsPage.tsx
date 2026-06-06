@@ -37,7 +37,10 @@ function getPagedMeta(paged?: PagedData<unknown>) {
 
 function formatDate(dateStr: string) {
   try {
-    return new Date(dateStr).toLocaleString("vi-VN", {
+    const date = new Date(dateStr)
+    if (Number.isNaN(date.getTime())) return "Không rõ"
+
+    return date.toLocaleString("vi-VN", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -52,6 +55,8 @@ function formatDate(dateStr: string) {
 function formatRelative(dateStr: string): string {
   try {
     const date = new Date(dateStr)
+    if (Number.isNaN(date.getTime())) return "Không rõ thời gian"
+
     const now = new Date()
     const diffMs = now.getTime() - date.getTime()
     const diffMins = Math.floor(diffMs / 60000)
@@ -139,20 +144,26 @@ export default function AdminAuditLogsPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="p-6 md:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-            Admin audit trail
-          </p>
-          <h2 className="mt-4 text-3xl font-extrabold leading-tight md:text-4xl">
-            Nhật ký hành động
-          </h2>
-          <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted">
-            Theo dõi tất cả hành động của admin trên hệ thống. Mỗi thao tác được ghi lại với
-            thời gian, người thực hiện và địa chỉ IP.
-          </p>
+      <section className="overflow-hidden rounded-[30px] bg-white/90 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+        <div className="flex flex-col gap-5 p-5 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex min-w-0 items-center gap-4">
+            <span className="grid size-14 shrink-0 place-items-center rounded-[20px] bg-po-primary-soft text-po-primary ring-1 ring-po-border/80">
+              <Activity className="size-6" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-po-text-subtle">
+                Admin audit trail
+              </p>
+              <h2 className="mt-1 truncate text-2xl font-extrabold leading-tight text-po-text">
+                Nhật ký hành động
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-po-text-muted">
+                Theo dõi thao tác admin, người thực hiện, thời gian và địa chỉ IP trong một bảng vận hành.
+              </p>
+            </div>
+          </div>
 
-          <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[520px]">
             <HeroMetric
               label="Tổng hành động"
               value={String((meta as { totalRecords?: number })?.totalRecords ?? 0)}
@@ -162,7 +173,8 @@ export default function AdminAuditLogsPage() {
               label="Hôm nay"
               value={String(items.filter((l) => {
                 try {
-                  const d = new Date(l.CreatedAt)
+                  const d = new Date(l.createdAt)
+                  if (Number.isNaN(d.getTime())) return false
                   const today = new Date()
                   return d.toDateString() === today.toDateString()
                 } catch { return false }
@@ -173,7 +185,8 @@ export default function AdminAuditLogsPage() {
               label="Tuần này"
               value={String(items.filter((l) => {
                 try {
-                  const d = new Date(l.CreatedAt)
+                  const d = new Date(l.createdAt)
+                  if (Number.isNaN(d.getTime())) return false
                   const now = new Date()
                   const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
                   return diffDays < 7
@@ -245,7 +258,7 @@ export default function AdminAuditLogsPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[30px] bg-white/95 shadow-[0_12px_40px_rgba(15,23,42,0.06)] ring-1 ring-[#F3E8D8]">
+      <div className="admin-table-shell">
         <div className="grid gap-3 p-3 md:hidden">
           {isLoading ? (
             <div className="py-14 text-center">
@@ -258,12 +271,12 @@ export default function AdminAuditLogsPage() {
               description="Chưa có hành động nào được ghi lại trong hệ thống."
             />
           ) : (
-            items.map((log) => <AuditMobileCard key={log.AuditLogId} log={log} />)
+            items.map((log) => <AuditMobileCard key={log.auditLogId} log={log} />)
           )}
         </div>
 
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[1020px] table-fixed text-left">
+        <div className="admin-table-scroll hidden md:block">
+          <table className="admin-table min-w-[1020px]">
             <thead>
               <tr className="border-b border-[#F1E3D2] bg-gradient-to-b from-[#FFFCF8] to-[#FFF9F2]">
                 <th className="w-[180px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
@@ -310,18 +323,18 @@ export default function AdminAuditLogsPage() {
                 </tr>
               ) : (
                 items.map((log) => {
-                  const actionMeta = ACTION_META[log.Action] ?? {
-                    label: log.Action,
+                  const actionMeta = ACTION_META[log.action] ?? {
+                    label: log.action,
                     icon: Activity,
                     color: "text-po-text-muted",
                   }
-                  const categoryMeta = CATEGORY_META[log.Category] ?? {
-                    label: log.Category,
+                  const categoryMeta = CATEGORY_META[log.category] ?? {
+                    label: log.category,
                     icon: Globe,
                     color: "text-po-text-muted",
                   }
-                  const severityMeta = SEVERITY_META[log.Severity] ?? {
-                    label: log.Severity,
+                  const severityMeta = SEVERITY_META[log.severity] ?? {
+                    label: log.severity,
                     color: "text-po-text-muted",
                   }
                   const ActionIcon = actionMeta.icon
@@ -329,16 +342,16 @@ export default function AdminAuditLogsPage() {
 
                   return (
                     <tr
-                      key={log.AuditLogId}
+                      key={log.auditLogId}
                         className="group transition hover:bg-[#FFF9F2]"
                     >
                         <td className="px-4 py-4">
                           <div className="space-y-0.5">
                             <p className="text-sm font-semibold text-po-text whitespace-nowrap">
-                            {formatDate(log.CreatedAt)}
+                            {formatDate(log.createdAt)}
                           </p>
                           <p className="text-[10px] text-po-text-muted">
-                            {formatRelative(log.CreatedAt)}
+                            {formatRelative(log.createdAt)}
                           </p>
                         </div>
                       </td>
@@ -359,18 +372,18 @@ export default function AdminAuditLogsPage() {
                         </div>
                       </td>
                         <td className="px-4 py-4">
-                        {log.UserEmail ? (
+                        {log.userEmail ? (
                           <div className="flex items-center gap-2">
                               <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#FFE4BF] text-[#B96A00] text-xs font-extrabold ring-1 ring-[#FFD8A0]">
-                              {log.UserEmail[0].toUpperCase()}
+                              {log.userEmail[0].toUpperCase()}
                             </div>
                             <div className="min-w-0">
                                 <p className="truncate text-xs font-bold text-po-text">
-                                {log.UserEmail}
+                                {log.userEmail}
                               </p>
-                              {log.UserId && (
+                              {log.userId && (
                                   <p className="text-[10px] font-mono text-po-text-muted">
-                                  {log.UserId.slice(0, 8)}
+                                  {log.userId.slice(0, 8)}
                                 </p>
                               )}
                             </div>
@@ -386,7 +399,7 @@ export default function AdminAuditLogsPage() {
                       </td>
                       <td className="px-4 py-4">
                         <span className="text-[11px] font-mono text-po-text-muted">
-                          {log.IpAddress ?? "—"}
+                          {log.ipAddress ?? "—"}
                         </span>
                       </td>
                     </tr>
@@ -481,29 +494,29 @@ function HeroMetric({
   icon: React.ElementType
 }) {
   return (
-    <div className="rounded-2xl bg-po-surface-muted/75 p-4 ring-1 ring-po-border/70">
-      <div className="flex items-center gap-2 mb-1">
-        <Icon className="size-4 text-po-primary" />
-        <p className="text-2xl font-extrabold tabular-nums text-po-text">{value}</p>
+    <div className="rounded-2xl bg-po-surface-muted/75 px-3 py-2.5 ring-1 ring-po-border/70">
+      <div className="flex items-center gap-2">
+        <Icon className="size-3.5 text-po-primary" />
+        <p className="text-lg font-extrabold tabular-nums text-po-text">{value}</p>
       </div>
-      <p className="text-xs leading-5 text-po-text-muted">{label}</p>
+      <p className="mt-0.5 text-[11px] font-semibold leading-4 text-po-text-muted">{label}</p>
     </div>
   )
 }
 
 function AuditMobileCard({ log }: { log: AuditLogItemResponse }) {
-  const actionMeta = ACTION_META[log.Action] ?? {
-    label: log.Action,
+  const actionMeta = ACTION_META[log.action] ?? {
+    label: log.action,
     icon: Activity,
     color: "text-po-text-muted",
   }
-  const categoryMeta = CATEGORY_META[log.Category] ?? {
-    label: log.Category,
+  const categoryMeta = CATEGORY_META[log.category] ?? {
+    label: log.category,
     icon: Globe,
     color: "text-po-text-muted",
   }
-  const severityMeta = SEVERITY_META[log.Severity] ?? {
-    label: log.Severity,
+  const severityMeta = SEVERITY_META[log.severity] ?? {
+    label: log.severity,
     color: "text-po-text-muted",
   }
   const ActionIcon = actionMeta.icon
@@ -522,7 +535,7 @@ function AuditMobileCard({ log }: { log: AuditLogItemResponse }) {
                 {actionMeta.label}
               </h3>
               <p className="mt-1 text-xs text-po-text-muted">
-                {formatDate(log.CreatedAt)} · {formatRelative(log.CreatedAt)}
+                {formatDate(log.createdAt)} · {formatRelative(log.createdAt)}
               </p>
             </div>
             <span className={`text-xs font-bold ${severityMeta.color}`}>
@@ -537,9 +550,9 @@ function AuditMobileCard({ log }: { log: AuditLogItemResponse }) {
           <CategoryIcon className={`size-3.5 shrink-0 ${categoryMeta.color}`} />
           <span className={`font-semibold ${categoryMeta.color}`}>{categoryMeta.label}</span>
         </div>
-        <span>Người thực hiện: {log.UserEmail ?? "Hệ thống"}</span>
-        {log.UserId ? <span className="font-mono">UserId: {log.UserId.slice(0, 8)}</span> : null}
-        <span className="font-mono">IP: {log.IpAddress ?? "-"}</span>
+        <span>Người thực hiện: {log.userEmail ?? "Hệ thống"}</span>
+        {log.userId ? <span className="font-mono">UserId: {log.userId.slice(0, 8)}</span> : null}
+        <span className="font-mono">IP: {log.ipAddress ?? "-"}</span>
       </div>
     </article>
   )

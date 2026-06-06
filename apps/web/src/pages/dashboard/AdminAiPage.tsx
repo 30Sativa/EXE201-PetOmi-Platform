@@ -31,13 +31,17 @@ export default function AdminAiPage() {
   const { data: dashboard, isLoading } = useQuery({
     queryKey: ["admin", "dashboard", "ai"],
     queryFn: getAdminDashboardApi,
-    staleTime: 60 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   })
 
   const { data: alertsData, isLoading: alertsLoading } = useQuery({
     queryKey: ["admin", "alerts", "ai"],
     queryFn: () => getAdminAlertsApi({ maxItems: 25 }),
-    staleTime: 30 * 1000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   })
 
   const aiStats = dashboard?.aiStats
@@ -47,9 +51,9 @@ export default function AdminAiPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="p-6 md:p-8">
+      <section className="admin-page-hero">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="admin-page-hero-body">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
               AI operations
             </p>
@@ -62,11 +66,11 @@ export default function AdminAiPage() {
             </p>
           </div>
 
-          <div className="relative min-h-[240px] overflow-hidden bg-[radial-gradient(circle_at_24%_24%,rgba(52,211,153,0.18),transparent_32%),linear-gradient(135deg,#fff7ed,#f6fffb)] lg:min-h-full">
-            <div className="absolute right-8 top-8 grid size-28 place-items-center rounded-[32px] bg-white/72 text-po-primary shadow-xl shadow-orange-200/25 ring-1 ring-po-border/70 backdrop-blur">
-              <Bot className="size-12" />
+          <div className="relative min-h-[168px] overflow-hidden bg-po-surface-muted/45 lg:min-h-full">
+            <div className="absolute right-5 top-5 grid size-16 place-items-center rounded-[20px] bg-white/78 text-po-primary shadow-sm shadow-orange-200/20 ring-1 ring-po-border/70 backdrop-blur">
+              <Bot className="size-8" />
             </div>
-            <div className="absolute bottom-5 left-5 right-5 rounded-[24px] bg-white/90 p-4 shadow-xl shadow-orange-200/20 ring-1 ring-po-border/70 backdrop-blur">
+            <div className="absolute bottom-5 left-5 right-5 rounded-[18px] bg-white/90 p-3 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/70 backdrop-blur">
               <div className="flex items-center gap-2 text-sm font-semibold text-po-text">
                 <Sparkles className="size-4 text-po-primary" />
                 AI signal board

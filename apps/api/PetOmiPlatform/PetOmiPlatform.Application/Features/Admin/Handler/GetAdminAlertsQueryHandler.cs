@@ -31,8 +31,8 @@ public class GetAdminAlertsQueryHandler : IRequestHandler<GetAdminAlertsQuery, A
         var maxItems = Math.Clamp(request.MaxItems, 1, 100);
 
         var pendingClinics = (await _clinicRepository.GetByStatusAsync("Pending", 1, maxItems)).ToList();
-        var (inactiveUsers, _) = await _userRepository.GetAdminPagedAsync(null, false, 1, maxItems);
-        var (unverifiedCandidates, _) = await _userRepository.GetAdminPagedAsync(null, null, 1, Math.Max(maxItems * 4, 100));
+        var (inactiveUsers, _) = await _userRepository.GetAdminPagedAsync(null, false, null, 1, maxItems);
+        var (unverifiedCandidates, _) = await _userRepository.GetAdminPagedAsync(null, null, null, 1, Math.Max(maxItems * 4, 100));
 
         var inactiveUserDtos = await BuildUserDtosAsync(inactiveUsers);
         var unverifiedUsers = unverifiedCandidates.Where(u => !u.EmailVerified).Take(maxItems).ToList();

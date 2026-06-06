@@ -202,6 +202,143 @@ canvas {
   max-width: 100%;
 }
 
+.admin-page-hero {
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgb(255 255 255 / 92%);
+  color: var(--po-color-text);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 70%) inset, 0 16px 40px rgb(74 47 33 / 5%);
+  border: 1px solid rgb(240 228 216 / 86%);
+}
+
+.admin-page-hero .admin-page-hero-body,
+.admin-page-hero > div:not(.grid) {
+  padding: 20px;
+}
+
+.admin-page-hero .admin-page-hero-body {
+  display: grid;
+  align-items: center;
+  gap: 12px 24px;
+}
+
+.admin-page-hero .admin-page-hero-body > :not(.hero-metrics) {
+  grid-column: 1;
+}
+
+.admin-page-hero h2 {
+  margin-top: 2px;
+  max-width: 56rem;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.12;
+  text-wrap: balance;
+}
+
+.admin-page-hero p {
+  text-wrap: pretty;
+}
+
+.admin-page-hero .hero-metrics {
+  margin-top: 6px;
+}
+
+.admin-page-hero .hero-metrics > * {
+  border-radius: 16px;
+  padding: 10px 12px;
+}
+
+.admin-page-hero > .grid {
+  display: block;
+}
+
+.admin-page-hero > .grid > .relative {
+  display: none;
+}
+
+.admin-page-hero .hero-metrics p:first-child,
+.admin-page-hero .hero-metrics p:has(+ p) {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.admin-table-shell {
+  overflow: hidden;
+  border-radius: 24px;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 80%) inset, 0 16px 42px rgb(74 47 33 / 5%);
+  border: 1px solid rgb(240 228 216 / 86%);
+}
+
+.admin-table-scroll {
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-table thead tr {
+  border-bottom: 1px solid rgb(240 228 216 / 90%);
+  background: rgb(255 252 248 / 96%);
+}
+
+.admin-table th {
+  border-right: 0;
+  padding: 14px 16px;
+  vertical-align: middle;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--po-color-text-subtle);
+}
+
+.admin-table th + th {
+  border-left: 1px solid rgb(244 231 216 / 74%);
+}
+
+.admin-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.admin-table tbody tr {
+  transition: background-color 180ms ease;
+}
+
+.admin-table tbody tr + tr {
+  border-top: 1px solid rgb(244 232 217 / 84%);
+}
+
+.admin-table tbody tr:hover {
+  background: rgb(255 249 242 / 72%);
+}
+
+@media (min-width: 768px) {
+  .admin-page-hero .admin-page-hero-body,
+  .admin-page-hero > div:not(.grid) {
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-page-hero .admin-page-hero-body {
+    grid-template-columns: minmax(0, 1fr) minmax(360px, auto);
+  }
+
+  .admin-page-hero .hero-metrics {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    margin-top: 0;
+    align-self: center;
+  }
+}
+
 :focus {
   outline: none;
 }

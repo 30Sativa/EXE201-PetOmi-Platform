@@ -163,8 +163,8 @@ export default function AdminAlertsPage() {
 
   return (
     <div className="grid gap-5">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="p-6 md:p-8">
+      <section className="admin-page-hero">
+        <div className="admin-page-hero-body">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
             Admin alerts center
           </p>
@@ -176,7 +176,7 @@ export default function AdminAlertsPage() {
             Ưu tiên các cảnh báo mức cao trước.
           </p>
 
-          <div className="mt-6 grid max-w-2xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="hero-metrics grid max-w-2xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <HeroMetric
               label="Tổng cảnh báo"
               value={String(stats.total)}

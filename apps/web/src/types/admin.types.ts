@@ -128,17 +128,17 @@ export interface ReviewClinicResponse {
 
 // Audit Log
 export interface AuditLogItemResponse {
-  AuditLogId: string
-  UserId: string | null
-  UserEmail: string | null
-  UserFullName: string | null
-  Action: string
-  EntityType: string | null
-  EntityId: string | null
-  Severity: string
-  Category: string
-  IpAddress: string | null
-  CreatedAt: string
+  auditLogId: string
+  userId: string | null
+  userEmail: string | null
+  userFullName: string | null
+  action: string
+  entityType: string | null
+  entityId: string | null
+  severity: string
+  category: string
+  ipAddress: string | null
+  createdAt: string
 }
 
 // System Settings

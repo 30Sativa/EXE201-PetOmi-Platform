@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react"
+
 import { cn } from "@/lib/utils"
 
 interface AvatarProps {
@@ -30,9 +32,15 @@ export default function Avatar({
   shape = "circle",
   className,
 }: AvatarProps) {
+  const [imageFailed, setImageFailed] = useState(false)
   const initials = fallback ?? getInitials(alt)
+  const shouldUseFallback = !src || imageFailed
 
-  if (!src) {
+  useEffect(() => {
+    setImageFailed(false)
+  }, [src])
+
+  if (shouldUseFallback) {
     return (
       <div
         className={cn(
@@ -52,6 +60,7 @@ export default function Avatar({
     <img
       src={src}
       alt={alt}
+      onError={() => setImageFailed(true)}
       className={cn(
         "object-cover",
         shape === "circle" ? "rounded-full" : "rounded-2xl",

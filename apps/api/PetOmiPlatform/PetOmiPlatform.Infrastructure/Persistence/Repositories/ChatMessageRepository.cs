@@ -76,7 +76,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
         {
             var aiMessages = _context.ChatMessages
                 .AsNoTracking()
-                .Where(m => m.IsActive && m.SenderRole == "AI");
+                .Where(m => m.IsActive && (m.SenderRole == "AI" || m.SenderRole == "assistant"));
 
             var aiMessagesSince = aiMessages.Where(m => m.CreatedAt >= fromUtc);
 
@@ -84,7 +84,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var aiResponsesSince = await aiMessagesSince.CountAsync();
             var ragResponses = await aiMessages.CountAsync(m => m.RagUsed);
             var ragResponsesSince = await aiMessagesSince.CountAsync(m => m.RagUsed);
-            var failedResponsesSince = await aiMessagesSince.CountAsync(m => m.Status == "Failed");
+            var failedResponsesSince = await aiMessagesSince.CountAsync(m => m.Status == "Failed" || m.Status == "failed");
             var activeConversationsSince = await _context.ChatMessages
                 .AsNoTracking()
                 .Where(m => m.IsActive && m.CreatedAt >= fromUtc)
@@ -125,7 +125,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .AsNoTracking()
                 .Where(m =>
                     m.IsActive &&
-                    m.SenderRole == "AI" &&
+                    (m.SenderRole == "AI" || m.SenderRole == "assistant") &&
                     m.CreatedAt >= fromUtc &&
                     m.Intent != null &&
                     m.Intent != "")

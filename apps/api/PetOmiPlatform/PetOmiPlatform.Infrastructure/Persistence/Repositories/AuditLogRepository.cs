@@ -70,7 +70,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 e.UserAgent,
                 e.Severity,
                 e.CreatedAt,
-                e.User?.Email
+                e.User?.Email,
+                e.UserId
             )).ToList();
 
             return (domains, total);

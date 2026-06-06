@@ -11,7 +11,7 @@ export default function DashboardSection({
   return (
     <section
       className={cn(
-        "rounded-[30px] bg-white/88 p-5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 md:p-6",
+        "rounded-[24px] bg-white/90 p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80",
         className,
       )}
     >

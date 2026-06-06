@@ -63,12 +63,14 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 .GetUserIdByProviderAsync("Google", googleUser.ProviderKey);
 
             UserDomain user;
+            var requiresPasswordSetup = false;
 
             if (existingUserId.HasValue)
             {
                 // 3a. Đã có → load user lên
                 user = await _userRepository.GetByIdAsync(existingUserId.Value)
                     ?? throw new NotFoundException("Không tìm thấy tài khoản.");
+                requiresPasswordSetup = !user.HasPassword;
             }
             else
             {
@@ -82,12 +84,14 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 {
                     // Email đã tồn tại → link ExternalLogin vào account cũ
                     user = existingUser;
+                    requiresPasswordSetup = !user.HasPassword;
                 }
                 else
                 {
                     // Tạo user mới — không có password (OAuth user)
                     user = UserDomain.CreateWithoutPassword(email);
                     await _userRepository.AddAsync(user);
+                    requiresPasswordSetup = true;
 
                     // Auto gán Role Owner
                     await _userRoleRepository.AddAsync(user.Id, RoleConstants.OwnerId);
@@ -182,7 +186,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 Roles = roles,
                 UserId = user.Id,
                 Email = user.Email.Value,
-                IsProfileCompleted = user.IsProfileCompleted
+                IsProfileCompleted = user.IsProfileCompleted,
+                RequiresPasswordSetup = requiresPasswordSetup
             };
         }
     }

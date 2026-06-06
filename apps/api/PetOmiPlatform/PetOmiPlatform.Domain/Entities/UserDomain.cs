@@ -12,6 +12,7 @@ namespace PetOmiPlatform.Domain.Entities
     {
         public Email Email { get; private set; }
         public PasswordHash? PasswordHash { get; private set; }
+        public bool HasPassword => PasswordHash != null;
 
         public bool EmailVerified { get; private set; }
         public int FailedLoginAttempts { get; private set; }
@@ -150,6 +151,8 @@ namespace PetOmiPlatform.Domain.Entities
         {
             if (!IsActive)
                 throw new DomainException("Tài khoản đã bị khoá hoặc xoá.");
+            if (!EmailVerified)
+                throw new DomainException("Vui lòng xác minh email trước khi đăng nhập.");
             if (IsLocked())
                 throw new DomainException($"Tài khoản đang bị khoá đến {LockoutUntil.Value}.");
         }   

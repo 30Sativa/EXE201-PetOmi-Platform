@@ -16,6 +16,7 @@ export default function GoogleCallbackPage() {
     const activeRole = searchParams.get("activeRole") ?? undefined
     const roles = searchParams.getAll("roles")
     const isProfileCompleted = searchParams.get("isProfileCompleted") === "true"
+    const requiresPasswordSetup = searchParams.get("requiresPasswordSetup") === "true"
 
     if (accessToken && refreshToken) {
       const payload = {
@@ -25,6 +26,7 @@ export default function GoogleCallbackPage() {
         email: email ?? "",
         userId: userId ?? "",
         isProfileCompleted,
+        requiresPasswordSetup,
         activeRole,
         roles,
       }

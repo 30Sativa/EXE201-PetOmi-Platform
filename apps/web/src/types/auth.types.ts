@@ -45,6 +45,7 @@ export interface LoginResponse {
   email: string
   userId: string
   isProfileCompleted: boolean
+  requiresPasswordSetup?: boolean
   activeRole: string
   roles: string[]
   expiresIn?: number
@@ -101,6 +102,7 @@ export interface GetCurrentUserResponse {
   userId: string
   email: string
   emailVerified: boolean
+  hasPassword: boolean
   isActive: boolean
   isProfileCompleted: boolean
   createdAt: string

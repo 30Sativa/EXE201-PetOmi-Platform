@@ -130,6 +130,18 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         /// <summary>
+        /// Thiết lập mật khẩu cho tài khoản OAuth chưa có mật khẩu đăng nhập thường.
+        /// </summary>
+        [HttpPost("set-password")]
+        [Authorize]
+        public async Task<IActionResult> SetPassword([FromBody] SetPasswordRequest request)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await Mediator.Send(new SetPasswordCommand(userId, request));
+            return Ok(BaseResponse<object>.Ok(null, "Thiết lập mật khẩu thành công."));
+        }
+
+        /// <summary>
         /// Bật hoặc tắt vai trò được chỉ định cho người dùng hiện tại trong ngữ cảnh của một phòng khám cụ thể.
         /// </summary>
         [HttpPost("toggle-role")]
@@ -180,7 +192,8 @@ namespace PetOmiPlatform.API.Controllers
                 { "email", result.Email },
                 { "userId", result.UserId.ToString() },
                 { "activeRole", result.ActiveRole },
-                { "isProfileCompleted", result.IsProfileCompleted.ToString().ToLowerInvariant() }
+                { "isProfileCompleted", result.IsProfileCompleted.ToString().ToLowerInvariant() },
+                { "requiresPasswordSetup", result.RequiresPasswordSetup.ToString().ToLowerInvariant() }
             };
 
             foreach (var role in result.Roles)

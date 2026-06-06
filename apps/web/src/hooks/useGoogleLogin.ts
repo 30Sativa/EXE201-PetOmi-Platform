@@ -20,6 +20,7 @@ export function useGoogleLogin() {
         email,
         userId,
         isProfileCompleted,
+        requiresPasswordSetup,
         activeRole,
         roles,
       } = event.data
@@ -32,9 +33,17 @@ export function useGoogleLogin() {
           roles,
         })
 
-        if (isProfileCompleted) {
+        const nextPath = isProfileCompleted
+          ? getDashboardPathForRole(resolvePreferredRole(activeRole, roles))
+          : "/complete-profile"
+
+        if (requiresPasswordSetup) {
+          navigate(`/set-password?next=${encodeURIComponent(nextPath)}`, {
+            replace: true,
+          })
+        } else if (isProfileCompleted) {
           navigate(
-            getDashboardPathForRole(resolvePreferredRole(activeRole, roles)),
+            nextPath,
             { replace: true },
           )
         } else {
@@ -73,6 +82,7 @@ export function useGoogleLogin() {
       email: string
       userId: string
       isProfileCompleted: boolean
+      requiresPasswordSetup?: boolean
       activeRole?: string
       roles?: string[]
     }) => {
@@ -87,11 +97,19 @@ export function useGoogleLogin() {
         },
       )
 
-      if (tokens.isProfileCompleted) {
-        navigate(
-          getDashboardPathForRole(
+      const nextPath = tokens.isProfileCompleted
+        ? getDashboardPathForRole(
             resolvePreferredRole(tokens.activeRole, tokens.roles),
-          ),
+          )
+        : "/complete-profile"
+
+      if (tokens.requiresPasswordSetup) {
+        navigate(`/set-password?next=${encodeURIComponent(nextPath)}`, {
+          replace: true,
+        })
+      } else if (tokens.isProfileCompleted) {
+        navigate(
+          nextPath,
           { replace: true },
         )
       } else {

@@ -17,6 +17,7 @@ import GoogleCallbackPage from "@/pages/GoogleCallbackPage"
 import LandingPage from "@/pages/LandingPage"
 import NotFoundPage from "@/pages/NotFoundPage"
 import ResetPasswordPage from "@/pages/ResetPasswordPage"
+import SetPasswordPage from "@/pages/SetPasswordPage"
 import VerifyEmailPage from "@/pages/VerifyEmailPage"
 
 import AdminDashboardPage from "@/pages/dashboard/AdminDashboardPage"
@@ -94,6 +95,15 @@ const router = createBrowserRouter([
       {
         path: "reset-password",
         element: <ResetPasswordPage />,
+      },
+
+      {
+        path: "set-password",
+        element: (
+          <RequireAuth>
+            <SetPasswordPage />
+          </RequireAuth>
+        ),
       },
 
       {

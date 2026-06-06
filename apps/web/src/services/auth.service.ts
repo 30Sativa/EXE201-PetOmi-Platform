@@ -5,6 +5,7 @@ import type {
   RegisterRequest,
   RefreshTokenRequest,
   ResetPasswordRequest,
+  SetPasswordRequest,
   ToggleRoleRequest,
 } from "@/schemas/auth.schema"
 import type {
@@ -67,7 +68,7 @@ export const verifyEmailApi = async (
   token: string,
 ): Promise<VerifyEmailResponse> => {
   const response = await api.get(
-    `/auth/verify-email?token=${token}`,
+    `/auth/verify-email?token=${encodeURIComponent(token)}`,
   )
 
   return unwrapResponse<VerifyEmailResponse>(response)
@@ -89,6 +90,13 @@ export const resetPasswordApi = async (
   data: ResetPasswordRequest,
 ): Promise<{ message: string }> => {
   const response = await api.post("/auth/reset-password", data)
+  return unwrapResponse<{ message: string }>(response)
+}
+
+export const setPasswordApi = async (
+  data: SetPasswordRequest,
+): Promise<{ message: string }> => {
+  const response = await api.post("/auth/set-password", data)
   return unwrapResponse<{ message: string }>(response)
 }
 

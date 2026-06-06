@@ -93,6 +93,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
 
             session.AssignToken(refreshToken.Id);
             await _userSessionRepository.UpdateAsync(session);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             var roles = await _userRoleRepository.GetRolesByUserIdAsync(user.Id);
             var activeRole = AuthRoleResolver.ResolveDefaultActiveRole(roles);

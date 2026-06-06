@@ -44,6 +44,7 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 UserId = user.Id,
                 Email = user.Email.Value,
                 EmailVerified = user.EmailVerified,
+                HasPassword = user.HasPassword,
                 IsActive = user.IsActive,
                 IsProfileCompleted = user.IsProfileCompleted,
                 CreatedAt = user.CreatedAt,

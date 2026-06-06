@@ -58,6 +58,10 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<PetHealthProfile> PetHealthProfiles { get; set; }
 
+    public virtual DbSet<PetHealthShareAccessLog> PetHealthShareAccessLogs { get; set; }
+
+    public virtual DbSet<PetHealthShareToken> PetHealthShareTokens { get; set; }
+
     public virtual DbSet<PetMedicalRecord> PetMedicalRecords { get; set; }
 
     public virtual DbSet<PetPhoto> PetPhotos { get; set; }
@@ -799,6 +803,96 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey<PetHealthProfile>(d => d.PetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PetHealthProfiles_Pet");
+        });
+
+        modelBuilder.Entity<PetHealthShareToken>(entity =>
+        {
+            entity.HasKey(e => e.ShareTokenId).HasName("PK_PetHealthShareTokens");
+
+            entity.HasIndex(e => e.DisplayCode, "UX_PetHealthShareTokens_DisplayCode_Active")
+                .IsUnique()
+                .HasFilter("([RevokedAt] IS NULL)");
+
+            entity.HasIndex(e => new { e.PetId, e.CreatedAt }, "IX_PetHealthShareTokens_PetID_CreatedAt")
+                .IsDescending(false, true);
+
+            entity.HasIndex(e => e.TokenHash, "IX_PetHealthShareTokens_TokenHash");
+
+            entity.Property(e => e.ShareTokenId)
+                .HasDefaultValueSql("(newid())")
+                .HasColumnName("ShareTokenID");
+            entity.Property(e => e.AccessMode)
+                .HasMaxLength(30)
+                .HasDefaultValue("Temporary");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.CreatedByUserId).HasColumnName("CreatedByUserID");
+            entity.Property(e => e.DisplayCode).HasMaxLength(20);
+            entity.Property(e => e.MaxUses);
+            entity.Property(e => e.Note).HasMaxLength(500);
+            entity.Property(e => e.OwnerUserId).HasColumnName("OwnerUserID");
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.Scope).HasMaxLength(40);
+            entity.Property(e => e.TokenHash).HasMaxLength(256);
+            entity.Property(e => e.UsedCount).HasDefaultValue(0);
+
+            entity.HasOne(d => d.Clinic).WithMany()
+                .HasForeignKey(d => d.ClinicId)
+                .HasConstraintName("FK_PetHealthShareTokens_Clinic");
+
+            entity.HasOne(d => d.CreatedByUser).WithMany()
+                .HasForeignKey(d => d.CreatedByUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PetHealthShareTokens_CreatedBy");
+
+            entity.HasOne(d => d.OwnerUser).WithMany()
+                .HasForeignKey(d => d.OwnerUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PetHealthShareTokens_Owner");
+
+            entity.HasOne(d => d.Pet).WithMany()
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PetHealthShareTokens_Pet");
+        });
+
+        modelBuilder.Entity<PetHealthShareAccessLog>(entity =>
+        {
+            entity.HasKey(e => e.AccessLogId).HasName("PK_PetHealthShareAccessLogs");
+
+            entity.HasIndex(e => new { e.PetId, e.CreatedAt }, "IX_PetHealthShareAccessLogs_Pet_CreatedAt")
+                .IsDescending(false, true);
+
+            entity.Property(e => e.AccessLogId)
+                .HasDefaultValueSql("(newid())")
+                .HasColumnName("AccessLogID");
+            entity.Property(e => e.AccessedByUserId).HasColumnName("AccessedByUserID");
+            entity.Property(e => e.AccessType).HasMaxLength(40);
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.FailureReason).HasMaxLength(200);
+            entity.Property(e => e.IpAddress).HasMaxLength(64);
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.Result).HasMaxLength(30);
+            entity.Property(e => e.ShareTokenId).HasColumnName("ShareTokenID");
+            entity.Property(e => e.UserAgent).HasMaxLength(500);
+
+            entity.HasOne(d => d.AccessedByUser).WithMany()
+                .HasForeignKey(d => d.AccessedByUserId)
+                .HasConstraintName("FK_PetHealthShareAccessLogs_User");
+
+            entity.HasOne(d => d.Clinic).WithMany()
+                .HasForeignKey(d => d.ClinicId)
+                .HasConstraintName("FK_PetHealthShareAccessLogs_Clinic");
+
+            entity.HasOne(d => d.Pet).WithMany()
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_PetHealthShareAccessLogs_Pet");
+
+            entity.HasOne(d => d.ShareToken).WithMany()
+                .HasForeignKey(d => d.ShareTokenId)
+                .HasConstraintName("FK_PetHealthShareAccessLogs_Token");
         });
 
         modelBuilder.Entity<PetMedicalRecord>(entity =>

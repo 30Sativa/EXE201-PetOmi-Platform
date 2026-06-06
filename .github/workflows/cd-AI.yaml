@@ -53,8 +53,8 @@ jobs:
 
             cd ~/petomi-ai
 
-            docker compose pull ai
-            docker compose up -d ai
+            docker compose pull ai-service
+            docker compose up -d ai-service
 
             docker compose ps
             docker logs --tail=80 petomi-ai

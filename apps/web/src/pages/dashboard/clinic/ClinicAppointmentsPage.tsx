@@ -27,7 +27,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useMyClinic } from "@/hooks/useClinicQueries"
 import { appointmentStatusKey, appointmentStatusLabel, appointmentTypeLabel, petSpeciesLabel, staffRoleLabel } from "@/lib/clinicDisplay"
 import { cn, getErrorMessage } from "@/lib/utils"
-import { formatDate, formatShortId, formatTime, todayDateInput } from "@/lib/format"
+import { formatDate, formatShortId, formatTime, todayDateInput, toDateInputValue } from "@/lib/format"
 import {
   cancelAppointmentApi,
   checkInClinicAppointmentApi,
@@ -88,13 +88,17 @@ export default function ClinicAppointmentsPage() {
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
   const clinicId = clinic?.clinicId ?? ""
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
-  const [dateFilter, setDateFilter] = useState(todayDateInput())
+  const [dateFilter, setDateFilter] = useState("")
   const [searchFilter, setSearchFilter] = useState("")
   const debouncedSearchFilter = useDebouncedValue(searchFilter.trim(), 300)
   const [actionTarget, setActionTarget] = useState<{ appointment: AppointmentListItemResponse; type: ActionType } | null>(null)
   const [reason, setReason] = useState("")
   const [isGuestOpen, setIsGuestOpen] = useState(false)
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false)
+  const today = todayDateInput()
+  const tomorrowDate = new Date()
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrow = toDateInputValue(tomorrowDate)
 
   const appointmentsQuery = useQuery({
     queryKey: ["clinic", clinicId, "appointments", statusFilter, dateFilter, debouncedSearchFilter],
@@ -114,6 +118,7 @@ export default function ClinicAppointmentsPage() {
   const pendingCount = appointments.filter((appointment) => appointmentStatusKey(appointment.status) === "pending").length
   const checkedInCount = appointments.filter((appointment) => appointmentStatusKey(appointment.status) === "checkedin").length
   const walkInCount = appointments.filter((appointment) => appointment.isWalkIn).length
+  const todayCount = appointments.filter((appointment) => appointment.appointmentDate === today).length
 
   const invalidateAppointments = async () => {
     await Promise.all([
@@ -195,8 +200,9 @@ export default function ClinicAppointmentsPage() {
             </p>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3 lg:w-[480px]">
+          <div className="grid gap-2 sm:grid-cols-4 lg:w-[640px]">
             <MetricCard label="Đang hiển thị" value={String(appointments.length)} icon={CalendarCheck} tone="info" />
+            <MetricCard label="Hôm nay" value={String(todayCount)} icon={Clock} tone="info" />
             <MetricCard label="Chờ xác nhận" value={String(pendingCount)} icon={Clock} tone="warning" />
             <MetricCard label="Đã check-in" value={String(checkedInCount)} icon={Stethoscope} tone="success" />
           </div>
@@ -209,7 +215,7 @@ export default function ClinicAppointmentsPage() {
             <div>
               <h3 className="text-base font-extrabold text-po-text">Hàng đợi lịch hẹn</h3>
               <p className="mt-1 text-xs text-po-text-muted">
-                {dateFilter ? `Ngày ${formatDate(dateFilter)}` : "Không lọc ngày"} · {walkInCount} walk-in
+                {dateFilter ? `Ngày ${formatDate(dateFilter)}` : "Tất cả ngày"} · {walkInCount} walk-in
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -232,22 +238,27 @@ export default function ClinicAppointmentsPage() {
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
             <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="w-full xl:flex-1" />
-            <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto] xl:w-[520px]">
+            <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto] xl:w-[620px]">
               <input
                 value={searchFilter}
                 onChange={(event) => setSearchFilter(event.target.value)}
                 placeholder="Tìm pet, owner, dịch vụ hoặc mã lịch"
                 className="h-10 min-w-0 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
               />
-              <label className="flex h-10 w-fit shrink-0 items-center gap-2 rounded-full border border-po-border bg-white px-3 text-xs font-bold text-po-text-muted">
-                Ngày
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(event) => setDateFilter(event.target.value)}
-                  className="h-8 rounded-xl border border-po-border bg-white px-2 text-sm font-semibold text-po-text outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
-                />
-              </label>
+              <div className="flex flex-wrap items-center gap-2">
+                <DateQuickFilter label="Tất cả ngày" isActive={dateFilter === ""} onClick={() => setDateFilter("")} />
+                <DateQuickFilter label="Hôm nay" isActive={dateFilter === today} onClick={() => setDateFilter(today)} />
+                <DateQuickFilter label="Ngày mai" isActive={dateFilter === tomorrow} onClick={() => setDateFilter(tomorrow)} />
+                <label className="flex h-10 w-fit shrink-0 items-center gap-2 rounded-full border border-po-border bg-white px-3 text-xs font-bold text-po-text-muted">
+                  Ngày
+                  <input
+                    type="date"
+                    value={dateFilter}
+                    onChange={(event) => setDateFilter(event.target.value)}
+                    className="h-8 rounded-xl border border-po-border bg-white px-2 text-sm font-semibold text-po-text outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+                  />
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -451,6 +462,30 @@ function MetricCard({
         <p className="mt-1 text-lg font-extrabold leading-none text-po-text">{value}</p>
       </div>
     </div>
+  )
+}
+
+function DateQuickFilter({
+  label,
+  isActive,
+  onClick,
+}: {
+  label: string
+  isActive: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-10 items-center rounded-full border px-3 text-xs font-bold transition",
+        isActive
+          ? "border-po-primary bg-po-primary-soft text-po-primary"
+          : "border-po-border bg-white text-po-text-muted hover:border-po-primary/60 hover:text-po-primary",
+      )}
+    >
+      {label}
+    </button>
   )
 }
 

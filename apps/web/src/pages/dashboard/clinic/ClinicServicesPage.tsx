@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Clock, Pencil, Plus, ReceiptText, Trash2, Wrench, type LucideIcon } from "lucide-react"
 import { toast } from "sonner"
 
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -62,6 +63,7 @@ export default function ClinicServicesPage() {
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
   const clinicId = clinic?.clinicId ?? ""
   const [editing, setEditing] = useState<ClinicServiceResponse | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ClinicServiceResponse | null>(null)
   const [form, setForm] = useState<ServiceForm>(emptyForm)
 
   const profileQuery = useQuery({
@@ -103,6 +105,7 @@ export default function ClinicServicesPage() {
     mutationFn: (serviceId: string) => deleteClinicServiceApi(clinicId, serviceId),
     onSuccess: async () => {
       toast.success("Đã xóa dịch vụ.")
+      setDeleteTarget(null)
       await queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "public"] })
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa dịch vụ.")),
@@ -177,7 +180,7 @@ export default function ClinicServicesPage() {
                       setEditing(service)
                       setForm(toForm(service))
                     }}
-                    onDelete={() => deleteMutation.mutate(service.serviceId)}
+                    onDelete={() => setDeleteTarget(service)}
                   />
                 ))}
               </div>
@@ -224,6 +227,19 @@ export default function ClinicServicesPage() {
           </div>
         </aside>
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteMutation.mutate(deleteTarget.serviceId)
+        }}
+        title="Xóa dịch vụ"
+        description={`Bạn có chắc muốn xóa dịch vụ ${deleteTarget?.serviceName ?? ""}? Dịch vụ này sẽ không còn dùng cho booking và hóa đơn mới.`}
+        confirmLabel="Xóa dịch vụ"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   )
 }

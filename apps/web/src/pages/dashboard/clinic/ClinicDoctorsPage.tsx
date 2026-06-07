@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -58,6 +59,8 @@ export default function ClinicDoctorsPage() {
   const [dayOfWeek, setDayOfWeek] = useState(1)
   const [startTime, setStartTime] = useState("08:00")
   const [endTime, setEndTime] = useState("17:00")
+  const [deactivateTarget, setDeactivateTarget] = useState<ClinicDoctorListItemResponse | null>(null)
+  const [deleteScheduleTarget, setDeleteScheduleTarget] = useState<DoctorScheduleResponse | null>(null)
 
   const doctorsQuery = useQuery({
     queryKey: ["clinic", clinicId, "doctors"],
@@ -103,6 +106,7 @@ export default function ClinicDoctorsPage() {
       deactivateClinicStaffApi(clinicId, vetClinicId, { reason: "Xóa khỏi phòng khám từ trang quản lý nhân sự" }),
     onSuccess: async () => {
       toast.success("Đã xóa nhân sự khỏi phòng khám.")
+      setDeactivateTarget(null)
       await invalidate()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa nhân sự.")),
@@ -129,6 +133,7 @@ export default function ClinicDoctorsPage() {
       deleteDoctorScheduleApi(clinicId, vetClinicId, scheduleId),
     onSuccess: async () => {
       toast.success("Đã xóa ca trực.")
+      setDeleteScheduleTarget(null)
       await invalidate()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa ca trực.")),
@@ -209,7 +214,7 @@ export default function ClinicDoctorsPage() {
                     isBusy={roleMutation.isPending || deactivateMutation.isPending || deleteScheduleMutation.isPending}
                     onSelect={() => setScheduleTarget(doctor)}
                     onChangeRole={(role) => roleMutation.mutate({ vetClinicId: doctor.vetClinicId, role })}
-                    onDeactivate={() => deactivateMutation.mutate(doctor.vetClinicId)}
+                    onDeactivate={() => setDeactivateTarget(doctor)}
                   />
                 ))}
               </div>
@@ -304,12 +309,7 @@ export default function ClinicDoctorsPage() {
                       key={schedule.scheduleId}
                       schedule={schedule}
                       isDeleting={deleteScheduleMutation.isPending}
-                      onDelete={() =>
-                        deleteScheduleMutation.mutate({
-                          vetClinicId: schedule.vetClinicId,
-                          scheduleId: schedule.scheduleId,
-                        })
-                      }
+                      onDelete={() => setDeleteScheduleTarget(schedule)}
                     />
                   ))
                 )}
@@ -318,6 +318,37 @@ export default function ClinicDoctorsPage() {
           </section>
         </aside>
       </div>
+
+      <ConfirmDialog
+        isOpen={deactivateTarget !== null}
+        onClose={() => setDeactivateTarget(null)}
+        onConfirm={() => {
+          if (deactivateTarget) deactivateMutation.mutate(deactivateTarget.vetClinicId)
+        }}
+        title="Xóa nhân sự khỏi phòng khám"
+        description={`Bạn có chắc muốn xóa ${deactivateTarget?.fullName ?? ""} khỏi phòng khám? Người này sẽ mất quyền thao tác trong phòng khám.`}
+        confirmLabel="Xóa nhân sự"
+        variant="danger"
+        isLoading={deactivateMutation.isPending}
+      />
+
+      <ConfirmDialog
+        isOpen={deleteScheduleTarget !== null}
+        onClose={() => setDeleteScheduleTarget(null)}
+        onConfirm={() => {
+          if (deleteScheduleTarget) {
+            deleteScheduleMutation.mutate({
+              vetClinicId: deleteScheduleTarget.vetClinicId,
+              scheduleId: deleteScheduleTarget.scheduleId,
+            })
+          }
+        }}
+        title="Xóa ca trực"
+        description={`Bạn có chắc muốn xóa ca ${deleteScheduleTarget?.dayName ?? ""} ${deleteScheduleTarget ? `${formatTime(deleteScheduleTarget.startTime)} - ${formatTime(deleteScheduleTarget.endTime)}` : ""}?`}
+        confirmLabel="Xóa ca trực"
+        variant="danger"
+        isLoading={deleteScheduleMutation.isPending}
+      />
     </div>
   )
 }

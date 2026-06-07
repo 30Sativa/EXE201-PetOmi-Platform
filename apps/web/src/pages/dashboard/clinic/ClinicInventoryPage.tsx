@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import ImageUploadField from "@/components/ui/ImageUploadField"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
@@ -72,6 +73,7 @@ export default function ClinicInventoryPage() {
   const [form, setForm] = useState(emptyForm)
   const [isImageUploading, setIsImageUploading] = useState(false)
   const [stockAction, setStockAction] = useState<StockAction>(null)
+  const [deleteTarget, setDeleteTarget] = useState<InventoryItemResponse | null>(null)
   const [stockAmount, setStockAmount] = useState("1")
   const [stockNote, setStockNote] = useState("")
 
@@ -135,6 +137,7 @@ export default function ClinicInventoryPage() {
     mutationFn: (itemId: string) => deleteInventoryItemApi(clinicId, itemId),
     onSuccess: async () => {
       toast.success("Đã xóa mặt hàng.")
+      setDeleteTarget(null)
       await invalidate()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa mặt hàng.")),
@@ -246,7 +249,7 @@ export default function ClinicInventoryPage() {
                     item={item}
                     onStockIn={() => setStockAction({ item, type: "in" })}
                     onStockOut={() => setStockAction({ item, type: "out" })}
-                    onDelete={() => deleteMutation.mutate(item.itemId)}
+                    onDelete={() => setDeleteTarget(item)}
                     isDeleting={deleteMutation.isPending}
                   />
                 ))}
@@ -334,6 +337,19 @@ export default function ClinicInventoryPage() {
           onConfirm={() => stockMutation.mutate()}
         />
       ) : null}
+
+      <ConfirmDialog
+        isOpen={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          if (deleteTarget) deleteMutation.mutate(deleteTarget.itemId)
+        }}
+        title="Xóa mặt hàng"
+        description={`Bạn có chắc muốn xóa ${deleteTarget?.itemName ?? ""} khỏi kho? Hành động này có thể ảnh hưởng toa thuốc và hóa đơn mới.`}
+        confirmLabel="Xóa mặt hàng"
+        variant="danger"
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   )
 }

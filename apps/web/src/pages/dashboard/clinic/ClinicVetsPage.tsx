@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -57,6 +58,7 @@ export default function ClinicVetsPage() {
     startTime: "08:00",
     endTime: "17:00",
   })
+  const [deleteScheduleTarget, setDeleteScheduleTarget] = useState<{ vetClinicId: string; schedule: DoctorScheduleResponse } | null>(null)
 
   const { data: myClinic, isLoading: loadingClinic } = useQuery({
     queryKey: ["owner", "my-clinic"],
@@ -127,6 +129,7 @@ export default function ClinicVetsPage() {
       deleteDoctorScheduleApi(clinicId, vetClinicId, scheduleId),
     onSuccess: async () => {
       toast.success("Đã xóa ca làm việc.")
+      setDeleteScheduleTarget(null)
       await invalidateStaff()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Xóa ca làm việc thất bại.")),
@@ -283,17 +286,30 @@ export default function ClinicVetsPage() {
                 doctor={doctor}
                 schedules={schedulesByVetClinic[doctor.vetClinicId] ?? []}
                 isDeleting={deleteScheduleMutation.isPending}
-                onDeleteSchedule={(scheduleId) =>
-                  deleteScheduleMutation.mutate({
-                    vetClinicId: doctor.vetClinicId,
-                    scheduleId,
-                  })
-                }
+                onDeleteSchedule={(schedule) => setDeleteScheduleTarget({ vetClinicId: doctor.vetClinicId, schedule })}
               />
             ))}
           </div>
         )}
       </DashboardSection>
+
+      <ConfirmDialog
+        isOpen={deleteScheduleTarget !== null}
+        onClose={() => setDeleteScheduleTarget(null)}
+        onConfirm={() => {
+          if (deleteScheduleTarget) {
+            deleteScheduleMutation.mutate({
+              vetClinicId: deleteScheduleTarget.vetClinicId,
+              scheduleId: deleteScheduleTarget.schedule.scheduleId,
+            })
+          }
+        }}
+        title="Xóa ca làm việc"
+        description={`Bạn có chắc muốn xóa ca ${deleteScheduleTarget?.schedule.dayName ?? ""} ${deleteScheduleTarget ? `${formatTime(deleteScheduleTarget.schedule.startTime)} - ${formatTime(deleteScheduleTarget.schedule.endTime)}` : ""}?`}
+        confirmLabel="Xóa ca"
+        variant="danger"
+        isLoading={deleteScheduleMutation.isPending}
+      />
     </div>
   )
 }
@@ -307,7 +323,7 @@ function DoctorCard({
   doctor: ClinicDoctorListItemResponse
   schedules: DoctorScheduleResponse[]
   isDeleting: boolean
-  onDeleteSchedule: (scheduleId: string) => void
+  onDeleteSchedule: (schedule: DoctorScheduleResponse) => void
 }) {
   return (
     <div className="rounded-2xl bg-white p-4 ring-1 ring-po-border/80">
@@ -345,7 +361,7 @@ function DoctorCard({
               </div>
               <button
                 type="button"
-                onClick={() => onDeleteSchedule(schedule.scheduleId)}
+                onClick={() => onDeleteSchedule(schedule)}
                 disabled={isDeleting}
                 className="inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-xs font-semibold text-po-danger ring-1 ring-po-border/70 transition hover:bg-po-danger-soft disabled:opacity-50"
               >

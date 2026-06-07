@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -61,6 +62,12 @@ type RetailCartItem = {
   availableQuantity: number
 }
 
+type BillingConfirmTarget =
+  | { type: "pay"; invoice: InvoiceResponse; method: "Cash" | "BankTransfer"; methodLabel: string }
+  | { type: "sepay"; invoice: InvoiceResponse }
+  | { type: "cancel"; invoice: InvoiceResponse }
+  | { type: "remove-cart"; item: RetailCartItem }
+
 const appointmentStatusOptions = [
   { value: "all", label: "Tất cả trạng thái" },
   { value: "Pending", label: "Chờ xác nhận" },
@@ -95,6 +102,7 @@ export default function ClinicBillingPage() {
   const [retailCart, setRetailCart] = useState<RetailCartItem[]>([])
   const [retailInvoice, setRetailInvoice] = useState<InvoiceResponse | null>(null)
   const [workspace, setWorkspace] = useState<BillingWorkspace>("checkout")
+  const [confirmTarget, setConfirmTarget] = useState<BillingConfirmTarget | null>(null)
 
   const summaryQuery = useQuery({
     queryKey: ["clinic", clinicId, "dashboard-summary"],
@@ -258,6 +266,7 @@ export default function ClinicBillingPage() {
       payInvoiceApi(clinicId, invoice.id, { paymentMethod: method, paidAmount: invoice.finalAmount }),
     onSuccess: async () => {
       toast.success("Đã ghi nhận thanh toán.")
+      setConfirmTarget(null)
       setRetailInvoice(null)
       await invalidateBilling()
     },
@@ -268,6 +277,7 @@ export default function ClinicBillingPage() {
     mutationFn: (invoice: InvoiceResponse) =>
       requestSePayPaymentApi(clinicId, invoice.id, { paymentReference: invoice.paymentReference }),
     onSuccess: async (data) => {
+      setConfirmTarget(null)
       setQrRequest(data)
       toast.success("Đã tạo yêu cầu thanh toán SePay.")
       await invalidateBilling()
@@ -293,6 +303,7 @@ export default function ClinicBillingPage() {
       cancelInvoiceApi(clinicId, invoice.id, { cancelReason: "Hủy từ quầy thu ngân clinic" }),
     onSuccess: async () => {
       toast.success("Đã hủy hóa đơn.")
+      setConfirmTarget(null)
       await invalidateBilling()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể hủy hóa đơn.")),
@@ -313,6 +324,28 @@ export default function ClinicBillingPage() {
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể xác nhận hoàn tiền.")),
   })
+
+  const handleConfirmBillingAction = () => {
+    if (!confirmTarget) return
+
+    switch (confirmTarget.type) {
+      case "pay":
+        payMutation.mutate({ invoice: confirmTarget.invoice, method: confirmTarget.method })
+        break
+      case "sepay":
+        sePayMutation.mutate(confirmTarget.invoice)
+        break
+      case "cancel":
+        cancelMutation.mutate(confirmTarget.invoice)
+        break
+      case "remove-cart":
+        setRetailCart((current) =>
+          current.filter((cartItem) => cartItem.inventoryItemId !== confirmTarget.item.inventoryItemId),
+        )
+        setConfirmTarget(null)
+        break
+    }
+  }
 
   if (isClinicLoading) {
     return <div className="rounded-[30px] bg-white/88 py-16 text-center ring-1 ring-po-border/80"><LoadingSpinner /></div>
@@ -434,10 +467,10 @@ export default function ClinicBillingPage() {
                     ) : invoice ? (
                       <InvoiceCard
                         invoice={invoice}
-                        onPayCash={() => payMutation.mutate({ invoice, method: "Cash" })}
-                        onPayBank={() => payMutation.mutate({ invoice, method: "BankTransfer" })}
-                        onSePay={() => sePayMutation.mutate(invoice)}
-                        onCancel={() => cancelMutation.mutate(invoice)}
+                        onPayCash={() => setConfirmTarget({ type: "pay", invoice, method: "Cash", methodLabel: "tiền mặt" })}
+                        onPayBank={() => setConfirmTarget({ type: "pay", invoice, method: "BankTransfer", methodLabel: "chuyển khoản" })}
+                        onSePay={() => setConfirmTarget({ type: "sepay", invoice })}
+                        onCancel={() => setConfirmTarget({ type: "cancel", invoice })}
                         busy={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
                       />
                     ) : (
@@ -512,7 +545,7 @@ export default function ClinicBillingPage() {
                         <div className="flex items-center gap-3">
                           <p className="text-sm font-extrabold text-po-text">{formatCurrency(item.quantity * item.unitPrice)}</p>
                           <button
-                            onClick={() => setRetailCart((current) => current.filter((cartItem) => cartItem.inventoryItemId !== item.inventoryItemId))}
+                            onClick={() => setConfirmTarget({ type: "remove-cart", item })}
                             className="rounded-full p-2 text-po-danger transition hover:bg-po-danger-soft"
                           >
                             <Trash2 className="size-4" />
@@ -542,10 +575,10 @@ export default function ClinicBillingPage() {
                   <div className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-po-border/70">
                     <InvoiceCard
                       invoice={retailInvoice}
-                      onPayCash={() => payMutation.mutate({ invoice: retailInvoice, method: "Cash" })}
-                      onPayBank={() => payMutation.mutate({ invoice: retailInvoice, method: "BankTransfer" })}
-                      onSePay={() => sePayMutation.mutate(retailInvoice)}
-                      onCancel={() => cancelMutation.mutate(retailInvoice)}
+                      onPayCash={() => setConfirmTarget({ type: "pay", invoice: retailInvoice, method: "Cash", methodLabel: "tiền mặt" })}
+                      onPayBank={() => setConfirmTarget({ type: "pay", invoice: retailInvoice, method: "BankTransfer", methodLabel: "chuyển khoản" })}
+                      onSePay={() => setConfirmTarget({ type: "sepay", invoice: retailInvoice })}
+                      onCancel={() => setConfirmTarget({ type: "cancel", invoice: retailInvoice })}
                       busy={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
                     />
                   </div>
@@ -663,8 +696,56 @@ export default function ClinicBillingPage() {
           </div>
         </Modal>
       ) : null}
+
+      <ConfirmDialog
+        isOpen={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={handleConfirmBillingAction}
+        title={billingConfirmCopy(confirmTarget).title}
+        description={billingConfirmCopy(confirmTarget).description}
+        confirmLabel={billingConfirmCopy(confirmTarget).confirmLabel}
+        variant={confirmTarget?.type === "cancel" || confirmTarget?.type === "remove-cart" ? "danger" : "warning"}
+        isLoading={payMutation.isPending || sePayMutation.isPending || cancelMutation.isPending}
+      />
     </div>
   )
+}
+
+function billingConfirmCopy(target: BillingConfirmTarget | null) {
+  if (!target) {
+    return {
+      title: "",
+      description: "",
+      confirmLabel: "Xác nhận",
+    }
+  }
+
+  switch (target.type) {
+    case "pay":
+      return {
+        title: "Ghi nhận thanh toán",
+        description: `Xác nhận hóa đơn ${target.invoice.invoiceCode} đã thanh toán bằng ${target.methodLabel} với số tiền ${formatCurrency(target.invoice.finalAmount)}?`,
+        confirmLabel: "Ghi nhận thanh toán",
+      }
+    case "sepay":
+      return {
+        title: "Tạo yêu cầu SePay",
+        description: `Tạo QR thanh toán cho hóa đơn ${target.invoice.invoiceCode} với số tiền ${formatCurrency(target.invoice.finalAmount)}?`,
+        confirmLabel: "Tạo QR",
+      }
+    case "cancel":
+      return {
+        title: "Hủy hóa đơn",
+        description: `Bạn có chắc muốn hủy hóa đơn ${target.invoice.invoiceCode}? Hành động này sẽ ảnh hưởng doanh thu và đối soát.`,
+        confirmLabel: "Hủy hóa đơn",
+      }
+    case "remove-cart":
+      return {
+        title: "Xóa mặt hàng khỏi giỏ",
+        description: `Xóa ${target.item.itemName} khỏi giỏ bán hàng tại quầy?`,
+        confirmLabel: "Xóa khỏi giỏ",
+      }
+  }
 }
 
 function SePayPaymentStatusPanel({

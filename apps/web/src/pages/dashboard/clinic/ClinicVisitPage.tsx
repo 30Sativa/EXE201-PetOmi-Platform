@@ -5,6 +5,7 @@ import { toast } from "sonner"
 import { ArrowLeft, CheckCircle2, Pill, Plus, Receipt, Save, Stethoscope, Trash2 } from "lucide-react"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import ConfirmDialog from "@/components/ui/ConfirmDialog"
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
@@ -61,6 +62,12 @@ const emptyExamForm: ExamForm = {
   treatmentPlan: "",
 }
 
+type VisitConfirmTarget =
+  | { type: "complete-exam" }
+  | { type: "delete-prescription"; prescription: PrescriptionItemResponse }
+  | { type: "pay"; invoice: InvoiceResponse; paymentMethod: string; paidAmount: string }
+  | { type: "sepay"; invoice: InvoiceResponse }
+
 function toExamForm(exam: ExaminationResponse | null | undefined): ExamForm {
   if (!exam) return emptyExamForm
 
@@ -115,6 +122,7 @@ export default function ClinicVisitPage() {
   const [paymentMethod, setPaymentMethod] = useState("Cash")
   const [paidAmount, setPaidAmount] = useState("")
   const [qrRequest, setQrRequest] = useState<SePayPaymentRequestResponse | null>(null)
+  const [confirmTarget, setConfirmTarget] = useState<VisitConfirmTarget | null>(null)
 
   const examQuery = useQuery({
     queryKey: ["clinic", clinicId, "examination", appointmentId],
@@ -187,6 +195,7 @@ export default function ClinicVisitPage() {
     mutationFn: () => completeExaminationApi(clinicId, examinationId),
     onSuccess: async () => {
       toast.success("Đã hoàn tất phiếu khám.")
+      setConfirmTarget(null)
       await queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "examination", appointmentId] })
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể hoàn tất phiếu khám.")),
@@ -224,6 +233,7 @@ export default function ClinicVisitPage() {
     mutationFn: (prescriptionId: string) => deletePrescriptionApi(clinicId, examinationId, prescriptionId),
     onSuccess: async () => {
       toast.success("Đã xóa thuốc khỏi toa.")
+      setConfirmTarget(null)
       await queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "prescriptions", examinationId] })
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa thuốc.")),
@@ -254,6 +264,7 @@ export default function ClinicVisitPage() {
       }),
     onSuccess: async () => {
       toast.success("Đã ghi nhận thanh toán.")
+      setConfirmTarget(null)
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "invoice", appointmentId] }),
         queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "dashboard-summary"] }),
@@ -266,6 +277,7 @@ export default function ClinicVisitPage() {
     mutationFn: (invoice: InvoiceResponse) => requestSePayPaymentApi(clinicId, invoice.id),
     onSuccess: async (result) => {
       toast.success("Đã tạo QR SePay.")
+      setConfirmTarget(null)
       setQrRequest(result)
       await queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "invoice", appointmentId] })
     },
@@ -285,6 +297,25 @@ export default function ClinicVisitPage() {
       void queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "dashboard-summary"] })
     }
   }, [sePayStatusQuery.data?.status, queryClient, clinicId, appointmentId])
+
+  const handleConfirmVisitAction = () => {
+    if (!confirmTarget) return
+
+    switch (confirmTarget.type) {
+      case "complete-exam":
+        completeExamMutation.mutate()
+        break
+      case "delete-prescription":
+        deletePrescriptionMutation.mutate(confirmTarget.prescription.id)
+        break
+      case "pay":
+        payMutation.mutate(confirmTarget.invoice)
+        break
+      case "sepay":
+        sePayMutation.mutate(confirmTarget.invoice)
+        break
+    }
+  }
 
   if (isClinicLoading || examQuery.isLoading) {
     return <div className="rounded-[30px] bg-white/88 py-16 text-center ring-1 ring-po-border/80"><LoadingSpinner /></div>
@@ -330,7 +361,7 @@ export default function ClinicVisitPage() {
                   Lưu
                 </button>
                 <button
-                  onClick={() => completeExamMutation.mutate()}
+                  onClick={() => setConfirmTarget({ type: "complete-exam" })}
                   disabled={!form.diagnosis.trim() || completeExamMutation.isPending}
                   className="inline-flex h-10 items-center gap-2 rounded-full bg-po-success px-4 text-sm font-semibold text-white transition hover:bg-po-success/90 disabled:opacity-60"
                 >
@@ -369,7 +400,7 @@ export default function ClinicVisitPage() {
                 <PrescriptionList
                   prescriptions={prescriptions}
                   isLoading={prescriptionsQuery.isLoading}
-                  onDelete={(id) => deletePrescriptionMutation.mutate(id)}
+                  onDelete={(prescription) => setConfirmTarget({ type: "delete-prescription", prescription })}
                 />
               </div>
             )}
@@ -392,14 +423,62 @@ export default function ClinicVisitPage() {
               onPaymentMethodChange={setPaymentMethod}
               onPaidAmountChange={setPaidAmount}
               onCompose={() => autoComposeMutation.mutate()}
-              onPay={() => invoice && payMutation.mutate(invoice)}
-              onRequestQr={() => invoice && sePayMutation.mutate(invoice)}
+              onPay={() => invoice && setConfirmTarget({ type: "pay", invoice, paymentMethod, paidAmount })}
+              onRequestQr={() => invoice && setConfirmTarget({ type: "sepay", invoice })}
             />
           </DashboardSection>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmTarget !== null}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={handleConfirmVisitAction}
+        title={visitConfirmCopy(confirmTarget).title}
+        description={visitConfirmCopy(confirmTarget).description}
+        confirmLabel={visitConfirmCopy(confirmTarget).confirmLabel}
+        variant={confirmTarget?.type === "delete-prescription" ? "danger" : "warning"}
+        isLoading={completeExamMutation.isPending || deletePrescriptionMutation.isPending || payMutation.isPending || sePayMutation.isPending}
+      />
     </div>
   )
+}
+
+function visitConfirmCopy(target: VisitConfirmTarget | null) {
+  if (!target) {
+    return {
+      title: "",
+      description: "",
+      confirmLabel: "Xác nhận",
+    }
+  }
+
+  switch (target.type) {
+    case "complete-exam":
+      return {
+        title: "Hoàn tất phiếu khám",
+        description: "Bạn có chắc muốn hoàn tất phiếu khám? Sau khi hoàn tất, phiếu sẽ chuyển sang trạng thái đã hoàn thành.",
+        confirmLabel: "Hoàn tất",
+      }
+    case "delete-prescription":
+      return {
+        title: "Xóa thuốc khỏi toa",
+        description: `Xóa ${target.prescription.medicationName} khỏi toa thuốc? Hóa đơn tạo sau đó sẽ không còn tính thuốc này.`,
+        confirmLabel: "Xóa thuốc",
+      }
+    case "pay":
+      return {
+        title: "Ghi nhận thu tiền",
+        description: `Xác nhận hóa đơn ${target.invoice.invoiceCode} đã thu ${formatCurrency(Number(target.paidAmount) || target.invoice.finalAmount)} bằng ${target.paymentMethod === "Cash" ? "tiền mặt" : "chuyển khoản thủ công"}?`,
+        confirmLabel: "Ghi nhận thu tiền",
+      }
+    case "sepay":
+      return {
+        title: "Tạo QR SePay",
+        description: `Tạo yêu cầu thanh toán SePay cho hóa đơn ${target.invoice.invoiceCode} với số tiền ${formatCurrency(target.invoice.finalAmount)}?`,
+        confirmLabel: "Tạo QR",
+      }
+  }
 }
 
 function ExamFormView({
@@ -488,7 +567,7 @@ function PrescriptionList({
 }: {
   prescriptions: PrescriptionItemResponse[]
   isLoading: boolean
-  onDelete: (id: string) => void
+  onDelete: (prescription: PrescriptionItemResponse) => void
 }) {
   if (isLoading) return <div className="py-6 text-center"><LoadingSpinner /></div>
   if (prescriptions.length === 0) return <EmptyState icon={Pill} title="Chưa có thuốc" description="Thêm thuốc để auto-compose hóa đơn chính xác hơn." />
@@ -502,7 +581,7 @@ function PrescriptionList({
             <p className="mt-1 text-xs text-po-text-muted">{item.dosage} · {item.frequency} · {item.durationDays} ngày</p>
             {item.instructions ? <p className="mt-1 text-xs text-po-text-subtle">{item.instructions}</p> : null}
           </div>
-          <button onClick={() => onDelete(item.id)} className="rounded-full p-2 text-po-danger transition hover:bg-po-danger-soft">
+          <button onClick={() => onDelete(item)} className="rounded-full p-2 text-po-danger transition hover:bg-po-danger-soft">
             <Trash2 className="size-4" />
           </button>
         </div>

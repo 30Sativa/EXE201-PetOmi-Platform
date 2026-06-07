@@ -653,7 +653,7 @@ function ClinicReviewRow({
           <StatusBadge variant={statusVariant(clinic.status)} label={clinic.status} />
         </div>
         <div className="mt-3 grid gap-2 text-xs text-po-text-muted sm:grid-cols-3">
-          <span>Giấy phép: {clinic.licenseNumber ?? "Chưa cập nhật"}</span>
+          <span>Giấy phép: {clinic.licenseImageUrl || clinic.hasLicenseFile ? "Đã gửi file" : "Chưa có file"}</span>
           <span>Email: {clinic.email ?? "Chưa có"}</span>
           <span>Ngày gửi: {formatDate(clinic.createdAt)}</span>
         </div>

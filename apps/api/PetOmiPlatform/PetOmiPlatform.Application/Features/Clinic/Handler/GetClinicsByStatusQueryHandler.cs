@@ -33,6 +33,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 LicenseNumber = c.LicenseNumber,
                 LicenseImageUrl = c.LicenseImageUrl,
                 LicenseCloudinaryPublicId = c.LicenseCloudinaryPublicId,
+                HasLicenseFile = !string.IsNullOrWhiteSpace(c.LicenseImageUrl),
                 Status = c.Status.ToString(),
                 RejectedReason = c.RejectedReason,
                 CreatedAt = c.CreatedAt

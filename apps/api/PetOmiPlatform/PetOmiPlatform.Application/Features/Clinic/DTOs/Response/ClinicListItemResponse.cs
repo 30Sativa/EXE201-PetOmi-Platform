@@ -11,6 +11,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
         public string? LicenseNumber { get; set; }
         public string? LicenseImageUrl { get; set; }     // Admin click xem ảnh GKPD
         public string? LicenseCloudinaryPublicId { get; set; }
+        public bool HasLicenseFile { get; set; }
         public string Status { get; set; } = null!;
         public string? RejectedReason { get; set; }
         public DateTime CreatedAt { get; set; }

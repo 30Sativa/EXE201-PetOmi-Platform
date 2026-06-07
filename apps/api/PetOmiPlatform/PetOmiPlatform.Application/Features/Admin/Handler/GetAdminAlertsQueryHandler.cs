@@ -139,6 +139,7 @@ public class GetAdminAlertsQueryHandler : IRequestHandler<GetAdminAlertsQuery, A
             LicenseNumber = clinic.LicenseNumber,
             LicenseImageUrl = clinic.LicenseImageUrl,
             LicenseCloudinaryPublicId = clinic.LicenseCloudinaryPublicId,
+            HasLicenseFile = !string.IsNullOrWhiteSpace(clinic.LicenseImageUrl),
             Status = clinic.Status.ToString(),
             RejectedReason = clinic.RejectedReason,
             CreatedAt = clinic.CreatedAt

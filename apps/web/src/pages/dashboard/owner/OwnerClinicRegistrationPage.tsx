@@ -279,6 +279,10 @@ function isEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
+function isPdfUrl(url?: string | null) {
+  return Boolean(url?.toLowerCase().includes(".pdf"))
+}
+
 function findProvince(code: string) {
   return ADDRESS_OPTIONS.find((province) => province.code === code)
 }
@@ -854,9 +858,48 @@ function ExistingClinicPanel({
           <div className="mt-5 grid gap-3 text-sm text-po-text-muted sm:grid-cols-2">
             <InfoRow label="Email" value={clinic.email ?? "Chưa có"} />
             <InfoRow label="Điện thoại" value={clinic.phone ?? "Chưa có"} />
-            <InfoRow label="Giấy phép" value={clinic.licenseNumber ?? "Chưa có"} />
+            <InfoRow label="File giấy phép" value={clinic.licenseImageUrl || clinic.hasLicenseFile ? "Đã gửi" : "Chưa có"} />
             <InfoRow label="Ngày tạo" value={formatDate(clinic.createdAt)} />
           </div>
+
+          {clinic.licenseImageUrl ? (
+            <div className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-po-border/70">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-extrabold text-po-text">File giấy phép đã gửi</p>
+                  <p className="mt-1 text-xs text-po-text-muted">Bạn có thể mở lại file đã nộp cho admin.</p>
+                </div>
+                <a
+                  href={clinic.licenseImageUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:bg-po-primary hover:text-white"
+                >
+                  <FileText className="size-3.5" />
+                  {isPdfUrl(clinic.licenseImageUrl) ? "Mở PDF" : "Xem ảnh"}
+                </a>
+              </div>
+              <a
+                href={clinic.licenseImageUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 block overflow-hidden rounded-2xl bg-po-surface-muted ring-1 ring-po-border/70"
+              >
+                {isPdfUrl(clinic.licenseImageUrl) ? (
+                  <span className="flex h-36 flex-col items-center justify-center gap-2 text-po-primary">
+                    <FileText className="size-8" />
+                    <span className="text-xs font-semibold">PDF giấy phép phòng khám</span>
+                  </span>
+                ) : (
+                  <img
+                    src={clinic.licenseImageUrl}
+                    alt={`Giấy phép phòng khám ${clinic.clinicName}`}
+                    className="h-40 w-full object-cover"
+                  />
+                )}
+              </a>
+            </div>
+          ) : null}
 
           {clinic.rejectedReason ? (
             <p className="mt-4 rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">

@@ -389,15 +389,15 @@ function AlertCard({
 
           {alert.type === "pending_clinic" && alert.clinic && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {alert.clinic.licenseNumber ? (
+              {alert.clinic.licenseImageUrl || alert.clinic.hasLicenseFile ? (
                 <span className="inline-flex items-center gap-1 text-po-success text-xs">
                   <BadgeCheck className="size-3" />
-                  GPLX: {alert.clinic.licenseNumber}
+                  Đã gửi file giấy phép
                 </span>
               ) : (
                 <span className="inline-flex items-center gap-1 text-po-warning text-xs">
                   <AlertCircle className="size-3" />
-                  Chưa có GPLX
+                  Chưa có file giấy phép
                 </span>
               )}
               <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto">

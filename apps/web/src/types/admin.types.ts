@@ -8,6 +8,7 @@ export interface ClinicListItemResponse {
   licenseNumber: string | null
   licenseImageUrl: string | null
   licenseCloudinaryPublicId: string | null
+  hasLicenseFile?: boolean
   status: string
   rejectedReason: string | null
   createdAt: string

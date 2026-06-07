@@ -26,6 +26,10 @@ function isPdfUrl(url?: string | null) {
   return Boolean(url?.toLowerCase().includes(".pdf"))
 }
 
+function hasLicenseFile(clinic: ClinicListItemResponse) {
+  return Boolean(clinic.hasLicenseFile || clinic.licenseImageUrl)
+}
+
 export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDrawerProps) {
   if (!clinic) return null
 
@@ -94,8 +98,8 @@ export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDraw
             </h3>
             <div className="space-y-3 rounded-2xl bg-po-surface-muted/50 p-4">
               <InfoRow
-                label="So GPLX"
-                value={clinic.licenseNumber ?? "Chua co"}
+                label="File giay phep"
+                value={hasLicenseFile(clinic) ? "Da gui" : "Chua co"}
               />
               {clinic.licenseImageUrl ? (
                 <div className="space-y-2">

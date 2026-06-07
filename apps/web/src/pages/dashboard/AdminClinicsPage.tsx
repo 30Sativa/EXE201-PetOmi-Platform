@@ -50,6 +50,10 @@ function isPdfUrl(url?: string | null) {
   return Boolean(url?.toLowerCase().includes(".pdf"))
 }
 
+function hasLicenseFile(clinic: ClinicListItemResponse) {
+  return Boolean(clinic.hasLicenseFile || clinic.licenseImageUrl)
+}
+
 type StatusFilter = "Pending" | "Approved" | "Rejected"
 
 function clinicStatusLabel(status: string) {
@@ -272,10 +276,10 @@ export default function AdminClinicsPage() {
                               <Calendar className="size-3" />
                               <span className="text-[10px]">{formatDate(clinic.createdAt)}</span>
                             </span>
-                            {clinic.licenseNumber && (
+                            {hasLicenseFile(clinic) && (
                               <span className="inline-flex items-center gap-1 text-po-primary">
                                 <BadgeCheck className="size-3" />
-                                <span className="text-[10px]">GPLX: {clinic.licenseNumber}</span>
+                                <span className="text-[10px]">Đã gửi giấy phép</span>
                               </span>
                             )}
                           </div>
@@ -298,11 +302,11 @@ export default function AdminClinicsPage() {
                       </div>
                     </td>
                     <td className="px-5 py-4 shrink-0 w-[130px]">
-                      {clinic.licenseNumber ? (
+                      {hasLicenseFile(clinic) ? (
                         <div className="space-y-1">
                           <span className="inline-flex items-center gap-1 text-po-success text-xs">
                             <BadgeCheck className="size-3" />
-                            {clinic.licenseNumber}
+                            Đã có file
                           </span>
                           {clinic.licenseImageUrl && (
                             <button
@@ -311,14 +315,14 @@ export default function AdminClinicsPage() {
                               className="inline-flex items-center gap-1 text-po-primary text-xs font-semibold transition hover:text-po-primary-hover"
                             >
                               <Eye className="size-3" />
-                              Xem ảnh
+                              {isPdfUrl(clinic.licenseImageUrl) ? "Mở PDF" : "Xem ảnh"}
                             </button>
                           )}
                         </div>
                       ) : (
                         <span className="inline-flex items-center gap-1 text-po-warning text-xs">
                           <AlertCircle className="size-3" />
-                          Chưa có GPLX
+                          Chưa có file
                         </span>
                       )}
                     </td>
@@ -518,7 +522,7 @@ function ClinicMobileCard({
       <div className="mt-4 grid gap-2 rounded-2xl bg-white/70 p-3 text-xs text-po-text-muted ring-1 ring-po-border/60">
         <span>Email: {clinic.email ?? "Chưa có"}</span>
         <span>Điện thoại: {clinic.phone ?? "Chưa có"}</span>
-        <span>Số giấy phép: {clinic.licenseNumber ?? "Chưa có"}</span>
+        <span>File giấy phép: {hasLicenseFile(clinic) ? "Đã gửi" : "Chưa có"}</span>
         <span>Ngày đăng ký: {formatDate(clinic.createdAt)}</span>
         {clinic.rejectedReason ? <span>Lý do: {clinic.rejectedReason}</span> : null}
       </div>
@@ -540,7 +544,7 @@ function ClinicMobileCard({
             className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white"
           >
             <Eye className="size-3.5" />
-            Ảnh phép
+            Giấy phép
           </button>
         ) : null}
 
@@ -631,7 +635,7 @@ function ClinicDetailModal({
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 <DetailInfo label="Email" value={clinic.email ?? "Chưa có"} />
                 <DetailInfo label="Điện thoại" value={clinic.phone ?? "Chưa có"} />
-                <DetailInfo label="Số giấy phép" value={clinic.licenseNumber ?? "Chưa có"} />
+                <DetailInfo label="File giấy phép" value={hasLicenseFile(clinic) ? "Đã gửi" : "Chưa có"} />
                 <DetailInfo label="Trạng thái" value={clinicStatusLabel(clinic.status)} />
               </div>
 

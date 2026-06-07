@@ -48,6 +48,7 @@ export interface MyClinicResponse {
   logoUrl: string | null
   logoCloudinaryPublicId: string | null
   licenseCloudinaryPublicId: string | null
+  hasLicenseFile?: boolean
   status: string
   rejectedReason: string | null
   createdAt: string

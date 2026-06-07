@@ -31,6 +31,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 LicenseNumber = membership.LicenseNumber,
                 LicenseImageUrl = membership.LicenseImageUrl,
                 LicenseCloudinaryPublicId = membership.LicenseCloudinaryPublicId,
+                HasLicenseFile = !string.IsNullOrWhiteSpace(membership.LicenseImageUrl),
                 LogoUrl = membership.LogoUrl,
                 LogoCloudinaryPublicId = membership.LogoCloudinaryPublicId,
                 Status = membership.Status,

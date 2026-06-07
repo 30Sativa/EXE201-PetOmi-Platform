@@ -56,7 +56,8 @@ namespace PetOmiPlatform.Domain.Entities
                 throw new DomainException("Khong the cap nhat vai tro cho staff da ngung hoat dong.");
 
             if (roleId != ClinicRoleConstants.PrimaryVetId &&
-                roleId != ClinicRoleConstants.AssistantId)
+                roleId != ClinicRoleConstants.AssistantId &&
+                roleId != ClinicRoleConstants.CashierId)
             {
                 throw new DomainException("Role staff khong hop le.");
             }

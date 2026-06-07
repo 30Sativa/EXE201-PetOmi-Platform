@@ -319,7 +319,7 @@ export default function ClinicBillingPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={ReceiptText} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi mở quầy thu ngân." />
+    return <EmptyState icon={ReceiptText} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi mở quầy thu ngân." />
   }
 
   const summary = summaryQuery.data

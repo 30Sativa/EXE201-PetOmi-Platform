@@ -53,13 +53,26 @@ export function invoiceSourceLabel(source: string) {
   return map[normalize(source)] ?? source
 }
 
-export function staffRoleLabel(role: string) {
+export function staffRoleLabel(role?: string | null) {
   const map: Record<string, string> = {
+    clinicowner: "Chủ phòng khám",
     primaryvet: "Bác sĩ chính",
-    assistant: "Trợ lý",
+    assistant: "Tiếp nhận/phụ tá",
+    cashier: "Thu ngân",
   }
 
-  return map[normalize(role)] ?? role
+  return map[normalize(role ?? "")] ?? role ?? "Chưa có vai trò"
+}
+
+export function staffRoleDescription(role?: string | null) {
+  const map: Record<string, string> = {
+    clinicowner: "Quản lý nhân sự, dịch vụ, hồ sơ phòng khám, thanh toán và toàn bộ vận hành.",
+    primaryvet: "Khám bệnh, ghi hồ sơ khám, chẩn đoán và kê đơn.",
+    assistant: "Tiếp nhận lịch hẹn, check-in, hỗ trợ điều phối và xem ngữ cảnh hồ sơ khám.",
+    cashier: "Thu tiền, tạo hóa đơn, bán tại quầy, xem kho và đối soát giao dịch.",
+  }
+
+  return map[normalize(role ?? "")] ?? "Vai trò này chưa có mô tả nhiệm vụ."
 }
 
 export function petSpeciesLabel(species: string) {
@@ -96,9 +109,9 @@ export function examinationStatusLabel(status: string) {
 export function sePayReconciliationStatusLabel(status: string) {
   const map: Record<string, string> = {
     pending: "Đang chờ",
-    matched: "Đã match",
+    matched: "Đã khớp",
     dismissed: "Đã bỏ qua",
-    unmatched: "Chưa match",
+    unmatched: "Chưa khớp",
   }
 
   return map[normalize(status)] ?? status

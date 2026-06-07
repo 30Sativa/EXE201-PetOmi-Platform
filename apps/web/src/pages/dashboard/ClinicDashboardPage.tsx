@@ -5,6 +5,7 @@ import {
   CreditCard,
   PackageSearch,
   Receipt,
+  UserRoundCog,
   WalletCards,
   type LucideIcon,
 } from "lucide-react"
@@ -16,6 +17,15 @@ import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import {
+  appointmentStatusKey,
+  appointmentStatusLabel,
+  appointmentTypeLabel,
+  clinicStatusLabel,
+  sePayReconciliationStatusLabel,
+  staffRoleDescription,
+  staffRoleLabel,
+} from "@/lib/clinicDisplay"
 import { CLINIC_PERMISSIONS, hasClinicPermission } from "@/lib/clinicPermissions"
 import { formatCurrency, formatShortId, formatTime, todayDateInput } from "@/lib/format"
 import { cn } from "@/lib/utils"
@@ -25,35 +35,21 @@ import { getLowStockApi } from "@/services/clinic.service"
 import type { AppointmentListItemResponse, InventoryItemResponse, SePayReconciliationItemResponse } from "@/types"
 
 function appointmentStatusVariant(status: string) {
-  switch (status.toLowerCase()) {
+  switch (appointmentStatusKey(status)) {
     case "pending":
       return "pending" as const
     case "confirmed":
-    case "checked-in":
+    case "checkedin":
       return "confirmed" as const
     case "completed":
       return "completed" as const
     case "cancelled":
     case "rejected":
-    case "no-show":
+    case "noshow":
       return "cancelled" as const
     default:
       return "default" as const
   }
-}
-
-function appointmentStatusLabel(status: string) {
-  const map: Record<string, string> = {
-    pending: "Chờ xác nhận",
-    confirmed: "Đã xác nhận",
-    "checked-in": "Đã check-in",
-    completed: "Hoàn thành",
-    cancelled: "Đã hủy",
-    rejected: "Từ chối",
-    "no-show": "Không đến",
-  }
-
-  return map[status.toLowerCase()] ?? status
 }
 
 const compactNumber = (value: number) =>
@@ -136,8 +132,8 @@ export default function ClinicDashboardPage() {
     return (
       <EmptyState
         icon={ClipboardCheck}
-        title="Chưa có hồ sơ clinic"
-        description="Hãy đăng ký phòng khám ở dashboard owner trước khi mở khu vực clinic."
+        title="Chưa có hồ sơ phòng khám"
+        description="Hãy đăng ký phòng khám ở dashboard chủ nuôi trước khi mở khu vực phòng khám."
       />
     )
   }
@@ -148,18 +144,27 @@ export default function ClinicDashboardPage() {
         <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
-              Tổng quan clinic
+              Tổng quan phòng khám
             </p>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-extrabold leading-tight text-po-text">{clinic.clinicName}</h2>
               <StatusBadge
                 variant={clinic.status === "Approved" ? "success" : clinic.status === "Rejected" ? "danger" : "warning"}
-                label={clinic.status}
+                label={clinicStatusLabel(clinic.status)}
               />
             </div>
             <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
-              Theo dõi lịch trong ngày, dòng tiền, công nợ, đối soát SePay và cảnh báo kho.
+              Theo dõi lịch trong ngày, dòng tiền, công nợ, đối soát SePay và cảnh báo kho theo đúng quyền của vai trò hiện tại.
             </p>
+            <div className="mt-3 flex max-w-3xl items-start gap-2 rounded-2xl bg-po-surface-muted/70 p-3 ring-1 ring-po-border/70">
+              <UserRoundCog className="mt-0.5 size-4 shrink-0 text-po-primary" />
+              <div className="min-w-0">
+                <p className="text-xs font-extrabold text-po-text">{staffRoleLabel(clinic.clinicRoleName)}</p>
+                <p className="mt-1 text-xs leading-5 text-po-text-muted">
+                  {staffRoleDescription(clinic.clinicRoleName)}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2 lg:w-[430px]">
@@ -190,7 +195,7 @@ export default function ClinicDashboardPage() {
 
       <div
         className={cn(
-          "grid gap-4 xl:h-[calc(100dvh-294px)] xl:min-h-[620px]",
+          "grid gap-4 xl:h-[calc(100dvh-340px)] xl:min-h-[620px]",
           hasSidePanels ? "xl:grid-cols-[minmax(0,1fr)_360px]" : "",
         )}
       >
@@ -228,48 +233,48 @@ export default function ClinicDashboardPage() {
         </section>
 
         {hasSidePanels ? (
-        <aside className="grid min-h-0 gap-4 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
-          <Panel
-            title="Cảnh báo kho"
-            subtitle={`${summary?.lowStockItemCount ?? lowStock.length} mặt hàng cần kiểm tra.`}
-            actionLabel="Mở kho"
-            onAction={() => navigate("/dashboard/clinic/inventory")}
-          >
-            <InventoryWarningList items={lowStock.slice(0, 4)} isLoading={lowStockQuery.isLoading} />
-          </Panel>
+          <aside className="grid min-h-0 gap-4 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
+            <Panel
+              title="Cảnh báo kho"
+              subtitle={`${summary?.lowStockItemCount ?? lowStock.length} mặt hàng cần kiểm tra.`}
+              actionLabel="Mở kho"
+              onAction={() => navigate("/dashboard/clinic/inventory")}
+            >
+              <InventoryWarningList items={lowStock.slice(0, 4)} isLoading={lowStockQuery.isLoading} />
+            </Panel>
 
-          <Panel
-            title="Đối soát SePay"
-            subtitle="Giao dịch chuyển khoản cần staff kiểm tra."
-            actionLabel="Đối soát"
-            onAction={() => navigate("/dashboard/clinic/billing/reconciliation")}
-          >
-            <ReconciliationPreview items={reconciliationItems} isLoading={reconciliationQuery.isLoading} />
-          </Panel>
-        </aside>
+            <Panel
+              title="Đối soát SePay"
+              subtitle="Giao dịch chuyển khoản cần thu ngân kiểm tra."
+              actionLabel="Đối soát"
+              onAction={() => navigate("/dashboard/clinic/billing/reconciliation")}
+            >
+              <ReconciliationPreview items={reconciliationItems} isLoading={reconciliationQuery.isLoading} />
+            </Panel>
+          </aside>
         ) : null}
       </div>
 
       {canViewBilling ? (
-      <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h3 className="text-base font-extrabold text-po-text">Bucket công nợ</h3>
-            <p className="mt-1 text-xs text-po-text-muted">Ưu tiên hóa đơn tồn lâu trước khi đóng ngày.</p>
+        <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h3 className="text-base font-extrabold text-po-text">Nhóm công nợ</h3>
+              <p className="mt-1 text-xs text-po-text-muted">Ưu tiên hóa đơn tồn lâu trước khi đóng ngày.</p>
+            </div>
+            <button
+              onClick={() => navigate("/dashboard/clinic/billing")}
+              className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted"
+            >
+              Mở thu ngân
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/dashboard/clinic/billing")}
-            className="inline-flex h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted"
-          >
-            Mở thu ngân
-          </button>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <DebtBucket label="0-7 ngày" count={summary?.aging0To7Days.count ?? 0} amount={summary?.aging0To7Days.amount ?? 0} />
-          <DebtBucket label="8-30 ngày" count={summary?.aging8To30Days.count ?? 0} amount={summary?.aging8To30Days.amount ?? 0} />
-          <DebtBucket label="31+ ngày" count={summary?.aging31PlusDays.count ?? 0} amount={summary?.aging31PlusDays.amount ?? 0} danger />
-        </div>
-      </section>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <DebtBucket label="0-7 ngày" count={summary?.aging0To7Days.count ?? 0} amount={summary?.aging0To7Days.amount ?? 0} />
+            <DebtBucket label="8-30 ngày" count={summary?.aging8To30Days.count ?? 0} amount={summary?.aging8To30Days.amount ?? 0} />
+            <DebtBucket label="31+ ngày" count={summary?.aging31PlusDays.count ?? 0} amount={summary?.aging31PlusDays.amount ?? 0} danger />
+          </div>
+        </section>
       ) : null}
     </div>
   )
@@ -349,8 +354,8 @@ function AppointmentRow({
   canOpenVisit: boolean
 }) {
   const navigate = useNavigate()
-  const status = appointment.status.toLowerCase()
-  const shouldOpenVisit = canOpenVisit && (status === "checked-in" || status === "completed")
+  const status = appointmentStatusKey(appointment.status)
+  const shouldOpenVisit = canOpenVisit && (status === "checkedin" || status === "completed")
 
   return (
     <article className="grid gap-3 rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70 transition hover:bg-white hover:shadow-sm hover:shadow-orange-100/70 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -358,10 +363,10 @@ function AppointmentRow({
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-extrabold text-po-text">Pet {formatShortId(appointment.petId)}</p>
           <StatusBadge variant={appointmentStatusVariant(appointment.status)} label={appointmentStatusLabel(appointment.status)} />
-          {appointment.isWalkIn ? <span className="rounded-full bg-po-accent-soft px-2.5 py-0.5 text-xs font-semibold text-po-accent">Walk-in</span> : null}
+          {appointment.isWalkIn ? <span className="rounded-full bg-po-accent-soft px-2.5 py-0.5 text-xs font-semibold text-po-accent">Khách vãng lai</span> : null}
         </div>
         <p className="mt-2 text-xs font-medium text-po-text-muted">
-          {appointment.appointmentType} · {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
+          {appointmentTypeLabel(appointment.appointmentType)} · {formatTime(appointment.startTime)} - {formatTime(appointment.endTime)}
         </p>
       </div>
       <button
@@ -409,7 +414,7 @@ function ReconciliationPreview({
   isLoading: boolean
 }) {
   if (isLoading) return <RowSkeleton compact />
-  if (items.length === 0) return <EmptyState icon={CreditCard} title="Không có giao dịch treo" description="SePay reconciliation đang sạch." className="py-8" />
+  if (items.length === 0) return <EmptyState icon={CreditCard} title="Không có giao dịch treo" description="Đối soát SePay đang sạch." className="py-8" />
 
   return (
     <div className="grid gap-2">
@@ -417,7 +422,7 @@ function ReconciliationPreview({
         <div key={item.paymentTransactionId} className="rounded-2xl bg-po-surface-muted/60 px-3 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-extrabold text-po-text">{formatCompactCurrency(item.transferAmount)}</p>
-            <StatusBadge variant={item.needsAttention ? "danger" : "warning"} label={item.status} />
+            <StatusBadge variant={item.needsAttention ? "danger" : "warning"} label={sePayReconciliationStatusLabel(item.status)} />
           </div>
           <p className="mt-1 truncate text-xs text-po-text-muted">{item.transferContent ?? item.referenceCode ?? "Không có nội dung"}</p>
         </div>

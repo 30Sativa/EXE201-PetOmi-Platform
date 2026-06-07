@@ -101,7 +101,7 @@ export default function ClinicVetsPage() {
         role: staffForm.role,
       }),
     onSuccess: async () => {
-      toast.success("Đã gán bác sĩ vào clinic.")
+      toast.success("Đã thêm bác sĩ vào phòng khám.")
       setStaffForm({ vetProfileId: "", role: "PrimaryVet" })
       await invalidateStaff()
     },
@@ -178,8 +178,8 @@ export default function ClinicVetsPage() {
     return (
       <EmptyState
         icon={Stethoscope}
-        title="Chưa có clinic"
-        description="Tạo và được duyệt clinic trước khi quản lý bác sĩ."
+        title="Chưa có phòng khám"
+        description="Tạo và được duyệt phòng khám trước khi quản lý bác sĩ."
       />
     )
   }
@@ -189,11 +189,11 @@ export default function ClinicVetsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard label="Nhân sự active" value={String(doctors.length)} />
         <SummaryCard label="Ca làm việc" value={String(schedules.length)} />
-        <SummaryCard label="Trạng thái clinic" value={myClinic.status} />
+        <SummaryCard label="Trạng thái phòng khám" value={myClinic.status} />
       </div>
 
       <DashboardSection
-        title="Gán bác sĩ vào clinic"
+        title="Thêm bác sĩ vào phòng khám"
         subtitle="BE hiện nhận trực tiếp VetProfileId, nên FE để nhập ID này cho đến khi có API tìm bác sĩ."
       >
         <form onSubmit={handleAssignStaff} className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px_auto] md:items-end">
@@ -228,7 +228,7 @@ export default function ClinicVetsPage() {
         </form>
       </DashboardSection>
 
-      <DashboardSection title="Thêm lịch làm việc" subtitle="Thiết lập ca làm việc theo tuần cho từng bác sĩ trong clinic.">
+      <DashboardSection title="Thêm lịch làm việc" subtitle="Thiết lập ca làm việc theo tuần cho từng bác sĩ trong phòng khám.">
         <form onSubmit={handleSetSchedule} className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_1fr_1fr_1fr_auto] md:items-end">
           <label className="grid gap-1.5 text-sm font-semibold text-po-text">
             <span>Bác sĩ</span>

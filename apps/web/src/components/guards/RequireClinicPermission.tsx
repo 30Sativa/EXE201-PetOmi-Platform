@@ -1,10 +1,10 @@
+import { ShieldAlert } from "lucide-react"
 import { Navigate } from "react-router-dom"
 
 import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import { useMyClinic } from "@/hooks/useClinicQueries"
 import { hasAnyClinicPermission, type ClinicPermission } from "@/lib/clinicPermissions"
-import { ShieldAlert } from "lucide-react"
 
 interface RequireClinicPermissionProps {
   children: React.ReactNode
@@ -34,7 +34,7 @@ export function RequireClinicPermission({
       <EmptyState
         icon={ShieldAlert}
         title="Không đủ quyền"
-        description="Vai trò clinic hiện tại không được mở khu vực này."
+        description="Vai trò phòng khám hiện tại không được mở khu vực này."
       />
     )
   }

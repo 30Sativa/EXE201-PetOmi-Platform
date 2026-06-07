@@ -45,9 +45,9 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
             staff = RequireActiveStaff(staff);
 
             if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId &&
-                staff.RoleId != ClinicRoleConstants.AssistantId)
+                staff.RoleId != ClinicRoleConstants.CashierId)
             {
-                throw new ForbiddenException("Chi ClinicOwner hoac Assistant moi co quyen tao va thu hoa don.");
+                throw new ForbiddenException("Chi ClinicOwner hoac Cashier moi co quyen tao va thu hoa don.");
             }
 
             return staff;
@@ -58,9 +58,9 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
             staff = RequireActiveStaff(staff);
 
             if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId &&
-                staff.RoleId != ClinicRoleConstants.AssistantId)
+                staff.RoleId != ClinicRoleConstants.CashierId)
             {
-                throw new ForbiddenException("Chi ClinicOwner hoac Assistant moi co quyen xem hoa don.");
+                throw new ForbiddenException("Chi ClinicOwner hoac Cashier moi co quyen xem hoa don.");
             }
 
             return staff;

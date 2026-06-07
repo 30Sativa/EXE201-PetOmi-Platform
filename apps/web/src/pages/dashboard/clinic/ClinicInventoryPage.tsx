@@ -177,7 +177,7 @@ export default function ClinicInventoryPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={PackageSearch} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi quản lý kho." />
+    return <EmptyState icon={PackageSearch} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi quản lý kho." />
   }
 
   const canAdd = form.itemName.trim() && Number(form.quantity) >= 0 && Number(form.lowStockThreshold) >= 0

@@ -104,7 +104,7 @@ export default function ClinicReconciliationPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={ClipboardList} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi đối soát SePay." />
+    return <EmptyState icon={ClipboardList} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi đối soát SePay." />
   }
 
   const items = reconciliationQuery.data ?? []

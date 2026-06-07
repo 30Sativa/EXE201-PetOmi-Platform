@@ -1,11 +1,9 @@
 -- ===================================================================
--- MIGRATION 035: Reconcile clinic role permissions with clinic workflow
+-- MIGRATION 037: Add dedicated Cashier clinic role
 -- Scope:
--- - Keep Vet as global mode only.
--- - Use VetClinicRoles as the source of clinic permissions.
--- - Assistant is front desk/intake support: appointment flow and read-only visit context.
--- - Cashier owns clinic billing, counter orders, and payment reconciliation.
--- Safe to re-run.
+-- - Cashier owns billing, counter orders, and payment reconciliation.
+-- - Assistant returns to intake/front-desk support without billing write.
+-- Safe to re-run after 004 and/or 035.
 -- ===================================================================
 USE PetOmni_DB;
 GO
@@ -24,13 +22,12 @@ GO
 
 MERGE Permissions AS target
 USING (VALUES
-    ('22222222-0000-0000-0000-000000000010', 'inventory:view', 'View clinic inventory'),
-    ('22222222-0000-0000-0000-000000000011', 'inventory:manage', 'Create, update, stock in/out, and deactivate inventory items'),
-    ('22222222-0000-0000-0000-000000000012', 'invoice:view', 'View invoices, payment status, and unpaid balances'),
-    ('22222222-0000-0000-0000-000000000013', 'invoice:manage', 'Create, cancel, collect, and refund invoices'),
-    ('22222222-0000-0000-0000-000000000014', 'order:manage', 'Create and confirm counter sale or prescription orders'),
-    ('22222222-0000-0000-0000-000000000015', 'payment:reconcile', 'Review and match payment transactions'),
-    ('22222222-0000-0000-0000-000000000016', 'payment:configure', 'Configure clinic receiving payment account')
+    ('22222222-0000-0000-0000-000000000005', 'appointment:view', 'Xem lich hen cua phong kham'),
+    ('22222222-0000-0000-0000-000000000010', 'inventory:view', 'Xem kho thuoc va vat tu phong kham'),
+    ('22222222-0000-0000-0000-000000000012', 'invoice:view', 'Xem hoa don, trang thai thanh toan va cong no'),
+    ('22222222-0000-0000-0000-000000000013', 'invoice:manage', 'Tao, huy, thu tien va hoan tien hoa don'),
+    ('22222222-0000-0000-0000-000000000014', 'order:manage', 'Tao va xac nhan don ban tai quay hoac cap phat thuoc'),
+    ('22222222-0000-0000-0000-000000000015', 'payment:reconcile', 'Doi soat va khop giao dich thanh toan')
 ) AS src(PermissionID, PermissionName, Description)
 ON target.PermissionID = src.PermissionID
 WHEN MATCHED THEN
@@ -42,21 +39,6 @@ GO
 
 MERGE VetClinicRolePermissions AS target
 USING (VALUES
-    -- ClinicOwner operation permissions
-    ('33333333-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000010'),
-    ('33333333-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000011'),
-    ('33333333-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000012'),
-    ('33333333-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000013'),
-    ('33333333-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000014'),
-    ('33333333-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000015'),
-    ('33333333-0000-0000-0000-000000000001', '22222222-0000-0000-0000-000000000016'),
-
-    -- Assistant front desk/intake permissions
-    ('33333333-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000004'),
-    ('33333333-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000005'),
-    ('33333333-0000-0000-0000-000000000003', '22222222-0000-0000-0000-000000000007'),
-
-    -- Cashier billing and reconciliation permissions
     ('33333333-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000005'),
     ('33333333-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000010'),
     ('33333333-0000-0000-0000-000000000004', '22222222-0000-0000-0000-000000000012'),
@@ -70,6 +52,7 @@ WHEN NOT MATCHED THEN
     VALUES (src.RoleID, src.PermissionID);
 GO
 
+-- Remove cashier-only permissions from Assistant if migration 035 granted them.
 DELETE FROM VetClinicRolePermissions
 WHERE RoleID = '33333333-0000-0000-0000-000000000003'
   AND PermissionID IN (
@@ -87,5 +70,6 @@ SELECT
 FROM VetClinicRoles vcr
 JOIN VetClinicRolePermissions vcrp ON vcr.RoleID = vcrp.RoleID
 JOIN Permissions p ON vcrp.PermissionID = p.PermissionID
+WHERE vcr.RoleName IN ('Assistant', 'Cashier')
 ORDER BY vcr.RoleName, p.PermissionName;
 GO

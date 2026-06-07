@@ -9,7 +9,8 @@ namespace PetOmiPlatform.Application.Features.Clinic.Validation
         private static readonly string[] ValidRoles =
         [
             ClinicRoleConstants.PrimaryVet,
-            ClinicRoleConstants.Assistant
+            ClinicRoleConstants.Assistant,
+            ClinicRoleConstants.Cashier
         ];
 
         public UpdateClinicStaffRoleCommandValidator()
@@ -23,7 +24,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Validation
             RuleFor(x => x.Request.Role)
                 .NotEmpty().WithMessage("Role khong duoc de trong.")
                 .Must(r => ValidRoles.Contains(r))
-                .WithMessage("Role chi duoc la 'PrimaryVet' hoac 'Assistant'.");
+                .WithMessage("Role chi duoc la 'PrimaryVet', 'Assistant' hoac 'Cashier'.");
         }
     }
 }

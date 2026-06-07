@@ -181,7 +181,7 @@ export default function ClinicAppointmentsPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={CalendarCheck} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi quản lý lịch hẹn." />
+    return <EmptyState icon={CalendarCheck} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi quản lý lịch hẹn." />
   }
 
   return (
@@ -190,7 +190,7 @@ export default function ClinicAppointmentsPage() {
         <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
-              Lịch clinic
+              Lịch phòng khám
             </p>
             <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
               Quản lý lịch hẹn
@@ -242,7 +242,7 @@ export default function ClinicAppointmentsPage() {
               <input
                 value={searchFilter}
                 onChange={(event) => setSearchFilter(event.target.value)}
-                placeholder="Tìm pet, owner, dịch vụ hoặc mã lịch"
+                placeholder="Tìm pet, chủ nuôi, dịch vụ hoặc mã lịch"
                 className="h-10 min-w-0 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
               />
               <div className="flex flex-wrap items-center gap-2">
@@ -354,12 +354,12 @@ function actionDialogText(type: ActionType) {
     },
     "no-show": {
       title: "Đánh dấu không đến",
-      description: "Lịch sẽ được ghi nhận là owner không đến.",
+      description: "Lịch sẽ được ghi nhận là chủ nuôi không đến.",
       confirmLabel: "Đánh dấu",
     },
     cancel: {
       title: "Hủy lịch hẹn",
-      description: "Lịch sẽ bị hủy bởi clinic.",
+      description: "Lịch sẽ bị hủy bởi phòng khám.",
       confirmLabel: "Hủy lịch",
     },
   }
@@ -565,7 +565,7 @@ function ReasonDialog({
           value={reason}
           onChange={(event) => onReasonChange(event.target.value)}
           rows={3}
-          placeholder="Nhập lý do để lưu audit và thông báo cho owner"
+          placeholder="Nhập lý do để lưu audit và thông báo cho chủ nuôi"
           className="mt-4 w-full resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
         />
         <div className="mt-5 flex justify-end gap-3">
@@ -642,7 +642,7 @@ function GuestWalkInModal({
         <div className="flex items-start justify-between gap-4 border-b border-po-border px-6 py-5">
           <div>
             <h3 className="text-lg font-extrabold text-po-text">Tiếp nhận khách vãng lai</h3>
-            <p className="mt-1 text-sm text-po-text-muted">Tạo owner tạm, pet tạm và lịch walk-in trong một bước.</p>
+            <p className="mt-1 text-sm text-po-text-muted">Tạo chủ nuôi tạm, pet tạm và lịch walk-in trong một bước.</p>
           </div>
           <button onClick={onClose} className="rounded-full p-1.5 text-po-text-muted transition hover:bg-po-surface-muted">
             <X className="size-5" />
@@ -653,7 +653,7 @@ function GuestWalkInModal({
           <div className="grid gap-5 md:grid-cols-2">
             <Input label="Tên chủ pet" value={form.ownerFullName} onChange={(value) => update("ownerFullName", value)} required />
             <Input label="Số điện thoại" value={form.ownerPhone} onChange={(value) => update("ownerPhone", value)} required />
-            <Input label="Địa chỉ owner" value={form.ownerAddress ?? ""} onChange={(value) => update("ownerAddress", value)} />
+            <Input label="Địa chỉ chủ nuôi" value={form.ownerAddress ?? ""} onChange={(value) => update("ownerAddress", value)} />
             <Input label="Tên pet" value={form.petName} onChange={(value) => update("petName", value)} required />
             <Select label="Loài" value={form.petSpecies} onChange={(value) => update("petSpecies", value)} options={[{ value: "Dog", label: "Chó" }, { value: "Cat", label: "Mèo" }, { value: "Other", label: "Khác" }]} />
             <Input label="Giống" value={form.petBreed ?? ""} onChange={(value) => update("petBreed", value)} />
@@ -788,11 +788,11 @@ function EmergencyModal({
           </span>
           <div>
             <h3 className="text-lg font-extrabold text-po-text">Tạo lịch cấp cứu</h3>
-            <p className="mt-1 text-sm text-po-text-muted">Tìm pet đã từng có lịch tại clinic. Khách mới nên dùng tiếp nhận vãng lai.</p>
+            <p className="mt-1 text-sm text-po-text-muted">Tìm pet đã từng có lịch tại phòng khám. Khách mới nên dùng tiếp nhận vãng lai.</p>
           </div>
         </div>
         <div className="mt-5 grid gap-4">
-          <Input label="Tìm pet hoặc owner" value={petSearch} onChange={(value) => {
+          <Input label="Tìm pet hoặc chủ nuôi" value={petSearch} onChange={(value) => {
             setPetSearch(value)
             setSelectedPetId("")
           }} />
@@ -882,7 +882,7 @@ function SelectedPetSummary({ pet }: { pet: ClinicPetSearchItemResponse }) {
           {pet.gender ? ` · ${pet.gender}` : ""}
         </p>
         <p className="mt-1 truncate text-xs text-po-text-subtle">
-          Owner: {pet.ownerFullName || pet.ownerPhone || pet.ownerEmail}
+          Chủ nuôi: {pet.ownerFullName || pet.ownerPhone || pet.ownerEmail}
         </p>
         {pet.lastAppointmentDate ? (
           <p className="mt-1 text-xs text-po-text-subtle">

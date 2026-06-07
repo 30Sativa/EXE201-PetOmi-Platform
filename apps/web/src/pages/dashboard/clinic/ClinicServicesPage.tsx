@@ -113,7 +113,7 @@ export default function ClinicServicesPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={Wrench} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi quản lý dịch vụ." />
+    return <EmptyState icon={Wrench} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi quản lý dịch vụ." />
   }
 
   const services = profileQuery.data?.services ?? []
@@ -164,7 +164,7 @@ export default function ClinicServicesPage() {
             {profileQuery.isLoading ? (
               <ServiceSkeleton />
             ) : services.length === 0 ? (
-              <EmptyState icon={Wrench} title="Chưa có dịch vụ" description="Thêm dịch vụ để owner có thể chọn khi đặt lịch." className="py-14" />
+              <EmptyState icon={Wrench} title="Chưa có dịch vụ" description="Thêm dịch vụ để chủ nuôi có thể chọn khi đặt lịch." className="py-14" />
             ) : (
               <div className="grid gap-3">
                 {services.map((service) => (

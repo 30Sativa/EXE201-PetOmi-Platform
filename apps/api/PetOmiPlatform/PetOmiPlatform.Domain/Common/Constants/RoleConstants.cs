@@ -18,16 +18,19 @@ namespace PetOmiPlatform.Domain.Common.Constants
         public static readonly Guid ClinicOwnerId = Guid.Parse("33333333-0000-0000-0000-000000000001");
         public static readonly Guid PrimaryVetId = Guid.Parse("33333333-0000-0000-0000-000000000002");
         public static readonly Guid AssistantId = Guid.Parse("33333333-0000-0000-0000-000000000003");
+        public static readonly Guid CashierId = Guid.Parse("33333333-0000-0000-0000-000000000004");
         // String cho validation + mapping
         public const string ClinicOwner = "ClinicOwner";
         public const string PrimaryVet = "PrimaryVet";
         public const string Assistant = "Assistant";
+        public const string Cashier = "Cashier";
 
         // Helper: convert string → Guid để lưu DB
         public static Guid ToRoleId(string roleName) => roleName switch
         {
             PrimaryVet => PrimaryVetId,
             Assistant => AssistantId,
+            Cashier => CashierId,
             ClinicOwner => ClinicOwnerId,
             _ => throw new ArgumentException($"Role không hợp lệ: {roleName}")
         };

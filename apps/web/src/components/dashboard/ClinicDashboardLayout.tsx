@@ -10,6 +10,7 @@ import {
   PackageSearch,
   Settings,
   Stethoscope,
+  UserRoundCog,
   type LucideIcon,
   Wrench,
 } from "lucide-react"
@@ -17,6 +18,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
 import { useAuth } from "@/contexts/AuthContext"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { staffRoleDescription, staffRoleLabel } from "@/lib/clinicDisplay"
 import { CLINIC_PERMISSIONS, hasAnyClinicPermission, type ClinicPermission } from "@/lib/clinicPermissions"
 import { cn } from "@/lib/utils"
 
@@ -29,12 +31,12 @@ const navItems: Array<{
 }> = [
   { label: "Tổng quan", to: "/dashboard/clinic", icon: LayoutDashboard, exact: true },
   { label: "Lịch hẹn", to: "/dashboard/clinic/appointments", icon: CalendarClock, permissions: [CLINIC_PERMISSIONS.VIEW_APPOINTMENTS] },
-  { label: "Bác sĩ", to: "/dashboard/clinic/doctors", icon: Stethoscope, permissions: [CLINIC_PERMISSIONS.MANAGE_STAFF] },
+  { label: "Nhân sự", to: "/dashboard/clinic/doctors", icon: Stethoscope, permissions: [CLINIC_PERMISSIONS.MANAGE_STAFF] },
   { label: "Dịch vụ", to: "/dashboard/clinic/services", icon: Wrench, permissions: [CLINIC_PERMISSIONS.EDIT_INFO] },
   { label: "Kho", to: "/dashboard/clinic/inventory", icon: PackageSearch, permissions: [CLINIC_PERMISSIONS.VIEW_INVENTORY] },
   { label: "Thu ngân", to: "/dashboard/clinic/billing", icon: CreditCard, exact: true, permissions: [CLINIC_PERMISSIONS.VIEW_INVOICE] },
   { label: "Đối soát", to: "/dashboard/clinic/billing/reconciliation", icon: ClipboardList, permissions: [CLINIC_PERMISSIONS.RECONCILE_PAYMENT] },
-  { label: "Hồ sơ clinic", to: "/dashboard/clinic/profile", icon: ClipboardPlus, permissions: [CLINIC_PERMISSIONS.EDIT_INFO] },
+  { label: "Hồ sơ phòng khám", to: "/dashboard/clinic/profile", icon: ClipboardPlus, permissions: [CLINIC_PERMISSIONS.EDIT_INFO] },
   { label: "Thanh toán", to: "/dashboard/clinic/payments", icon: Settings, permissions: [CLINIC_PERMISSIONS.CONFIGURE_PAYMENT] },
 ]
 
@@ -44,6 +46,7 @@ export default function ClinicDashboardLayout() {
   const navigate = useNavigate()
   const clinicName = clinic?.clinicName?.trim() || "PetOmi"
   const clinicLogoUrl = clinic?.logoUrl
+  const roleName = clinic?.clinicRoleName
   const visibleNavItems = navItems.filter((item) =>
     hasAnyClinicPermission(clinic, item.permissions ?? []),
   )
@@ -63,26 +66,20 @@ export default function ClinicDashboardLayout() {
           >
             <span className="grid size-11 shrink-0 place-items-center overflow-hidden rounded-2xl bg-po-primary-soft text-po-primary ring-2 ring-po-primary-soft">
               {clinicLogoUrl ? (
-                <img
-                  src={clinicLogoUrl}
-                  alt={clinicName}
-                  className="size-full object-cover"
-                />
+                <img src={clinicLogoUrl} alt={clinicName} className="size-full object-cover" />
               ) : (
                 <Building2 className="size-5" />
               )}
             </span>
             <span className="min-w-0">
-              <span className="block truncate text-base leading-tight">
-                {clinicName}
-              </span>
-              <span className="block text-xs font-semibold text-po-text-subtle">
-                Vận hành phòng khám
-              </span>
+              <span className="block truncate text-base leading-tight">{clinicName}</span>
+              <span className="block text-xs font-semibold text-po-text-subtle">Vận hành phòng khám</span>
             </span>
           </Link>
 
-          <nav className="mt-3 grid gap-1">
+          {clinic ? <StaffProfile roleName={roleName} /> : null}
+
+          <nav className="mt-1 grid gap-1">
             {visibleNavItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -107,9 +104,7 @@ export default function ClinicDashboardLayout() {
         <div className="flex min-w-0 flex-1 flex-col gap-5">
           <header className="flex flex-wrap items-center justify-between gap-4 rounded-[30px] bg-white/78 px-4 py-4 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 backdrop-blur sm:px-5">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-po-text-subtle">
-                Phòng khám của bạn
-              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-po-text-subtle">Phòng khám của bạn</p>
               <h1 className="mt-1 text-2xl font-extrabold leading-tight text-po-text md:text-3xl">
                 Quản lý phòng khám
               </h1>
@@ -130,9 +125,8 @@ export default function ClinicDashboardLayout() {
           </header>
 
           <div className="flex min-w-0 flex-col gap-3 rounded-[28px] bg-white/82 p-4 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 lg:hidden">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-              Menu
-            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">Menu</p>
+            {clinic ? <StaffProfile roleName={roleName} compact /> : null}
             <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
               {visibleNavItems.map((item) => (
                 <NavLink
@@ -158,6 +152,30 @@ export default function ClinicDashboardLayout() {
           <div className="min-w-0">
             <Outlet />
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StaffProfile({
+  roleName,
+  compact,
+}: {
+  roleName?: string | null
+  compact?: boolean
+}) {
+  return (
+    <div className={cn("rounded-2xl bg-po-surface-muted/70 p-3 ring-1 ring-po-border/70", compact ? "ring-0" : "")}>
+      <div className="flex items-start gap-2">
+        <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-white text-po-primary ring-1 ring-po-border/70">
+          <UserRoundCog className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-xs font-extrabold text-po-text">{staffRoleLabel(roleName)}</p>
+          <p className="mt-1 line-clamp-3 text-[11px] font-medium leading-4 text-po-text-muted">
+            {staffRoleDescription(roleName)}
+          </p>
         </div>
       </div>
     </div>

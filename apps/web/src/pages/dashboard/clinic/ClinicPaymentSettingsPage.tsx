@@ -65,7 +65,7 @@ export default function ClinicPaymentSettingsPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={CreditCard} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi cấu hình thanh toán." />
+    return <EmptyState icon={CreditCard} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi cấu hình thanh toán." />
   }
 
   const account = accountQuery.data
@@ -77,7 +77,7 @@ export default function ClinicPaymentSettingsPage() {
         <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
-              Thanh toán clinic
+              Thanh toán phòng khám
             </p>
             <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
               Cấu hình SePay
@@ -130,7 +130,7 @@ export default function ClinicPaymentSettingsPage() {
                 <p className="mt-3 text-sm font-semibold text-po-text-muted">{account.accountName ?? "Chưa có tên chủ tài khoản"}</p>
               </div>
             ) : (
-              <EmptyState icon={CreditCard} title="Chưa cấu hình SePay" description="Nhập thông tin tài khoản để clinic có thể tạo QR thanh toán." className="py-8" />
+            <EmptyState icon={CreditCard} title="Chưa cấu hình SePay" description="Nhập thông tin tài khoản để phòng khám có thể tạo QR thanh toán." className="py-8" />
             )}
           </div>
         </section>

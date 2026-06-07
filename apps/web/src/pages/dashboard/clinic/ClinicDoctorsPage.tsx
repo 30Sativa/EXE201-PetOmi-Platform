@@ -18,6 +18,7 @@ import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { staffRoleDescription, staffRoleLabel } from "@/lib/clinicDisplay"
 import { formatShortId, formatTime } from "@/lib/format"
 import { getErrorMessage } from "@/lib/utils"
 import {
@@ -43,11 +44,9 @@ const dayOptions = [
 
 const roleOptions = [
   { value: "PrimaryVet", label: "Bác sĩ chính" },
-  { value: "Assistant", label: "Trợ lý" },
+  { value: "Assistant", label: "Tiếp nhận/phụ tá" },
+  { value: "Cashier", label: "Thu ngân" },
 ]
-
-const roleLabel = (role: string) =>
-  roleOptions.find((option) => option.value === role)?.label ?? role
 
 export default function ClinicDoctorsPage() {
   const queryClient = useQueryClient()
@@ -82,11 +81,11 @@ export default function ClinicDoctorsPage() {
   const assignMutation = useMutation({
     mutationFn: () => assignClinicStaffApi(clinicId, { vetEmail: vetEmail.trim(), role: staffRole }),
     onSuccess: async () => {
-      toast.success("Đã gán staff vào clinic.")
+      toast.success("Đã thêm nhân sự vào phòng khám.")
       setVetEmail("")
       await invalidate()
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể gán staff.")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể thêm nhân sự.")),
   })
 
   const roleMutation = useMutation({
@@ -101,12 +100,12 @@ export default function ClinicDoctorsPage() {
 
   const deactivateMutation = useMutation({
     mutationFn: (vetClinicId: string) =>
-      deactivateClinicStaffApi(clinicId, vetClinicId, { reason: "Ngưng hoạt động từ dashboard clinic" }),
+      deactivateClinicStaffApi(clinicId, vetClinicId, { reason: "Xóa khỏi phòng khám từ trang quản lý nhân sự" }),
     onSuccess: async () => {
-      toast.success("Đã ngưng hoạt động staff.")
+      toast.success("Đã xóa nhân sự khỏi phòng khám.")
       await invalidate()
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể ngưng staff.")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể xóa nhân sự.")),
   })
 
   const addScheduleMutation = useMutation({
@@ -153,7 +152,7 @@ export default function ClinicDoctorsPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={Stethoscope} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi quản lý bác sĩ." />
+    return <EmptyState icon={Stethoscope} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi quản lý nhân sự." />
   }
 
   return (
@@ -162,18 +161,18 @@ export default function ClinicDoctorsPage() {
         <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
-              Nhân sự clinic
+              Nhân sự phòng khám
             </p>
             <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
-              Bác sĩ, vai trò và lịch trực
+              Nhân sự, vai trò và lịch trực
             </h2>
             <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
-              Quản lý staff và ca làm theo cùng một màn hình để biết ngay ai đang phụ trách lịch nào.
+              Chủ phòng khám thêm, đổi vai trò hoặc xóa nhân sự tại đây. Thu ngân là vai trò riêng cho hóa đơn và đối soát.
             </p>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-3 lg:w-[470px]">
-            <MetricCard label="Staff active" value={String(doctors.length)} icon={Users} tone="info" />
+            <MetricCard label="Nhân sự hoạt động" value={String(doctors.length)} icon={Users} tone="info" />
             <MetricCard label="Ca trực" value={String(schedules.length)} icon={CalendarClock} tone="success" />
             <MetricCard label="Đang chọn" value={scheduleTarget ? "1" : "0"} icon={UserCheck} tone="warning" />
           </div>
@@ -184,8 +183,8 @@ export default function ClinicDoctorsPage() {
         <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-po-border/80 px-4 py-3">
             <div>
-              <h3 className="text-base font-extrabold text-po-text">Danh sách bác sĩ</h3>
-              <p className="mt-1 text-xs text-po-text-muted">{doctors.length} staff đang active trong clinic.</p>
+              <h3 className="text-base font-extrabold text-po-text">Danh sách nhân sự</h3>
+              <p className="mt-1 text-xs text-po-text-muted">{doctors.length} nhân sự đang hoạt động trong phòng khám.</p>
             </div>
             {scheduleTarget ? (
               <p className="rounded-full bg-po-primary-soft px-3 py-1 text-xs font-bold text-po-primary">
@@ -198,7 +197,7 @@ export default function ClinicDoctorsPage() {
             {doctorsQuery.isLoading || scheduleQuery.isLoading ? (
               <RosterSkeleton />
             ) : doctors.length === 0 ? (
-              <EmptyState icon={Stethoscope} title="Chưa có staff" description="Gán bác sĩ để mở lịch trực và nhận booking." className="py-14" />
+              <EmptyState icon={Stethoscope} title="Chưa có nhân sự" description="Thêm bác sĩ, phụ tá hoặc thu ngân để vận hành phòng khám." className="py-14" />
             ) : (
               <div className="grid gap-3">
                 {doctors.map((doctor) => (
@@ -209,12 +208,7 @@ export default function ClinicDoctorsPage() {
                     selected={scheduleTarget?.vetClinicId === doctor.vetClinicId}
                     isBusy={roleMutation.isPending || deactivateMutation.isPending || deleteScheduleMutation.isPending}
                     onSelect={() => setScheduleTarget(doctor)}
-                    onToggleRole={() =>
-                      roleMutation.mutate({
-                        vetClinicId: doctor.vetClinicId,
-                        role: doctor.roleName === "PrimaryVet" ? "Assistant" : "PrimaryVet",
-                      })
-                    }
+                    onChangeRole={(role) => roleMutation.mutate({ vetClinicId: doctor.vetClinicId, role })}
                     onDeactivate={() => deactivateMutation.mutate(doctor.vetClinicId)}
                   />
                 ))}
@@ -227,8 +221,8 @@ export default function ClinicDoctorsPage() {
           <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-extrabold text-po-text">Gán staff</h3>
-                <p className="mt-1 text-xs text-po-text-muted">Dùng email đăng nhập của bác sĩ hoặc trợ lý.</p>
+                <h3 className="text-base font-extrabold text-po-text">Thêm nhân sự</h3>
+                <p className="mt-1 text-xs text-po-text-muted">Dùng email đăng nhập của bác sĩ, phụ tá hoặc thu ngân.</p>
               </div>
               <span className="grid size-10 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
                 <UserPlus className="size-5" />
@@ -251,7 +245,7 @@ export default function ClinicDoctorsPage() {
               className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:opacity-60 active:translate-y-0"
             >
               <UserPlus className="size-4" />
-              {assignMutation.isPending ? "Đang gán..." : "Gán staff"}
+              {assignMutation.isPending ? "Đang thêm..." : "Thêm nhân sự"}
             </button>
           </section>
 
@@ -271,7 +265,7 @@ export default function ClinicDoctorsPage() {
                   onChange={(value) => setScheduleTarget(doctors.find((doctor) => doctor.vetClinicId === value) ?? null)}
                   options={[
                     { value: "", label: "Chọn bác sĩ" },
-                    ...doctors.map((doctor) => ({ value: doctor.vetClinicId, label: `${doctor.fullName} · ${roleLabel(doctor.roleName)}` })),
+                    ...doctors.map((doctor) => ({ value: doctor.vetClinicId, label: `${doctor.fullName} · ${staffRoleLabel(doctor.roleName)}` })),
                   ]}
                 />
                 <div className="grid gap-2">
@@ -301,7 +295,7 @@ export default function ClinicDoctorsPage() {
                   Ca của bác sĩ đang chọn
                 </p>
                 {!scheduleTarget ? (
-                  <EmptyState icon={Clock} title="Chưa chọn bác sĩ" description="Chọn một staff để xem ca trực riêng." className="py-8" />
+                  <EmptyState icon={Clock} title="Chưa chọn nhân sự" description="Chọn một nhân sự để xem ca trực riêng." className="py-8" />
                 ) : selectedDoctorSchedules.length === 0 ? (
                   <EmptyState icon={CalendarPlus} title="Chưa có ca trực" description="Thêm ca đầu tiên cho bác sĩ này." className="py-8" />
                 ) : (
@@ -364,7 +358,7 @@ function DoctorRow({
   selected,
   isBusy,
   onSelect,
-  onToggleRole,
+  onChangeRole,
   onDeactivate,
 }: {
   doctor: ClinicDoctorListItemResponse
@@ -372,9 +366,11 @@ function DoctorRow({
   selected: boolean
   isBusy: boolean
   onSelect: () => void
-  onToggleRole: () => void
+  onChangeRole: (role: string) => void
   onDeactivate: () => void
 }) {
+  const isClinicOwner = doctor.roleName === "ClinicOwner"
+
   return (
     <article className={`grid gap-4 rounded-[22px] p-3 ring-1 transition lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start ${
       selected
@@ -393,10 +389,13 @@ function DoctorRow({
         <div className="min-w-0">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h4 className="truncate text-sm font-extrabold text-po-text">{doctor.fullName}</h4>
-            <StatusBadge variant="info" label={roleLabel(doctor.roleName)} />
+            <StatusBadge variant="info" label={staffRoleLabel(doctor.roleName)} />
           </div>
           <p className="mt-1 text-xs font-medium text-po-text-muted">
             {doctor.specialization ?? "Chưa có chuyên môn"} · {formatShortId(doctor.vetClinicId)}
+          </p>
+          <p className="mt-1 max-w-xl text-xs leading-5 text-po-text-muted">
+            {staffRoleDescription(doctor.roleName)}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {schedules.length === 0 ? (
@@ -426,19 +425,27 @@ function DoctorRow({
         >
           Chọn lịch
         </button>
-        <button
-          onClick={onToggleRole}
-          disabled={isBusy}
-          className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-bold text-po-primary transition hover:bg-po-primary hover:text-white disabled:opacity-60 active:translate-y-px"
+        <select
+          value={doctor.roleName}
+          onChange={(event) => onChangeRole(event.target.value)}
+          disabled={isBusy || isClinicOwner}
+          className="h-9 rounded-full border border-po-border bg-white px-3 text-xs font-bold text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/20 disabled:cursor-not-allowed disabled:bg-po-surface-muted disabled:text-po-text-subtle"
+          aria-label={`Vai trò của ${doctor.fullName}`}
         >
-          Đổi vai trò
-        </button>
+          {isClinicOwner ? <option value="ClinicOwner">Chủ phòng khám</option> : null}
+          {roleOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <button
           onClick={onDeactivate}
-          disabled={isBusy}
+          disabled={isBusy || isClinicOwner}
+          title={isClinicOwner ? "Không thể xóa chủ phòng khám khỏi phòng khám." : undefined}
           className="inline-flex h-9 items-center rounded-full bg-po-danger-soft px-4 text-xs font-bold text-po-danger transition hover:bg-po-danger hover:text-white disabled:opacity-60 active:translate-y-px"
         >
-          Ngưng
+          Xóa khỏi phòng khám
         </button>
       </div>
     </article>

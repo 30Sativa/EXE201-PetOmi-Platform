@@ -54,7 +54,7 @@ export interface MyClinicResponse {
   updatedAt: string | null
   vetClinicId: string | null
   clinicRoleId: string | null
-  clinicRoleName: "ClinicOwner" | "PrimaryVet" | "Assistant" | string | null
+  clinicRoleName: "ClinicOwner" | "PrimaryVet" | "Assistant" | "Cashier" | string | null
   clinicPermissions: string[]
 }
 
@@ -156,11 +156,11 @@ export interface ClinicPetSearchItemResponse {
 export interface AssignStaffRequest {
   vetEmail?: string
   vetProfileId?: string
-  role: "PrimaryVet" | "Assistant" | string
+  role: "PrimaryVet" | "Assistant" | "Cashier" | string
 }
 
 export interface UpdateClinicStaffRoleRequest {
-  role: "PrimaryVet" | "Assistant" | string
+  role: "PrimaryVet" | "Assistant" | "Cashier" | string
 }
 
 export interface DeactivateClinicStaffRequest {

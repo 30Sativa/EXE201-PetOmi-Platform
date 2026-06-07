@@ -290,7 +290,7 @@ export default function ClinicQuickAddModal({
 
           {isEmergency && (
             <div className="rounded-2xl border border-po-danger/30 bg-po-danger-soft px-4 py-3 text-xs font-semibold text-po-danger">
-              Lịch cấp cứu sẽ được tạo ngay và tự động xác nhận. Hệ thống sẽ gửi thông báo cho owner.
+              Lịch cấp cứu sẽ được tạo ngay và tự động xác nhận. Hệ thống sẽ gửi thông báo cho chủ nuôi.
             </div>
           )}
         </div>

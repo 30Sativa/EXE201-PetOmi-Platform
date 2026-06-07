@@ -291,7 +291,7 @@ export default function ClinicVisitPage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={Stethoscope} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi khám bệnh." />
+    return <EmptyState icon={Stethoscope} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi khám bệnh." />
   }
 
   const prescriptions = prescriptionsQuery.data ?? []

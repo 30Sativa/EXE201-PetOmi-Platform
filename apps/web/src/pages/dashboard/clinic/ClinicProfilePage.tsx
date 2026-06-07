@@ -107,10 +107,10 @@ export default function ClinicProfilePage() {
         openingHours: infoForm.openingHours.trim() || null,
       }),
     onSuccess: async () => {
-      toast.success("Đã cập nhật hồ sơ clinic.")
+      toast.success("Đã cập nhật hồ sơ phòng khám.")
       await invalidateProfile()
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật hồ sơ clinic.")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật hồ sơ phòng khám.")),
   })
 
   const locationMutation = useMutation({
@@ -124,7 +124,7 @@ export default function ClinicProfilePage() {
       toast.success("Đã cập nhật khu vực đặt lịch.")
       await invalidateProfile()
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật vị trí clinic.")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể cập nhật vị trí phòng khám.")),
   })
 
   if (isClinicLoading) {
@@ -132,7 +132,7 @@ export default function ClinicProfilePage() {
   }
 
   if (!clinic) {
-    return <EmptyState icon={ClipboardPlus} title="Chưa có clinic" description="Bạn cần có hồ sơ clinic trước khi cập nhật thông tin công khai." />
+    return <EmptyState icon={ClipboardPlus} title="Chưa có phòng khám" description="Bạn cần có hồ sơ phòng khám trước khi cập nhật thông tin công khai." />
   }
 
   const canSaveInfo = infoForm.clinicName.trim().length > 1
@@ -157,13 +157,13 @@ export default function ClinicProfilePage() {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-po-text-subtle">
-                Hồ sơ clinic
+                Hồ sơ phòng khám
               </p>
               <h2 className="mt-1 truncate text-2xl font-extrabold leading-tight text-po-text">
                 {infoForm.clinicName || clinic.clinicName}
               </h2>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-po-text-muted">
-                Cập nhật thông tin owner nhìn thấy khi tìm clinic và đặt lịch.
+                Cập nhật thông tin chủ nuôi nhìn thấy khi tìm phòng khám và đặt lịch.
               </p>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function ClinicProfilePage() {
 
       <DashboardSection
         title="Thông tin công khai"
-        subtitle="Tên, logo, mô tả và giờ mở cửa sẽ hiển thị ở booking flow của owner."
+        subtitle="Tên, logo, mô tả và giờ mở cửa sẽ hiển thị ở luồng đặt lịch của chủ nuôi."
       >
         <div className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)]">
           <div className="grid content-start gap-4 rounded-3xl bg-po-surface-muted/55 p-4 ring-1 ring-po-border/70">
@@ -194,7 +194,7 @@ export default function ClinicProfilePage() {
                 {clinicLogo ? (
                   <img
                     src={clinicLogo}
-                    alt={infoForm.clinicName || "Logo clinic"}
+                    alt={infoForm.clinicName || "Logo phòng khám"}
                     className="size-full object-cover"
                   />
                 ) : (
@@ -203,7 +203,7 @@ export default function ClinicProfilePage() {
               </div>
             </div>
             <ImageUploadField
-              label="Logo clinic"
+              label="Logo phòng khám"
               value={infoForm.logoUrl}
               imageType="clinic_logo"
               resourceId={clinicId}
@@ -230,7 +230,7 @@ export default function ClinicProfilePage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
-            <Input label="Tên clinic" value={infoForm.clinicName} onChange={(value) => setInfoForm({ ...infoForm, clinicName: value })} />
+            <Input label="Tên phòng khám" value={infoForm.clinicName} onChange={(value) => setInfoForm({ ...infoForm, clinicName: value })} />
             <Input label="Số điện thoại" icon={Phone} value={infoForm.phone} onChange={(value) => setInfoForm({ ...infoForm, phone: value })} />
             <Input label="Email" icon={Mail} value={infoForm.email} onChange={(value) => setInfoForm({ ...infoForm, email: value })} />
             <Input label="Địa chỉ" icon={MapPin} value={infoForm.address} onChange={(value) => setInfoForm({ ...infoForm, address: value })} />
@@ -256,7 +256,7 @@ export default function ClinicProfilePage() {
 
       <DashboardSection
         title="Khu vực và lịch đặt hẹn"
-        subtitle="Tọa độ giúp owner tìm phòng khám gần họ. Khoảng nghỉ giúp hạn chế các lịch bị đặt sát nhau."
+        subtitle="Tọa độ giúp chủ nuôi tìm phòng khám gần họ. Khoảng nghỉ giúp hạn chế các lịch bị đặt sát nhau."
       >
         <div className="grid gap-4 md:grid-cols-3">
           <Input label="Vĩ độ" value={locationForm.latitude} onChange={(value) => setLocationForm({ ...locationForm, latitude: value })} />

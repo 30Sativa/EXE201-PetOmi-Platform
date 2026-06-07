@@ -87,7 +87,7 @@ export default function ClinicAppointmentsPage() {
   const queryClient = useQueryClient()
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
   const clinicId = clinic?.clinicId ?? ""
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("Pending")
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all")
   const [dateFilter, setDateFilter] = useState(todayDateInput())
   const [searchFilter, setSearchFilter] = useState("")
   const debouncedSearchFilter = useDebouncedValue(searchFilter.trim(), 300)

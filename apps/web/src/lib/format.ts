@@ -29,5 +29,10 @@ export const formatShortId = (value?: string | null) => {
   return value.slice(0, 8)
 }
 
-export const todayDateInput = () => new Date().toISOString().slice(0, 10)
+export const toDateInputValue = (date: Date) => {
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+  return localDate.toISOString().slice(0, 10)
+}
+
+export const todayDateInput = () => toDateInputValue(new Date())
 

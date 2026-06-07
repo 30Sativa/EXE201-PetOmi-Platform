@@ -205,7 +205,7 @@ export default function OwnerBookAppointmentModal({
   const canGoNextVal = canGoNext(step, selectedClinic, selectedPet, selectedDoctor, appointmentType, selectedDate, selectedSlot)
   const showBack = step !== "clinic"
 
-  const availableSlots = Array.isArray(slots) ? slots : []
+  const availableSlots = Array.isArray(slots) ? slots.filter((slot) => slot.isAvailable) : []
 
   if (!isOpen) return null
 

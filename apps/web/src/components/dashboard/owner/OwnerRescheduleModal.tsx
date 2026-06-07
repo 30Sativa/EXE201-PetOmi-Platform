@@ -9,7 +9,6 @@ import {
   getAvailableSlotsApi,
   rescheduleAppointmentApi,
 } from "@/services/appointments.service"
-import { getMyClinicApi } from "@/services/clinic.service"
 import type {
   AppointmentListItemResponse,
   AvailableSlotResponse,
@@ -44,20 +43,16 @@ export default function OwnerRescheduleModal({
     }
   }, [isOpen])
 
-  const { data: myClinic } = useQuery({
-    queryKey: ["owner", "my-clinic"],
-    queryFn: getMyClinicApi,
-    retry: false,
-  })
-
   const { data: slots, isLoading: loadingSlots } = useQuery({
     queryKey: ["available-slots-reschedule", appointment?.appointmentId, selectedDate],
     queryFn: () =>
       getAvailableSlotsApi({
-        clinicId: myClinic?.clinicId ?? "",
+        clinicId: appointment?.clinicId ?? "",
         date: selectedDate,
+        serviceId: appointment?.serviceId ?? undefined,
+        vetClinicId: appointment?.vetClinicId ?? undefined,
       }),
-    enabled: Boolean(isOpen && myClinic?.clinicId && selectedDate !== ""),
+    enabled: Boolean(isOpen && appointment?.clinicId && selectedDate !== ""),
   })
 
   const rescheduleMutation = useMutation({
@@ -66,9 +61,9 @@ export default function OwnerRescheduleModal({
         return Promise.reject(new Error("Thiếu thông tin đổi lịch."))
       }
       return rescheduleAppointmentApi(appointment.appointmentId, {
-        appointmentDate: selectedDate,
-        startTime: selectedSlot.startTime,
-        endTime: selectedSlot.endTime,
+        newDate: selectedDate,
+        newStartTime: selectedSlot.startTime,
+        newEndTime: selectedSlot.endTime,
       })
     },
     onSuccess: () => {
@@ -114,7 +109,7 @@ export default function OwnerRescheduleModal({
 
   const formatTime = (timeStr: string) => timeStr.slice(0, 5)
 
-  const availableSlots = Array.isArray(slots) ? slots : []
+  const availableSlots = Array.isArray(slots) ? slots.filter((slot) => slot.isAvailable) : []
 
   if (!isOpen || !appointment) return null
 

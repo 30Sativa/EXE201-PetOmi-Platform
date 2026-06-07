@@ -29,6 +29,8 @@ namespace PetOmiPlatform.Application.Features.Appointment.DTOs.Response
     public class AppointmentListItemResponse
     {
         public Guid AppointmentId { get; set; }
+        public Guid ClinicId { get; set; }
+        public Guid? ServiceId { get; set; }
         public Guid PetId { get; set; }
         public Guid? VetClinicId { get; set; }
 

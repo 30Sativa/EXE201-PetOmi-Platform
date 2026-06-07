@@ -55,7 +55,15 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
 
         public static VetClinicDomain RequireInvoiceViewer(VetClinicDomain? staff)
         {
-            return RequireActiveStaff(staff);
+            staff = RequireActiveStaff(staff);
+
+            if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId &&
+                staff.RoleId != ClinicRoleConstants.AssistantId)
+            {
+                throw new ForbiddenException("Chi ClinicOwner hoac Assistant moi co quyen xem hoa don.");
+            }
+
+            return staff;
         }
 
         public static VetClinicDomain RequireClinicOwner(VetClinicDomain? staff)

@@ -11,6 +11,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task<bool> ExistsAsync(Guid vetProfileId, Guid clinicId);
         Task<bool> IsClinicApprovedAsync(Guid clinicId);
         Task<VetClinicDomain?> GetByUserIdAndClinicIdAsync(Guid userId, Guid clinicId);
+        Task<ClinicMembershipDto?> GetActiveMembershipByUserIdAsync(Guid userId, Guid? clinicId = null);
         Task<VetClinicDomain?> GetByVetClinicIdAsync(Guid vetClinicId);
         Task<VetClinicDomain?> GetActiveByVetClinicIdAndClinicIdAsync(Guid vetClinicId, Guid clinicId);
         Task<List<Guid>> GetAllVetClinicIdsAsync(Guid vetProfileId);
@@ -29,5 +30,27 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         public string? AvatarUrl { get; set; }
         public string? Specialization { get; set; }
         public string RoleName { get; set; } = null!;
+    }
+
+    public class ClinicMembershipDto
+    {
+        public Guid ClinicId { get; set; }
+        public string ClinicName { get; set; } = null!;
+        public string? Address { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
+        public string? LicenseNumber { get; set; }
+        public string? LicenseImageUrl { get; set; }
+        public string? LicenseCloudinaryPublicId { get; set; }
+        public string? LogoUrl { get; set; }
+        public string? LogoCloudinaryPublicId { get; set; }
+        public string Status { get; set; } = null!;
+        public string? RejectedReason { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public Guid VetClinicId { get; set; }
+        public Guid ClinicRoleId { get; set; }
+        public string ClinicRoleName { get; set; } = null!;
+        public List<string> ClinicPermissions { get; set; } = new();
     }
 }

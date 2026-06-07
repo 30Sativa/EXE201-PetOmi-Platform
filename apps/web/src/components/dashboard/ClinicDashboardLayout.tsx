@@ -10,24 +10,32 @@ import {
   PackageSearch,
   Settings,
   Stethoscope,
+  type LucideIcon,
   Wrench,
 } from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
 import { useAuth } from "@/contexts/AuthContext"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { CLINIC_PERMISSIONS, hasAnyClinicPermission, type ClinicPermission } from "@/lib/clinicPermissions"
 import { cn } from "@/lib/utils"
 
-const navItems = [
+const navItems: Array<{
+  label: string
+  to: string
+  icon: LucideIcon
+  exact?: boolean
+  permissions?: ClinicPermission[]
+}> = [
   { label: "Tổng quan", to: "/dashboard/clinic", icon: LayoutDashboard, exact: true },
-  { label: "Lịch hẹn", to: "/dashboard/clinic/appointments", icon: CalendarClock },
-  { label: "Bác sĩ", to: "/dashboard/clinic/doctors", icon: Stethoscope },
-  { label: "Dịch vụ", to: "/dashboard/clinic/services", icon: Wrench },
-  { label: "Kho", to: "/dashboard/clinic/inventory", icon: PackageSearch },
-  { label: "Thu ngân", to: "/dashboard/clinic/billing", icon: CreditCard, exact: true },
-  { label: "Đối soát", to: "/dashboard/clinic/billing/reconciliation", icon: ClipboardList },
-  { label: "Hồ sơ clinic", to: "/dashboard/clinic/profile", icon: ClipboardPlus },
-  { label: "Thanh toán", to: "/dashboard/clinic/payments", icon: Settings },
+  { label: "Lịch hẹn", to: "/dashboard/clinic/appointments", icon: CalendarClock, permissions: [CLINIC_PERMISSIONS.VIEW_APPOINTMENTS] },
+  { label: "Bác sĩ", to: "/dashboard/clinic/doctors", icon: Stethoscope, permissions: [CLINIC_PERMISSIONS.MANAGE_STAFF] },
+  { label: "Dịch vụ", to: "/dashboard/clinic/services", icon: Wrench, permissions: [CLINIC_PERMISSIONS.EDIT_INFO] },
+  { label: "Kho", to: "/dashboard/clinic/inventory", icon: PackageSearch, permissions: [CLINIC_PERMISSIONS.VIEW_INVENTORY] },
+  { label: "Thu ngân", to: "/dashboard/clinic/billing", icon: CreditCard, exact: true, permissions: [CLINIC_PERMISSIONS.VIEW_INVOICE] },
+  { label: "Đối soát", to: "/dashboard/clinic/billing/reconciliation", icon: ClipboardList, permissions: [CLINIC_PERMISSIONS.RECONCILE_PAYMENT] },
+  { label: "Hồ sơ clinic", to: "/dashboard/clinic/profile", icon: ClipboardPlus, permissions: [CLINIC_PERMISSIONS.EDIT_INFO] },
+  { label: "Thanh toán", to: "/dashboard/clinic/payments", icon: Settings, permissions: [CLINIC_PERMISSIONS.CONFIGURE_PAYMENT] },
 ]
 
 export default function ClinicDashboardLayout() {
@@ -36,6 +44,9 @@ export default function ClinicDashboardLayout() {
   const navigate = useNavigate()
   const clinicName = clinic?.clinicName?.trim() || "PetOmi"
   const clinicLogoUrl = clinic?.logoUrl
+  const visibleNavItems = navItems.filter((item) =>
+    hasAnyClinicPermission(clinic, item.permissions ?? []),
+  )
 
   const handleLogout = async () => {
     await logout()
@@ -72,7 +83,7 @@ export default function ClinicDashboardLayout() {
           </Link>
 
           <nav className="mt-3 grid gap-1">
-            {navItems.map((item) => (
+            {visibleNavItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -123,7 +134,7 @@ export default function ClinicDashboardLayout() {
               Menu
             </p>
             <nav className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-              {navItems.map((item) => (
+              {visibleNavItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}

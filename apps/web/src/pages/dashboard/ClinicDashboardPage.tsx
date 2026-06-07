@@ -16,7 +16,9 @@ import EmptyState from "@/components/ui/EmptyState"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { useMyClinic } from "@/hooks/useClinicQueries"
+import { CLINIC_PERMISSIONS, hasClinicPermission } from "@/lib/clinicPermissions"
 import { formatCurrency, formatShortId, formatTime, todayDateInput } from "@/lib/format"
+import { cn } from "@/lib/utils"
 import { getBillingSummaryApi, getReconciliationApi } from "@/services/clinic-billing.service"
 import { getClinicAppointmentsApi } from "@/services/clinic-appointments.service"
 import { getLowStockApi } from "@/services/clinic.service"
@@ -71,11 +73,17 @@ export default function ClinicDashboardPage() {
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
   const clinicId = clinic?.clinicId ?? ""
   const today = todayDateInput()
+  const canViewAppointments = hasClinicPermission(clinic, CLINIC_PERMISSIONS.VIEW_APPOINTMENTS)
+  const canWriteMedicalRecord = hasClinicPermission(clinic, CLINIC_PERMISSIONS.WRITE_MEDICAL_RECORD)
+  const canViewBilling = hasClinicPermission(clinic, CLINIC_PERMISSIONS.VIEW_INVOICE)
+  const canViewInventory = hasClinicPermission(clinic, CLINIC_PERMISSIONS.VIEW_INVENTORY)
+  const canReconcilePayments = hasClinicPermission(clinic, CLINIC_PERMISSIONS.RECONCILE_PAYMENT)
+  const hasSidePanels = canViewInventory || canReconcilePayments
 
   const summaryQuery = useQuery({
     queryKey: ["clinic", clinicId, "dashboard-summary"],
     queryFn: () => getBillingSummaryApi(clinicId),
-    enabled: Boolean(clinicId),
+    enabled: Boolean(clinicId) && canViewBilling,
   })
 
   const appointmentsQuery = useQuery({
@@ -87,13 +95,13 @@ export default function ClinicDashboardPage() {
         page: 1,
         pageSize: 8,
       }),
-    enabled: Boolean(clinicId),
+    enabled: Boolean(clinicId) && canViewAppointments,
   })
 
   const lowStockQuery = useQuery({
     queryKey: ["clinic", clinicId, "low-stock"],
     queryFn: () => getLowStockApi(clinicId),
-    enabled: Boolean(clinicId),
+    enabled: Boolean(clinicId) && canViewInventory,
   })
 
   const reconciliationQuery = useQuery({
@@ -105,14 +113,16 @@ export default function ClinicDashboardPage() {
         includeMatched: false,
         alertAfterMinutes: 30,
       }),
-    enabled: Boolean(clinicId),
+    enabled: Boolean(clinicId) && canReconcilePayments,
   })
 
   const summary = summaryQuery.data
   const appointments = appointmentsQuery.data?.items ?? []
   const lowStock = lowStockQuery.data ?? []
   const reconciliationItems = reconciliationQuery.data ?? []
-  const actionCount = (summary?.pendingReconciliationCount ?? 0) + (summary?.pendingManualRefundCount ?? 0)
+  const actionCount = canViewBilling
+    ? (summary?.pendingReconciliationCount ?? 0) + (summary?.pendingManualRefundCount ?? 0)
+    : 0
 
   if (isClinicLoading) {
     return (
@@ -153,20 +163,37 @@ export default function ClinicDashboardPage() {
           </div>
 
           <div className="grid gap-2 sm:grid-cols-2 lg:w-[430px]">
-            <MetricCard label="Doanh thu hôm nay" value={formatCompactCurrency(summary?.todayPaidRevenue)} icon={WalletCards} tone="success" />
-            <MetricCard label="Cần xử lý" value={String(actionCount)} icon={AlertTriangle} tone="warning" />
+            {canViewBilling ? (
+              <>
+                <MetricCard label="Doanh thu hôm nay" value={formatCompactCurrency(summary?.todayPaidRevenue)} icon={WalletCards} tone="success" />
+                <MetricCard label="Cần xử lý" value={String(actionCount)} icon={AlertTriangle} tone="warning" />
+              </>
+            ) : (
+              <MetricCard label="Lịch hôm nay" value={String(appointments.length)} icon={CalendarClock} tone="info" />
+            )}
           </div>
         </div>
       </section>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Lượt khám hôm nay" value={String(summary?.todayVisitCount ?? appointments.length)} icon={CalendarClock} tone="info" />
-        <MetricCard label="Hóa đơn chưa thu" value={String(summary?.unpaidInvoiceCount ?? 0)} hint={formatCompactCurrency(summary?.totalUnpaidAmount)} icon={Receipt} tone="warning" />
-        <MetricCard label="Đối soát" value={String(summary?.pendingReconciliationCount ?? 0)} icon={CreditCard} tone="danger" />
-        <MetricCard label="Kho cần xem" value={String(summary?.lowStockItemCount ?? lowStock.length)} icon={PackageSearch} tone="info" />
+        {canViewBilling ? (
+          <MetricCard label="Hóa đơn chưa thu" value={String(summary?.unpaidInvoiceCount ?? 0)} hint={formatCompactCurrency(summary?.totalUnpaidAmount)} icon={Receipt} tone="warning" />
+        ) : null}
+        {canReconcilePayments ? (
+          <MetricCard label="Đối soát" value={String(summary?.pendingReconciliationCount ?? 0)} icon={CreditCard} tone="danger" />
+        ) : null}
+        {canViewInventory ? (
+          <MetricCard label="Kho cần xem" value={String(summary?.lowStockItemCount ?? lowStock.length)} icon={PackageSearch} tone="info" />
+        ) : null}
       </div>
 
-      <div className="grid gap-4 xl:h-[calc(100dvh-294px)] xl:min-h-[620px] xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div
+        className={cn(
+          "grid gap-4 xl:h-[calc(100dvh-294px)] xl:min-h-[620px]",
+          hasSidePanels ? "xl:grid-cols-[minmax(0,1fr)_360px]" : "",
+        )}
+      >
         <section className="min-h-0 overflow-hidden rounded-[26px] bg-white/90 ring-1 ring-po-border/80">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-po-border/80 px-4 py-3">
             <div>
@@ -189,13 +216,18 @@ export default function ClinicDashboardPage() {
             ) : (
               <div className="grid gap-3">
                 {appointments.map((appointment) => (
-                  <AppointmentRow key={appointment.appointmentId} appointment={appointment} />
+                  <AppointmentRow
+                    key={appointment.appointmentId}
+                    appointment={appointment}
+                    canOpenVisit={canWriteMedicalRecord}
+                  />
                 ))}
               </div>
             )}
           </div>
         </section>
 
+        {hasSidePanels ? (
         <aside className="grid min-h-0 gap-4 xl:grid-rows-[minmax(0,1fr)_minmax(0,1fr)]">
           <Panel
             title="Cảnh báo kho"
@@ -215,8 +247,10 @@ export default function ClinicDashboardPage() {
             <ReconciliationPreview items={reconciliationItems} isLoading={reconciliationQuery.isLoading} />
           </Panel>
         </aside>
+        ) : null}
       </div>
 
+      {canViewBilling ? (
       <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -236,6 +270,7 @@ export default function ClinicDashboardPage() {
           <DebtBucket label="31+ ngày" count={summary?.aging31PlusDays.count ?? 0} amount={summary?.aging31PlusDays.amount ?? 0} danger />
         </div>
       </section>
+      ) : null}
     </div>
   )
 }
@@ -306,10 +341,16 @@ function Panel({
   )
 }
 
-function AppointmentRow({ appointment }: { appointment: AppointmentListItemResponse }) {
+function AppointmentRow({
+  appointment,
+  canOpenVisit,
+}: {
+  appointment: AppointmentListItemResponse
+  canOpenVisit: boolean
+}) {
   const navigate = useNavigate()
   const status = appointment.status.toLowerCase()
-  const canOpenVisit = status === "checked-in" || status === "completed"
+  const shouldOpenVisit = canOpenVisit && (status === "checked-in" || status === "completed")
 
   return (
     <article className="grid gap-3 rounded-[22px] bg-po-surface-muted/45 p-3 ring-1 ring-po-border/70 transition hover:bg-white hover:shadow-sm hover:shadow-orange-100/70 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -324,10 +365,10 @@ function AppointmentRow({ appointment }: { appointment: AppointmentListItemRespo
         </p>
       </div>
       <button
-        onClick={() => navigate(canOpenVisit ? `/dashboard/clinic/appointments/${appointment.appointmentId}/visit` : "/dashboard/clinic/appointments")}
+        onClick={() => navigate(shouldOpenVisit ? `/dashboard/clinic/appointments/${appointment.appointmentId}/visit` : "/dashboard/clinic/appointments")}
         className="inline-flex h-9 items-center justify-center rounded-full bg-white px-4 text-xs font-bold text-po-text ring-1 ring-po-border/70 transition hover:bg-po-primary hover:text-white"
       >
-        {canOpenVisit ? "Mở phiếu khám" : "Xử lý"}
+        {shouldOpenVisit ? "Mở phiếu khám" : "Xử lý"}
       </button>
     </article>
   )

@@ -70,9 +70,10 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public Task<bool> IsClinicOwnerAsync(Guid userId, Guid clinicId)
         {
-            return _context.VetClinics.AnyAsync(vc=> vc.VetProfile.UserId == userId
-               && vc.ClinicId == clinicId
-                && vc.IsActive);
+            return _context.VetClinics.AnyAsync(vc => vc.VetProfile.UserId == userId
+                && vc.ClinicId == clinicId
+                && vc.IsActive
+                && vc.RoleId == ClinicRoleConstants.ClinicOwnerId);
         }
 
         public async Task<VetClinicDomain?> GetByUserIdAndClinicIdAsync(Guid userId, Guid clinicId)
@@ -81,6 +82,60 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .FirstOrDefaultAsync(vc => vc.VetProfile.UserId == userId && vc.ClinicId == clinicId && vc.IsActive);
 
             return entity?.ToDomain();
+        }
+
+        public async Task<ClinicMembershipDto?> GetActiveMembershipByUserIdAsync(Guid userId, Guid? clinicId = null)
+        {
+            var query = _context.VetClinics
+                .AsNoTracking()
+                .Include(vc => vc.Clinic)
+                .Include(vc => vc.Role)
+                    .ThenInclude(role => role.VetClinicRolePermissions)
+                        .ThenInclude(rolePermission => rolePermission.Permission)
+                .Where(vc =>
+                    vc.VetProfile.UserId == userId &&
+                    vc.VetProfile.IsActive &&
+                    vc.IsActive);
+
+            if (clinicId.HasValue)
+            {
+                query = query.Where(vc => vc.ClinicId == clinicId.Value);
+            }
+
+            var entity = await query
+                .OrderByDescending(vc => vc.RoleId == ClinicRoleConstants.ClinicOwnerId)
+                .ThenByDescending(vc => vc.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            if (entity == null)
+            {
+                return null;
+            }
+
+            return new ClinicMembershipDto
+            {
+                ClinicId = entity.ClinicId,
+                ClinicName = entity.Clinic.ClinicName,
+                Address = entity.Clinic.Address,
+                Phone = entity.Clinic.Phone,
+                Email = entity.Clinic.Email,
+                LicenseNumber = entity.Clinic.LicenseNumber,
+                LicenseImageUrl = entity.Clinic.LicenseImageUrl,
+                LicenseCloudinaryPublicId = entity.Clinic.LicenseCloudinaryPublicId,
+                LogoUrl = entity.Clinic.LogoUrl,
+                LogoCloudinaryPublicId = entity.Clinic.LogoCloudinaryPublicId,
+                Status = entity.Clinic.Status,
+                RejectedReason = entity.Clinic.RejectedReason,
+                CreatedAt = entity.Clinic.CreatedAt,
+                UpdatedAt = entity.Clinic.UpdatedAt,
+                VetClinicId = entity.VetClinicId,
+                ClinicRoleId = entity.RoleId,
+                ClinicRoleName = entity.Role.RoleName,
+                ClinicPermissions = entity.Role.VetClinicRolePermissions
+                    .Select(rolePermission => rolePermission.Permission.PermissionName)
+                    .OrderBy(permissionName => permissionName)
+                    .ToList()
+            };
         }
 
         public async Task<VetClinicDomain?> GetByVetClinicIdAsync(Guid vetClinicId)

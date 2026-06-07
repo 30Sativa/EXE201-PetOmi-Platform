@@ -31,7 +31,7 @@ namespace PetOmiPlatform.API.Controllers
         [HttpGet("my-clinic")]
         public async Task<IActionResult> GetMyClinic()
         {
-            var result = await Mediator.Send(new GetMyClinicQuery(CurrentUserId));
+            var result = await Mediator.Send(new GetMyClinicQuery(CurrentUserId, CurrentActiveClinicId));
             return Ok(BaseResponse<GetMyClinicResponse?>.Ok(result));
         }
 

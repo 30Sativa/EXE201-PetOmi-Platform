@@ -52,6 +52,10 @@ export interface MyClinicResponse {
   rejectedReason: string | null
   createdAt: string
   updatedAt: string | null
+  vetClinicId: string | null
+  clinicRoleId: string | null
+  clinicRoleName: "ClinicOwner" | "PrimaryVet" | "Assistant" | string | null
+  clinicPermissions: string[]
 }
 
 export interface UpdateClinicInfoRequest {

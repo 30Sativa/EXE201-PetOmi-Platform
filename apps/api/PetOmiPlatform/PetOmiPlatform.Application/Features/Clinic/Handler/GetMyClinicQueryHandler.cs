@@ -7,34 +7,40 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
 {
     public class GetMyClinicQueryHandler : IRequestHandler<GetMyClinicQuery, GetMyClinicResponse?>
     {
-        private readonly IClinicRepository _clinicRepository;
+        private readonly IVetClinicRepository _vetClinicRepository;
 
-        public GetMyClinicQueryHandler(IClinicRepository clinicRepository)
+        public GetMyClinicQueryHandler(IVetClinicRepository vetClinicRepository)
         {
-            _clinicRepository = clinicRepository;
+            _vetClinicRepository = vetClinicRepository;
         }
 
         public async Task<GetMyClinicResponse?> Handle(GetMyClinicQuery request, CancellationToken cancellationToken)
         {
-            var clinic = await _clinicRepository.GetByOwnerUserIdAsync(request.UserId);
-            if (clinic == null) return null;
+            var membership = await _vetClinicRepository.GetActiveMembershipByUserIdAsync(
+                request.UserId,
+                request.ActiveClinicId);
+            if (membership == null) return null;
 
             return new GetMyClinicResponse
             {
-                ClinicId = clinic.Id,
-                ClinicName = clinic.ClinicName,
-                Address = clinic.Address,
-                Phone = clinic.Phone,
-                Email = clinic.Email,
-                LicenseNumber = clinic.LicenseNumber,
-                LicenseImageUrl = clinic.LicenseImageUrl,
-                LicenseCloudinaryPublicId = clinic.LicenseCloudinaryPublicId,
-                LogoUrl = clinic.LogoUrl,
-                LogoCloudinaryPublicId = clinic.LogoCloudinaryPublicId,
-                Status = clinic.Status.ToString(),
-                RejectedReason = clinic.RejectedReason,
-                CreatedAt = clinic.CreatedAt,
-                UpdatedAt = clinic.UpdatedAt
+                ClinicId = membership.ClinicId,
+                ClinicName = membership.ClinicName,
+                Address = membership.Address,
+                Phone = membership.Phone,
+                Email = membership.Email,
+                LicenseNumber = membership.LicenseNumber,
+                LicenseImageUrl = membership.LicenseImageUrl,
+                LicenseCloudinaryPublicId = membership.LicenseCloudinaryPublicId,
+                LogoUrl = membership.LogoUrl,
+                LogoCloudinaryPublicId = membership.LogoCloudinaryPublicId,
+                Status = membership.Status,
+                RejectedReason = membership.RejectedReason,
+                CreatedAt = membership.CreatedAt,
+                UpdatedAt = membership.UpdatedAt,
+                VetClinicId = membership.VetClinicId,
+                ClinicRoleId = membership.ClinicRoleId,
+                ClinicRoleName = membership.ClinicRoleName,
+                ClinicPermissions = membership.ClinicPermissions
             };
         }
     }

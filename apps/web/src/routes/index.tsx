@@ -4,6 +4,7 @@ import App from "@/App"
 
 import { RequireAuth } from "@/components/guards/RequireAuth"
 import { DashboardRedirect } from "@/components/guards/DashboardRedirect"
+import { RequireClinicPermission } from "@/components/guards/RequireClinicPermission"
 
 import AdminDashboardLayout from "@/components/dashboard/AdminDashboardLayout"
 import ClinicDashboardLayout from "@/components/dashboard/ClinicDashboardLayout"
@@ -51,6 +52,7 @@ import OwnerPetsPage from "@/pages/dashboard/owner/OwnerPetsPage"
 import OwnerProfilePage from "@/pages/dashboard/owner/OwnerProfilePage"
 import OwnerRemindersPage from "@/pages/dashboard/owner/OwnerRemindersPage"
 import OwnerReviewsPage from "@/pages/dashboard/owner/OwnerReviewsPage"
+import { CLINIC_PERMISSIONS } from "@/lib/clinicPermissions"
 
 const router = createBrowserRouter([
   {
@@ -205,39 +207,75 @@ const router = createBrowserRouter([
           },
           {
             path: "appointments",
-            element: <ClinicAppointmentsPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.VIEW_APPOINTMENTS]}>
+                <ClinicAppointmentsPage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "appointments/:appointmentId/visit",
-            element: <ClinicVisitPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.WRITE_MEDICAL_RECORD]}>
+                <ClinicVisitPage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "doctors",
-            element: <ClinicDoctorsPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.MANAGE_STAFF]}>
+                <ClinicDoctorsPage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "services",
-            element: <ClinicServicesPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.EDIT_INFO]}>
+                <ClinicServicesPage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "inventory",
-            element: <ClinicInventoryPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.VIEW_INVENTORY]}>
+                <ClinicInventoryPage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "billing",
-            element: <ClinicBillingPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.VIEW_INVOICE]}>
+                <ClinicBillingPage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "billing/reconciliation",
-            element: <ClinicReconciliationPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.RECONCILE_PAYMENT]}>
+                <ClinicReconciliationPage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "profile",
-            element: <ClinicProfilePage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.EDIT_INFO]}>
+                <ClinicProfilePage />
+              </RequireClinicPermission>
+            ),
           },
           {
             path: "payments",
-            element: <ClinicPaymentSettingsPage />,
+            element: (
+              <RequireClinicPermission permissions={[CLINIC_PERMISSIONS.CONFIGURE_PAYMENT]}>
+                <ClinicPaymentSettingsPage />
+              </RequireClinicPermission>
+            ),
           },
         ],
       },

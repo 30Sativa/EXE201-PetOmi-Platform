@@ -30,5 +30,19 @@ namespace PetOmiPlatform.API.Common
                 return userId;
             }
         }
+
+        protected Guid? CurrentActiveClinicId
+        {
+            get
+            {
+                var rawClinicId = User.FindFirstValue("activeClinicId");
+                if (string.IsNullOrWhiteSpace(rawClinicId))
+                {
+                    return null;
+                }
+
+                return Guid.TryParse(rawClinicId, out var clinicId) ? clinicId : null;
+            }
+        }
     }
 }

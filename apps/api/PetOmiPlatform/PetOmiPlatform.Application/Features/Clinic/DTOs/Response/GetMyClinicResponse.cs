@@ -16,5 +16,9 @@ namespace PetOmiPlatform.Application.Features.Clinic.DTOs.Response
         public string? RejectedReason { get; set; }          // Lý do từ chối (nếu Rejected)
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+        public Guid? VetClinicId { get; set; }
+        public Guid? ClinicRoleId { get; set; }
+        public string? ClinicRoleName { get; set; }
+        public List<string> ClinicPermissions { get; set; } = new();
     }
 }

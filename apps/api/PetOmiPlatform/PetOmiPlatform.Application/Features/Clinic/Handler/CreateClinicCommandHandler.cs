@@ -33,15 +33,26 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
 
         public async Task<CreateClinicResponse> Handle(CreateClinicCommand command, CancellationToken cancellationToken)
         {
-            // 1. Kiểm tra user có VetProfile không
-            //    Phải là bác sĩ mới được tạo clinic
-            var vetProfile = await _vetProfileRepository.GetByUserIdAsync(command.UserId)
-                ?? throw new NotFoundException("Bạn cần tạo VetProfile trước khi mở phòng khám.");
-
-            // 2. Kiểm tra LicenseNumber chưa bị trùng
-            if (command.Request.LicenseNumber != null)
+            // 1. Ensure the current owner has a technical VetProfile for clinic membership.
+            //    The user-facing registration flow only asks for the clinic profile.
+            var vetProfile = await _vetProfileRepository.GetByUserIdAsync(command.UserId);
+            if (vetProfile == null)
             {
-                var exists = await _clinicRepository.ExistsByLicenseNumberAsync(command.Request.LicenseNumber);
+                vetProfile = VetProfileDomain.Create(
+                    userId: command.UserId,
+                    licenseNumber: null,
+                    specialization: null);
+                await _vetProfileRepository.AddAsync(vetProfile);
+            }
+
+            var licenseNumber = string.IsNullOrWhiteSpace(command.Request.LicenseNumber)
+                ? null
+                : command.Request.LicenseNumber.Trim();
+
+            // 2. Kiểm tra LicenseNumber chưa bị trùng nếu client cũ vẫn gửi mã giấy phép
+            if (licenseNumber != null)
+            {
+                var exists = await _clinicRepository.ExistsByLicenseNumberAsync(licenseNumber);
                 if (exists)
                     throw new ConflictException("Số giấy phép này đã được đăng ký.");
             }
@@ -52,7 +63,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 address: command.Request.Address,
                 phone: command.Request.Phone,
                 email: command.Request.Email,
-                licenseNumber: command.Request.LicenseNumber,
+                licenseNumber: licenseNumber,
                 licenseImageUrl: command.Request.LicenseImageUrl,
                 licenseCloudinaryPublicId: command.Request.LicenseCloudinaryPublicId,
                 logoUrl: command.Request.LogoUrl,

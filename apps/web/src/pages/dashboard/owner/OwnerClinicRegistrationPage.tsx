@@ -6,8 +6,6 @@ import {
   ClipboardCheck,
   FileText,
   MapPin,
-  Sparkles,
-  Stethoscope,
   UploadCloud,
 } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -18,16 +16,11 @@ import DashboardSection from "@/components/dashboard/DashboardSection"
 import ImageUploadField from "@/components/ui/ImageUploadField"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
-import { useMe } from "@/hooks/useAuthQueries"
-import { createClinicApi, createVetProfileApi, getMyClinicApi } from "@/services/clinic.service"
+import { createClinicApi, getMyClinicApi } from "@/services/clinic.service"
 import { cn, getErrorMessage } from "@/lib/utils"
 import type { CreateClinicRequest, MyClinicResponse } from "@/types"
 
-type StepKey = "vet" | "clinic"
-
 type FormState = {
-  vetLicenseNumber: string
-  specialization: string
   clinicName: string
   provinceCode: string
   districtCode: string
@@ -35,7 +28,6 @@ type FormState = {
   addressDetail: string
   phone: string
   email: string
-  licenseNumber: string
   licenseImageUrl: string
   licenseCloudinaryPublicId: string
   logoUrl: string
@@ -227,8 +219,6 @@ const ADDRESS_OPTIONS: ProvinceOption[] = [
 ]
 
 const initialForm: FormState = {
-  vetLicenseNumber: "",
-  specialization: "",
   clinicName: "",
   provinceCode: "",
   districtCode: "",
@@ -236,7 +226,6 @@ const initialForm: FormState = {
   addressDetail: "",
   phone: "",
   email: "",
-  licenseNumber: "",
   licenseImageUrl: "",
   licenseCloudinaryPublicId: "",
   logoUrl: "",
@@ -320,20 +309,14 @@ export default function OwnerClinicRegistrationPage() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState<FormState>(initialForm)
   const [formErrors, setFormErrors] = useState<FormErrors>({})
-  const [activeStep, setActiveStep] = useState<StepKey>("clinic")
-  const [localVetProfileCreated, setLocalVetProfileCreated] = useState(false)
   const [message, setMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
 
-  const { data: me, isLoading: loadingMe } = useMe()
   const { data: myClinic, isLoading: loadingClinic } = useQuery({
     queryKey: ["owner", "my-clinic"],
     queryFn: getMyClinicApi,
     retry: false,
   })
-
-  const hasVetProfile = Boolean(me?.vetProfile) || localVetProfileCreated
-  const visibleStep = activeStep
 
   const selectedProvince = findProvince(form.provinceCode)
   const selectedDistrict = findDistrict(form.provinceCode, form.districtCode)
@@ -343,50 +326,13 @@ export default function OwnerClinicRegistrationPage() {
     setErrorMessage("")
   }
 
-  const markVetProfileReady = async (successMessage?: string) => {
-    setLocalVetProfileCreated(true)
-    setFormErrors({})
-    setErrorMessage("")
-    setActiveStep("clinic")
-    if (successMessage) toast.success(successMessage)
-    await queryClient.invalidateQueries({ queryKey: ["auth", "me"] })
-  }
-
-  const createVetProfileMutation = useMutation({
-    mutationFn: () =>
-      createVetProfileApi({
-        licenseNumber: toNullable(form.vetLicenseNumber),
-        specialization: toNullable(form.specialization),
-      }),
-    onSuccess: () => markVetProfileReady("Đã tạo hồ sơ bác sĩ thú y."),
-    onError: async (error) => {
-      const errorText = getErrorMessage(error, "Tạo hồ sơ bác sĩ thất bại. Vui lòng thử lại.")
-      if (errorText.toLowerCase().includes("vetprofile")) {
-        await markVetProfileReady("Hồ sơ bác sĩ đã tồn tại, mình chuyển sang bước phòng khám.")
-        return
-      }
-
-      setMessage("")
-      setErrorMessage(errorText)
-      toast.error(errorText)
-    },
-  })
-
   const createClinicMutation = useMutation({
     mutationFn: async () => {
-      if (!hasVetProfile) {
-        await createVetProfileApi({
-          licenseNumber: toNullable(form.vetLicenseNumber),
-          specialization: toNullable(form.specialization),
-        })
-      }
-
       const payload: CreateClinicRequest = {
         clinicName: form.clinicName.trim(),
         address: toNullable(composeAddress(form)),
         phone: toNullable(form.phone),
         email: toNullable(form.email),
-        licenseNumber: toNullable(form.licenseNumber),
         licenseImageUrl: toNullable(form.licenseImageUrl),
         licenseCloudinaryPublicId: toNullable(form.licenseCloudinaryPublicId),
         logoUrl: toNullable(form.logoUrl),
@@ -414,12 +360,11 @@ export default function OwnerClinicRegistrationPage() {
     },
   })
 
-  const isLoading = loadingMe || loadingClinic
+  const isLoading = loadingClinic
 
   const clinicCompleteness = useMemo(() => {
     const fields = [
       form.clinicName,
-      form.licenseNumber,
       form.email,
       form.phone,
       form.provinceCode,
@@ -472,29 +417,11 @@ export default function OwnerClinicRegistrationPage() {
       updateValue(field, event.target.value)
     }
 
-  const validateVetStep = () => {
-    if (hasVetProfile) return true
-
-    const errors: FormErrors = {}
-    if (!form.vetLicenseNumber.trim()) {
-      errors.vetLicenseNumber = "Nhập số chứng chỉ hành nghề của bác sĩ."
-    }
-    if (!form.specialization.trim()) {
-      errors.specialization = "Nhập chuyên môn chính của bác sĩ."
-    }
-
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
   const validateClinicStep = () => {
     const errors: FormErrors = {}
 
     if (form.clinicName.trim().length < 2) {
       errors.clinicName = "Tên phòng khám cần có ít nhất 2 ký tự."
-    }
-    if (!form.licenseNumber.trim()) {
-      errors.licenseNumber = "Nhập số giấy phép kinh doanh/phòng khám."
     }
     if (!form.licenseImageUrl.trim()) {
       errors.licenseImageUrl = "Upload ảnh giấy phép để admin có thể đối chiếu."
@@ -524,19 +451,6 @@ export default function OwnerClinicRegistrationPage() {
     return Object.keys(errors).length === 0
   }
 
-  const handleVetSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    clearFeedback()
-    if (!validateVetStep()) return
-
-    if (hasVetProfile) {
-      setActiveStep("clinic")
-      return
-    }
-
-    createVetProfileMutation.mutate()
-  }
-
   const handleClinicSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     clearFeedback()
@@ -546,31 +460,17 @@ export default function OwnerClinicRegistrationPage() {
 
   return (
     <div className="grid gap-5 md:gap-6">
-      <div className="grid gap-4 sm:grid-cols-3">
-        <FlowStep
-          icon={Stethoscope}
-          title="1. Hồ sơ bác sĩ"
-          text={hasVetProfile ? "Đã có hồ sơ chuyên môn" : "Tự tạo khi gửi hồ sơ"}
-          active={!myClinic && visibleStep === "vet"}
-          done={hasVetProfile}
-          disabled
-          onClick={() => {
-            setActiveStep("clinic")
-          }}
-        />
+      <div className="grid gap-4 sm:grid-cols-2">
         <FlowStep
           icon={Building2}
-          title="2. Hồ sơ phòng khám"
+          title="1. Hồ sơ phòng khám"
           text={myClinic ? "Đã gửi hồ sơ phòng khám" : "Nhập thông tin để admin review"}
-          active={!myClinic && visibleStep === "clinic"}
+          active={!myClinic}
           done={Boolean(myClinic)}
-          onClick={() => {
-            setActiveStep("clinic")
-          }}
         />
         <FlowStep
           icon={ClipboardCheck}
-          title="3. Admin duyệt"
+          title="2. Admin duyệt"
           text={myClinic ? statusLabel(myClinic.status) : "Chờ sau khi gửi hồ sơ"}
           done={myClinic?.status === "Approved"}
           disabled
@@ -583,20 +483,10 @@ export default function OwnerClinicRegistrationPage() {
         </div>
       ) : myClinic ? (
         <ExistingClinicPanel clinic={myClinic} onOpenClinic={() => navigate("/dashboard/clinic")} />
-      ) : visibleStep === "vet" ? (
-        <VetProfileStep
-          form={form}
-          errors={formErrors}
-          isSubmitting={createVetProfileMutation.isPending}
-          onSubmit={handleVetSubmit}
-          onCancel={() => navigate("/dashboard/owner")}
-          onChange={updateField}
-        />
       ) : (
         <ClinicProfileStep
           form={form}
           errors={formErrors}
-          hasVetProfile={hasVetProfile}
           completion={clinicCompleteness}
           message={message}
           errorMessage={errorMessage}
@@ -605,7 +495,6 @@ export default function OwnerClinicRegistrationPage() {
           districtOptions={selectedProvince?.districts ?? []}
           wardOptions={selectedDistrict?.wards ?? []}
           composedAddress={composeAddress(form)}
-          onBack={() => setActiveStep("clinic")}
           onCancel={() => navigate("/dashboard/owner")}
           onSubmit={handleClinicSubmit}
           onChange={updateField}
@@ -616,83 +505,9 @@ export default function OwnerClinicRegistrationPage() {
   )
 }
 
-function VetProfileStep({
-  form,
-  errors,
-  isSubmitting,
-  onSubmit,
-  onCancel,
-  onChange,
-}: {
-  form: FormState
-  errors: FormErrors
-  isSubmitting: boolean
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
-  onCancel: () => void
-  onChange: (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement>) => void
-}) {
-  return (
-    <DashboardSection
-      title="Hồ sơ bác sĩ thú y"
-      subtitle="Bước này xác nhận người đại diện chuyên môn cho phòng khám. Sau khi lưu, bạn sẽ chuyển sang phần thông tin phòng khám."
-      className="bg-white/92"
-      action={
-        <span className="inline-flex items-center gap-2 rounded-full bg-po-primary-soft px-3 py-1.5 text-xs font-semibold text-po-primary">
-          <Sparkles className="size-3.5" />
-          Bước bắt buộc
-        </span>
-      }
-    >
-      <form onSubmit={onSubmit} className="grid gap-5">
-        <div className="rounded-[26px] bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70 md:p-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            <InputField
-              label="Số chứng chỉ hành nghề"
-              value={form.vetLicenseNumber}
-              onChange={onChange("vetLicenseNumber")}
-              placeholder="VD: CCHN-VET-2026-001"
-              error={errors.vetLicenseNumber}
-              helper="Dùng để admin đối chiếu năng lực chuyên môn."
-              required
-            />
-            <InputField
-              label="Chuyên môn chính"
-              value={form.specialization}
-              onChange={onChange("specialization")}
-              placeholder="Nội khoa, phẫu thuật, da liễu..."
-              error={errors.specialization}
-              helper="Có thể nhập nhiều chuyên môn, cách nhau bằng dấu phẩy."
-              required
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="inline-flex h-11 items-center rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-white"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSubmitting ? "Đang tạo hồ sơ..." : "Tạo hồ sơ bác sĩ"}
-            <ArrowRight className="size-4" />
-          </button>
-        </div>
-      </form>
-    </DashboardSection>
-  )
-}
-
 function ClinicProfileStep({
   form,
   errors,
-  hasVetProfile,
   completion,
   message,
   errorMessage,
@@ -701,7 +516,6 @@ function ClinicProfileStep({
   districtOptions,
   wardOptions,
   composedAddress,
-  onBack,
   onCancel,
   onSubmit,
   onChange,
@@ -709,7 +523,6 @@ function ClinicProfileStep({
 }: {
   form: FormState
   errors: FormErrors
-  hasVetProfile: boolean
   completion: number
   message: string
   errorMessage: string
@@ -718,7 +531,6 @@ function ClinicProfileStep({
   districtOptions: DistrictOption[]
   wardOptions: WardOption[]
   composedAddress: string
-  onBack: () => void
   onCancel: () => void
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void
   onChange: (field: keyof FormState) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void
@@ -746,13 +558,8 @@ function ClinicProfileStep({
       <form onSubmit={onSubmit} className="grid gap-5">
         <div className="flex flex-wrap items-center gap-3 rounded-[24px] bg-po-success-soft px-4 py-3 text-sm text-po-success ring-1 ring-po-success/15">
           <CheckCircle2 className="size-5 shrink-0" />
-          <span className="hidden">
-            {hasVetProfile
-              ? "Hồ sơ bác sĩ đã sẵn sàng. Bạn có thể gửi thông tin phòng khám."
-              : "Bạn cần tạo hồ sơ bác sĩ trước khi gửi phòng khám."}
-          </span>
           <span className="font-semibold">
-            Ban co the upload anh hoac PDF chung chi/giay phep roi gui ho so phong kham ngay.
+            Ban co the upload anh hoac PDF giay phep roi gui ho so phong kham ngay.
           </span>
         </div>
 
@@ -763,14 +570,6 @@ function ClinicProfileStep({
             onChange={onChange("clinicName")}
             placeholder="PetOmi Clinic Thảo Điền"
             error={errors.clinicName}
-            required
-          />
-          <InputField
-            label="Số giấy phép phòng khám"
-            value={form.licenseNumber}
-            onChange={onChange("licenseNumber")}
-            placeholder="GPKD-..."
-            error={errors.licenseNumber}
             required
           />
           <InputField
@@ -811,7 +610,7 @@ function ClinicProfileStep({
             onUploadComplete={(result) => onValueChange("licenseCloudinaryPublicId", result.publicId)}
             imageType="clinic_license"
             accept="image/jpeg,image/png,image/webp,application/pdf"
-            emptyLabel="Upload anh/PDF chung chi"
+            emptyLabel="Upload anh/PDF giay phep"
             replaceLabel="Thay anh/PDF"
             helpText="JPG, PNG, WEBP hoac PDF, toi da 5MB"
             previewClassName="h-40 w-full rounded-2xl border border-po-border object-cover"
@@ -932,14 +731,6 @@ function ClinicProfileStep({
         ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onBack}
-            className="hidden h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:bg-po-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
-            disabled
-          >
-            Quay lại hồ sơ bác sĩ
-          </button>
           <div className="flex flex-wrap items-center justify-end gap-3">
             <button
               type="button"

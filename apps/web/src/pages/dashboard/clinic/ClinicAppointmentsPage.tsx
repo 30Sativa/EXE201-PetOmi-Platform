@@ -236,16 +236,16 @@ export default function ClinicAppointmentsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="w-full xl:flex-1" />
-            <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_auto] xl:w-[620px]">
+          <div className="grid gap-3">
+            <TabFilter tabs={statusFilters} activeTab={statusFilter} onChange={setStatusFilter} className="w-full" />
+            <div className="grid gap-2 lg:grid-cols-[minmax(260px,1fr)_auto] lg:items-center">
               <input
                 value={searchFilter}
                 onChange={(event) => setSearchFilter(event.target.value)}
                 placeholder="Tìm pet, chủ nuôi, dịch vụ hoặc mã lịch"
                 className="h-10 min-w-0 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text outline-none transition placeholder:text-po-text-muted/70 focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
               />
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-[24px] bg-po-surface-muted/60 p-2 ring-1 ring-po-border/60">
                 <DateQuickFilter label="Tất cả ngày" isActive={dateFilter === ""} onClick={() => setDateFilter("")} />
                 <DateQuickFilter label="Hôm nay" isActive={dateFilter === today} onClick={() => setDateFilter(today)} />
                 <DateQuickFilter label="Ngày mai" isActive={dateFilter === tomorrow} onClick={() => setDateFilter(tomorrow)} />

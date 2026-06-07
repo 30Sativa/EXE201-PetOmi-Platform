@@ -53,6 +53,15 @@ namespace PetOmiPlatform.API.Controllers
             return Ok(BaseResponse<GuestWalkInIntakeResponse>.Ok(result));
         }
 
+        /// <summary>Create temporary owner + pet and open an emergency appointment immediately.</summary>
+        [HttpPost("emergency/guest-intake")]
+        public async Task<IActionResult> CreateGuestEmergencyIntake([FromBody] CreateGuestWalkInIntakeRequest request)
+        {
+            var result = await Mediator.Send(
+                new CreateGuestEmergencyIntakeCommand(CurrentUserId, request));
+            return Ok(BaseResponse<GuestWalkInIntakeResponse>.Ok(result));
+        }
+
         /// <summary>Confirm appointment (Pending to Confirmed).</summary>
         [HttpPost("{appointmentId:guid}/confirm")]
         public async Task<IActionResult> Confirm(Guid appointmentId)

@@ -124,3 +124,10 @@ export const createGuestWalkInIntakeApi = async (
   const response = await api.post("/appointments/walk-in/guest-intake", data)
   return unwrapResponse<GuestWalkInIntakeResponse>(response)
 }
+
+export const createGuestEmergencyIntakeApi = async (
+  data: CreateGuestWalkInIntakeRequest,
+): Promise<GuestWalkInIntakeResponse> => {
+  const response = await api.post("/appointments/emergency/guest-intake", data)
+  return unwrapResponse<GuestWalkInIntakeResponse>(response)
+}

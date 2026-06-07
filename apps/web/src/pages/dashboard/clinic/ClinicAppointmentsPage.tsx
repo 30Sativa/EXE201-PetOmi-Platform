@@ -34,6 +34,7 @@ import {
   completeAppointmentApi,
   confirmAppointmentApi,
   createEmergencyAppointmentApi,
+  createGuestEmergencyIntakeApi,
   createGuestWalkInIntakeApi,
   getClinicAppointmentsApi,
   noShowAppointmentApi,
@@ -726,6 +727,27 @@ function buildGuestWalkInInitial(clinicId: string): CreateGuestWalkInIntakeReque
   }
 }
 
+function buildGuestEmergencyInitial(clinicId: string): CreateGuestWalkInIntakeRequest {
+  const now = new Date()
+  return {
+    clinicId,
+    ownerFullName: "",
+    ownerPhone: "",
+    ownerAddress: "",
+    petName: "",
+    petSpecies: "Dog",
+    petBreed: "",
+    petGender: "Unknown",
+    petDateOfBirth: "",
+    isPetBirthDateEstimated: true,
+    appointmentDate: todayDateInput(),
+    startTime: now.toTimeString().slice(0, 5),
+    endTime: new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5),
+    appointmentType: "Emergency",
+    notes: "",
+  }
+}
+
 function EmergencyModal({
   isOpen,
   clinicId,
@@ -740,6 +762,8 @@ function EmergencyModal({
   const [petSearch, setPetSearch] = useState("")
   const [selectedPetId, setSelectedPetId] = useState("")
   const [notes, setNotes] = useState("")
+  const [mode, setMode] = useState<"existing" | "guest">("existing")
+  const [guestForm, setGuestForm] = useState<CreateGuestWalkInIntakeRequest>(() => buildGuestEmergencyInitial(clinicId))
   const debouncedPetSearch = useDebouncedValue(petSearch.trim(), 300)
 
   const petsQuery = useQuery({
@@ -771,56 +795,195 @@ function EmergencyModal({
       setPetSearch("")
       setSelectedPetId("")
       setNotes("")
+      setMode("existing")
       await onDone()
       onClose()
     },
     onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo lịch cấp cứu.")),
   })
 
+  const guestEmergencyMutation = useMutation({
+    mutationFn: () => {
+      const now = new Date()
+      return createGuestEmergencyIntakeApi({
+        ...guestForm,
+        clinicId,
+        ownerFullName: guestForm.ownerFullName.trim(),
+        ownerPhone: guestForm.ownerPhone.trim(),
+        ownerAddress: guestForm.ownerAddress?.trim() || null,
+        petName: guestForm.petName.trim(),
+        petBreed: guestForm.petBreed?.trim() || null,
+        petDateOfBirth: guestForm.petDateOfBirth || null,
+        vetClinicId: null,
+        serviceId: null,
+        appointmentDate: todayDateInput(),
+        startTime: now.toTimeString().slice(0, 5),
+        endTime: new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5),
+        appointmentType: "Emergency",
+        notes: guestForm.notes?.trim() || notes.trim() || null,
+      })
+    },
+    onSuccess: async () => {
+      toast.success("Đã tạo lịch cấp cứu cho pet mới.")
+      setPetSearch("")
+      setSelectedPetId("")
+      setNotes("")
+      setMode("existing")
+      setGuestForm(buildGuestEmergencyInitial(clinicId))
+      await onDone()
+      onClose()
+    },
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo lịch cấp cứu.")),
+  })
+
+  const isSavingEmergency = mutation.isPending || guestEmergencyMutation.isPending
+  const canCreateGuestEmergency =
+    guestForm.ownerFullName.trim().length > 0 &&
+    guestForm.ownerPhone.trim().length > 0 &&
+    guestForm.petName.trim().length > 0
+
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 animate-dialog-in" onClick={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="m-auto w-[min(480px,100%)] rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
+      <div className="m-auto max-h-[90vh] w-[min(760px,100%)] overflow-y-auto rounded-[28px] border border-po-border bg-white p-6 shadow-2xl shadow-black/20 animate-dialog-content-in">
         <div className="flex items-start gap-3">
           <span className="grid size-10 place-items-center rounded-2xl bg-po-danger text-white">
             <AlertTriangle className="size-5" />
           </span>
           <div>
             <h3 className="text-lg font-extrabold text-po-text">Tạo lịch cấp cứu</h3>
-            <p className="mt-1 text-sm text-po-text-muted">Tìm pet đã từng có lịch tại phòng khám. Khách mới nên dùng tiếp nhận vãng lai.</p>
+            <p className="mt-1 text-sm text-po-text-muted">Chọn hồ sơ có sẵn hoặc nhập nhanh pet mới. Ca cấp cứu không bị chặn vì pet chưa có trong hệ thống.</p>
           </div>
         </div>
         <div className="mt-5 grid gap-4">
-          <Input label="Tìm pet hoặc chủ nuôi" value={petSearch} onChange={(value) => {
-            setPetSearch(value)
-            setSelectedPetId("")
-          }} />
-          <PetSearchSelect
-            value={selectedPetId}
-            pets={pets}
-            isLoading={petsQuery.isLoading || petsQuery.isFetching}
-            onChange={setSelectedPetId}
-          />
-          {selectedPet ? <SelectedPetSummary pet={selectedPet} /> : null}
-          <label className="grid gap-1.5 text-sm font-semibold text-po-text">
-            Ghi chú
-            <textarea
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              rows={3}
-              className="resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
-            />
-          </label>
+          <div className="grid grid-cols-2 gap-2 rounded-[22px] bg-po-surface-muted/70 p-1.5 ring-1 ring-po-border/70">
+            {[
+              { value: "existing", label: "Pet đã có hồ sơ" },
+              { value: "guest", label: "Pet mới / chưa có hồ sơ" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setMode(option.value as "existing" | "guest")}
+                className={cn(
+                  "h-10 rounded-[18px] px-3 text-sm font-extrabold transition",
+                  mode === option.value
+                    ? "bg-white text-po-danger shadow-sm ring-1 ring-po-border"
+                    : "text-po-text-muted hover:bg-white/70 hover:text-po-text",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {mode === "existing" ? (
+            <>
+              <Input label="Tìm pet hoặc chủ nuôi" value={petSearch} onChange={(value) => {
+                setPetSearch(value)
+                setSelectedPetId("")
+              }} />
+              <PetSearchSelect
+                value={selectedPetId}
+                pets={pets}
+                isLoading={petsQuery.isLoading || petsQuery.isFetching}
+                onChange={setSelectedPetId}
+              />
+              {selectedPet ? <SelectedPetSummary pet={selectedPet} /> : (
+                <p className="rounded-2xl bg-po-warning/10 px-4 py-3 text-sm font-semibold text-po-text-muted ring-1 ring-po-warning/20">
+                  Không thấy pet? Chuyển sang "Pet mới / chưa có hồ sơ" để tạo ca cấp cứu ngay.
+                </p>
+              )}
+              <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+                Ghi chú
+                <textarea
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                  rows={3}
+                  className="resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+                />
+              </label>
+            </>
+          ) : (
+            <div className="grid gap-4">
+              <div className="grid gap-3 md:grid-cols-2">
+                <Input
+                  label="Tên chủ pet"
+                  value={guestForm.ownerFullName}
+                  required
+                  onChange={(value) => setGuestForm((current) => ({ ...current, ownerFullName: value }))}
+                />
+                <Input
+                  label="Số điện thoại"
+                  value={guestForm.ownerPhone}
+                  required
+                  onChange={(value) => setGuestForm((current) => ({ ...current, ownerPhone: value }))}
+                />
+              </div>
+              <Input
+                label="Địa chỉ chủ nuôi"
+                value={guestForm.ownerAddress ?? ""}
+                onChange={(value) => setGuestForm((current) => ({ ...current, ownerAddress: value }))}
+              />
+              <div className="grid gap-3 md:grid-cols-2">
+                <Input
+                  label="Tên pet"
+                  value={guestForm.petName}
+                  required
+                  onChange={(value) => setGuestForm((current) => ({ ...current, petName: value }))}
+                />
+                <Input
+                  label="Giống"
+                  value={guestForm.petBreed ?? ""}
+                  onChange={(value) => setGuestForm((current) => ({ ...current, petBreed: value }))}
+                />
+                <Select
+                  label="Loài"
+                  value={guestForm.petSpecies}
+                  onChange={(value) => setGuestForm((current) => ({ ...current, petSpecies: value }))}
+                  options={[
+                    { value: "Dog", label: "Chó" },
+                    { value: "Cat", label: "Mèo" },
+                  ]}
+                />
+                <Select
+                  label="Giới tính"
+                  value={guestForm.petGender ?? "Unknown"}
+                  onChange={(value) => setGuestForm((current) => ({ ...current, petGender: value }))}
+                  options={[
+                    { value: "Unknown", label: "Chưa rõ" },
+                    { value: "Male", label: "Đực" },
+                    { value: "Female", label: "Cái" },
+                  ]}
+                />
+              </div>
+              <label className="grid gap-1.5 text-sm font-semibold text-po-text">
+                Ghi chú cấp cứu
+                <textarea
+                  value={guestForm.notes ?? ""}
+                  onChange={(event) => setGuestForm((current) => ({ ...current, notes: event.target.value }))}
+                  rows={3}
+                  className="resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+                />
+              </label>
+            </div>
+          )}
         </div>
         <div className="mt-5 flex justify-end gap-3">
           <button onClick={onClose} className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted">Hủy</button>
           <button
-            onClick={() => mutation.mutate()}
-            disabled={!selectedPetId || mutation.isPending}
+            onClick={() => {
+              if (mode === "existing") {
+                mutation.mutate()
+                return
+              }
+              guestEmergencyMutation.mutate()
+            }}
+            disabled={isSavingEmergency || (mode === "existing" ? !selectedPetId : !canCreateGuestEmergency)}
             className="inline-flex h-10 items-center rounded-full bg-po-danger px-5 text-sm font-semibold text-white transition hover:bg-po-danger/90 disabled:opacity-60"
           >
-            {mutation.isPending ? "Đang tạo..." : "Tạo cấp cứu"}
+            {isSavingEmergency ? "Đang tạo..." : "Tạo cấp cứu"}
           </button>
         </div>
       </div>

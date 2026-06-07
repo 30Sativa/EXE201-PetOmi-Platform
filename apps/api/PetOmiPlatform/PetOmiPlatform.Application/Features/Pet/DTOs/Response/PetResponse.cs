@@ -9,6 +9,8 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Response
 
         public Guid OwnerUserId { get; set; }
 
+        public string? PublicPetCode { get; set; }
+
         public string Name { get; set; } = null!;
 
         public string Species { get; set; } = null!;

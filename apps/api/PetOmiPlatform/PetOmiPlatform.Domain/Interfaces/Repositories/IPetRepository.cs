@@ -16,6 +16,8 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
 
         Task<List<ClinicPetSearchResult>> SearchByClinicAsync(Guid clinicId, string? search, int limit);
 
+        Task<bool> PublicPetCodeExistsAsync(string publicPetCode);
+
         // Thêm pet mới
         Task AddAsync(PetDomain pet);
 

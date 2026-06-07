@@ -32,8 +32,10 @@ namespace PetOmiPlatform.Application.Features.Clinic.Validation
                 .When(x => x.Request.LicenseNumber != null);
 
             RuleFor(x => x.Request.LicenseImageUrl)
+                .NotEmpty().WithMessage("Anh giay phep phong kham la bat buoc.")
                 .MaximumLength(500).WithMessage("License image URL toi da 500 ky tu.")
-                .When(x => x.Request.LicenseImageUrl != null);
+                .Must(uri => Uri.TryCreate(uri, UriKind.Absolute, out _))
+                .WithMessage("License image URL khong hop le.");
 
             RuleFor(x => x.Request.LicenseCloudinaryPublicId)
                 .MaximumLength(500).WithMessage("License image publicId toi da 500 ky tu.")

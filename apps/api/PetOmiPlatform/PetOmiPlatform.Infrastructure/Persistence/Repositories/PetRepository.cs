@@ -103,6 +103,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 .ToListAsync();
         }
 
+        public async Task<bool> PublicPetCodeExistsAsync(string publicPetCode)
+        {
+            var normalizedCode = publicPetCode.Trim().ToUpper();
+            return await _context.Pets
+                .AnyAsync(p => p.PublicPetCode == normalizedCode);
+        }
+
         public async Task AddAsync(PetDomain pet)
         {
             await _context.Pets.AddAsync(pet.ToEntity());

@@ -155,6 +155,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IPetPhotoRepository, PetPhotoRepository>();
             services.AddScoped<IPetMedicalRecordRepository, PetMedicalRecordRepository>();
             services.AddScoped<IPetUserAccessRepository, PetUserAccessRepository>();
+            services.AddScoped<IPetHealthShareTokenRepository, PetHealthShareTokenRepository>();
+            services.AddScoped<IPetHealthShareAccessLogRepository, PetHealthShareAccessLogRepository>();
             
             // Sprint 5 - Clinic Visit Flow
             services.AddScoped<IMedicalExaminationRepository, MedicalExaminationRepository>();
@@ -173,6 +175,8 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
             services.AddScoped<IPetAvatarService, PetAvatarService>();
+            services.AddScoped<IPetCodeGenerator, PetCodeGenerator>();
+            services.AddScoped<IShareCodeHasher, ShareCodeHasher>();
 
 
             // Reminders

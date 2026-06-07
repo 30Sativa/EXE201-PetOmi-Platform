@@ -1,4 +1,5 @@
-﻿import { X } from "lucide-react"
+import { FileText, X } from "lucide-react"
+
 import StatusBadge from "@/components/ui/StatusBadge"
 import type { ClinicListItemResponse } from "@/types"
 
@@ -21,6 +22,10 @@ function formatDate(dateStr: string) {
   }
 }
 
+function isPdfUrl(url?: string | null) {
+  return Boolean(url?.toLowerCase().includes(".pdf"))
+}
+
 export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDrawerProps) {
   if (!clinic) return null
 
@@ -36,15 +41,15 @@ export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDraw
       <aside className="relative z-10 flex w-[min(520px,100vw)] flex-col overflow-y-auto bg-white shadow-2xl shadow-black/30 animate-drawer-in">
         <div className="flex items-center justify-between gap-4 border-b border-po-border/60 p-5">
           <div>
-            <h2 className="text-lg font-extrabold text-po-text">Chi tiết phòng khám</h2>
+            <h2 className="text-lg font-extrabold text-po-text">Chi tiet phong kham</h2>
             <p className="mt-0.5 text-xs text-po-text-muted">
-              Thông tin chi tiết của phòng khám
+              Thong tin chi tiet cua phong kham
             </p>
           </div>
           <button
             onClick={onClose}
             className="shrink-0 rounded-full p-2 text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text"
-            aria-label="Đóng"
+            aria-label="Dong"
           >
             <X className="size-5" />
           </button>
@@ -53,15 +58,15 @@ export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDraw
         <div className="flex-1 space-y-6 p-5">
           <section>
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
-              Thông tin cơ bản
+              Thong tin co ban
             </h3>
-            <div className="rounded-2xl bg-po-surface-muted/50 p-4 space-y-3">
-              <InfoRow label="Tên phòng khám" value={clinic.clinicName} />
-              <InfoRow label="Email" value={clinic.email ?? "Chưa có"} />
-              <InfoRow label="Số điện thoại" value={clinic.phone ?? "Chưa có"} />
-              <InfoRow label="Địa chỉ" value={clinic.address ?? "Chưa có"} />
+            <div className="space-y-3 rounded-2xl bg-po-surface-muted/50 p-4">
+              <InfoRow label="Ten phong kham" value={clinic.clinicName} />
+              <InfoRow label="Email" value={clinic.email ?? "Chua co"} />
+              <InfoRow label="So dien thoai" value={clinic.phone ?? "Chua co"} />
+              <InfoRow label="Dia chi" value={clinic.address ?? "Chua co"} />
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-po-text-subtle">Trạng thái</span>
+                <span className="text-xs font-semibold text-po-text-subtle">Trang thai</span>
                 <StatusBadge
                   variant={
                     clinic.status === "Approved"
@@ -72,30 +77,30 @@ export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDraw
                   }
                   label={
                     clinic.status === "Approved"
-                      ? "Đã duyệt"
+                      ? "Da duyet"
                       : clinic.status === "Rejected"
-                        ? "Từ chối"
-                        : "Chờ duyệt"
+                        ? "Tu choi"
+                        : "Cho duyet"
                   }
                 />
               </div>
-              <InfoRow label="Ngày đăng ký" value={formatDate(clinic.createdAt)} />
+              <InfoRow label="Ngay dang ky" value={formatDate(clinic.createdAt)} />
             </div>
           </section>
 
           <section>
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
-              Giấy phép hoạt động
+              Giay phep hoat dong
             </h3>
-            <div className="rounded-2xl bg-po-surface-muted/50 p-4 space-y-3">
+            <div className="space-y-3 rounded-2xl bg-po-surface-muted/50 p-4">
               <InfoRow
-                label="Số GPLX"
-                value={clinic.licenseNumber ?? "Chưa có"}
+                label="So GPLX"
+                value={clinic.licenseNumber ?? "Chua co"}
               />
               {clinic.licenseImageUrl ? (
                 <div className="space-y-2">
                   <span className="text-xs font-semibold text-po-text-subtle">
-                    Ảnh giấy phép
+                    File giay phep
                   </span>
                   <a
                     href={clinic.licenseImageUrl}
@@ -103,15 +108,22 @@ export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDraw
                     rel="noopener noreferrer"
                     className="block overflow-hidden rounded-xl border border-po-border/60 transition hover:opacity-80"
                   >
-                    <img
-                      src={clinic.licenseImageUrl}
-                      alt="Giấy phép phòng khám"
-                      className="h-48 w-full object-cover"
-                    />
+                    {isPdfUrl(clinic.licenseImageUrl) ? (
+                      <span className="flex h-48 w-full flex-col items-center justify-center gap-2 bg-white text-po-primary">
+                        <FileText className="size-8" />
+                        <span className="text-xs font-semibold">Mo PDF giay phep</span>
+                      </span>
+                    ) : (
+                      <img
+                        src={clinic.licenseImageUrl}
+                        alt="Giay phep phong kham"
+                        className="h-48 w-full object-cover"
+                      />
+                    )}
                   </a>
                 </div>
               ) : (
-                <p className="text-sm text-po-text-muted italic">Chưa có ảnh giấy phép</p>
+                <p className="text-sm italic text-po-text-muted">Chua co file giay phep</p>
               )}
             </div>
           </section>
@@ -119,9 +131,9 @@ export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDraw
           {clinic.rejectedReason && (
             <section>
               <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
-                Lý do từ chối
+                Ly do tu choi
               </h3>
-              <div className="rounded-2xl bg-po-danger-soft/30 border border-po-danger/20 p-4">
+              <div className="rounded-2xl border border-po-danger/20 bg-po-danger-soft/30 p-4">
                 <p className="text-sm text-po-danger">{clinic.rejectedReason}</p>
               </div>
             </section>
@@ -131,9 +143,9 @@ export default function ClinicDetailDrawer({ clinic, onClose }: ClinicDetailDraw
         <div className="border-t border-po-border/60 p-5">
           <button
             onClick={onClose}
-            className="w-full inline-flex h-11 items-center justify-center rounded-full bg-po-surface-muted text-sm font-semibold text-po-text transition hover:bg-po-border/30"
+            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-po-surface-muted text-sm font-semibold text-po-text transition hover:bg-po-border/30"
           >
-            Đóng
+            Dong
           </button>
         </div>
       </aside>
@@ -145,8 +157,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start justify-between gap-4">
       <span className="shrink-0 text-xs font-semibold text-po-text-subtle">{label}</span>
-      <span className="text-sm font-medium text-po-text text-right">{value}</span>
+      <span className="text-right text-sm font-medium text-po-text">{value}</span>
     </div>
   )
 }
-

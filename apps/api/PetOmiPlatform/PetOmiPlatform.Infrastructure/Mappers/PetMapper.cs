@@ -11,6 +11,7 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             return PetDomain.Reconstitute(
                 id: entity.PetId,
                 ownerUserId: entity.OwnerUserId,
+                publicPetCode: entity.PublicPetCode,
                 name: entity.Name,
                 species: entity.Species,
                 breed: entity.Breed,
@@ -32,6 +33,7 @@ namespace PetOmiPlatform.Infrastructure.Mappers
             {
                 PetId = domain.Id,
                 OwnerUserId = domain.OwnerUserId,
+                PublicPetCode = domain.PublicPetCode,
                 Name = domain.Name,
                 Species = domain.Species,
                 Breed = domain.Breed,

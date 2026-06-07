@@ -39,6 +39,8 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 Items = items.Select(d => new AppointmentListItemResponse
                 {
                     AppointmentId = d.Id,
+                    ClinicId = d.ClinicId,
+                    ServiceId = d.ServiceId,
                     PetId = d.PetId,
                     VetClinicId = d.VetClinicId,
                     AppointmentDate = d.AppointmentDate,
@@ -80,6 +82,8 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 Items = items.Select(d => new AppointmentListItemResponse
                 {
                     AppointmentId = d.Id,
+                    ClinicId = d.ClinicId,
+                    ServiceId = d.ServiceId,
                     PetId = d.PetId,
                     VetClinicId = d.VetClinicId,
                     AppointmentDate = d.AppointmentDate,

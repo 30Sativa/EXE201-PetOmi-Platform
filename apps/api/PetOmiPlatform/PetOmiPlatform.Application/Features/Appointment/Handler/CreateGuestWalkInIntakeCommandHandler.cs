@@ -26,6 +26,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
         private readonly IClinicServiceRepository _serviceRepository;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IPetCodeGenerator _petCodeGenerator;
         private readonly IUnitOfWork _unitOfWork;
 
         public CreateGuestWalkInIntakeCommandHandler(
@@ -38,6 +39,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             IClinicServiceRepository serviceRepository,
             IAppointmentRepository appointmentRepository,
             IPasswordHasher passwordHasher,
+            IPetCodeGenerator petCodeGenerator,
             IUnitOfWork unitOfWork)
         {
             _clinicRepository = clinicRepository;
@@ -49,6 +51,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             _serviceRepository = serviceRepository;
             _appointmentRepository = appointmentRepository;
             _passwordHasher = passwordHasher;
+            _petCodeGenerator = petCodeGenerator;
             _unitOfWork = unitOfWork;
         }
 
@@ -113,8 +116,11 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 address: req.OwnerAddress);
             await _userProfileRepository.AddAsync(ownerProfile);
 
+            var publicPetCode = await GenerateUniquePublicPetCodeAsync();
+
             var pet = PetDomain.Create(
                 ownerUserId: ownerUser.Id,
+                publicPetCode: publicPetCode,
                 name: req.PetName,
                 species: req.PetSpecies,
                 breed: req.PetBreed,
@@ -162,6 +168,18 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             var clinicPart = clinicId.ToString("N")[..8];
             var randomPart = Guid.NewGuid().ToString("N")[..6];
             return $"guest+{clinicPart}.{shortPhone}.{DateTime.UtcNow:yyyyMMddHHmmss}.{randomPart}@guest.petomi.local";
+        }
+
+        private async Task<string> GenerateUniquePublicPetCodeAsync()
+        {
+            for (var attempt = 0; attempt < 10; attempt++)
+            {
+                var code = _petCodeGenerator.GeneratePublicPetCode();
+                if (!await _petRepository.PublicPetCodeExistsAsync(code))
+                    return code;
+            }
+
+            throw new ConflictException("Khong the tao ma dinh danh thu cung. Vui long thu lai.");
         }
     }
 }

@@ -9,34 +9,52 @@ namespace PetOmiPlatform.API.Common.Validators
             ".jpg", ".jpeg", ".png", ".webp"
         };
 
+        private static readonly HashSet<string> AllowedClinicLicenseExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg", ".jpeg", ".png", ".webp", ".pdf"
+        };
+
         private static readonly HashSet<string> AllowedMimeTypes = new(StringComparer.OrdinalIgnoreCase)
         {
             "image/jpeg", "image/png", "image/webp"
         };
 
+        private static readonly HashSet<string> AllowedClinicLicenseMimeTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "image/jpeg", "image/png", "image/webp", "application/pdf"
+        };
+
         private const long MaxSizeBytes = 5 * 1024 * 1024; // 5MB
 
-        public (bool isValid, string? error) Validate(IFormFile? file)
+        public (bool isValid, string? error) Validate(IFormFile? file, string? imageType = null)
         {
             if (file == null || file.Length == 0)
             {
-                return (false, "File ảnh không được để trống.");
+                return (false, "File khong duoc de trong.");
             }
 
             if (file.Length > MaxSizeBytes)
             {
-                return (false, $"Kích thước file vượt quá giới hạn 5MB. File hiện tại: {file.Length / 1024.0 / 1024.0:F2}MB.");
+                return (false, $"Kich thuoc file vuot qua gioi han 5MB. File hien tai: {file.Length / 1024.0 / 1024.0:F2}MB.");
             }
+
+            var isClinicLicense = string.Equals(imageType, "clinic_license", StringComparison.OrdinalIgnoreCase);
+            var allowedExtensions = isClinicLicense ? AllowedClinicLicenseExtensions : AllowedExtensions;
+            var allowedMimeTypes = isClinicLicense ? AllowedClinicLicenseMimeTypes : AllowedMimeTypes;
 
             var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant() ?? string.Empty;
-            if (!AllowedExtensions.Contains(extension))
+            if (!allowedExtensions.Contains(extension))
             {
-                return (false, "Định dạng file không được hỗ trợ. Chỉ chấp nhận: jpg, jpeg, png, webp.");
+                return (false, isClinicLicense
+                    ? "Dinh dang file khong duoc ho tro. Chi chap nhan: jpg, jpeg, png, webp, pdf."
+                    : "Dinh dang file khong duoc ho tro. Chi chap nhan: jpg, jpeg, png, webp.");
             }
 
-            if (!AllowedMimeTypes.Contains(file.ContentType))
+            if (!allowedMimeTypes.Contains(file.ContentType))
             {
-                return (false, "Content-Type không hợp lệ. Chỉ chấp nhận: image/jpeg, image/png, image/webp.");
+                return (false, isClinicLicense
+                    ? "Content-Type khong hop le. Chi chap nhan: image/jpeg, image/png, image/webp, application/pdf."
+                    : "Content-Type khong hop le. Chi chap nhan: image/jpeg, image/png, image/webp.");
             }
 
             return (true, null);

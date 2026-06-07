@@ -7,6 +7,7 @@ namespace PetOmiPlatform.Domain.Entities
     public class PetDomain : BaseEntity
     {
         public Guid OwnerUserId { get; private set; }
+        public string? PublicPetCode { get; private set; }
         public string Name { get; private set; }
         public string Species { get; private set; }           // "Dog" hoặc "Cat"
         public string? Breed { get; private set; }
@@ -27,6 +28,7 @@ namespace PetOmiPlatform.Domain.Entities
         // Constructor nội bộ cho factory method Create
         private PetDomain(
             Guid ownerUserId,
+            string? publicPetCode,
             string name,
             string species,
             string? breed,
@@ -38,6 +40,7 @@ namespace PetOmiPlatform.Domain.Entities
         {
             Id = Guid.NewGuid();
             OwnerUserId = ownerUserId;
+            PublicPetCode = publicPetCode;
             Name = name;
             Species = species;
             Breed = breed;
@@ -55,6 +58,7 @@ namespace PetOmiPlatform.Domain.Entities
         // Tạo hồ sơ thú cưng mới
         public static PetDomain Create(
             Guid ownerUserId,
+            string? publicPetCode,
             string name,
             string species,
             string? breed,
@@ -65,7 +69,7 @@ namespace PetOmiPlatform.Domain.Entities
             string? avatarCloudinaryPublicId = null)
         {
             return new PetDomain(
-                ownerUserId, name, species, breed,
+                ownerUserId, publicPetCode, name, species, breed,
                 gender, dateOfBirth,
                 isBirthDateEstimated, avatarUrl, avatarCloudinaryPublicId);
         }
@@ -74,6 +78,7 @@ namespace PetOmiPlatform.Domain.Entities
         public static PetDomain Reconstitute(
             Guid id,
             Guid ownerUserId,
+            string? publicPetCode,
             string name,
             string species,
             string? breed,
@@ -91,6 +96,7 @@ namespace PetOmiPlatform.Domain.Entities
             {
                 Id = id,
                 OwnerUserId = ownerUserId,
+                PublicPetCode = publicPetCode,
                 Name = name,
                 Species = species,
                 Breed = breed,
@@ -109,6 +115,15 @@ namespace PetOmiPlatform.Domain.Entities
         // === Behavior Methods (Domain Logic) ===
 
         // Cập nhật thông tin hồ sơ pet — chỉ ghi đè field được gửi lên (PATCH semantics)
+        public void AssignPublicPetCode(string publicPetCode)
+        {
+            if (string.IsNullOrWhiteSpace(publicPetCode))
+                throw new DomainException("Ma dinh danh thu cung khong hop le.");
+
+            PublicPetCode = publicPetCode.Trim().ToUpperInvariant();
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public void UpdateInfo(
             string? name,
             string? species,

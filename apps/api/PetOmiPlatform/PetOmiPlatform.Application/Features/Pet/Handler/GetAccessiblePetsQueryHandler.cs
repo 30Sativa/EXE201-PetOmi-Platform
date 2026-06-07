@@ -48,6 +48,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             {
                 PetId = p.Id,
                 OwnerUserId = p.OwnerUserId,
+                PublicPetCode = p.PublicPetCode,
                 Name = p.Name,
                 Species = p.Species,
                 Breed = p.Breed,

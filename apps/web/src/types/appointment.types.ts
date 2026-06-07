@@ -51,6 +51,8 @@ export interface GuestWalkInIntakeResponse {
 
 export interface AppointmentListItemResponse {
   appointmentId: string
+  clinicId: string
+  serviceId: string | null
   petId: string
   vetClinicId: string | null
   appointmentDate: string
@@ -97,9 +99,9 @@ export interface CancelAppointmentRequest {
 }
 
 export interface RescheduleAppointmentRequest {
-  appointmentDate: string
-  startTime: string
-  endTime: string
+  newDate: string
+  newStartTime: string
+  newEndTime: string
   reason?: string
 }
 

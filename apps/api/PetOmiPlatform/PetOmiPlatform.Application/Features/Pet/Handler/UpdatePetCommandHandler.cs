@@ -103,6 +103,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             {
                 PetId = pet.Id,
                 OwnerUserId = pet.OwnerUserId,
+                PublicPetCode = pet.PublicPetCode,
                 Name = pet.Name,
                 Species = pet.Species,
                 Breed = pet.Breed,

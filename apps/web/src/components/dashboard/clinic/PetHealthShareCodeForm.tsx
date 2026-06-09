@@ -18,6 +18,19 @@ interface PetHealthShareCodeFormProps {
 
 const normalizeShareCode = (value: string) => value.trim().toUpperCase()
 
+const getResolveErrorMessage = (error: unknown) => {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "response" in error &&
+    (error as { response?: { status?: number } }).response?.status === 429
+  ) {
+    return "Too many attempts. Please wait a minute before trying another HealthShareCode."
+  }
+
+  return getErrorMessage(error, "Could not resolve this health share code.")
+}
+
 export default function PetHealthShareCodeForm({
   clinicId,
   initialCode,
@@ -42,9 +55,7 @@ export default function PetHealthShareCodeForm({
       onOverviewLoaded(overview)
     },
     onError: (error) => {
-      setErrorMessage(
-        getErrorMessage(error, "Could not resolve this health share code."),
-      )
+      setErrorMessage(getResolveErrorMessage(error))
     },
   })
 
@@ -87,6 +98,9 @@ export default function PetHealthShareCodeForm({
           value={shareCode}
           onChange={(event) => setShareCode(event.target.value)}
           placeholder="HLT-ABC-123"
+          maxLength={20}
+          autoComplete="off"
+          spellCheck={false}
           disabled={mutation.isPending}
           className="h-11 rounded-xl border border-po-border bg-white px-4 text-sm font-semibold uppercase tracking-wide text-po-text placeholder:normal-case placeholder:tracking-normal placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
         />

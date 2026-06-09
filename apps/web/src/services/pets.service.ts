@@ -7,6 +7,7 @@ import type {
   CreatePetWeightLogRequest,
   GrantPetAccessRequest,
   PetHealthProfileResponse,
+  PetTimelineResponse,
   PetMedicalRecordResponse,
   PetPhotoResponse,
   PetResponse,
@@ -59,6 +60,20 @@ export const updatePetApi = async (
 
 export const deletePetApi = async (petId: string): Promise<void> => {
   await api.delete(`/pets/${petId}`)
+}
+
+export const getPetTimelineApi = async (
+  petId: string,
+  params?: {
+    page?: number
+    pageSize?: number
+    activityType?: string
+    fromDate?: string
+    toDate?: string
+  },
+): Promise<PetTimelineResponse> => {
+  const response = await api.get(`/pets/${petId}/timeline`, { params })
+  return unwrapResponse<PetTimelineResponse>(response)
 }
 
 // ==================== PET HEALTH PROFILE ====================

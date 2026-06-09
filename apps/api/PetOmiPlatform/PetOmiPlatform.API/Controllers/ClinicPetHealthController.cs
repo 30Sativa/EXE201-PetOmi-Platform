@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.PetHealthShare.DTOs.Request;
@@ -32,6 +33,7 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         [HttpPost("resolve")]
+        [EnableRateLimiting("HealthShareResolve")]
         public async Task<IActionResult> ResolveHealthShare(
             Guid clinicId,
             [FromBody] ResolvePetHealthShareRequest request)

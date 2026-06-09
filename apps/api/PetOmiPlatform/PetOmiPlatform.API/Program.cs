@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.API.Common.Authorization;
@@ -8,10 +9,14 @@ using PetOmiPlatform.API.Middlewares;
 using PetOmiPlatform.API.Services;
 using PetOmiPlatform.API.Swagger;
 using PetOmiPlatform.Application;
+using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Infrastructure;
 using System.Reflection;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +56,45 @@ builder.Services.AddCors(options =>
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials();
+    });
+});
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+
+        var response = BaseResponse<object>.Fail(
+            "Too many HealthShareCode attempts. Please wait a minute and try again.",
+            StatusCodes.Status429TooManyRequests);
+
+        await context.HttpContext.Response.WriteAsync(
+            JsonSerializer.Serialize(response, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+            }),
+            cancellationToken);
+    };
+
+    options.AddPolicy("HealthShareResolve", httpContext =>
+    {
+        var clinicId = httpContext.Request.RouteValues["clinicId"]?.ToString() ?? "unknown-clinic";
+        var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? httpContext.User.FindFirstValue("sub")
+            ?? "anonymous";
+        var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown-ip";
+        var partitionKey = $"{clinicId}:{userId}:{ipAddress}";
+
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey, _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+        });
     });
 });
 
@@ -153,6 +197,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.UseMiddleware<PasswordSetupMiddleware>();
 

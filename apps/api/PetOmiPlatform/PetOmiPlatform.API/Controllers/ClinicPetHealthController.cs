@@ -16,6 +16,21 @@ namespace PetOmiPlatform.API.Controllers
     {
         public ClinicPetHealthController(IMediator mediator) : base(mediator) { }
 
+        [HttpGet("~/api/clinic/{clinicId:guid}/pets/{petId:guid}/health-overview")]
+        public async Task<IActionResult> GetPetHealthOverview(
+            Guid clinicId,
+            Guid petId,
+            [FromQuery] string? shareCode = null)
+        {
+            var result = await Mediator.Send(new GetClinicPetHealthOverviewQuery(
+                RequestUserId: CurrentUserId,
+                ClinicId: clinicId,
+                PetId: petId,
+                ShareCode: shareCode));
+
+            return Ok(BaseResponse<PetHealthOverviewResponse>.Ok(result));
+        }
+
         [HttpPost("resolve")]
         public async Task<IActionResult> ResolveHealthShare(
             Guid clinicId,

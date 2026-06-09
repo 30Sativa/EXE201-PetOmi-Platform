@@ -36,6 +36,7 @@ import ClinicBillingPage from "@/pages/dashboard/clinic/ClinicBillingPage"
 import ClinicDoctorsPage from "@/pages/dashboard/clinic/ClinicDoctorsPage"
 import ClinicInventoryPage from "@/pages/dashboard/clinic/ClinicInventoryPage"
 import ClinicPaymentSettingsPage from "@/pages/dashboard/clinic/ClinicPaymentSettingsPage"
+import ClinicPetIntakePage from "@/pages/dashboard/clinic/ClinicPetIntakePage"
 import ClinicProfilePage from "@/pages/dashboard/clinic/ClinicProfilePage"
 import ClinicReconciliationPage from "@/pages/dashboard/clinic/ClinicReconciliationPage"
 import ClinicServicesPage from "@/pages/dashboard/clinic/ClinicServicesPage"
@@ -212,6 +213,10 @@ const router = createBrowserRouter([
                 <ClinicAppointmentsPage />
               </RequireClinicPermission>
             ),
+          },
+          {
+            path: "pet-intake",
+            element: <ClinicPetIntakePage />,
           },
           {
             path: "appointments/:appointmentId/visit",

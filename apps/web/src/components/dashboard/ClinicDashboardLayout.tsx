@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LogOut,
   PackageSearch,
+  Search,
   Settings,
   Stethoscope,
   UserRoundCog,
@@ -31,6 +32,7 @@ const navItems: Array<{
 }> = [
   { label: "Tổng quan", to: "/dashboard/clinic", icon: LayoutDashboard, exact: true },
   { label: "Lịch hẹn", to: "/dashboard/clinic/appointments", icon: CalendarClock, permissions: [CLINIC_PERMISSIONS.VIEW_APPOINTMENTS] },
+  { label: "Tiếp nhận", to: "/dashboard/clinic/pet-intake", icon: Search },
   { label: "Nhân sự", to: "/dashboard/clinic/doctors", icon: Stethoscope, permissions: [CLINIC_PERMISSIONS.MANAGE_STAFF] },
   { label: "Dịch vụ", to: "/dashboard/clinic/services", icon: Wrench, permissions: [CLINIC_PERMISSIONS.EDIT_INFO] },
   { label: "Kho", to: "/dashboard/clinic/inventory", icon: PackageSearch, permissions: [CLINIC_PERMISSIONS.VIEW_INVENTORY] },

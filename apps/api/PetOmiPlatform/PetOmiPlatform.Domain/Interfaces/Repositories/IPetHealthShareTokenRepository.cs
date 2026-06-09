@@ -6,6 +6,7 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
     {
         Task<PetHealthShareTokenDomain?> GetByIdAsync(Guid shareTokenId);
         Task<PetHealthShareTokenDomain?> GetByDisplayCodeAsync(string displayCode);
+        Task<PetHealthShareTokenDomain?> GetLatestByDisplayCodeAsync(string displayCode);
         Task<PetHealthShareTokenDomain?> GetByTokenHashAsync(string tokenHash);
         Task<List<PetHealthShareTokenDomain>> GetByPetIdAsync(Guid petId);
         Task<bool> DisplayCodeExistsAsync(string displayCode);

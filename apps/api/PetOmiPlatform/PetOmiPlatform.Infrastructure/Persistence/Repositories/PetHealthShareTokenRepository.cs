@@ -30,6 +30,16 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entity?.ToDomain();
         }
 
+        public async Task<PetHealthShareTokenDomain?> GetLatestByDisplayCodeAsync(string displayCode)
+        {
+            var normalizedCode = displayCode.Trim().ToUpper();
+            var entity = await _context.PetHealthShareTokens
+                .Where(t => t.DisplayCode == normalizedCode)
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstOrDefaultAsync();
+            return entity?.ToDomain();
+        }
+
         public async Task<PetHealthShareTokenDomain?> GetByTokenHashAsync(string tokenHash)
         {
             var entity = await _context.PetHealthShareTokens

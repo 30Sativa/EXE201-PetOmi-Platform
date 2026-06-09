@@ -23,6 +23,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
         private readonly IPetHealthProfileRepository _healthProfileRepository;
         private readonly IReminderRepository _reminderRepository;
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IMedicalExaminationRepository _medicalExaminationRepository;
         private readonly IPetAccessService _accessService;
 
         public GetPetTimelineQueryHandler(
@@ -33,6 +34,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             IPetHealthProfileRepository healthProfileRepository,
             IReminderRepository reminderRepository,
             IAppointmentRepository appointmentRepository,
+            IMedicalExaminationRepository medicalExaminationRepository,
             IPetAccessService accessService)
         {
             _petRepository = petRepository;
@@ -42,6 +44,7 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
             _healthProfileRepository = healthProfileRepository;
             _reminderRepository = reminderRepository;
             _appointmentRepository = appointmentRepository;
+            _medicalExaminationRepository = medicalExaminationRepository;
             _accessService = accessService;
         }
 
@@ -223,7 +226,53 @@ namespace PetOmiPlatform.Application.Features.Pet.Handler
                 }
             }
 
-            // 6. Health Profile Created
+            // 6. Completed clinic examinations
+            if (ShouldInclude(query.ActivityType, "ClinicExamination"))
+            {
+                var examinations = await _medicalExaminationRepository.GetByPetIdAsync(query.PetId, 1, 1000);
+                foreach (var exam in examinations)
+                {
+                    if (exam.Status != ExaminationStatus.Completed)
+                        continue;
+
+                    var occurredAt = exam.CompletedAt ?? exam.UpdatedAt ?? exam.CreatedAt;
+                    if (!MatchesDateRange(occurredAt, query.FromDate, query.ToDate))
+                        continue;
+
+                    allActivities.Add(new PetActivityResponse
+                    {
+                        ActivityId = exam.Id,
+                        PetId = exam.PetId,
+                        ActivityType = "ClinicExamination",
+                        Title = string.IsNullOrWhiteSpace(exam.Diagnosis)
+                            ? "Clinic visit completed"
+                            : $"Clinic visit: {exam.Diagnosis}",
+                        Description = exam.ExaminationNotes ?? exam.TreatmentPlan ?? exam.ChiefComplaint,
+                        OccurredAt = occurredAt,
+                        CreatedAt = exam.CreatedAt,
+                        SourceId = exam.Id,
+                        Icon = "stethoscope",
+                        Color = "#0EA5E9",
+                        Metadata = SerializeMetadata(new
+                        {
+                            appointmentId = exam.AppointmentId,
+                            vetClinicId = exam.VetClinicId,
+                            chiefComplaint = exam.ChiefComplaint,
+                            weightKg = exam.WeightKg,
+                            temperatureC = exam.TemperatureC,
+                            heartRate = exam.HeartRate,
+                            respiratoryRate = exam.RespiratoryRate,
+                            examinationNotes = exam.ExaminationNotes,
+                            diagnosis = exam.Diagnosis,
+                            treatmentPlan = exam.TreatmentPlan,
+                            status = exam.Status.ToString(),
+                            completedAt = exam.CompletedAt?.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                        })
+                    });
+                }
+            }
+
+            // 7. Health Profile Created
             if (ShouldInclude(query.ActivityType, "HealthProfile"))
             {
                 var profile = await _healthProfileRepository.GetByPetIdAsync(query.PetId);

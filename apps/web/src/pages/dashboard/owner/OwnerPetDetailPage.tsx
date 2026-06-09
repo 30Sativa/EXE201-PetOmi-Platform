@@ -11,6 +11,7 @@ import {
   Pencil,
   Plus,
   Scale,
+  Share2,
   Trash2,
   Weight,
 } from "lucide-react"
@@ -27,6 +28,8 @@ import HealthProfileModal from "@/components/dashboard/owner/HealthProfileModal"
 import WeightLogModal from "@/components/dashboard/owner/WeightLogModal"
 import MedicalRecordModal from "@/components/dashboard/owner/MedicalRecordModal"
 import PhotoModal from "@/components/dashboard/owner/PhotoModal"
+import PetHealthShareList from "@/components/dashboard/owner/PetHealthShareList"
+import SharePetHealthProfileDialog from "@/components/dashboard/owner/SharePetHealthProfileDialog"
 import TabFilter from "@/components/ui/TabFilter"
 import {
   deletePetApi,
@@ -135,6 +138,7 @@ export default function OwnerPetDetailPage() {
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false)
   const [isMedicalModalOpen, setIsMedicalModalOpen] = useState(false)
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false)
+  const [isHealthShareDialogOpen, setIsHealthShareDialogOpen] = useState(false)
   const [editingMedicalRecord, setEditingMedicalRecord] = useState<PetMedicalRecordResponse | null>(null)
   const [isReminderModalOpen, setIsReminderModalOpen] = useState(false)
   const [dismissingReminder, setDismissingReminder] = useState<ReminderResponse | null>(null)
@@ -289,6 +293,13 @@ export default function OwnerPetDetailPage() {
         </button>
         <div className="flex gap-2">
           <button
+            onClick={() => setIsHealthShareDialogOpen(true)}
+            className="inline-flex h-10 items-center gap-2 rounded-full border border-po-primary/30 bg-white px-4 text-sm font-semibold text-po-primary transition hover:bg-po-primary/10"
+          >
+            <Share2 className="size-4" />
+            Share health
+          </button>
+          <button
             onClick={() => setIsEditModalOpen(true)}
             className="inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
           >
@@ -398,8 +409,10 @@ export default function OwnerPetDetailPage() {
           )}
           {activeTab === "sharing" && (
             <SharingTab
+              petId={pet.petId}
               accessList={accessList}
               petName={pet.name}
+              onCreateHealthShare={() => setIsHealthShareDialogOpen(true)}
               onRevoke={(access) => setRevokingAccess(access)}
             />
           )}
@@ -465,6 +478,14 @@ export default function OwnerPetDetailPage() {
         isOpen={isReminderModalOpen}
         onClose={() => setIsReminderModalOpen(false)}
         defaultPetId={petId}
+      />
+
+      {/* Health Share Dialog */}
+      <SharePetHealthProfileDialog
+        isOpen={isHealthShareDialogOpen}
+        onClose={() => setIsHealthShareDialogOpen(false)}
+        petId={petId!}
+        petName={pet.name}
       />
 
       {/* Dismiss Reminder Dialog */}
@@ -995,12 +1016,16 @@ function PhotosTab({
 // ==================== SHARING TAB ====================
 
 function SharingTab({
+  petId,
   accessList,
   petName,
+  onCreateHealthShare,
   onRevoke,
 }: {
+  petId: string
   accessList?: PetUserAccessResponse[] | null
   petName: string
+  onCreateHealthShare: () => void
   onRevoke: (access: PetUserAccessResponse) => void
 }) {
   const activeCount = (accessList ?? []).filter((a) => !a.isExpired).length
@@ -1018,6 +1043,12 @@ function SharingTab({
           <p className="mt-1 text-2xl font-extrabold text-po-text">Viewer · Editor</p>
         </div>
       </div>
+
+      <PetHealthShareList
+        petId={petId}
+        petName={petName}
+        onCreateShare={onCreateHealthShare}
+      />
 
       {/* Access List */}
       <DashboardSection title={`Quản lý chia sẻ ${petName}`}>

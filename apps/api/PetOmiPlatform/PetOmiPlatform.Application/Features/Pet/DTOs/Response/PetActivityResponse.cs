@@ -10,7 +10,7 @@ namespace PetOmiPlatform.Application.Features.Pet.DTOs.Response
         // The pet this activity belongs to.
         public Guid PetId { get; set; }
 
-        // Type of activity: MedicalRecord, WeightLog, Photo, Reminder, Appointment, HealthProfile
+        // Type of activity: MedicalRecord, WeightLog, Photo, Reminder, Appointment, ClinicExamination, HealthProfile
         public string ActivityType { get; set; } = null!;
 
         // Human-readable title for the activity.

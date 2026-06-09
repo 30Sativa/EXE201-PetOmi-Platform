@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom"
 import { ArrowRight, ClipboardPlus, LogIn, ShieldCheck } from "lucide-react"
 
 import PetHealthOverviewPanel from "@/components/dashboard/clinic/PetHealthOverviewPanel"
+import PetHealthQrScanner from "@/components/dashboard/clinic/PetHealthQrScanner"
 import PetHealthShareCodeForm from "@/components/dashboard/clinic/PetHealthShareCodeForm"
 import PublicPetCodeLookup from "@/components/dashboard/clinic/PublicPetCodeLookup"
 import TraditionalPetLookupPanel from "@/components/dashboard/clinic/TraditionalPetLookupPanel"
@@ -24,6 +25,7 @@ export default function ClinicPetIntakePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const shareCode = searchParams.get("shareCode") ?? ""
+  const [activeShareCode, setActiveShareCode] = useState(shareCode)
   const [activeTab, setActiveTab] = useState<IntakeTab>(shareCode ? "code" : "known-pets")
   const [overview, setOverview] = useState<PetHealthOverviewResponse | null>(null)
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
@@ -93,11 +95,19 @@ export default function ClinicPetIntakePage() {
       </section>
 
       {activeTab === "code" ? (
-        <PetHealthShareCodeForm
-          clinicId={clinicId}
-          initialCode={shareCode}
-          onOverviewLoaded={handleOverviewLoaded}
-        />
+        <div className="grid gap-4">
+          <PetHealthQrScanner
+            onCodeScanned={(code) => {
+              setActiveShareCode(code)
+              setActiveTab("code")
+            }}
+          />
+          <PetHealthShareCodeForm
+            clinicId={clinicId}
+            initialCode={activeShareCode}
+            onOverviewLoaded={handleOverviewLoaded}
+          />
+        </div>
       ) : null}
 
       {activeTab === "petomi-id" ? (

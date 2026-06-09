@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react"
 import { Check, Clipboard, Link2, ShieldCheck, X } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { QRCodeSVG } from "qrcode.react"
 import { toast } from "sonner"
 
 import { createPetHealthShareApi } from "@/services/pet-health-share.service"
@@ -302,6 +303,15 @@ export default function SharePetHealthProfileDialog({
           <aside className="rounded-2xl border border-po-border bg-po-surface-muted p-4">
             {createdShare ? (
               <div className="grid gap-4">
+                <div className="rounded-2xl border border-po-border bg-white p-3">
+                  <QRCodeSVG
+                    value={shareLink}
+                    size={224}
+                    level="M"
+                    includeMargin
+                    className="h-auto w-full"
+                  />
+                </div>
                 <div>
                   <p className="text-xs font-semibold uppercase text-po-text-muted">
                     Health share code
@@ -346,7 +356,7 @@ export default function SharePetHealthProfileDialog({
                     Your code appears here
                   </p>
                   <p className="mt-1 text-xs text-po-text-muted">
-                    Create a code, then copy it for the clinic. QR rendering can be added later without changing the backend flow.
+                    Create a code, then show the QR or copy the link for the clinic.
                   </p>
                 </div>
               </div>

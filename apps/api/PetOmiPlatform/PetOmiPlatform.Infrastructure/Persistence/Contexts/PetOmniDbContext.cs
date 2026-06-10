@@ -111,6 +111,8 @@ public partial class PetOmniDbContext : DbContext
     {
         modelBuilder.Entity<Appointment>(entity =>
         {
+            entity.HasKey(e => e.AppointmentId).HasName("PK_Appointments");
+
             entity.HasIndex(e => new { e.ClinicId, e.AppointmentDate, e.Status }, "IX_Appointments_Clinic_Date");
 
             entity.HasIndex(e => new { e.Status, e.CreatedAt }, "IX_Appointments_Pending_CreatedAt").HasFilter("([Status]='Pending')");
@@ -120,8 +122,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => new { e.VetClinicId, e.AppointmentDate }, "IX_Appointments_VetClinic_Date").HasFilter("([VetClinicID] IS NOT NULL)");
 
             entity.Property(e => e.AppointmentId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("AppointmentID");
+                .HasColumnName("AppointmentID")
+                .ValueGeneratedNever();
             entity.Property(e => e.AppointmentType)
                 .HasMaxLength(50)
                 .IsUnicode(false)

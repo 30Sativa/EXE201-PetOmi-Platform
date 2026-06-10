@@ -1,9 +1,10 @@
-﻿import { useEffect, useState, type ReactNode } from "react"
+﻿import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   Activity,
   Banknote,
   CalendarCheck,
+  CheckCircle2,
   CreditCard,
   PackageSearch,
   Plus,
@@ -36,6 +37,7 @@ import {
   getBillingSummaryApi,
   getInvoiceByAppointmentApi,
   getPendingManualRefundsApi,
+  getReconciliationApi,
   getUnpaidAgingApi,
   payInvoiceApi,
   requestSePayPaymentApi,
@@ -49,6 +51,7 @@ import type {
   PendingManualRefundItemResponse,
   SePayPaymentRequestResponse,
   SePayPaymentStatusResponse,
+  SePayReconciliationItemResponse,
 } from "@/types"
 
 const today = new Date().toISOString().slice(0, 10)
@@ -103,6 +106,7 @@ export default function ClinicBillingPage() {
   const [retailInvoice, setRetailInvoice] = useState<InvoiceResponse | null>(null)
   const [workspace, setWorkspace] = useState<BillingWorkspace>("checkout")
   const [confirmTarget, setConfirmTarget] = useState<BillingConfirmTarget | null>(null)
+  const settledSePayInvoiceIdsRef = useRef(new Set<string>())
 
   const summaryQuery = useQuery({
     queryKey: ["clinic", clinicId, "dashboard-summary"],
@@ -125,6 +129,18 @@ export default function ClinicBillingPage() {
   const refundsQuery = useQuery({
     queryKey: ["clinic", clinicId, "manual-refunds"],
     queryFn: () => getPendingManualRefundsApi({ clinicId, page: 1, pageSize: 20 }),
+    enabled: Boolean(clinicId),
+  })
+
+  const paymentHistoryQuery = useQuery({
+    queryKey: ["clinic", clinicId, "payment-history"],
+    queryFn: () =>
+      getReconciliationApi({
+        clinicId,
+        limit: 20,
+        includeMatched: true,
+        alertAfterMinutes: 15,
+      }),
     enabled: Boolean(clinicId),
   })
 
@@ -154,17 +170,42 @@ export default function ClinicBillingPage() {
     enabled: Boolean(clinicId && selectedAppointmentId),
   })
 
-  const invalidateBilling = async () => {
+  const invalidateBilling = useCallback(async () => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "dashboard-summary"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "unpaid-aging"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "manual-refunds"] }),
+      queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "payment-history"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "revenue-trend"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "invoice-by-appointment"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "inventory"] }),
       queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "reconciliation"] }),
     ])
-  }
+  }, [clinicId, queryClient])
+
+  const markInvoicePaidLocally = useCallback((status: SePayPaymentStatusResponse) => {
+    const paidAt = status.transactionDate ?? new Date().toISOString()
+    const patchInvoice = (invoice: InvoiceResponse | null | undefined): InvoiceResponse | null | undefined => {
+      if (!invoice || invoice.id !== status.invoiceId) return invoice
+
+      return {
+        ...invoice,
+        status: "Paid",
+        paymentProvider: "SePay",
+        paymentMethod: "SePayBankTransfer",
+        paymentReference: status.paymentReference ?? invoice.paymentReference,
+        paidAmount: status.receivedAmount ?? status.paidAmount ?? status.finalAmount,
+        paidAt,
+        paymentWebhookAt: paidAt,
+      }
+    }
+
+    queryClient.setQueriesData<InvoiceResponse | null>(
+      { queryKey: ["clinic", clinicId, "invoice-by-appointment"] },
+      (current) => patchInvoice(current) ?? null,
+    )
+    setRetailInvoice((current) => patchInvoice(current) ?? null)
+  }, [clinicId, queryClient])
 
   const addRetailItem = () => {
     const inventoryItem = (inventoryQuery.data ?? []).find((item) => item.itemId === selectedInventoryId)
@@ -289,14 +330,28 @@ export default function ClinicBillingPage() {
     queryKey: ["clinic", clinicId, "sepay-payment-status", qrRequest?.invoiceId],
     queryFn: () => getSePayPaymentStatusApi(clinicId, qrRequest!.invoiceId),
     enabled: Boolean(clinicId && qrRequest?.invoiceId),
-    refetchInterval: qrRequest ? 3000 : false,
+    refetchInterval: (query) => {
+      const status = query.state.data
+      return qrRequest && !status?.isFinal ? 2000 : false
+    },
   })
 
   useEffect(() => {
-    if (qrStatusQuery.data?.status === "Paid") {
-      void invalidateBilling()
+    const status = qrStatusQuery.data
+    if (status?.status !== "Paid" || settledSePayInvoiceIdsRef.current.has(status.invoiceId)) {
+      return
     }
-  }, [qrStatusQuery.data?.status])
+
+    settledSePayInvoiceIdsRef.current.add(status.invoiceId)
+    queueMicrotask(() => {
+      markInvoicePaidLocally(status)
+      toast.success(`Thanh toán ${status.invoiceCode} thành công.`, {
+        description: `${formatCurrency(status.receivedAmount ?? status.finalAmount)} đã được ghi nhận qua SePay.`,
+        icon: <CheckCircle2 className="size-4 text-po-success" />,
+      })
+      void invalidateBilling()
+    })
+  }, [invalidateBilling, markInvoicePaidLocally, qrStatusQuery.data])
 
   const cancelMutation = useMutation({
     mutationFn: (invoice: InvoiceResponse) =>
@@ -364,6 +419,7 @@ export default function ClinicBillingPage() {
   const retailTotal = Math.max(0, retailSubtotal - (Number(retailDiscountAmount) || 0))
   const unpaidItems = unpaidQuery.data ?? []
   const refundItems = refundsQuery.data ?? []
+  const paymentHistoryItems = paymentHistoryQuery.data ?? []
 
   return (
     <div className="grid gap-4">
@@ -642,6 +698,11 @@ export default function ClinicBillingPage() {
               </div>
             </section>
 
+            <PaymentHistory
+              items={paymentHistoryItems}
+              isLoading={paymentHistoryQuery.isLoading}
+            />
+
             <BillingQueue
               unpaidItems={unpaidItems}
               refundItems={refundItems}
@@ -681,9 +742,15 @@ export default function ClinicBillingPage() {
       ) : null}
 
       {qrRequest ? (
-        <Modal title="QR thanh toán SePay" onClose={() => setQrRequest(null)}>
+        <Modal title={qrStatusQuery.data?.status === "Paid" ? "Thanh toán thành công" : "QR thanh toán SePay"} onClose={() => setQrRequest(null)}>
           <div className="grid gap-4 text-center">
-            <img src={qrRequest.qrCodeUrl} alt="SePay QR" className="mx-auto size-56 rounded-2xl border border-po-border object-contain p-3" />
+            {qrStatusQuery.data?.status === "Paid" ? (
+              <div className="mx-auto grid size-24 place-items-center rounded-full bg-po-success-soft text-po-success ring-8 ring-po-success-soft/60">
+                <CheckCircle2 className="size-14" />
+              </div>
+            ) : (
+              <img src={qrRequest.qrCodeUrl} alt="SePay QR" className="mx-auto size-56 rounded-2xl border border-po-border object-contain p-3" />
+            )}
             <div>
               <p className="text-sm font-bold text-po-text">{qrRequest.invoiceCode}</p>
               <p className="mt-2 rounded-2xl bg-po-primary-soft px-4 py-2 font-mono text-base font-extrabold text-po-primary">
@@ -693,6 +760,15 @@ export default function ClinicBillingPage() {
               <p className="mt-2 text-lg font-extrabold text-po-primary">{formatCurrency(qrRequest.finalAmount)}</p>
             </div>
             <SePayPaymentStatusPanel status={qrStatusQuery.data} isLoading={qrStatusQuery.isFetching} />
+            {qrStatusQuery.data?.status === "Paid" ? (
+              <button
+                type="button"
+                onClick={() => setQrRequest(null)}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-po-success px-5 text-sm font-bold text-white transition hover:bg-po-success/90"
+              >
+                Hoàn tất
+              </button>
+            ) : null}
           </div>
         </Modal>
       ) : null}
@@ -764,18 +840,78 @@ function SePayPaymentStatusPanel({
   }[effectiveStatus] ?? "border-po-border bg-po-surface-muted text-po-text-muted"
 
   const message = status?.message ?? "Đang chờ thanh toán..."
+  const isPaid = effectiveStatus === "Paid"
 
   return (
     <div className={`rounded-2xl border px-4 py-3 text-left ${tone}`}>
-      <p className="text-sm font-extrabold">{message}</p>
+      <div className="flex items-start gap-3">
+        {isPaid ? (
+          <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+        ) : null}
+        <div className="min-w-0">
+      <p className="text-sm font-extrabold">{isPaid ? "Thanh toán thành công." : message}</p>
       {status?.receivedAmount != null ? (
         <p className="mt-1 text-xs font-semibold">
           Đã nhận {formatCurrency(status.receivedAmount)} / cần thu {formatCurrency(status.finalAmount)}
         </p>
       ) : (
-        <p className="mt-1 text-xs font-semibold">{isLoading ? "Đang kiểm tra giao dịch..." : "Tự động kiểm tra mỗi 3 giây."}</p>
+        <p className="mt-1 text-xs font-semibold">{isLoading ? "Đang kiểm tra giao dịch..." : "Tự động kiểm tra mỗi 2 giây."}</p>
       )}
+        </div>
+      </div>
     </div>
+  )
+}
+
+function PaymentHistory({
+  items,
+  isLoading,
+}: {
+  items: SePayReconciliationItemResponse[]
+  isLoading: boolean
+}) {
+  const paidItems = items
+    .filter((item) => item.invoiceId)
+    .slice(0, 8)
+
+  return (
+    <section className="rounded-[26px] bg-white/90 p-4 ring-1 ring-po-border/80">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h3 className="text-base font-extrabold text-po-text">Lịch sử thanh toán</h3>
+          <p className="mt-1 text-xs text-po-text-muted">Giao dịch SePay đã khớp hóa đơn gần nhất.</p>
+        </div>
+        <StatusBadge variant="success" label={`${paidItems.length} giao dịch`} />
+      </div>
+
+      <div className="mt-3 grid gap-2">
+        {isLoading ? (
+          <div className="rounded-2xl bg-po-surface-muted py-8 text-center">
+            <LoadingSpinner />
+          </div>
+        ) : paidItems.length === 0 ? (
+          <EmptyState icon={CreditCard} title="Chưa có lịch sử" description="Thanh toán SePay đã khớp hóa đơn sẽ xuất hiện ở đây." className="py-8" />
+        ) : (
+          paidItems.map((item) => (
+            <div key={item.paymentTransactionId} className="rounded-2xl bg-po-success-soft/45 p-3 ring-1 ring-po-success/15">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-extrabold text-po-text">{item.invoiceCode ?? item.referenceCode ?? "SePay"}</p>
+                  <p className="mt-1 text-xs font-semibold text-po-text-muted">
+                    {formatDate(item.transactionDate, { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+                <CheckCircle2 className="size-5 shrink-0 text-po-success" />
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="truncate text-xs text-po-text-subtle">{item.referenceCode ?? item.providerTransactionId}</p>
+                <p className="shrink-0 text-sm font-extrabold text-po-success">{formatCurrency(item.transferAmount)}</p>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </section>
   )
 }
 

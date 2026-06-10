@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate, useParams } from "react-router-dom"
 import { toast } from "sonner"
@@ -123,6 +123,7 @@ export default function ClinicVisitPage() {
   const [paidAmount, setPaidAmount] = useState("")
   const [qrRequest, setQrRequest] = useState<SePayPaymentRequestResponse | null>(null)
   const [confirmTarget, setConfirmTarget] = useState<VisitConfirmTarget | null>(null)
+  const settledSePayInvoiceIdsRef = useRef(new Set<string>())
 
   const examQuery = useQuery({
     queryKey: ["clinic", clinicId, "examination", appointmentId],
@@ -284,19 +285,56 @@ export default function ClinicVisitPage() {
     onError: (error) => toast.error(getErrorMessage(error, "Không thể tạo QR SePay.")),
   })
 
+  const markInvoicePaidLocally = useCallback((status: SePayPaymentStatusResponse) => {
+    const paidAt = status.transactionDate ?? new Date().toISOString()
+
+    queryClient.setQueriesData<InvoiceResponse | null>(
+      { queryKey: ["clinic", clinicId, "invoice"] },
+      (invoice) => {
+        if (!invoice || invoice.id !== status.invoiceId) return invoice ?? null
+
+        return {
+          ...invoice,
+          status: "Paid",
+          paymentProvider: "SePay",
+          paymentMethod: "SePayBankTransfer",
+          paymentReference: status.paymentReference ?? invoice.paymentReference,
+          paidAmount: status.receivedAmount ?? status.paidAmount ?? status.finalAmount,
+          paidAt,
+          paymentWebhookAt: paidAt,
+        }
+      },
+    )
+  }, [clinicId, queryClient])
+
   const sePayStatusQuery = useQuery({
     queryKey: ["clinic", clinicId, "sepay-payment-status", qrRequest?.invoiceId],
     queryFn: () => getSePayPaymentStatusApi(clinicId, qrRequest!.invoiceId),
     enabled: Boolean(clinicId && qrRequest?.invoiceId),
-    refetchInterval: qrRequest ? 3000 : false,
+    refetchInterval: (query) => {
+      const status = query.state.data
+      return qrRequest && !status?.isFinal ? 2000 : false
+    },
   })
 
   useEffect(() => {
-    if (sePayStatusQuery.data?.status === "Paid") {
+    const status = sePayStatusQuery.data
+    if (status?.status !== "Paid" || settledSePayInvoiceIdsRef.current.has(status.invoiceId)) {
+      return
+    }
+
+    settledSePayInvoiceIdsRef.current.add(status.invoiceId)
+    queueMicrotask(() => {
+      markInvoicePaidLocally(status)
+      toast.success(`Thanh toán ${status.invoiceCode} thành công.`, {
+        description: `${formatCurrency(status.receivedAmount ?? status.finalAmount)} đã được ghi nhận qua SePay.`,
+        icon: <CheckCircle2 className="size-4 text-po-success" />,
+      })
       void queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "invoice", appointmentId] })
       void queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "dashboard-summary"] })
-    }
-  }, [sePayStatusQuery.data?.status, queryClient, clinicId, appointmentId])
+      void queryClient.invalidateQueries({ queryKey: ["clinic", clinicId, "reconciliation"] })
+    })
+  }, [appointmentId, clinicId, markInvoicePaidLocally, queryClient, sePayStatusQuery.data])
 
   const handleConfirmVisitAction = () => {
     if (!confirmTarget) return
@@ -735,17 +773,23 @@ function SePayPaymentStatusPanel({
   }[effectiveStatus] ?? "border-po-border bg-po-surface-muted text-po-text-muted"
 
   const message = status?.message ?? "Đang chờ thanh toán..."
+  const isPaid = effectiveStatus === "Paid"
 
   return (
     <div className={`mx-auto w-full max-w-md rounded-2xl border px-4 py-3 text-left ${tone}`}>
-      <p className="text-sm font-extrabold">{message}</p>
-      {status?.receivedAmount != null ? (
-        <p className="mt-1 text-xs font-semibold">
-          Đã nhận {formatCurrency(status.receivedAmount)} / cần thu {formatCurrency(status.finalAmount)}
-        </p>
-      ) : (
-        <p className="mt-1 text-xs font-semibold">{isLoading ? "Đang kiểm tra giao dịch..." : "Tự động kiểm tra mỗi 3 giây."}</p>
-      )}
+      <div className="flex items-start gap-3">
+        {isPaid ? <CheckCircle2 className="mt-0.5 size-5 shrink-0" /> : null}
+        <div className="min-w-0">
+          <p className="text-sm font-extrabold">{isPaid ? "Thanh toán thành công." : message}</p>
+          {status?.receivedAmount != null ? (
+            <p className="mt-1 text-xs font-semibold">
+              Đã nhận {formatCurrency(status.receivedAmount)} / cần thu {formatCurrency(status.finalAmount)}
+            </p>
+          ) : (
+            <p className="mt-1 text-xs font-semibold">{isLoading ? "Đang kiểm tra giao dịch..." : "Tự động kiểm tra mỗi 2 giây."}</p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

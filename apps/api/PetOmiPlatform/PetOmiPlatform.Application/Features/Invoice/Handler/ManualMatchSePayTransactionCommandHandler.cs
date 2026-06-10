@@ -34,29 +34,29 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
 
             var transaction = await _paymentTransactionRepository.GetByIdAsync(request.PaymentTransactionId);
             if (transaction == null)
-                throw new NotFoundException($"Khong tim thay giao dich SePay ID {request.PaymentTransactionId}");
+                throw new NotFoundException($"Không tìm thấy giao dịch SePay ID {request.PaymentTransactionId}");
 
             if (transaction.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen thao tac giao dich SePay nay.");
+                throw new ForbiddenException("Không có quyền thao tác giao dịch SePay này.");
 
             if (transaction.IsMatched)
-                throw new ConflictException("Giao dich SePay nay da duoc xu ly.");
+                throw new ConflictException("Giao dịch SePay này đã được xử lý.");
 
             var invoice = await _invoiceRepository.GetByIdAsync(request.InvoiceId);
             if (invoice == null)
-                throw new NotFoundException($"Khong tim thay hoa don ID {request.InvoiceId}");
+                throw new NotFoundException($"Không tìm thấy hóa đơn ID {request.InvoiceId}");
 
             if (invoice.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen thao tac hoa don nay.");
+                throw new ForbiddenException("Không có quyền thao tác hóa đơn này.");
 
             if (transaction.TransferType != "in")
-                throw new ConflictException("Chi giao dich tien vao moi co the match voi hoa don.");
+                throw new ConflictException("Chỉ giao dịch tiền vào mới có thể khớp với hóa đơn.");
 
             if (transaction.TransferAmount < invoice.FinalAmount)
-                throw new ConflictException("So tien giao dich nho hon gia tri hoa don, khong the match.");
+                throw new ConflictException("Số tiền giao dịch nhỏ hơn giá trị hóa đơn, không thể khớp.");
 
             if (invoice.Status == InvoiceStatus.Cancelled)
-                throw new ConflictException("Hoa don da huy, khong the match giao dich.");
+                throw new ConflictException("Hóa đơn đã hủy, không thể khớp giao dịch.");
 
             invoice.MarkPaidBySePay(transaction.TransferAmount, DateTime.UtcNow);
             await _invoiceRepository.UpdateAsync(invoice);

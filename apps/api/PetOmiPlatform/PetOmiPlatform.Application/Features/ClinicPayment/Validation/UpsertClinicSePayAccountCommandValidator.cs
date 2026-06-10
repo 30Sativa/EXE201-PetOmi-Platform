@@ -8,22 +8,22 @@ namespace PetOmiPlatform.Application.Features.ClinicPayment.Validation
         public UpsertClinicSePayAccountCommandValidator()
         {
             RuleFor(x => x.ClinicId)
-                .NotEmpty().WithMessage("Clinic ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Clinic ID không được để trống.");
 
             RuleFor(x => x.Payload.BankCode)
-                .NotEmpty().WithMessage("Bank code khong duoc de trong.")
-                .MaximumLength(30).WithMessage("Bank code toi da 30 ky tu.");
+                .NotEmpty().WithMessage("Bank code không được để trống.")
+                .MaximumLength(30).WithMessage("Bank code tối đa 30 ký tự.");
 
             RuleFor(x => x.Payload.AccountNumber)
-                .NotEmpty().WithMessage("Account number khong duoc de trong.")
-                .MaximumLength(50).WithMessage("Account number toi da 50 ky tu.");
+                .NotEmpty().WithMessage("Account number không được để trống.")
+                .MaximumLength(50).WithMessage("Account number tối đa 50 ký tự.");
 
             RuleFor(x => x.Payload.BankName)
-                .MaximumLength(100).WithMessage("Bank name toi da 100 ky tu.")
+                .MaximumLength(100).WithMessage("Bank name tối đa 100 ký tự.")
                 .When(x => !string.IsNullOrWhiteSpace(x.Payload.BankName));
 
             RuleFor(x => x.Payload.AccountName)
-                .MaximumLength(200).WithMessage("Account name toi da 200 ky tu.")
+                .MaximumLength(200).WithMessage("Account name tối đa 200 ký tự.")
                 .When(x => !string.IsNullOrWhiteSpace(x.Payload.AccountName));
         }
     }

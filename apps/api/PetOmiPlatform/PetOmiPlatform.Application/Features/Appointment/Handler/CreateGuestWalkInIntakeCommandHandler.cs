@@ -69,14 +69,14 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
             ClinicRoleGuard.RequireActiveStaff(staff);
 
             if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var appointmentType))
-                throw new ValidationException("AppointmentType", $"Loai lich hen khong hop le: {req.AppointmentType}");
+                throw new ValidationException("AppointmentType", $"Loại lịch hẹn không hợp lệ: {req.AppointmentType}");
 
             if (req.ServiceId.HasValue)
             {
                 var service = await _serviceRepository.GetByIdAsync(req.ServiceId.Value)
                     ?? throw new NotFoundException("ClinicService", req.ServiceId.Value);
                 if (service.ClinicId != req.ClinicId || !service.IsActive)
-                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("ServiceId", "Dịch vụ không thuộc phòng khám hoặc đã ngừng hoạt động.");
             }
 
             if (req.VetClinicId.HasValue)
@@ -85,7 +85,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     req.VetClinicId.Value,
                     req.ClinicId);
                 if (vetClinic == null)
-                    throw new ValidationException("VetClinicId", "VetClinicId khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("VetClinicId", "VetClinicId không thuộc phòng khám hoặc đã ngừng hoạt động.");
 
                 var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
                 var hasConflict = await _appointmentRepository.HasDoctorConflictAcrossClinicsAsync(
@@ -94,7 +94,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     req.StartTime,
                     req.EndTime);
                 if (hasConflict)
-                    throw new ConflictException("Bac si da co lich trong khung gio nay.");
+                    throw new ConflictException("Bác sĩ đã có lịch trong khung giờ này.");
             }
 
             var tempEmail = BuildTemporaryGuestEmail(req.ClinicId, req.OwnerPhone);
@@ -179,7 +179,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     return code;
             }
 
-            throw new ConflictException("Khong the tao ma dinh danh thu cung. Vui long thu lai.");
+            throw new ConflictException("Không thể tạo mã định danh thú cưng. Vui lòng thử lại.");
         }
     }
 }

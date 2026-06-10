@@ -104,7 +104,7 @@ export default function ClinicPaymentSettingsPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-base font-extrabold text-po-text">Tài khoản hiện tại</h3>
-              <p className="mt-1 text-xs text-po-text-muted">Backend trả số tài khoản dạng masked.</p>
+              <p className="mt-1 text-xs text-po-text-muted">Hệ thống trả số tài khoản đã che bớt.</p>
             </div>
             <span className="grid size-10 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
               <Landmark className="size-5" />

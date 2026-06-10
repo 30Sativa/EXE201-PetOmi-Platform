@@ -47,7 +47,7 @@ namespace PetOmiPlatform.API.Controllers
 
             return Ok(BaseResponse<PetHealthShareResolvedResponse>.Ok(
                 result,
-                "Resolve ma chia se ho so suc khoe thanh cong."));
+                "Xác thực mã chia sẻ hồ sơ sức khỏe thành công."));
         }
     }
 }

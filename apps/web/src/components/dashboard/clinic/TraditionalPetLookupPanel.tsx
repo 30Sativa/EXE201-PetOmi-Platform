@@ -44,7 +44,7 @@ export default function TraditionalPetLookupPanel({
     },
     onError: (error) => {
       setErrorMessage(
-        getErrorMessage(error, "Could not open this pet's clinic overview."),
+        getErrorMessage(error, "Không thể mở tổng quan phòng khám của thú cưng này."),
       )
     },
   })
@@ -58,9 +58,9 @@ export default function TraditionalPetLookupPanel({
           <UsersRound className="size-5" />
         </span>
         <div>
-          <h2 className="text-lg font-extrabold text-po-text">Known pets</h2>
+          <h2 className="text-lg font-extrabold text-po-text">Thú cưng đã biết</h2>
           <p className="mt-1 text-sm text-po-text-muted">
-            Search pets that already have appointment history with this clinic.
+            Tìm thú cưng đã có lịch hẹn tại phòng khám này.
           </p>
         </div>
       </div>
@@ -70,7 +70,7 @@ export default function TraditionalPetLookupPanel({
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search by pet, owner, email, phone, or internal ID"
+          placeholder="Tìm theo thú cưng, chủ nuôi, email, số điện thoại hoặc ID nội bộ"
           className="h-11 w-full rounded-xl border border-po-border bg-white pl-11 pr-4 text-sm text-po-text placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20"
         />
       </div>
@@ -88,8 +88,8 @@ export default function TraditionalPetLookupPanel({
       ) : pets.length === 0 ? (
         <EmptyState
           icon={UsersRound}
-          title="No known pets found"
-          description="Use a health share code or continue with guest intake if this is a new patient."
+          title="Không tìm thấy thú cưng đã biết"
+          description="Dùng mã chia sẻ sức khỏe hoặc tiếp tục tiếp nhận khách nếu đây là bệnh nhân mới."
         />
       ) : (
         <div className="grid gap-3">

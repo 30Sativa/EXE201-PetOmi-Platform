@@ -192,7 +192,7 @@ export default function ClinicInventoryPage() {
         <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-po-text-subtle">
-              Kho clinic
+              Kho phòng khám
             </p>
             <h2 className="mt-1 text-xl font-extrabold leading-tight text-po-text">
               Thuốc, vật tư và hàng bán tại quầy

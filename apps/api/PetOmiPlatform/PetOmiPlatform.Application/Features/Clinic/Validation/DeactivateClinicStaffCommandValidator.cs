@@ -8,14 +8,14 @@ namespace PetOmiPlatform.Application.Features.Clinic.Validation
         public DeactivateClinicStaffCommandValidator()
         {
             RuleFor(x => x.ClinicId)
-                .NotEmpty().WithMessage("ClinicId khong duoc de trong.");
+                .NotEmpty().WithMessage("ClinicId không được để trống.");
 
             RuleFor(x => x.VetClinicId)
-                .NotEmpty().WithMessage("VetClinicId khong duoc de trong.");
+                .NotEmpty().WithMessage("VetClinicId không được để trống.");
 
             RuleFor(x => x.Request.Reason)
-                .NotEmpty().WithMessage("Reason khong duoc de trong.")
-                .MaximumLength(500).WithMessage("Reason toi da 500 ky tu.");
+                .NotEmpty().WithMessage("Reason không được để trống.")
+                .MaximumLength(500).WithMessage("Reason tối đa 500 ký tự.");
         }
     }
 }

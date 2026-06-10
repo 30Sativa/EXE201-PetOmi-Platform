@@ -8,7 +8,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public GetBillingDashboardSummaryQueryValidator()
         {
             RuleFor(x => x.ClinicId)
-                .NotEmpty().WithMessage("Clinic ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Clinic ID không được để trống.");
         }
     }
 }

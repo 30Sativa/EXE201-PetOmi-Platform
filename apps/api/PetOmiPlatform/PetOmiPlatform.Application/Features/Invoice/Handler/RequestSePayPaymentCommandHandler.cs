@@ -35,10 +35,10 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
         {
             var invoice = await _invoiceRepository.GetByIdAsync(request.InvoiceId);
             if (invoice == null)
-                throw new NotFoundException($"Khong tim thay hoa don ID {request.InvoiceId}");
+                throw new NotFoundException($"Không tìm thấy hóa đơn ID {request.InvoiceId}");
 
             if (invoice.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen tao yeu cau SePay cho hoa don nay.");
+                throw new ForbiddenException("Không có quyền tạo yêu cầu SePay cho hóa đơn này.");
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequireInvoiceWriter(staff);
@@ -48,7 +48,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 PaymentProvider.SePay);
 
             if (account == null)
-                throw new ConflictException("Clinic chua cau hinh tai khoan SePay active.");
+                throw new ConflictException("Phòng khám chưa cấu hình tài khoản SePay active.");
 
             var paymentReference = await ResolvePaymentReferenceAsync(
                 request.Payload.PaymentReference,
@@ -96,7 +96,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 }
             }
 
-            throw new ConflictException("Khong the tao payment reference SePay duy nhat. Vui long thu lai.");
+            throw new ConflictException("Không thể tạo payment reference SePay duy nhất. Vui lòng thử lại.");
         }
 
         private async Task<string> ResolvePaymentReferenceAsync(string? requestedReference, string? existingReference)

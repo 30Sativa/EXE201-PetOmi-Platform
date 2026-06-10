@@ -570,13 +570,13 @@ function PrescriptionForm({
           <Input label="Số ngày" value={String(form.durationDays)} onChange={(value) => update("durationDays", Number(value) || 0)} />
         </div>
         <label className="grid gap-1.5 text-sm font-semibold text-po-text">
-          Link kho
+          Liên kết kho
           <select
             value={form.inventoryItemId ?? ""}
             onChange={(event) => update("inventoryItemId", event.target.value)}
             className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm font-medium outline-none focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
           >
-            <option value="">Không link kho</option>
+            <option value="">Không liên kết kho</option>
             {inventory.map((item) => (
               <option key={item.itemId} value={item.itemId}>
                 {item.itemName} · tồn {item.quantity}

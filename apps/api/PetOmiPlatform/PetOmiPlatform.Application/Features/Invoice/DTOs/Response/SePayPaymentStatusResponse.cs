@@ -6,7 +6,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
         public string InvoiceCode { get; set; } = string.Empty;
         public string? PaymentReference { get; set; }
         public string Status { get; set; } = "Pending";
-        public string Message { get; set; } = "Dang cho thanh toan.";
+        public string Message { get; set; } = "Đang chờ thanh toán.";
         public bool IsFinal { get; set; }
         public decimal FinalAmount { get; set; }
         public decimal? PaidAmount { get; set; }

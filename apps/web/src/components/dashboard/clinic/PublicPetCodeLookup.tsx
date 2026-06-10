@@ -31,7 +31,7 @@ export default function PublicPetCodeLookup({
     },
     onError: (error) => {
       setMatches([])
-      setErrorMessage(getErrorMessage(error, "Could not lookup this PetOmi ID."))
+      setErrorMessage(getErrorMessage(error, "Không thể tra cứu PetOmi ID này."))
     },
   })
 
@@ -46,7 +46,7 @@ export default function PublicPetCodeLookup({
       setErrorMessage(
         getErrorMessage(
           error,
-          "This pet needs a valid HealthShareCode before private health records can be shown.",
+          "Thú cưng này cần HealthShareCode hợp lệ trước khi hiển thị hồ sơ sức khỏe riêng tư.",
         ),
       )
     },
@@ -66,9 +66,9 @@ export default function PublicPetCodeLookup({
           <IdCard className="size-5" />
         </span>
         <div>
-          <h2 className="text-lg font-extrabold text-po-text">PetOmi ID lookup</h2>
+          <h2 className="text-lg font-extrabold text-po-text">Tra cứu PetOmi ID</h2>
           <p className="mt-1 text-sm text-po-text-muted">
-            Use this only to find known pets. Private health records still require a share code or an existing clinic relationship.
+            Chỉ dùng để tìm thú cưng đã biết. Hồ sơ sức khỏe riêng tư vẫn cần mã chia sẻ hoặc quan hệ phòng khám hợp lệ.
           </p>
         </div>
       </div>
@@ -120,14 +120,14 @@ export default function PublicPetCodeLookup({
                 className="inline-flex h-9 items-center gap-2 rounded-full border border-po-border bg-white px-4 text-xs font-semibold text-po-text-muted transition hover:text-po-text disabled:opacity-60"
               >
                 {overviewMutation.isPending ? <LoadingSpinner size="sm" /> : null}
-                Open clinic overview
+                Mở tổng quan phòng khám
               </button>
             </div>
           ))}
         </div>
       ) : lookupMutation.isSuccess ? (
         <div className="rounded-2xl border border-po-border bg-po-surface-muted px-4 py-3 text-sm text-po-text-muted">
-          No known pet found for this code. Ask the owner for a HealthShareCode or continue with guest intake.
+          Không tìm thấy thú cưng nào với mã này. Hãy xin HealthShareCode từ chủ nuôi hoặc tiếp tục tiếp nhận khách.
         </div>
       ) : null}
     </section>

@@ -74,13 +74,13 @@ export default function ClinicReconciliationPage() {
       })
     },
     onSuccess: async () => {
-      toast.success("Đã match giao dịch SePay.")
+      toast.success("Đã khớp giao dịch SePay.")
       setMatchTarget(null)
       setInvoiceId("")
       setReviewNote("")
       await invalidate()
     },
-    onError: (error) => toast.error(getErrorMessage(error, "Không thể match giao dịch.")),
+    onError: (error) => toast.error(getErrorMessage(error, "Không thể khớp giao dịch.")),
   })
 
   const dismissMutation = useMutation({
@@ -124,7 +124,7 @@ export default function ClinicReconciliationPage() {
               Đối soát giao dịch
             </h2>
             <p className="mt-2 max-w-2xl text-xs leading-5 text-po-text-muted">
-              Kiểm tra chuyển khoản, match hóa đơn hoặc bỏ qua giao dịch không hợp lệ.
+              Kiểm tra chuyển khoản, khớp hóa đơn hoặc bỏ qua giao dịch không hợp lệ.
             </p>
           </div>
 
@@ -140,7 +140,7 @@ export default function ClinicReconciliationPage() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
               <h3 className="text-base font-extrabold text-po-text">Danh sách giao dịch</h3>
-              <p className="mt-1 text-xs text-po-text-muted">{items.length} giao dịch · {unmatchedCount} chưa match hóa đơn.</p>
+              <p className="mt-1 text-xs text-po-text-muted">{items.length} giao dịch · {unmatchedCount} chưa khớp hóa đơn.</p>
             </div>
             <label className="grid w-36 gap-1.5 text-xs font-bold text-po-text">
               Cảnh báo sau
@@ -193,11 +193,11 @@ export default function ClinicReconciliationPage() {
       </section>
 
       {matchTarget ? (
-        <Modal title="Match giao dịch" onClose={() => setMatchTarget(null)}>
+        <Modal title="Khớp giao dịch" onClose={() => setMatchTarget(null)}>
           <p className="text-sm text-po-text-muted">{formatCurrency(matchTarget.transferAmount)} · {matchTarget.referenceCode ?? formatShortId(matchTarget.paymentTransactionId)}</p>
           <div className="mt-4 grid gap-4">
             <Input label="Mã hóa đơn nội bộ" value={invoiceId} onChange={setInvoiceId} />
-            <Textarea label="Ghi chú review" value={reviewNote} onChange={setReviewNote} />
+            <Textarea label="Ghi chú rà soát" value={reviewNote} onChange={setReviewNote} />
           </div>
           <div className="mt-5 flex justify-end gap-3">
             <button onClick={() => setMatchTarget(null)} className="inline-flex h-10 items-center rounded-full px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted">Hủy</button>
@@ -206,7 +206,7 @@ export default function ClinicReconciliationPage() {
               disabled={!invoiceId.trim() || matchMutation.isPending}
               className="inline-flex h-10 items-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
             >
-              {matchMutation.isPending ? "Đang match..." : "Match hóa đơn"}
+              {matchMutation.isPending ? "Đang khớp..." : "Khớp hóa đơn"}
             </button>
           </div>
         </Modal>
@@ -308,7 +308,7 @@ function ReconciliationRow({
               onClick={onMatch}
               className="inline-flex h-9 items-center rounded-full bg-po-primary-soft px-4 text-xs font-bold text-po-primary transition hover:bg-po-primary hover:text-white active:translate-y-px"
             >
-              Match thủ công
+              Khớp thủ công
             </button>
             <button
               onClick={onDismiss}

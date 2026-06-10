@@ -42,7 +42,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
 
             var vetClinic = await _vetClinicRepo.GetByVetClinicIdAsync(schedule.VetClinicId);
             if (vetClinic == null || vetClinic.ClinicId != command.ClinicId)
-                throw new ForbiddenException("Lich lam viec nay khong thuoc phong kham cua ban.");
+                throw new ForbiddenException("Lịch làm việc này không thuộc phòng khám của bạn.");
 
             schedule.Deactivate();
             await _scheduleRepo.UpdateAsync(schedule);

@@ -45,10 +45,10 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                     ?? throw new NotFoundException("Appointment", request.Payload.AppointmentId.Value);
 
                 if (appointment.ClinicId != request.ClinicId)
-                    throw new ForbiddenException("Khong co quyen tao hoa don cho lich hen nay.");
+                    throw new ForbiddenException("Không có quyền tạo hóa đơn cho lịch hẹn này.");
 
                 if (await _invoiceRepository.HasActiveInvoiceAsync(appointment.Id))
-                    throw new ConflictException("Lich hen nay da co hoa don active.");
+                    throw new ConflictException("Lịch hẹn này đã có hóa đơn active.");
 
                 appointmentId = appointment.Id;
             }
@@ -60,20 +60,20 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                     ?? throw new NotFoundException("Order", request.Payload.OrderId.Value);
 
                 if (order.ClinicId != request.ClinicId)
-                    throw new ForbiddenException("Khong co quyen tao hoa don cho don hang nay.");
+                    throw new ForbiddenException("Không có quyền tạo hóa đơn cho đơn hàng này.");
 
                 if (await _invoiceRepository.HasActiveOrderInvoiceAsync(order.Id))
-                    throw new ConflictException("Don hang nay da co hoa don active.");
+                    throw new ConflictException("Đơn hàng này đã có hóa đơn active.");
             }
 
             if (!appointmentId.HasValue && order == null)
-                throw new ValidationException("InvoiceSource", "Hoa don phai co AppointmentId, OrderId hoac ca hai.");
+                throw new ValidationException("InvoiceSource", "Hóa đơn phải có AppointmentId, OrderId hoặc cả hai.");
 
             InvoiceSource? source = null;
             if (!string.IsNullOrWhiteSpace(request.Payload.InvoiceSource))
             {
                 if (!Enum.TryParse<InvoiceSource>(request.Payload.InvoiceSource, true, out var parsedSource))
-                    throw new ValidationException("InvoiceSource", $"Nguon hoa don khong hop le: {request.Payload.InvoiceSource}");
+                    throw new ValidationException("InvoiceSource", $"Nguồn hóa đơn không hợp lệ: {request.Payload.InvoiceSource}");
                 source = parsedSource;
             }
 

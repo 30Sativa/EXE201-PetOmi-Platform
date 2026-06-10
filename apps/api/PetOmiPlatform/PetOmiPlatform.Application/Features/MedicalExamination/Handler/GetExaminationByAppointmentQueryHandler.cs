@@ -31,7 +31,7 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
 
             var appointment = await _appointmentRepository.GetByIdAsync(exam.AppointmentId);
             if (appointment == null)
-                throw new NotFoundException($"Khong tim thay lich hen ID {exam.AppointmentId}");
+                throw new NotFoundException($"Không tìm thấy lịch hẹn ID {exam.AppointmentId}");
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.UserId, appointment.ClinicId);
             ClinicRoleGuard.RequireActiveStaff(staff);

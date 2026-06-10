@@ -15,10 +15,10 @@ import type { PetHealthOverviewResponse } from "@/types"
 type IntakeTab = "code" | "petomi-id" | "known-pets" | "guest"
 
 const tabs: { value: IntakeTab; label: string }[] = [
-  { value: "code", label: "Enter code" },
+  { value: "code", label: "Nhập mã" },
   { value: "petomi-id", label: "PetOmi ID" },
-  { value: "known-pets", label: "Known pets" },
-  { value: "guest", label: "Guest intake" },
+  { value: "known-pets", label: "Thú cưng đã biết" },
+  { value: "guest", label: "Tiếp nhận khách" },
 ]
 
 export default function ClinicPetIntakePage() {
@@ -46,16 +46,16 @@ export default function ClinicPetIntakePage() {
   if (!clinicId) {
     return (
       <div className="rounded-[24px] border border-po-border bg-white p-6 text-center">
-        <h2 className="text-xl font-extrabold text-po-text">Clinic profile required</h2>
+        <h2 className="text-xl font-extrabold text-po-text">Cần hồ sơ phòng khám</h2>
         <p className="mt-2 text-sm text-po-text-muted">
-          Create or join a clinic before using pet intake.
+          Tạo hoặc tham gia phòng khám trước khi tiếp nhận thú cưng.
         </p>
         <button
           type="button"
           onClick={() => navigate("/dashboard/owner/register-clinic")}
           className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white"
         >
-          Register clinic
+          Đăng ký phòng khám
           <ArrowRight className="size-4" />
         </button>
       </div>
@@ -74,7 +74,7 @@ export default function ClinicPetIntakePage() {
               Pet health access
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-po-text-muted">
-              Start with a HealthShareCode when the owner gives one. PetOmi ID and known-pet search are fallback paths and do not bypass backend access rules.
+              Bắt đầu bằng HealthShareCode khi chủ nuôi cung cấp. PetOmi ID và tìm thú cưng đã biết là phương án dự phòng và không bỏ qua quy tắc phân quyền của hệ thống.
             </p>
           </div>
           <Link
@@ -137,7 +137,7 @@ export default function ClinicPetIntakePage() {
             No health overview loaded
           </h3>
           <p className="mx-auto mt-1 max-w-xl text-sm text-po-text-muted">
-            Resolve a health share code or open a known pet with a valid clinic relationship to view the permitted overview.
+            Xác thực mã chia sẻ sức khỏe hoặc mở thú cưng có quan hệ hợp lệ với phòng khám để xem phần tổng quan được phép.
           </p>
         </section>
       )}
@@ -153,9 +153,9 @@ function GuestIntakeFallback() {
           <LogIn className="size-5" />
         </span>
         <div>
-          <h2 className="text-lg font-extrabold text-po-text">Guest intake fallback</h2>
+          <h2 className="text-lg font-extrabold text-po-text">Tiếp nhận khách dự phòng</h2>
           <p className="mt-1 max-w-2xl text-sm text-po-text-muted">
-            Use the appointment workspace for walk-in or emergency intake when the owner does not have an account, a PetOmi ID, or a HealthShareCode.
+            Dùng màn hình lịch hẹn để tiếp nhận walk-in hoặc cấp cứu khi chủ nuôi chưa có tài khoản, PetOmi ID hoặc HealthShareCode.
           </p>
         </div>
       </div>

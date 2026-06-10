@@ -30,7 +30,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             if (invoice == null)
                 return null;
             if (invoice.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen xem hoa don nay.");
+                throw new ForbiddenException("Không có quyền xem hóa đơn này.");
 
             var items = await _invoiceRepository.GetItemsByInvoiceIdAsync(invoice.Id);
             return invoice.ToResponse(items);

@@ -29,7 +29,7 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
             CancellationToken cancellationToken)
         {
             var pet = await _petRepository.GetByIdAsync(query.PetId)
-                ?? throw new NotFoundException("Khong tim thay ho so thu cung.");
+                ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
             await _accessService.EnsureOwnerAsync(pet, query.UserId, cancellationToken);
 

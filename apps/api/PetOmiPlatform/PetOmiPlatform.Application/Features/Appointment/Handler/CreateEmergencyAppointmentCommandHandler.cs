@@ -57,7 +57,7 @@ public class CreateEmergencyAppointmentCommandHandler
             vetClinic = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
                 req.VetClinicId.Value,
                 req.ClinicId)
-                ?? throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
+                ?? throw new ValidationException("VetClinicId", "Bác sĩ không thuộc phòng khám hoặc đã ngừng hoạt động.");
 
             if (!req.ForceConflictOverride)
             {
@@ -67,7 +67,7 @@ public class CreateEmergencyAppointmentCommandHandler
 
                 if (hasConflict)
                     throw new ConflictException(
-                        "Bac si da co lich trong khung gio nay. Neu van muon tao emergency, set ForceConflictOverride = true.");
+                        "Bác sĩ đã có lịch trong khung giờ này. Nếu vẫn muốn tạo lịch cấp cứu, hãy đặt ForceConflictOverride = true.");
             }
         }
 
@@ -78,7 +78,7 @@ public class CreateEmergencyAppointmentCommandHandler
             if (service == null)
                 throw new NotFoundException("ClinicService", req.ServiceId.Value);
             if (service.ClinicId != req.ClinicId || !service.IsActive)
-                throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+                throw new ValidationException("ServiceId", "Dịch vụ không thuộc phòng khám hoặc đã ngừng hoạt động.");
 
             durationMins = service.DurationMins;
         }

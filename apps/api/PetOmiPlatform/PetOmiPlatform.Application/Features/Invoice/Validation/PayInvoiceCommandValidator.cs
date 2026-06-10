@@ -9,12 +9,12 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public PayInvoiceCommandValidator()
         {
             RuleFor(x => x.InvoiceId)
-                .NotEmpty().WithMessage("Invoice ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Invoice ID không được để trống.");
 
             RuleFor(x => x.Payload.PaymentMethod)
-                .NotEmpty().WithMessage("Payment method khong duoc de trong.")
+                .NotEmpty().WithMessage("Payment method không được để trống.")
                 .Must(value => Enum.TryParse<PaymentMethod>(value, true, out _))
-                .WithMessage("Payment method khong hop le.");
+                .WithMessage("Payment method không hợp lệ.");
 
             RuleFor(x => x.Payload.PaidAmount)
                 .GreaterThan(0)

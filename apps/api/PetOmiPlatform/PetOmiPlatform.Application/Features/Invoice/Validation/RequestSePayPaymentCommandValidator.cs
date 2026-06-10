@@ -8,11 +8,11 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public RequestSePayPaymentCommandValidator()
         {
             RuleFor(x => x.InvoiceId)
-                .NotEmpty().WithMessage("Invoice ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Invoice ID không được để trống.");
 
             RuleFor(x => x.Payload.PaymentReference)
                 .MaximumLength(100)
-                .WithMessage("Payment reference toi da 100 ky tu.")
+                .WithMessage("Payment reference tối đa 100 ký tự.")
                 .When(x => !string.IsNullOrWhiteSpace(x.Payload.PaymentReference));
         }
     }

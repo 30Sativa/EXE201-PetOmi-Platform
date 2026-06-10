@@ -8,13 +8,13 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public HandleSePayWebhookCommandValidator()
         {
             RuleFor(x => x.Payload.Id)
-                .GreaterThan(0).WithMessage("Webhook transaction ID khong hop le.");
+                .GreaterThan(0).WithMessage("Webhook transaction ID không hợp lệ.");
 
             RuleFor(x => x.Payload.AccountNumber)
-                .NotEmpty().WithMessage("Webhook account number khong hop le.");
+                .NotEmpty().WithMessage("Webhook account number không hợp lệ.");
 
             RuleFor(x => x.Payload.Content)
-                .NotEmpty().WithMessage("Webhook transfer content khong hop le.");
+                .NotEmpty().WithMessage("Webhook transfer content không hợp lệ.");
 
             RuleFor(x => x.Payload.TransferType)
                 .Must(value => value == "in" || value == "out")

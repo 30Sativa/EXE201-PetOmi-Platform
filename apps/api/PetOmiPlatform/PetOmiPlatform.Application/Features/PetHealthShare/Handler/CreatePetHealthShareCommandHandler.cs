@@ -44,7 +44,7 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
             CancellationToken cancellationToken)
         {
             var pet = await _petRepository.GetByIdAsync(command.PetId)
-                ?? throw new NotFoundException("Khong tim thay ho so thu cung.");
+                ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
             await _accessService.EnsureOwnerAsync(pet, command.RequestUserId, cancellationToken);
 
@@ -97,7 +97,7 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
                     return code;
             }
 
-            throw new ConflictException("Khong the tao ma chia se ho so suc khoe. Vui long thu lai.");
+            throw new ConflictException("Không thể tạo mã chia sẻ hồ sơ sức khỏe. Vui lòng thử lại.");
         }
     }
 }

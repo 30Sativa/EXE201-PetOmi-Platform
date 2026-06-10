@@ -27,10 +27,10 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
         {
             var invoice = await _invoiceRepository.GetByIdAsync(request.InvoiceId);
             if (invoice == null)
-                throw new NotFoundException($"Khong tim thay hoa don ID {request.InvoiceId}");
+                throw new NotFoundException($"Không tìm thấy hóa đơn ID {request.InvoiceId}");
 
             if (invoice.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen xac nhan hoan tien cho hoa don nay.");
+                throw new ForbiddenException("Không có quyền xác nhận hoàn tiền cho hóa đơn này.");
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequireInvoiceWriter(staff);

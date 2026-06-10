@@ -53,7 +53,7 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
                 var item = await _inventoryRepository.GetByIdAsync(request.Payload.InventoryItemId.Value)
                     ?? throw new NotFoundException("InventoryItem", request.Payload.InventoryItemId.Value);
                 if (item.ClinicId != request.ClinicId || !item.IsActive)
-                    throw new ValidationException("InventoryItemId", "Vat tu/thuoc khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("InventoryItemId", "Vật tư/thuốc không thuộc phòng khám hoặc đã ngừng hoạt động.");
             }
 
             var prescription = PrescriptionDomain.Create(

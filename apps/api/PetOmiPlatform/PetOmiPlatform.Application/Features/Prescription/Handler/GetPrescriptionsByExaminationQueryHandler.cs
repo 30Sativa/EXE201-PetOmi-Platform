@@ -31,11 +31,11 @@ namespace PetOmiPlatform.Application.Features.Prescription.Handler
         {
             var exam = await _examinationRepository.GetByIdAsync(request.ExaminationId);
             if (exam == null)
-                throw new NotFoundException($"Khong tim thay phieu kham ID {request.ExaminationId}");
+                throw new NotFoundException($"Không tìm thấy phiếu khám ID {request.ExaminationId}");
 
             var appointment = await _appointmentRepository.GetByIdAsync(exam.AppointmentId);
             if (appointment == null || appointment.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen xem don thuoc cua phieu kham nay.");
+                throw new ForbiddenException("Không có quyền xem đơn thuốc của phiếu khám này.");
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequireActiveStaff(staff);

@@ -64,7 +64,7 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
             ClinicRoleGuard.RequireActiveStaff(staff);
 
             var pet = await _petRepository.GetByIdAsync(query.PetId)
-                ?? throw new NotFoundException("Khong tim thay ho so thu cung.");
+                ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
             pet.EnsureActive();
 
             var appointments = (await _appointmentRepository.GetByPetIdAsync(query.PetId, 1, 1000)).ToList();
@@ -100,15 +100,15 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
                     query.ShareCode.Trim().ToUpperInvariant());
 
                 if (shareToken == null)
-                    throw new NotFoundException("Ma chia se ho so suc khoe khong ton tai hoac da bi thu hoi.");
+                    throw new NotFoundException("Mã chia sẻ hồ sơ sức khỏe không tồn tại hoặc đã bị thu hồi.");
 
                 if (shareToken.PetId != query.PetId)
-                    throw new ForbiddenException("Ma chia se khong thuoc ho so thu cung nay.");
+                    throw new ForbiddenException("Mã chia sẻ không thuộc hồ sơ thú cưng này.");
 
                 if (!shareToken.CanBeUsedByClinic(query.ClinicId, DateTime.UtcNow) &&
                     !IsPreviouslyResolvedForClinic(shareToken, query.ClinicId, DateTime.UtcNow))
                 {
-                    throw new ForbiddenException("Ma chia se ho so suc khoe khong hop le cho phong kham nay.");
+                    throw new ForbiddenException("Mã chia sẻ hồ sơ sức khỏe không hợp lệ cho phòng khám này.");
                 }
 
                 return new PetHealthOverviewAccessResponse
@@ -121,7 +121,7 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
 
             var hasClinicRelationship = appointments.Any(a => a.ClinicId == query.ClinicId);
             if (!hasClinicRelationship)
-                throw new ForbiddenException("Ho so suc khoe yeu cau HealthShareCode hoac lich hen hop le voi phong kham.");
+                throw new ForbiddenException("Hồ sơ sức khỏe yêu cầu HealthShareCode hoặc lịch hẹn hợp lệ với phòng khám.");
 
             return new PetHealthOverviewAccessResponse
             {

@@ -30,7 +30,7 @@ namespace PetOmiPlatform.Application.Features.Order.Handler
             if (order == null)
                 return null;
             if (order.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen xem don hang nay.");
+                throw new ForbiddenException("Không có quyền xem đơn hàng này.");
 
             var items = await _orderRepository.GetItemsByOrderIdAsync(order.Id);
             return order.ToResponse(items);

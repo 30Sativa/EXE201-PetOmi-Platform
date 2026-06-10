@@ -30,7 +30,7 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
             CancellationToken cancellationToken)
         {
             var pet = await _petRepository.GetByIdAsync(command.PetId)
-                ?? throw new NotFoundException("Khong tim thay ho so thu cung.");
+                ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
 
             await _accessService.EnsureOwnerAsync(pet, command.RequestUserId, cancellationToken);
 
@@ -38,7 +38,7 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
                 ?? throw new NotFoundException("PetHealthShareToken", command.ShareTokenId);
 
             if (shareToken.PetId != command.PetId)
-                throw new ValidationException("ShareTokenId", "Ma chia se khong thuoc ho so thu cung nay.");
+                throw new ValidationException("ShareTokenId", "Mã chia sẻ không thuộc hồ sơ thú cưng này.");
 
             shareToken.Revoke(DateTime.UtcNow);
             await _shareTokenRepository.UpdateAsync(shareToken);

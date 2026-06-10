@@ -25,10 +25,10 @@ const getResolveErrorMessage = (error: unknown) => {
     "response" in error &&
     (error as { response?: { status?: number } }).response?.status === 429
   ) {
-    return "Too many attempts. Please wait a minute before trying another HealthShareCode."
+    return "Bạn thử quá nhiều lần. Vui lòng chờ một phút trước khi nhập HealthShareCode khác."
   }
 
-  return getErrorMessage(error, "Could not resolve this health share code.")
+  return getErrorMessage(error, "Không thể xác thực mã chia sẻ sức khỏe này.")
 }
 
 export default function PetHealthShareCodeForm({
@@ -63,7 +63,7 @@ export default function PetHealthShareCodeForm({
     if (!initialCode || !clinicId) return
     setShareCode(initialCode)
     mutation.mutate(initialCode)
-    // Run once for a link-opened share code.
+    // Chạy một lần khi mở bằng link có mã chia sẻ.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clinicId, initialCode])
 
@@ -85,10 +85,10 @@ export default function PetHealthShareCodeForm({
         </span>
         <div>
           <h2 className="text-lg font-extrabold text-po-text">
-            Enter health share code
+            Nhập mã chia sẻ sức khỏe
           </h2>
           <p className="mt-1 text-sm text-po-text-muted">
-            Paste the HLT code provided by the pet owner. The access scope is enforced by backend.
+            Dán mã HLT do chủ nuôi cung cấp. Phạm vi truy cập được hệ thống kiểm soát.
           </p>
         </div>
       </div>

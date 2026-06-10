@@ -31,7 +31,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 ?? throw new NotFoundException("Appointment", command.AppointmentId);
 
             if (appointment.BookedByUserId != command.OwnerUserId)
-                throw new ForbiddenException("Ban khong co quyen doi lich hen nay.");
+                throw new ForbiddenException("Bạn không có quyền đổi lịch hẹn này.");
 
             var req = command.Request;
 

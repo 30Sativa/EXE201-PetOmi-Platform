@@ -61,11 +61,11 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
                     await LogFailureAsync(
                         latestToken,
                         query,
-                        "Ma chia se ho so suc khoe da bi thu hoi.",
+                        "Mã chia sẻ hồ sơ sức khỏe đã bị thu hồi.",
                         cancellationToken);
                 }
 
-                throw new NotFoundException("Ma chia se ho so suc khoe khong ton tai hoac da bi thu hoi.");
+                throw new NotFoundException("Mã chia sẻ hồ sơ sức khỏe không tồn tại hoặc đã bị thu hồi.");
             }
 
             var nowUtc = DateTime.UtcNow;
@@ -74,9 +74,9 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
                 await LogFailureAsync(
                     shareToken,
                     query,
-                    "Ma chia se ho so suc khoe da het han.",
+                    "Mã chia sẻ hồ sơ sức khỏe đã hết hạn.",
                     cancellationToken);
-                throw new ValidationException("ShareCode", "Ma chia se ho so suc khoe da het han.");
+                throw new ValidationException("ShareCode", "Mã chia sẻ hồ sơ sức khỏe đã hết hạn.");
             }
 
             if (shareToken.HasReachedMaxUses())
@@ -84,9 +84,9 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
                 await LogFailureAsync(
                     shareToken,
                     query,
-                    "Ma chia se ho so suc khoe da dat gioi han su dung.",
+                    "Mã chia sẻ hồ sơ sức khỏe đã đạt giới hạn sử dụng.",
                     cancellationToken);
-                throw new ValidationException("ShareCode", "Ma chia se ho so suc khoe da dat gioi han su dung.");
+                throw new ValidationException("ShareCode", "Mã chia sẻ hồ sơ sức khỏe đã đạt giới hạn sử dụng.");
             }
 
             if (shareToken.ClinicId.HasValue && shareToken.ClinicId.Value != query.ClinicId)
@@ -94,21 +94,21 @@ namespace PetOmiPlatform.Application.Features.PetHealthShare.Handler
                 await LogFailureAsync(
                     shareToken,
                     query,
-                    "Ma chia se ho so suc khoe khong thuoc phong kham nay.",
+                    "Mã chia sẻ hồ sơ sức khỏe không thuộc phòng khám này.",
                     cancellationToken);
-                throw new ForbiddenException("Ma chia se ho so suc khoe khong thuoc phong kham nay.");
+                throw new ForbiddenException("Mã chia sẻ hồ sơ sức khỏe không thuộc phòng khám này.");
             }
 
             var pet = await _petRepository.GetByIdAsync(shareToken.PetId)
-                ?? throw new NotFoundException("Khong tim thay ho so thu cung.");
+                ?? throw new NotFoundException("Không tìm thấy hồ sơ thú cưng.");
             if (!pet.IsActive)
             {
                 await LogFailureAsync(
                     shareToken,
                     query,
-                    "Ho so thu cung da bi xoa.",
+                    "Hồ sơ thú cưng đã bị xóa.",
                     cancellationToken);
-                throw new NotFoundException("Ho so thu cung da bi xoa.");
+                throw new NotFoundException("Hồ sơ thú cưng đã bị xóa.");
             }
 
             shareToken.RegisterSuccessfulUse(nowUtc);

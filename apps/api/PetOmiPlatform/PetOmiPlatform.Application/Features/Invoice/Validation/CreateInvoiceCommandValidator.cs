@@ -9,24 +9,24 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         {
             RuleFor(x => x.Payload)
                 .Must(x => x.AppointmentId.HasValue || x.OrderId.HasValue)
-                .WithMessage("Hoa don phai co AppointmentId, OrderId hoac ca hai.");
+                .WithMessage("Hóa đơn phải có AppointmentId, OrderId hoặc cả hai.");
 
             RuleFor(x => x.Payload.TotalAmount)
-                .GreaterThanOrEqualTo(0).WithMessage("Tong tien khong duoc am.");
+                .GreaterThanOrEqualTo(0).WithMessage("Tổng tiền không được âm.");
 
             RuleFor(x => x.Payload.DiscountAmount)
-                .GreaterThanOrEqualTo(0).WithMessage("Giam gia khong duoc am.")
+                .GreaterThanOrEqualTo(0).WithMessage("Giảm giá không được âm.")
                 .Must((req, discount) => discount <= req.Payload.TotalAmount)
-                .WithMessage("Giam gia khong duoc lon hon tong tien.");
+                .WithMessage("Giảm giá không được lớn hơn tổng tiền.");
 
             RuleFor(x => x.Payload.Items)
-                .NotEmpty().WithMessage("Hoa don phai co it nhat 1 dong chi tiet.");
+                .NotEmpty().WithMessage("Hóa đơn phải có ít nhất 1 dòng chi tiết.");
 
             RuleForEach(x => x.Payload.Items).ChildRules(items =>
             {
-                items.RuleFor(i => i.Description).NotEmpty().WithMessage("Mo ta khong duoc de trong.");
+                items.RuleFor(i => i.Description).NotEmpty().WithMessage("Mô tả không được để trống.");
                 items.RuleFor(i => i.Quantity).GreaterThan(0).WithMessage("So luong phai lon hon 0.");
-                items.RuleFor(i => i.UnitPrice).GreaterThanOrEqualTo(0).WithMessage("Don gia khong duoc am.");
+                items.RuleFor(i => i.UnitPrice).GreaterThanOrEqualTo(0).WithMessage("Đơn giá không được âm.");
             });
         }
     }

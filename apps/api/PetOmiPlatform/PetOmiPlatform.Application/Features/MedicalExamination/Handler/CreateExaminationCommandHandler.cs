@@ -40,7 +40,7 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
                 throw new ForbiddenException("Không có quyền tạo phiếu khám cho lịch hẹn này.");
 
             if (appointment.Status != AppointmentStatus.CheckedIn)
-                throw new ConflictException("Chi co the tao phieu kham cho lich hen da check-in.");
+                throw new ConflictException("Chỉ có thể tạo phiếu khám cho lịch hẹn đã check-in.");
 
             var existingExam = await _examinationRepository.GetByAppointmentIdAsync(request.Payload.AppointmentId);
             if (existingExam != null)

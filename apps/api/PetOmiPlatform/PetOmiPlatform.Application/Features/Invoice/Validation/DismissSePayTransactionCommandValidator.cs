@@ -8,14 +8,14 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public DismissSePayTransactionCommandValidator()
         {
             RuleFor(x => x.ClinicId)
-                .NotEmpty().WithMessage("Clinic ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Clinic ID không được để trống.");
 
             RuleFor(x => x.PaymentTransactionId)
-                .NotEmpty().WithMessage("Payment transaction ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Payment transaction ID không được để trống.");
 
             RuleFor(x => x.ReviewNote)
-                .NotEmpty().WithMessage("Review note khong duoc de trong.")
-                .MaximumLength(500).WithMessage("Review note toi da 500 ky tu.");
+                .NotEmpty().WithMessage("Review note không được để trống.")
+                .MaximumLength(500).WithMessage("Review note tối đa 500 ký tự.");
         }
     }
 }

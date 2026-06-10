@@ -40,14 +40,14 @@ namespace PetOmiPlatform.Application.Features.Order.Handler
             ClinicRoleGuard.RequireInvoiceWriter(staff);
 
             if (!Enum.TryParse<OrderType>(payload.OrderType, true, out var orderType))
-                throw new ValidationException("OrderType", $"Loai don hang khong hop le: {payload.OrderType}");
+                throw new ValidationException("OrderType", $"Loại đơn hàng không hợp lệ: {payload.OrderType}");
 
             if (payload.AppointmentId.HasValue)
             {
                 var appointment = await _appointmentRepository.GetByIdAsync(payload.AppointmentId.Value)
                     ?? throw new NotFoundException("Appointment", payload.AppointmentId.Value);
                 if (appointment.ClinicId != payload.ClinicId)
-                    throw new ValidationException("AppointmentId", "Lich hen khong thuoc phong kham nay.");
+                    throw new ValidationException("AppointmentId", "Lịch hẹn không thuộc phòng khám này.");
             }
 
             var order = OrderDomain.Create(
@@ -65,11 +65,11 @@ namespace PetOmiPlatform.Application.Features.Order.Handler
                 var inventory = await _inventoryRepository.GetByIdAsync(itemRequest.InventoryItemId)
                     ?? throw new NotFoundException("InventoryItem", itemRequest.InventoryItemId);
                 if (inventory.ClinicId != payload.ClinicId || !inventory.IsActive)
-                    throw new ValidationException("InventoryItemId", $"Mat hang '{inventory.ItemName}' khong thuoc clinic hoac da ngung ban.");
+                    throw new ValidationException("InventoryItemId", $"Mặt hàng '{inventory.ItemName}' không thuộc phòng khám hoặc đã ngừng bán.");
                 if (itemRequest.Quantity > inventory.Quantity)
-                    throw new ValidationException("Quantity", $"Ton kho '{inventory.ItemName}' khong du. Hien co: {inventory.Quantity}.");
+                    throw new ValidationException("Quantity", $"Tồn kho '{inventory.ItemName}' không đủ. Hiện có: {inventory.Quantity}.");
                 if (!Enum.TryParse<OrderItemSourceType>(itemRequest.SourceType, true, out var sourceType))
-                    throw new ValidationException("SourceType", $"Nguon dong hang khong hop le: {itemRequest.SourceType}");
+                    throw new ValidationException("SourceType", $"Nguồn dòng hàng không hợp lệ: {itemRequest.SourceType}");
 
                 var unitPrice = itemRequest.UnitPrice ?? inventory.UnitPrice ?? 0m;
                 var description = string.IsNullOrWhiteSpace(itemRequest.Description)

@@ -56,9 +56,9 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 appointment = await _appointmentRepository.GetByIdAsync(request.Payload.AppointmentId.Value)
                     ?? throw new NotFoundException("Appointment", request.Payload.AppointmentId.Value);
                 if (appointment.ClinicId != request.ClinicId)
-                    throw new ForbiddenException("Khong co quyen tao hoa don cho lich hen nay.");
+                    throw new ForbiddenException("Không có quyền tạo hóa đơn cho lịch hẹn này.");
                 if (await _invoiceRepository.HasActiveInvoiceAsync(appointment.Id))
-                    throw new ConflictException("Lich hen nay da co hoa don active.");
+                    throw new ConflictException("Lịch hẹn này đã có hóa đơn active.");
             }
 
             OrderDomain? order = null;
@@ -67,13 +67,13 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 order = await _orderRepository.GetByIdAsync(request.Payload.OrderId.Value)
                     ?? throw new NotFoundException("Order", request.Payload.OrderId.Value);
                 if (order.ClinicId != request.ClinicId)
-                    throw new ForbiddenException("Khong co quyen tao hoa don cho don hang nay.");
+                    throw new ForbiddenException("Không có quyền tạo hóa đơn cho đơn hàng này.");
                 if (await _invoiceRepository.HasActiveOrderInvoiceAsync(order.Id))
-                    throw new ConflictException("Don hang nay da co hoa don active.");
+                    throw new ConflictException("Đơn hàng này đã có hóa đơn active.");
             }
 
             if (appointment == null && order == null)
-                throw new ValidationException("InvoiceSource", "Auto-compose can AppointmentId, OrderId hoac ca hai.");
+                throw new ValidationException("InvoiceSource", "Auto-compose cần AppointmentId, OrderId hoặc cả hai.");
 
             var examination = appointment == null
                 ? null
@@ -81,7 +81,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
 
             var items = await ComposeInvoiceItemsAsync(request, appointment, examination, order);
             if (items.Count == 0)
-                throw new ConflictException("Khong du du lieu de auto-compose hoa don. Hay tao hoa don thu cong.");
+                throw new ConflictException("Không đủ dữ liệu để auto-compose hóa đơn. Hãy tạo hóa đơn thủ công.");
 
             var totalAmount = items.Sum(x => x.Quantity * x.UnitPrice);
             var invoice = InvoiceDomain.Create(
@@ -127,7 +127,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                     ?? throw new NotFoundException("MedicalExamination", request.Payload.ExaminationId.Value);
 
                 if (examination.AppointmentId != appointmentId)
-                    throw new ConflictException("Phieu kham khong thuoc lich hen dang tao hoa don.");
+                    throw new ConflictException("Phiếu khám không thuộc lịch hẹn đang tạo hóa đơn.");
 
                 return examination;
             }
@@ -227,7 +227,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
         {
             return items
                 .Where(x => x.UnitPrice == 0)
-                .Select(x => $"Dong '{x.Description}' chua co don gia (UnitPrice = 0). Vui long kiem tra truoc khi thu tien.")
+                .Select(x => $"Dòng '{x.Description}' chưa có đơn giá (UnitPrice = 0). Vui lòng kiểm tra trước khi thu tiền.")
                 .ToList();
         }
 

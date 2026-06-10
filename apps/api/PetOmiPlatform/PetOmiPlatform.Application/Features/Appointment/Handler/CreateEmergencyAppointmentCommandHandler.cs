@@ -100,6 +100,8 @@ public class CreateEmergencyAppointmentCommandHandler
             serviceId: req.ServiceId,
             notes: req.Notes);
 
+        appointment.CheckIn(command.StaffUserId);
+
         await _appointmentRepository.AddAsync(appointment);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -791,7 +791,7 @@ function EmergencyModal({
       })
     },
     onSuccess: async () => {
-      toast.success("Đã tạo lịch cấp cứu.")
+      toast.success("Đã tạo và check-in ca cấp cứu.")
       setPetSearch("")
       setSelectedPetId("")
       setNotes("")
@@ -824,7 +824,7 @@ function EmergencyModal({
       })
     },
     onSuccess: async () => {
-      toast.success("Đã tạo lịch cấp cứu cho pet mới.")
+      toast.success("Đã tạo và check-in ca cấp cứu cho pet mới.")
       setPetSearch("")
       setSelectedPetId("")
       setNotes("")

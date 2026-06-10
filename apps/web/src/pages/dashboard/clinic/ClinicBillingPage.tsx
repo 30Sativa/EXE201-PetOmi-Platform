@@ -25,7 +25,7 @@ import StatusBadge from "@/components/ui/StatusBadge"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useMyClinic } from "@/hooks/useClinicQueries"
 import { appointmentStatusLabel, appointmentTypeLabel, invoiceSourceLabel, invoiceStatusLabel } from "@/lib/clinicDisplay"
-import { formatCurrency, formatDate, formatShortId, formatTime } from "@/lib/format"
+import { formatCurrency, formatDate, formatShortId, formatTime, todayDateInput, toDateInputValue } from "@/lib/format"
 import { getErrorMessage } from "@/lib/utils"
 import {
   autoComposeInvoiceApi,
@@ -54,8 +54,8 @@ import type {
   SePayReconciliationItemResponse,
 } from "@/types"
 
-const today = new Date().toISOString().slice(0, 10)
-const sevenDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+const today = todayDateInput()
+const sevenDaysAgo = toDateInputValue(new Date(Date.now() - 6 * 24 * 60 * 60 * 1000))
 
 type RetailCartItem = {
   inventoryItemId: string

@@ -222,8 +222,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.LicenseNumber, "UQ__Clinics__E8890166B2846302").IsUnique();
 
             entity.Property(e => e.ClinicId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("ClinicID");
+                .HasColumnName("ClinicID")
+                .ValueGeneratedNever();
             entity.Property(e => e.Address).HasMaxLength(500);
             entity.Property(e => e.ClinicName).HasMaxLength(200);
             entity.Property(e => e.CreatedAt)
@@ -258,8 +258,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => new { e.ClinicId, e.Provider, e.IsActive }, "IX_ClinicPaymentAccounts_ClinicProvider");
 
             entity.Property(e => e.ClinicPaymentAccountId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("ClinicPaymentAccountID");
+                .HasColumnName("ClinicPaymentAccountID")
+                .ValueGeneratedNever();
             entity.Property(e => e.AccountName).HasMaxLength(200);
             entity.Property(e => e.AccountNumber).HasMaxLength(50);
             entity.Property(e => e.BankCode).HasMaxLength(30);
@@ -285,8 +285,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.ClinicId, "IX_ClinicServices_ClinicID");
 
             entity.Property(e => e.ServiceId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("ServiceID");
+                .HasColumnName("ServiceID")
+                .ValueGeneratedNever();
             entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -311,8 +311,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.VetClinicId, "IX_DoctorSchedules_VetClinicID");
 
             entity.Property(e => e.ScheduleId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("ScheduleID");
+                .HasColumnName("ScheduleID")
+                .ValueGeneratedNever();
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
@@ -381,8 +381,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.ClinicId, "IX_Inventory_ClinicID");
 
             entity.Property(e => e.ItemId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("ItemID");
+                .HasColumnName("ItemID")
+                .ValueGeneratedNever();
             entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -416,8 +416,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.InvoiceCode, "UQ_Invoices_InvoiceCode").IsUnique();
 
             entity.Property(e => e.InvoiceId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("InvoiceID");
+                .HasColumnName("InvoiceID")
+                .ValueGeneratedNever();
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.BankAccountNo).HasMaxLength(50);
             entity.Property(e => e.BankCode).HasMaxLength(30);
@@ -479,8 +479,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.InvoiceId, "IX_InvoiceItems_InvoiceID");
 
             entity.Property(e => e.InvoiceItemId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("InvoiceItemID");
+                .HasColumnName("InvoiceItemID")
+                .ValueGeneratedNever();
             entity.Property(e => e.Description).HasMaxLength(300);
             entity.Property(e => e.InventoryItemId).HasColumnName("InventoryItemID");
             entity.Property(e => e.InvoiceId).HasColumnName("InvoiceID");
@@ -519,8 +519,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => new { e.ClinicId, e.Status }, "IX_Orders_Clinic_Status");
 
             entity.Property(e => e.OrderId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("OrderID");
+                .HasColumnName("OrderID")
+                .ValueGeneratedNever();
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.CancelledAt).HasColumnType("datetime");
             entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
@@ -571,8 +571,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.InventoryItemId, "IX_OrderItems_InventoryItemID");
 
             entity.Property(e => e.OrderItemId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("OrderItemID");
+                .HasColumnName("OrderItemID")
+                .ValueGeneratedNever();
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
@@ -637,8 +637,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => new { e.PetId, e.CreatedAt }, "IX_MedicalExaminations_PetID").IsDescending(false, true);
 
             entity.Property(e => e.ExaminationId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("ExaminationID");
+                .HasColumnName("ExaminationID")
+                .ValueGeneratedNever();
             entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
             entity.Property(e => e.ChiefComplaint).HasMaxLength(500);
             entity.Property(e => e.CompletedAt).HasColumnType("datetime");
@@ -707,8 +707,8 @@ public partial class PetOmniDbContext : DbContext
                 .IsDescending(false, true);
 
             entity.Property(e => e.PaymentTransactionId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("PaymentTransactionID");
+                .HasColumnName("PaymentTransactionID")
+                .ValueGeneratedNever();
             entity.Property(e => e.AccountNumber).HasMaxLength(50);
             entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
             entity.Property(e => e.CreatedAt)
@@ -756,8 +756,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasKey(e => e.PetId).HasName("PK__Pets__48E538024F5F401D");
 
             entity.Property(e => e.PetId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("PetID");
+                .HasColumnName("PetID")
+                .ValueGeneratedNever();
             entity.Property(e => e.AvatarUrl)
                 .HasMaxLength(500)
                 .HasColumnName("AvatarURL");
@@ -1023,8 +1023,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.ExaminationId, "IX_Prescriptions_ExaminationID");
 
             entity.Property(e => e.PrescriptionId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("PrescriptionID");
+                .HasColumnName("PrescriptionID")
+                .ValueGeneratedNever();
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
@@ -1327,8 +1327,8 @@ public partial class PetOmniDbContext : DbContext
             entity.ToTable("VetClinic");
 
             entity.Property(e => e.VetClinicId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("VetClinicID");
+                .HasColumnName("VetClinicID")
+                .ValueGeneratedNever();
             entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -1396,8 +1396,8 @@ public partial class PetOmniDbContext : DbContext
             entity.HasIndex(e => e.UserId, "UQ__VetProfi__1788CCAD3C8AA3B1").IsUnique();
 
             entity.Property(e => e.VetProfileId)
-                .HasDefaultValueSql("(newsequentialid())")
-                .HasColumnName("VetProfileID");
+                .HasColumnName("VetProfileID")
+                .ValueGeneratedNever();
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");

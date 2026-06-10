@@ -784,7 +784,7 @@ function EmergencyModal({
       return createEmergencyAppointmentApi({
         clinicId,
         petId: selectedPetId,
-        appointmentDate: now.toISOString().slice(0, 10),
+        appointmentDate: todayDateInput(),
         startTime: now.toTimeString().slice(0, 5),
         endTime: new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5),
         notes: notes.trim() || undefined,

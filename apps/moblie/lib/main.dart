@@ -375,7 +375,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Emulator dùng API mặc định: ${widget.repository.apiClient.baseUrl}',
+                      'API hiện tại: ${widget.repository.apiClient.baseUrl}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.textSubtle,
                         fontSize: 11,

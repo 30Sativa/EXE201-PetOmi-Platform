@@ -10,6 +10,8 @@ import {
   CalendarCheck,
   ChevronRight,
   Clock3,
+  CreditCard,
+  Crown,
   ExternalLink,
   History,
   Lightbulb,
@@ -17,11 +19,13 @@ import {
   MessageSquare,
   PawPrint,
   Plus,
+  RefreshCw,
   Send,
   Sparkles,
   Square,
   Syringe,
   Utensils,
+  X,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/AuthContext"
@@ -34,7 +38,13 @@ import {
   getConversationMessagesApi,
   sendChatMessageApi,
 } from "@/services/chat.service"
+import {
+  createChatSubscriptionPaymentApi,
+  getChatSubscriptionPaymentStatusApi,
+  getChatSubscriptionStatusApi,
+} from "@/services/chat-subscription.service"
 import type {
+  ChatSubscriptionPaymentResponse,
   ChatConversationResponse,
   ChatMessageResponse,
   SendChatMessageRequest,
@@ -104,6 +114,38 @@ const formatDateTime = (value?: string | null) => {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date)
+}
+
+const formatDate = (value?: string | null) => {
+  if (!value) return "Chua co"
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return "Chua co"
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date)
+}
+
+const formatCurrency = (value?: number | null) =>
+  new Intl.NumberFormat("vi-VN", {
+    style: "currency",
+    currency: "VND",
+    maximumFractionDigits: 0,
+  }).format(value ?? 0)
+
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as {
+      errors?: string[]
+      message?: string
+    } | undefined
+    return data?.errors?.[0] ?? data?.message ?? fallback
+  }
+
+  return fallback
 }
 
 const getConversationTitle = (conversation: ChatConversationResponse) => {
@@ -230,6 +272,8 @@ export default function OwnerChatPage() {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null)
   const [isPetPickerOpen, setIsPetPickerOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentRequest, setPaymentRequest] =
+    useState<ChatSubscriptionPaymentResponse | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const petPickerRef = useRef<HTMLDivElement | null>(null)
@@ -282,6 +326,8 @@ export default function OwnerChatPage() {
     [conversations, conversationId],
   )
 
+  const subscriptionPetId = selectedConversation?.petId ?? (selectedPetId || null)
+
   const canChangePet = !conversationId || !selectedConversation?.petId
 
   const currentPetLabel = useMemo(() => {
@@ -297,6 +343,55 @@ export default function OwnerChatPage() {
 
     return pets.find((pet) => pet.petId === selectedPetId)?.name ?? "Thú cưng đã chọn"
   }, [conversationId, currentPetLabel, pets, selectedPetId])
+
+  const {
+    data: subscriptionStatus,
+    isLoading: isLoadingSubscription,
+  } = useQuery({
+    queryKey: ["owner-chat-subscription", subscriptionPetId],
+    queryFn: () => getChatSubscriptionStatusApi(subscriptionPetId),
+    staleTime: 30 * 1000,
+  })
+
+  const createPaymentMutation = useMutation({
+    mutationFn: createChatSubscriptionPaymentApi,
+    onSuccess: (payment) => {
+      setPaymentRequest(payment)
+      setError(null)
+    },
+    onError: (mutationError) => {
+      setError(
+        getApiErrorMessage(
+          mutationError,
+          "Khong tao duoc QR thanh toan Premium. Vui long thu lai sau.",
+        ),
+      )
+    },
+  })
+
+  const paymentStatusQuery = useQuery({
+    queryKey: ["owner-chat-subscription-payment", paymentRequest?.paymentId],
+    queryFn: () => getChatSubscriptionPaymentStatusApi(paymentRequest?.paymentId ?? ""),
+    enabled: Boolean(paymentRequest?.paymentId) &&
+      paymentRequest?.status.toLowerCase() === "pending",
+    refetchInterval: (query) => {
+      const latestPayment = query.state.data as ChatSubscriptionPaymentResponse | undefined
+      const status = latestPayment?.status?.toLowerCase()
+      return status && status !== "pending" ? false : 5000
+    },
+  })
+
+  useEffect(() => {
+    const latestPayment = paymentStatusQuery.data
+    if (!latestPayment) return
+
+    setPaymentRequest(latestPayment)
+    if (latestPayment.status.toLowerCase() === "paid") {
+      void queryClient.invalidateQueries({
+        queryKey: ["owner-chat-subscription"],
+      })
+    }
+  }, [paymentStatusQuery.data, queryClient])
 
   useEffect(() => {
     setMessages(history)
@@ -361,6 +456,9 @@ export default function OwnerChatPage() {
       void queryClient.invalidateQueries({
         queryKey: ["owner-chat-messages", nextConversationId],
       })
+      void queryClient.invalidateQueries({
+        queryKey: ["owner-chat-subscription"],
+      })
     },
     onError: (mutationError) => {
       sendAbortControllerRef.current = null
@@ -368,7 +466,12 @@ export default function OwnerChatPage() {
       if (axios.isCancel(mutationError)) {
         setError(null)
       } else {
-        setError("Không gửi được tin nhắn. Vui lòng thử lại sau.")
+        setError(
+          getApiErrorMessage(
+            mutationError,
+            "Không gửi được tin nhắn. Vui lòng thử lại sau.",
+          ),
+        )
       }
 
       setActiveMessageId(null)
@@ -377,6 +480,32 @@ export default function OwnerChatPage() {
   })
 
   const isAiBusy = sendMessageMutation.isPending || isWaitingForAi
+  const quotaBlocked = Boolean(subscriptionStatus && !subscriptionStatus.canSend)
+  const quotaPercent = subscriptionStatus
+    ? Math.min(
+        100,
+        Math.round(
+          (subscriptionStatus.usage.usedMessages /
+            Math.max(subscriptionStatus.usage.monthlyMessageQuota, 1)) *
+            100,
+        ),
+      )
+    : 0
+  const premiumPlan = subscriptionStatus?.plans.find(
+    (plan) => plan.code.toLowerCase() === "premium",
+  )
+
+  const handleUpgradePremium = () => {
+    if (!subscriptionPetId) {
+      setError("Chon mot pet truoc khi nang cap Premium.")
+      return
+    }
+
+    createPaymentMutation.mutate({
+      planCode: "premium",
+      petId: subscriptionPetId,
+    })
+  }
 
   const abortPendingSend = () => {
     sendAbortControllerRef.current?.abort()
@@ -482,6 +611,13 @@ export default function OwnerChatPage() {
 
     const content = input.trim()
     if (!content || isAiBusy) return
+    if (quotaBlocked) {
+      setError(
+        subscriptionStatus?.blockReason ??
+          "Ban da dung het quota PetOmi AI trong chu ky hien tai.",
+      )
+      return
+    }
 
     const abortController = new AbortController()
     sendAbortControllerRef.current = abortController
@@ -711,7 +847,7 @@ export default function OwnerChatPage() {
             <button
               type={isAiBusy ? "button" : "submit"}
               onClick={isAiBusy ? stopCurrentResponse : undefined}
-              disabled={!isAiBusy && !input.trim()}
+              disabled={!isAiBusy && (!input.trim() || quotaBlocked)}
               className={cn(
                 "absolute bottom-2.5 right-2.5 grid size-10 place-items-center rounded-full text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-0",
                 isAiBusy
@@ -844,6 +980,188 @@ export default function OwnerChatPage() {
                 : "Chọn bé để PetOmi tư vấn sát hơn với hồ sơ và thói quen của bé."}
             </p>
           </div>
+          <div className="mt-4 rounded-2xl border border-po-border bg-white p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-po-text-muted">
+                  <Crown className="size-4 text-po-primary" />
+                  AI plan
+                </div>
+                <h4 className="mt-2 text-lg font-extrabold text-po-text">
+                  {isLoadingSubscription
+                    ? "Dang tai..."
+                    : subscriptionStatus?.currentPlanName ?? "Free"}
+                </h4>
+                <p className="mt-1 text-xs font-semibold text-po-text-subtle">
+                  {subscriptionStatus?.isPremium
+                    ? `Premium cho ${currentPetLabel} den ${formatDate(subscriptionStatus.subscriptionExpiresAt)}`
+                    : subscriptionPetId
+                      ? `Free quota account. Premium se gan rieng cho ${currentPetLabel}.`
+                      : "Chon pet de mua Premium theo tung be."}
+                </p>
+              </div>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-1 text-xs font-extrabold uppercase",
+                  subscriptionStatus?.isPremium
+                    ? "bg-po-primary text-white"
+                    : "bg-po-surface-muted text-po-text-muted",
+                )}
+              >
+                {subscriptionStatus?.currentPlanCode ?? "free"}
+              </span>
+            </div>
+
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-xs font-bold text-po-text-muted">
+                <span>Quota thang</span>
+                <span>
+                  {subscriptionStatus
+                    ? `${subscriptionStatus.usage.remainingMessages}/${subscriptionStatus.usage.monthlyMessageQuota} con lai`
+                    : "--"}
+                </span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-po-surface-muted">
+                <div
+                  className={cn(
+                    "h-full rounded-full",
+                    quotaBlocked ? "bg-po-danger" : "bg-po-primary",
+                  )}
+                  style={{ width: `${quotaPercent}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs font-medium text-po-text-subtle">
+                Reset: {formatDate(subscriptionStatus?.usage.resetAt)}
+              </p>
+            </div>
+
+            {subscriptionStatus?.blockReason ? (
+              <p className="mt-3 rounded-xl bg-po-danger-soft px-3 py-2 text-xs font-semibold text-po-danger">
+                {subscriptionStatus.blockReason}
+              </p>
+            ) : null}
+
+            <div className="mt-4 grid gap-2 text-xs font-semibold text-po-text-muted">
+              <div className="flex items-center justify-between gap-3">
+                <span>RAG sau</span>
+                <span>{subscriptionStatus?.capabilities.deepRagEnabled ? "Co" : "Khong"}</span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span>Upload anh</span>
+                <span>
+                  {subscriptionStatus?.capabilities.imageUploadEnabled
+                    ? `${subscriptionStatus.capabilities.maxImageUploadsPerMonth}/thang`
+                    : "Premium"}
+                </span>
+              </div>
+            </div>
+
+            {!subscriptionStatus?.isPremium ? (
+              <button
+                type="button"
+                onClick={handleUpgradePremium}
+                disabled={!subscriptionPetId || createPaymentMutation.isPending}
+                className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-4 text-sm font-extrabold text-white shadow-sm shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {createPaymentMutation.isPending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <CreditCard className="size-4" />
+                )}
+                Nang cap Premium
+                {premiumPlan ? ` - ${formatCurrency(premiumPlan.priceMonthly)}` : ""}
+              </button>
+            ) : null}
+
+            {subscriptionStatus?.ownerPetSubscriptions?.length ? (
+              <div className="mt-4 border-t border-po-border pt-3">
+                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-po-text-muted">
+                  Premium pets
+                </p>
+                <div className="mt-2 grid gap-1.5">
+                  {subscriptionStatus.ownerPetSubscriptions
+                    .filter((item) => item.isUsable)
+                    .slice(0, 3)
+                    .map((item) => (
+                      <div
+                        key={item.subscriptionId}
+                        className="flex items-center justify-between gap-2 rounded-xl bg-po-surface-muted px-3 py-2 text-xs font-semibold text-po-text-muted"
+                      >
+                        <span className="truncate">{item.petName}</span>
+                        <span className="shrink-0 text-po-primary">
+                          den {formatDate(item.expiresAt)}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {paymentRequest ? (
+            <div className="mt-4 rounded-2xl border border-po-border bg-po-surface-muted/70 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-po-primary">
+                    SePay Premium
+                  </p>
+                  <h4 className="mt-1 text-base font-extrabold text-po-text">
+                    {paymentRequest.petName}
+                  </h4>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPaymentRequest(null)}
+                  className="grid size-8 place-items-center rounded-full bg-white text-po-text-muted ring-1 ring-po-border hover:text-po-text"
+                  aria-label="Dong thanh toan"
+                  title="Dong thanh toan"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+
+              {paymentRequest.status.toLowerCase() === "paid" ? (
+                <div className="mt-3 rounded-xl bg-po-success-soft px-3 py-2 text-sm font-bold text-po-success">
+                  Da thanh toan. Premium da kich hoat.
+                </div>
+              ) : (
+                <>
+                  <img
+                    src={paymentRequest.qrCodeUrl}
+                    alt="SePay QR"
+                    className="mt-3 aspect-square w-full rounded-2xl bg-white object-contain p-3 ring-1 ring-po-border"
+                  />
+                  <div className="mt-3 grid gap-1.5 text-xs font-semibold text-po-text-muted">
+                    <div className="flex justify-between gap-3">
+                      <span>So tien</span>
+                      <span className="text-po-text">{formatCurrency(paymentRequest.amount)}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span>Noi dung CK</span>
+                      <span className="text-po-primary">{paymentRequest.paymentReference}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span>Het han QR</span>
+                      <span>{formatDateTime(paymentRequest.expiresAt)}</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => paymentStatusQuery.refetch()}
+                    disabled={paymentStatusQuery.isFetching}
+                    className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-white px-3 text-xs font-extrabold text-po-text ring-1 ring-po-border transition hover:bg-po-surface-muted disabled:opacity-60"
+                  >
+                    {paymentStatusQuery.isFetching ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="size-3.5" />
+                    )}
+                    Kiem tra thanh toan
+                  </button>
+                </>
+              )}
+            </div>
+          ) : null}
         </section>
 
         <section className="flex min-h-[390px] flex-col overflow-hidden rounded-[24px] bg-white/88 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 xl:min-h-0">

@@ -9,5 +9,7 @@ namespace PetOmiPlatform.Infrastructure.Common.Settings
         public string? WebhookSecret { get; set; }
         public bool RequireHmacSignature { get; set; } = false;
         public int MaxTimestampSkewSeconds { get; set; } = 300;
+        public string? PlatformBankAccountNo { get; set; }
+        public string? PlatformBankCode { get; set; }
     }
 }

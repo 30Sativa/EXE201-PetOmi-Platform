@@ -47,6 +47,21 @@ namespace PetOmiPlatform.Infrastructure.Services
                 RegexOptions.IgnoreCase);
         }
 
+        public SePayPlatformAccount? GetPlatformPaymentAccount()
+        {
+            if (string.IsNullOrWhiteSpace(_settings.PlatformBankAccountNo) ||
+                string.IsNullOrWhiteSpace(_settings.PlatformBankCode))
+            {
+                return null;
+            }
+
+            return new SePayPlatformAccount
+            {
+                BankAccountNo = _settings.PlatformBankAccountNo.Trim(),
+                BankCode = _settings.PlatformBankCode.Trim().ToUpperInvariant()
+            };
+        }
+
         private static string NormalizePrefix(string? prefix)
         {
             return string.IsNullOrWhiteSpace(prefix)

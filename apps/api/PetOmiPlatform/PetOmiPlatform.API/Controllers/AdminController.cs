@@ -8,6 +8,8 @@ using PetOmiPlatform.Application.Features.Admin.Commands;
 using PetOmiPlatform.Application.Features.Admin.DTOs.Request;
 using PetOmiPlatform.Application.Features.Admin.DTOs.Response;
 using PetOmiPlatform.Application.Features.Admin.Queries;
+using PetOmiPlatform.Application.Features.ChatSubscription.DTOs;
+using PetOmiPlatform.Application.Features.ChatSubscription.Queries;
 using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers;
@@ -40,6 +42,16 @@ public class AdminController : BaseController
     {
         var result = await Mediator.Send(new GetAdminAlertsQuery(maxItems));
         return Ok(BaseResponse<AdminAlertsResponse>.Ok(result));
+    }
+
+    /// <summary>
+    /// Tong quan goi chat AI, subscription owner-pet va payment subscription gan day.
+    /// </summary>
+    [HttpGet("chat-subscriptions")]
+    public async Task<IActionResult> GetChatSubscriptions([FromQuery] int take = 50)
+    {
+        var result = await Mediator.Send(new GetAdminChatSubscriptionsQuery(take));
+        return Ok(BaseResponse<AdminChatSubscriptionsResponse>.Ok(result));
     }
 
     /// <summary>

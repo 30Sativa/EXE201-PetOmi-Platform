@@ -12,5 +12,8 @@ public interface IAiServiceClient
         Guid userId,
         string content,
         Guid? petId,
+        string subscriptionPlan = "free",
+        int priorityLevel = 0,
+        bool deepRagEnabled = false,
         CancellationToken cancellationToken = default);
 }

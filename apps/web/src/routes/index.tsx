@@ -25,6 +25,7 @@ import AdminDashboardPage from "@/pages/dashboard/AdminDashboardPage"
 import AdminAiPage from "@/pages/dashboard/AdminAiPage"
 import AdminAlertsPage from "@/pages/dashboard/AdminAlertsPage"
 import AdminAuditLogsPage from "@/pages/dashboard/AdminAuditLogsPage"
+import AdminChatSubscriptionsPage from "@/pages/dashboard/AdminChatSubscriptionsPage"
 import AdminClinicsPage from "@/pages/dashboard/AdminClinicsPage"
 import AdminProfilePage from "@/pages/dashboard/AdminProfilePage"
 import AdminRolesPage from "@/pages/dashboard/AdminRolesPage"
@@ -296,6 +297,10 @@ const router = createBrowserRouter([
           {
             path: "ai",
             element: <AdminAiPage />,
+          },
+          {
+            path: "chat-subscriptions",
+            element: <AdminChatSubscriptionsPage />,
           },
           {
             path: "clinics",

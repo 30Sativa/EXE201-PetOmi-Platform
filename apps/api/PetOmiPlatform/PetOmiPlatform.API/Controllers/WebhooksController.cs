@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using PetOmiPlatform.Application.Features.ChatSubscription.Commands;
 using PetOmiPlatform.Application.Features.Invoice.Command;
 using PetOmiPlatform.Application.Features.Invoice.DTOs.Request;
 using PetOmiPlatform.Infrastructure.Common.Settings;
@@ -66,8 +67,14 @@ namespace PetOmiPlatform.API.Controllers
                 return BadRequest(new { success = false });
             }
 
-            var command = new HandleSePayWebhookCommand(webhookRequest, receivedApiKey, rawPayload);
-            await _mediator.Send(command);
+            var subscriptionHandled = await _mediator.Send(
+                new HandleChatSubscriptionSePayPaymentCommand(webhookRequest, rawPayload));
+
+            if (!subscriptionHandled)
+            {
+                var command = new HandleSePayWebhookCommand(webhookRequest, receivedApiKey, rawPayload);
+                await _mediator.Send(command);
+            }
 
             return Ok(new { success = true });
         }

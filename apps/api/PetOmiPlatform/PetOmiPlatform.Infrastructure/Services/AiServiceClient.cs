@@ -23,6 +23,9 @@ public class AiServiceClient : IAiServiceClient
         Guid userId,
         string content,
         Guid? petId,
+        string subscriptionPlan = "free",
+        int priorityLevel = 0,
+        bool deepRagEnabled = false,
         CancellationToken cancellationToken = default)
     {
         var task = new AiProcessTask(
@@ -31,6 +34,9 @@ public class AiServiceClient : IAiServiceClient
             UserId: userId,
             Content: content,
             PetId: petId,
+            SubscriptionPlan: subscriptionPlan,
+            PriorityLevel: priorityLevel,
+            DeepRagEnabled: deepRagEnabled,
             CancellationToken: cancellationToken);
 
         await _taskQueue.EnqueueAsync(task, cancellationToken);

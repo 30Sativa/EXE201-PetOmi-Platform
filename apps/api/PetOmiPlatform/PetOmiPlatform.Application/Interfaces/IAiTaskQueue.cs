@@ -10,6 +10,9 @@ public record AiProcessTask(
     Guid UserId,
     string Content,
     Guid? PetId,
+    string SubscriptionPlan,
+    int PriorityLevel,
+    bool DeepRagEnabled,
     CancellationToken CancellationToken);
 
 public interface IAiTaskQueue

@@ -102,6 +102,9 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<Conversation> Conversations { get; set; }
     public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+    public virtual DbSet<ChatSubscriptionPlan> ChatSubscriptionPlans { get; set; }
+    public virtual DbSet<ChatSubscription> ChatSubscriptions { get; set; }
+    public virtual DbSet<ChatSubscriptionPayment> ChatSubscriptionPayments { get; set; }
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -1426,6 +1429,136 @@ public partial class PetOmniDbContext : DbContext
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");
             entity.HasIndex(e => e.SettingKey).IsUnique();
+        });
+
+        modelBuilder.Entity<ChatSubscriptionPlan>(entity =>
+        {
+            entity.HasKey(e => e.PlanId).HasName("PK_ChatSubscriptionPlans");
+
+            entity.HasIndex(e => e.Code, "UX_ChatSubscriptionPlans_Code").IsUnique();
+
+            entity.Property(e => e.PlanId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("PlanID");
+            entity.Property(e => e.Code).HasMaxLength(40);
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.PriceMonthly).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.BillingCycleDays).HasDefaultValue(30);
+            entity.Property(e => e.MonthlyMessageQuota).HasDefaultValue(20);
+            entity.Property(e => e.PriorityLevel).HasDefaultValue(0);
+            entity.Property(e => e.DeepRagEnabled).HasDefaultValue(false);
+            entity.Property(e => e.ImageUploadEnabled).HasDefaultValue(false);
+            entity.Property(e => e.MaxImageUploadsPerMonth).HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.SortOrder).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+        });
+
+        modelBuilder.Entity<ChatSubscription>(entity =>
+        {
+            entity.HasKey(e => e.SubscriptionId).HasName("PK_ChatSubscriptions");
+
+            entity.HasIndex(e => new { e.OwnerUserId, e.PetId, e.ExpiresAt }, "IX_ChatSubscriptions_OwnerPet_ExpiresAt")
+                .IsDescending(false, false, true);
+            entity.HasIndex(e => new { e.ScopeType, e.OwnerUserId, e.PetId, e.IsActive }, "UX_ChatSubscriptions_ActiveOwnerPet")
+                .IsUnique()
+                .HasFilter("([ScopeType]='OwnerPet' AND [OwnerUserID] IS NOT NULL AND [PetID] IS NOT NULL AND [IsActive]=(1))");
+
+            entity.Property(e => e.SubscriptionId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("SubscriptionID");
+            entity.Property(e => e.ScopeType).HasMaxLength(30);
+            entity.Property(e => e.OwnerUserId).HasColumnName("OwnerUserID");
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.PlanId).HasColumnName("PlanID");
+            entity.Property(e => e.Status).HasMaxLength(20);
+            entity.Property(e => e.StartsAt).HasColumnType("datetime");
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.CancelledAt).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.OwnerUser).WithMany()
+                .HasForeignKey(d => d.OwnerUserId)
+                .HasConstraintName("FK_ChatSubscriptions_OwnerUser");
+
+            entity.HasOne(d => d.Pet).WithMany()
+                .HasForeignKey(d => d.PetId)
+                .HasConstraintName("FK_ChatSubscriptions_Pet");
+
+            entity.HasOne(d => d.Clinic).WithMany()
+                .HasForeignKey(d => d.ClinicId)
+                .HasConstraintName("FK_ChatSubscriptions_Clinic");
+
+            entity.HasOne(d => d.Plan).WithMany(p => p.ChatSubscriptions)
+                .HasForeignKey(d => d.PlanId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChatSubscriptions_Plan");
+        });
+
+        modelBuilder.Entity<ChatSubscriptionPayment>(entity =>
+        {
+            entity.HasKey(e => e.PaymentId).HasName("PK_ChatSubscriptionPayments");
+
+            entity.HasIndex(e => e.PaymentReference, "UX_ChatSubscriptionPayments_PaymentReference").IsUnique();
+            entity.HasIndex(e => new { e.Provider, e.ProviderTransactionId }, "UX_ChatSubscriptionPayments_ProviderTransaction")
+                .IsUnique()
+                .HasFilter("([ProviderTransactionID] IS NOT NULL)");
+            entity.HasIndex(e => new { e.OwnerUserId, e.CreatedAt }, "IX_ChatSubscriptionPayments_Owner_CreatedAt")
+                .IsDescending(false, true);
+
+            entity.Property(e => e.PaymentId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("PaymentID");
+            entity.Property(e => e.SubscriptionId).HasColumnName("SubscriptionID");
+            entity.Property(e => e.PlanId).HasColumnName("PlanID");
+            entity.Property(e => e.OwnerUserId).HasColumnName("OwnerUserID");
+            entity.Property(e => e.PetId).HasColumnName("PetID");
+            entity.Property(e => e.Status).HasMaxLength(20);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.Currency).HasMaxLength(10).HasDefaultValue("VND");
+            entity.Property(e => e.Provider).HasMaxLength(20);
+            entity.Property(e => e.PaymentReference).HasMaxLength(100);
+            entity.Property(e => e.ProviderTransactionId)
+                .HasMaxLength(100)
+                .HasColumnName("ProviderTransactionID");
+            entity.Property(e => e.QrCodeUrl).HasMaxLength(1000);
+            entity.Property(e => e.BankAccountNo).HasMaxLength(50);
+            entity.Property(e => e.BankCode).HasMaxLength(30);
+            entity.Property(e => e.PaidAt).HasColumnType("datetime");
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.RawPayload).HasColumnType("nvarchar(max)");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Subscription).WithMany(p => p.ChatSubscriptionPayments)
+                .HasForeignKey(d => d.SubscriptionId)
+                .HasConstraintName("FK_ChatSubscriptionPayments_Subscription");
+
+            entity.HasOne(d => d.Plan).WithMany(p => p.ChatSubscriptionPayments)
+                .HasForeignKey(d => d.PlanId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChatSubscriptionPayments_Plan");
+
+            entity.HasOne(d => d.OwnerUser).WithMany()
+                .HasForeignKey(d => d.OwnerUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChatSubscriptionPayments_OwnerUser");
+
+            entity.HasOne(d => d.Pet).WithMany()
+                .HasForeignKey(d => d.PetId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ChatSubscriptionPayments_Pet");
         });
 
         modelBuilder.Entity<Conversation>(entity =>

@@ -136,6 +136,9 @@ public class AiBackgroundService : BackgroundService
             user_id = task.UserId.ToString(),
             content = task.Content,
             pet_id = task.PetId?.ToString(),
+            subscription_plan = task.SubscriptionPlan,
+            priority_level = task.PriorityLevel,
+            deep_rag_enabled = task.DeepRagEnabled,
             webhook_url = $"{_webhookBaseUrl.TrimEnd('/')}/api/chat/webhook/ai-response"
         };
 

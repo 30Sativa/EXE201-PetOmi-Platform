@@ -19,6 +19,7 @@ namespace PetOmiPlatform.Application.Features.Chat.Handler
         private readonly IAiServiceClient _aiServiceClient;
         private readonly IPetRepository _petRepository;
         private readonly IPetAccessService _petAccessService;
+        private readonly IChatSubscriptionAccessService _chatSubscriptionAccessService;
 
         public SendChatMessageCommandHandler(
             IConversationRepository conversationRepository,
@@ -26,7 +27,8 @@ namespace PetOmiPlatform.Application.Features.Chat.Handler
             IUnitOfWork unitOfWork,
             IAiServiceClient aiServiceClient,
             IPetRepository petRepository,
-            IPetAccessService petAccessService)
+            IPetAccessService petAccessService,
+            IChatSubscriptionAccessService chatSubscriptionAccessService)
         {
             _conversationRepository = conversationRepository;
             _chatMessageRepository = chatMessageRepository;
@@ -34,6 +36,7 @@ namespace PetOmiPlatform.Application.Features.Chat.Handler
             _aiServiceClient = aiServiceClient;
             _petRepository = petRepository;
             _petAccessService = petAccessService;
+            _chatSubscriptionAccessService = chatSubscriptionAccessService;
         }
 
         public async Task<SendChatMessageResponse> Handle(SendChatMessageCommand command, CancellationToken ct)
@@ -80,6 +83,18 @@ namespace PetOmiPlatform.Application.Features.Chat.Handler
                 await _conversationRepository.AddAsync(conversation);
             }
 
+            var chatAccess = await _chatSubscriptionAccessService.GetAccessAsync(
+                command.UserId,
+                effectivePetId,
+                ct);
+
+            if (!chatAccess.CanSend)
+            {
+                throw new ConflictException(
+                    chatAccess.BlockReason ??
+                    "Ban da dung het quota PetOmi AI trong chu ky hien tai.");
+            }
+
             var message = ChatMessageDomain.CreateUserMessage(
                 conversationId: conversation.Id,
                 content: command.Request.Content
@@ -100,6 +115,9 @@ namespace PetOmiPlatform.Application.Features.Chat.Handler
                 userId: command.UserId,
                 content: command.Request.Content,
                 petId: effectivePetId,
+                subscriptionPlan: chatAccess.PlanCode,
+                priorityLevel: chatAccess.PriorityLevel,
+                deepRagEnabled: chatAccess.DeepRagEnabled,
                 cancellationToken: ct
             );
 

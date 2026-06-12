@@ -34,6 +34,7 @@ namespace PetOmiPlatform.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));       // 6. Đo performance
 
             services.AddScoped<IPetAccessService, PetAccessService>();
+            services.AddScoped<IChatSubscriptionAccessService, ChatSubscriptionAccessService>();
 
             return services;
         }

@@ -830,6 +830,7 @@ async def call_openai_chat(
     pet_id: Optional[str] = None,
     pet_type: Optional[str] = None,
     enable_rag: bool = True,
+    deep_rag_enabled: bool = False,
 ) -> dict:
     start_time = time.time()
 
@@ -942,10 +943,12 @@ async def call_openai_chat(
         )
         rag_topics = DataSourceMap.rag_filter_topics(intent_enum)
         metadata_filter = {"topic": rag_topics} if rag_topics else None
+        rag_candidate_limit = 12 if deep_rag_enabled else RAG_CANDIDATE_CHUNKS
+        rag_prompt_limit = 5 if deep_rag_enabled else RAG_PROMPT_CHUNKS
         _, raw_rag_chunks, rag_error = await search_rag_with_timeout(
             query=rag_query_used,
             metadata_filter=metadata_filter,
-            top_k=RAG_CANDIDATE_CHUNKS,
+            top_k=rag_candidate_limit,
         )
         if rag_error:
             logger.warning(
@@ -957,6 +960,7 @@ async def call_openai_chat(
                 raw_rag_chunks,
                 intent,
                 pet_profile,
+                limit=rag_prompt_limit,
             )
 
     # Build structured prompt
@@ -1051,6 +1055,7 @@ async def process_message(request: ChatProcessRequest) -> AiWebhookPayload:
             conversation_id=request.conversation_id,
             pet_id=request.pet_id,
             pet_type=None,
+            deep_rag_enabled=request.deep_rag_enabled,
         )
 
         payload = AiWebhookPayload(

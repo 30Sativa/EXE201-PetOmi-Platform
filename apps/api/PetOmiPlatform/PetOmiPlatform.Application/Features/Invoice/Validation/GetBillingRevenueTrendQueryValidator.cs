@@ -8,7 +8,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public GetBillingRevenueTrendQueryValidator()
         {
             RuleFor(x => x.ClinicId)
-                .NotEmpty().WithMessage("Clinic ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Clinic ID không được để trống.");
 
             RuleFor(x => x.ToDate)
                 .GreaterThanOrEqualTo(x => x.FromDate)
@@ -16,7 +16,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
 
             RuleFor(x => x)
                 .Must(x => x.ToDate.DayNumber - x.FromDate.DayNumber <= 365)
-                .WithMessage("Khoang ngay toi da la 366 ngay.");
+                .WithMessage("Khoảng ngày tối đa là 366 ngày.");
         }
     }
 }

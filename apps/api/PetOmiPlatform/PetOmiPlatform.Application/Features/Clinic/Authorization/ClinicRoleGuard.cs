@@ -9,7 +9,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
         public static VetClinicDomain RequireActiveStaff(VetClinicDomain? staff)
         {
             if (staff == null || !staff.IsActive)
-                throw new ForbiddenException("Tai khoan chua duoc phan quyen tai phong kham nay.");
+                throw new ForbiddenException("Tài khoản chưa được phân quyền tại phòng khám này.");
 
             return staff;
         }
@@ -21,7 +21,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
             if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId &&
                 staff.RoleId != ClinicRoleConstants.PrimaryVetId)
             {
-                throw new ForbiddenException("Chi ClinicOwner hoac PrimaryVet moi co quyen cap nhat ho so kham.");
+                throw new ForbiddenException("Chỉ ClinicOwner hoặc PrimaryVet mới có quyền cập nhật hồ sơ khám.");
             }
 
             return staff;
@@ -34,7 +34,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
             if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId &&
                 staff.RoleId != ClinicRoleConstants.PrimaryVetId)
             {
-                throw new ForbiddenException("Chi ClinicOwner hoac PrimaryVet moi co quyen ke don thuoc.");
+                throw new ForbiddenException("Chỉ ClinicOwner hoặc PrimaryVet mới có quyền kê đơn thuốc.");
             }
 
             return staff;
@@ -47,7 +47,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
             if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId &&
                 staff.RoleId != ClinicRoleConstants.CashierId)
             {
-                throw new ForbiddenException("Chi ClinicOwner hoac Cashier moi co quyen tao va thu hoa don.");
+                throw new ForbiddenException("Chỉ ClinicOwner hoặc Cashier mới có quyền tạo và thu hóa đơn.");
             }
 
             return staff;
@@ -60,7 +60,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
             if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId &&
                 staff.RoleId != ClinicRoleConstants.CashierId)
             {
-                throw new ForbiddenException("Chi ClinicOwner hoac Cashier moi co quyen xem hoa don.");
+                throw new ForbiddenException("Chỉ ClinicOwner hoặc Cashier mới có quyền xem hóa đơn.");
             }
 
             return staff;
@@ -72,7 +72,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Authorization
 
             if (staff.RoleId != ClinicRoleConstants.ClinicOwnerId)
             {
-                throw new ForbiddenException("Chi ClinicOwner moi co quyen cau hinh tai khoan thanh toan.");
+                throw new ForbiddenException("Chỉ ClinicOwner mới có quyền cấu hình tài khoản thanh toán.");
             }
 
             return staff;

@@ -57,7 +57,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 var service = await _serviceRepository.GetByIdAsync(req.ServiceId.Value)
                     ?? throw new NotFoundException("ClinicService", req.ServiceId.Value);
                 if (service.ClinicId != req.ClinicId || !service.IsActive)
-                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("ServiceId", "Dịch vụ không thuộc phòng khám hoặc đã ngừng hoạt động.");
             }
 
             if (!Enum.TryParse<AppointmentType>(req.AppointmentType, true, out var apptType))
@@ -68,7 +68,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 var vetClinic = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
                     req.VetClinicId.Value,
                     req.ClinicId)
-                    ?? throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
+                    ?? throw new ValidationException("VetClinicId", "Bác sĩ không thuộc phòng khám hoặc đã ngừng hoạt động.");
 
                 var allVetClinicIds = await _vetClinicRepository.GetAllVetClinicIdsAsync(vetClinic.VetProfileId);
                 var hasConflict = await _appointmentRepository.HasDoctorConflictAcrossClinicsAsync(

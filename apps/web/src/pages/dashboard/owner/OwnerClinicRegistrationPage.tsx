@@ -563,7 +563,7 @@ function ClinicProfileStep({
         <div className="flex flex-wrap items-center gap-3 rounded-[24px] bg-po-success-soft px-4 py-3 text-sm text-po-success ring-1 ring-po-success/15">
           <CheckCircle2 className="size-5 shrink-0" />
           <span className="font-semibold">
-            Ban co the upload anh hoac PDF giay phep roi gui ho so phong kham ngay.
+            Bạn có thể tải ảnh hoặc PDF giấy phép rồi gửi hồ sơ phòng khám ngay.
           </span>
         </div>
 
@@ -614,9 +614,9 @@ function ClinicProfileStep({
             onUploadComplete={(result) => onValueChange("licenseCloudinaryPublicId", result.publicId)}
             imageType="clinic_license"
             accept="image/jpeg,image/png,image/webp,application/pdf"
-            emptyLabel="Upload anh/PDF giay phep"
-            replaceLabel="Thay anh/PDF"
-            helpText="JPG, PNG, WEBP hoac PDF, toi da 5MB"
+            emptyLabel="Tải ảnh/PDF giấy phép"
+            replaceLabel="Thay ảnh/PDF"
+            helpText="JPG, PNG, WEBP hoặc PDF, tối đa 5MB"
             previewClassName="h-40 w-full rounded-2xl border border-po-border object-cover"
             maxSizeMb={5}
             disabled={isSaving}
@@ -632,7 +632,7 @@ function ClinicProfileStep({
             <div>
               <p className="text-sm font-extrabold text-po-text">Ảnh logo phòng khám (không bắt buộc)</p>
               <p className="mt-1 text-xs leading-5 text-po-text-muted">
-                Nên upload để hiển thị thương hiệu ở trang tìm clinic và dashboard.
+                Nên upload để hiển thị thương hiệu ở trang tìm phòng khám và dashboard.
               </p>
             </div>
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-po-text-muted ring-1 ring-po-border/80">
@@ -661,7 +661,7 @@ function ClinicProfileStep({
             <div>
               <p className="text-sm font-extrabold text-po-text">Địa chỉ phòng khám</p>
               <p className="mt-1 text-xs leading-5 text-po-text-muted">
-                Chọn theo danh mục để hạn chế sai chính tả. FE sẽ ghép thành chuỗi địa chỉ gửi về backend.
+                Chọn theo danh mục để hạn chế sai chính tả. Hệ thống sẽ ghép thành chuỗi địa chỉ gửi lên máy chủ.
               </p>
             </div>
           </div>

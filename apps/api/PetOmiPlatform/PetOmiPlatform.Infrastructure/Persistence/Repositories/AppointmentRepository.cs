@@ -23,7 +23,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task<AppointmentDomain?> GetByIdAsync(Guid appointmentId)
         {
-            var entity = await _context.Appointments.FindAsync(appointmentId);
+            var entity = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
             return entity?.ToDomain();
         }
 
@@ -184,7 +185,8 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task UpdateAsync(AppointmentDomain appointment)
         {
-            var entity = await _context.Appointments.FindAsync(appointment.Id);
+            var entity = await _context.Appointments
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointment.Id);
             if (entity == null) return;
 
             var updated = appointment.ToEntity();

@@ -26,19 +26,19 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
         public async Task<bool> Handle(UpdateClinicStaffRoleCommand request, CancellationToken cancellationToken)
         {
             var clinic = await _clinicRepository.GetByIdAsync(request.ClinicId)
-                ?? throw new NotFoundException("Khong tim thay phong kham.");
+                ?? throw new NotFoundException("Không tìm thấy phòng khám.");
             clinic.EnsureApproved();
 
             var isOwner = await _vetClinicRepository.IsClinicOwnerAsync(request.RequestingUserId, request.ClinicId);
             if (!isOwner)
-                throw new ForbiddenException("Chi ClinicOwner moi duoc cap nhat vai tro staff.");
+                throw new ForbiddenException("Chỉ ClinicOwner mới được cập nhật vai trò nhân viên.");
 
             var staff = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
                 request.VetClinicId,
-                request.ClinicId) ?? throw new NotFoundException("Khong tim thay staff dang hoat dong trong phong kham.");
+                request.ClinicId) ?? throw new NotFoundException("Không tìm thấy nhân viên đang hoạt động trong phòng khám.");
 
             if (staff.RoleId == ClinicRoleConstants.ClinicOwnerId)
-                throw new ForbiddenException("Khong the doi role cua ClinicOwner.");
+                throw new ForbiddenException("Không thể đổi vai trò của ClinicOwner.");
 
             var roleId = ClinicRoleConstants.ToRoleId(request.Request.Role);
             staff.ChangeRole(roleId, DateTime.UtcNow);

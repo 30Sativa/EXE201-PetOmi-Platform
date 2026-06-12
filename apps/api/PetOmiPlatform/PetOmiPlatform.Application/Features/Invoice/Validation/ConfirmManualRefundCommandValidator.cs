@@ -8,11 +8,11 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public ConfirmManualRefundCommandValidator()
         {
             RuleFor(x => x.InvoiceId)
-                .NotEmpty().WithMessage("Invoice ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Invoice ID không được để trống.");
 
             RuleFor(x => x.RefundNote)
-                .NotEmpty().WithMessage("RefundNote khong duoc de trong.")
-                .MaximumLength(500).WithMessage("RefundNote khong duoc vuot qua 500 ky tu.");
+                .NotEmpty().WithMessage("RefundNote không được để trống.")
+                .MaximumLength(500).WithMessage("RefundNote không được vượt quá 500 ký tự.");
         }
     }
 }

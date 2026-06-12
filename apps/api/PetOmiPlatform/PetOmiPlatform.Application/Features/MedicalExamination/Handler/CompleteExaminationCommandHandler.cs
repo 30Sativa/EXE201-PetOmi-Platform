@@ -40,7 +40,7 @@ namespace PetOmiPlatform.Application.Features.MedicalExamination.Handler
                 throw new ForbiddenException("Không có quyền truy cập phiếu khám này.");
 
             if (appointment.Status != AppointmentStatus.CheckedIn)
-                throw new ConflictException("Chi co the hoan tat phieu kham cho lich hen da check-in.");
+                throw new ConflictException("Chỉ có thể hoàn tất phiếu khám cho lịch hẹn đã check-in.");
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.VetUserId, request.ClinicId);
             ClinicRoleGuard.RequireMedicalWriter(staff);

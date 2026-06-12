@@ -28,7 +28,7 @@ namespace PetOmiPlatform.Application.Features.Order.Handler
             var order = await _orderRepository.GetByIdAsync(request.OrderId)
                 ?? throw new NotFoundException("Order", request.OrderId);
             if (order.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen huy don hang nay.");
+                throw new ForbiddenException("Không có quyền hủy đơn hàng này.");
 
             var staff = await _vetClinicRepository.GetByUserIdAndClinicIdAsync(request.StaffUserId, request.ClinicId);
             ClinicRoleGuard.RequireInvoiceWriter(staff);

@@ -31,17 +31,17 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             ClinicRoleGuard.RequireInvoiceViewer(staff);
 
             var invoice = await _invoiceRepository.GetByIdAsync(request.InvoiceId)
-                ?? throw new NotFoundException($"Khong tim thay hoa don ID {request.InvoiceId}");
+                ?? throw new NotFoundException($"Không tìm thấy hóa đơn ID {request.InvoiceId}");
 
             if (invoice.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen xem trang thai thanh toan cua hoa don nay.");
+                throw new ForbiddenException("Không có quyền xem trạng thái thanh toán của hóa đơn này.");
 
             if (invoice.Status == InvoiceStatus.Paid)
             {
                 return BuildResponse(
                     invoice,
                     "Paid",
-                    "Thanh toan thanh cong.",
+                    "Thanh toán thành công.",
                     isFinal: true);
             }
 
@@ -57,7 +57,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 return BuildResponse(
                     invoice,
                     "Pending",
-                    "Dang cho thanh toan.",
+                    "Đang chờ thanh toán.",
                     isFinal: false);
             }
 
@@ -66,7 +66,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 return BuildResponse(
                     invoice,
                     "AmountMismatch",
-                    "Sai so tien / can doi soat.",
+                    "Sai số tiền / cần đối soát.",
                     isFinal: false,
                     latest);
             }
@@ -74,7 +74,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
             return BuildResponse(
                 invoice,
                 "ReceivedUnmatched",
-                "Giao dich da nhan nhung chua khop hoa don.",
+                "Giao dịch đã nhận nhưng chưa khớp hóa đơn.",
                 isFinal: false,
                 latest);
         }

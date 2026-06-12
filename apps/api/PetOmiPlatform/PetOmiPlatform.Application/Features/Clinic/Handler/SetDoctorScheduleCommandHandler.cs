@@ -43,7 +43,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
             var vetClinic = await _vetClinicRepo.GetActiveByVetClinicIdAndClinicIdAsync(
                 command.VetClinicId,
                 command.ClinicId)
-                ?? throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
+                ?? throw new ValidationException("VetClinicId", "Bác sĩ không thuộc phòng khám hoặc đã ngừng hoạt động.");
 
             var existingSchedules = await _scheduleRepo.GetByVetClinicIdAsync(command.VetClinicId);
             var overlaps = existingSchedules.Any(x =>
@@ -51,7 +51,7 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
                 x.StartTime < command.Request.EndTime &&
                 x.EndTime > command.Request.StartTime);
             if (overlaps)
-                throw new ConflictException("Ca lam viec bi trung voi lich hien co cua bac si.");
+                throw new ConflictException("Ca làm việc bị trùng với lịch hiện có của bác sĩ.");
 
             var schedule = DoctorScheduleDomain.Create(
                 vetClinicId: command.VetClinicId,

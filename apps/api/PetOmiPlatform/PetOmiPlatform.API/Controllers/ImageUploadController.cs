@@ -61,7 +61,7 @@ namespace PetOmiPlatform.API.Controllers
             if (!FolderMap.TryGetValue(request.ImageType, out var folderTemplate))
             {
                 return BadRequest(BaseResponse<object>.Fail(
-                    $"ImageType khong hop le. Cac loai duoc ho tro: {string.Join(", ", FolderMap.Keys)}"));
+                    $"ImageType không hợp lệ. Các loại được hỗ trợ: {string.Join(", ", FolderMap.Keys)}"));
             }
 
             var userId = CurrentUserId.ToString();
@@ -136,7 +136,7 @@ namespace PetOmiPlatform.API.Controllers
                 "File uploaded: Type={ImageType}, PublicId={PublicId}, Size={Size}",
                 request.ImageType, result.PublicId, result.FileSizeBytes);
 
-            return Ok(BaseResponse<CloudinaryUploadResult>.Ok(result, "Upload file thanh cong."));
+            return Ok(BaseResponse<CloudinaryUploadResult>.Ok(result, "Upload file thành công."));
         }
 
         [HttpDelete]
@@ -152,7 +152,7 @@ namespace PetOmiPlatform.API.Controllers
             }
 
             await _cloudinaryService.DeleteAsync(publicId, cancellationToken);
-            return Ok(BaseResponse<object>.Ok(null, "Xoa file thanh cong."));
+            return Ok(BaseResponse<object>.Ok(null, "Xóa file thành công."));
         }
     }
 

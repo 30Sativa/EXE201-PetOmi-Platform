@@ -30,13 +30,13 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
 
             var transaction = await _paymentTransactionRepository.GetByIdAsync(request.PaymentTransactionId);
             if (transaction == null)
-                throw new NotFoundException($"Khong tim thay giao dich SePay ID {request.PaymentTransactionId}");
+                throw new NotFoundException($"Không tìm thấy giao dịch SePay ID {request.PaymentTransactionId}");
 
             if (transaction.ClinicId != request.ClinicId)
-                throw new ForbiddenException("Khong co quyen thao tac giao dich SePay nay.");
+                throw new ForbiddenException("Không có quyền thao tác giao dịch SePay này.");
 
             if (transaction.IsMatched)
-                throw new ConflictException("Giao dich SePay nay da duoc xu ly.");
+                throw new ConflictException("Giao dịch SePay này đã được xử lý.");
 
             await _paymentTransactionRepository.MarkDismissedAsync(
                 transaction.Id,

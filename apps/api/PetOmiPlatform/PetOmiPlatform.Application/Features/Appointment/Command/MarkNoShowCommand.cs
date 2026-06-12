@@ -5,7 +5,7 @@ using PetOmiPlatform.Application.Features.Appointment.DTOs.Response;
 namespace PetOmiPlatform.Application.Features.Appointment.Command;
 
 /// <summary>
-/// Staff danh dau owner khong den (Confirmed -> NoShow).
+/// Staff đánh dấu owner không đến (Confirmed -> NoShow).
 /// </summary>
 public record MarkNoShowCommand(
     Guid AppointmentId,

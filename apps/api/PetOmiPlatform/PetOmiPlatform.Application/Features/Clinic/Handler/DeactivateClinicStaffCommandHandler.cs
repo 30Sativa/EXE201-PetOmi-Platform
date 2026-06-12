@@ -25,16 +25,16 @@ namespace PetOmiPlatform.Application.Features.Clinic.Handler
         public async Task<bool> Handle(DeactivateClinicStaffCommand request, CancellationToken cancellationToken)
         {
             var clinic = await _clinicRepository.GetByIdAsync(request.ClinicId)
-                ?? throw new NotFoundException("Khong tim thay phong kham.");
+                ?? throw new NotFoundException("Không tìm thấy phòng khám.");
             clinic.EnsureApproved();
 
             var isOwner = await _vetClinicRepository.IsClinicOwnerAsync(request.RequestingUserId, request.ClinicId);
             if (!isOwner)
-                throw new ForbiddenException("Chi ClinicOwner moi duoc ngung hoat dong staff.");
+                throw new ForbiddenException("Chỉ ClinicOwner mới được ngừng hoạt động nhân viên.");
 
             var staff = await _vetClinicRepository.GetActiveByVetClinicIdAndClinicIdAsync(
                 request.VetClinicId,
-                request.ClinicId) ?? throw new NotFoundException("Khong tim thay staff dang hoat dong trong phong kham.");
+                request.ClinicId) ?? throw new NotFoundException("Không tìm thấy nhân viên đang hoạt động trong phòng khám.");
 
             staff.Deactivate(DateTime.UtcNow);
 

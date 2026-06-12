@@ -784,14 +784,14 @@ function EmergencyModal({
       return createEmergencyAppointmentApi({
         clinicId,
         petId: selectedPetId,
-        appointmentDate: now.toISOString().slice(0, 10),
+        appointmentDate: todayDateInput(),
         startTime: now.toTimeString().slice(0, 5),
         endTime: new Date(now.getTime() + 30 * 60 * 1000).toTimeString().slice(0, 5),
         notes: notes.trim() || undefined,
       })
     },
     onSuccess: async () => {
-      toast.success("Đã tạo lịch cấp cứu.")
+      toast.success("Đã tạo và check-in ca cấp cứu.")
       setPetSearch("")
       setSelectedPetId("")
       setNotes("")
@@ -824,7 +824,7 @@ function EmergencyModal({
       })
     },
     onSuccess: async () => {
-      toast.success("Đã tạo lịch cấp cứu cho pet mới.")
+      toast.success("Đã tạo và check-in ca cấp cứu cho pet mới.")
       setPetSearch("")
       setSelectedPetId("")
       setNotes("")

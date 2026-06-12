@@ -38,7 +38,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 var service = await _serviceRepository.GetByIdAsync(request.ServiceId.Value)
                     ?? throw new NotFoundException("ClinicService", request.ServiceId.Value);
                 if (service.ClinicId != request.ClinicId || !service.IsActive)
-                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("ServiceId", "Dịch vụ không thuộc phòng khám hoặc đã ngừng hoạt động.");
 
                 durationMins = service.DurationMins;
             }
@@ -49,7 +49,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     request.VetClinicId.Value,
                     request.ClinicId);
                 if (vetClinic == null)
-                    throw new ValidationException("VetClinicId", "Bac si khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("VetClinicId", "Bác sĩ không thuộc phòng khám hoặc đã ngừng hoạt động.");
             }
 
             int bufferMins = await _clinicRepository.GetBufferMinsAsync(request.ClinicId);

@@ -30,14 +30,14 @@ namespace PetOmiPlatform.API.Controllers
             [FromBody] CreatePetHealthShareRequest request)
         {
             var result = await Mediator.Send(new CreatePetHealthShareCommand(CurrentUserId, petId, request));
-            return Ok(BaseResponse<PetHealthShareResponse>.Ok(result, "Tao ma chia se ho so suc khoe thanh cong."));
+            return Ok(BaseResponse<PetHealthShareResponse>.Ok(result, "Tạo mã chia sẻ hồ sơ sức khỏe thành công."));
         }
 
         [HttpDelete("{shareTokenId:guid}")]
         public async Task<IActionResult> RevokeHealthShare(Guid petId, Guid shareTokenId)
         {
             await Mediator.Send(new RevokePetHealthShareCommand(CurrentUserId, petId, shareTokenId));
-            return Ok(BaseResponse<object>.Ok(null, "Thu hoi ma chia se ho so suc khoe thanh cong."));
+            return Ok(BaseResponse<object>.Ok(null, "Thu hồi mã chia sẻ hồ sơ sức khỏe thành công."));
         }
     }
 }

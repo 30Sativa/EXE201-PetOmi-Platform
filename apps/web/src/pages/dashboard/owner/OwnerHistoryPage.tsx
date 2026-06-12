@@ -8,7 +8,8 @@ import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import StatusBadge from "@/components/ui/StatusBadge"
 import TabFilter from "@/components/ui/TabFilter"
 import { getOwnerAppointmentsApi } from "@/services/appointments.service"
-import { getPetMedicalRecordsApi, getPetsApi } from "@/services/pets.service"
+import { getPetTimelineApi, getPetsApi } from "@/services/pets.service"
+import type { PetActivityResponse } from "@/types"
 
 type StatusFilter = "all" | "completed" | "cancelled"
 
@@ -19,12 +20,13 @@ interface HistoryItem {
   date: string
   petName: string
   status: "completed" | "cancelled"
+  note?: string | null
 }
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "Tất cả" },
-  { value: "completed", label: "Hoàn thành" },
-  { value: "cancelled", label: "Đã hủy" },
+  { value: "all", label: "All" },
+  { value: "completed", label: "Completed" },
+  { value: "cancelled", label: "Cancelled" },
 ]
 
 const formatDate = (dateStr: string) => {
@@ -37,6 +39,25 @@ const formatDate = (dateStr: string) => {
   } catch {
     return dateStr
   }
+}
+
+const parseMetadata = (metadata: string | null): Record<string, unknown> => {
+  if (!metadata) return {}
+
+  try {
+    const parsed = JSON.parse(metadata)
+    return parsed && typeof parsed === "object" ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+const getMetadataString = (
+  metadata: Record<string, unknown>,
+  key: string,
+) => {
+  const value = metadata[key]
+  return typeof value === "string" && value.trim() ? value : null
 }
 
 export default function OwnerHistoryPage() {
@@ -52,36 +73,62 @@ export default function OwnerHistoryPage() {
     queryFn: getPetsApi,
   })
 
-  const medicalRecordQueries = useQueries({
+  const timelineQueries = useQueries({
     queries: (pets ?? []).map((pet) => ({
-      queryKey: ["pet-medical-records", pet.petId],
-      queryFn: () => getPetMedicalRecordsApi(pet.petId),
+      queryKey: ["pet-timeline", pet.petId, "owner-history"],
+      queryFn: () => getPetTimelineApi(pet.petId, { page: 1, pageSize: 100 }),
     })),
   })
 
-  const isMedicalRecordsLoading = medicalRecordQueries.some((query) => query.isLoading)
-  const isLoading = isAppointmentsLoading || isPetsLoading || isMedicalRecordsLoading
+  const isTimelineLoading = timelineQueries.some((query) => query.isLoading)
+  const isLoading = isAppointmentsLoading || isPetsLoading || isTimelineLoading
 
   const getPetName = (petId: string) =>
-    pets?.find((pet) => pet.petId === petId)?.name ?? "Không rõ"
+    pets?.find((pet) => pet.petId === petId)?.name ?? "Unknown"
 
-  const medicalHistory: HistoryItem[] = medicalRecordQueries.flatMap((query, index) => {
+  const getAppointmentById = (appointmentId: string | null) =>
+    (appointments ?? []).find((appointment) => appointment.appointmentId === appointmentId)
+
+  const completedTimelineHistory: HistoryItem[] = timelineQueries.flatMap((query, index) => {
     const pet = pets?.[index]
-    return (query.data ?? []).map((record) => ({
-      id: `record-${record.medicalRecordId}`,
-      clinicName: record.clinicName?.trim() || "Không rõ",
-      diagnosis: record.title,
-      date: record.recordDate,
-      petName: pet?.name ?? getPetName(record.petId),
-      status: "completed" as const,
-    }))
+
+    return (query.data?.activities ?? [])
+      .filter((activity: PetActivityResponse) =>
+        activity.activityType === "MedicalRecord" ||
+        activity.activityType === "ClinicExamination",
+      )
+      .map((activity) => {
+        const metadata = parseMetadata(activity.metadata)
+        const appointmentId = getMetadataString(metadata, "appointmentId")
+        const appointment = appointmentId ? getAppointmentById(appointmentId) : undefined
+        const clinicName =
+          getMetadataString(metadata, "clinicName") ??
+          (activity.activityType === "ClinicExamination" && appointment
+            ? "Clinic visit"
+            : "Unknown")
+        const diagnosis =
+          getMetadataString(metadata, "diagnosis") ??
+          activity.title
+
+        return {
+          id: `${activity.activityType}-${activity.activityId}`,
+          clinicName,
+          diagnosis,
+          date: activity.occurredAt,
+          petName: pet?.name ?? getPetName(activity.petId),
+          status: "completed" as const,
+          note: activity.activityType === "ClinicExamination"
+            ? activity.description
+            : null,
+        }
+      })
   })
 
   const cancelledAppointments: HistoryItem[] = (appointments ?? [])
     .filter((appointment) => appointment.status.toLowerCase() === "cancelled")
     .map((appointment) => ({
       id: `appointment-${appointment.appointmentId}`,
-      clinicName: "Phòng khám",
+      clinicName: "Clinic",
       diagnosis: appointment.appointmentType,
       date: appointment.appointmentDate,
       petName: getPetName(appointment.petId),
@@ -89,16 +136,16 @@ export default function OwnerHistoryPage() {
     }))
 
   const allHistory = [
-    ...(statusFilter !== "cancelled" ? medicalHistory : []),
+    ...(statusFilter !== "cancelled" ? completedTimelineHistory : []),
     ...(statusFilter !== "completed" ? cancelledAppointments : []),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
   return (
     <div className="grid gap-6">
       <div>
-        <h2 className="text-xl font-extrabold text-po-text">Lịch sử khám</h2>
+        <h2 className="text-xl font-extrabold text-po-text">Visit history</h2>
         <p className="mt-1 text-sm text-po-text-muted">
-          Xem lại các lần khám đã hoàn thành và lịch đã hủy.
+          Review completed owner records, completed clinic examinations, and cancelled appointments.
         </p>
       </div>
 
@@ -108,7 +155,7 @@ export default function OwnerHistoryPage() {
         onChange={setStatusFilter}
       />
 
-      <DashboardSection title={`${allHistory.length} bản ghi`}>
+      <DashboardSection title={`${allHistory.length} records`}>
         {isLoading ? (
           <div className="flex justify-center py-12">
             <LoadingSpinner />
@@ -116,8 +163,8 @@ export default function OwnerHistoryPage() {
         ) : allHistory.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
-            title="Chưa có lịch sử khám"
-            description="Các lần khám đã hoàn thành sẽ xuất hiện ở đây."
+            title="No visit history yet"
+            description="Completed owner records and clinic examinations will appear here."
           />
         ) : (
           <div className="overflow-x-auto">
@@ -125,19 +172,19 @@ export default function OwnerHistoryPage() {
               <thead>
                 <tr className="border-b border-po-border text-left">
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Thú cưng
+                    Pet
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Phòng khám
+                    Source
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Nội dung khám
+                    Visit detail
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Ngày
+                    Date
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Trạng thái
+                    Status
                   </th>
                 </tr>
               </thead>
@@ -148,12 +195,19 @@ export default function OwnerHistoryPage() {
                       <p className="font-semibold text-po-text">{item.petName}</p>
                     </td>
                     <td className="py-3 text-po-text-muted">{item.clinicName}</td>
-                    <td className="py-3 text-po-text-muted">{item.diagnosis}</td>
+                    <td className="py-3 text-po-text-muted">
+                      <p>{item.diagnosis}</p>
+                      {item.note ? (
+                        <p className="mt-1 max-w-xl text-xs text-po-text-subtle">
+                          {item.note}
+                        </p>
+                      ) : null}
+                    </td>
                     <td className="py-3 text-po-text-muted">{formatDate(item.date)}</td>
                     <td className="py-3">
                       <StatusBadge
                         variant={item.status === "completed" ? "success" : "danger"}
-                        label={item.status === "completed" ? "Hoàn thành" : "Đã hủy"}
+                        label={item.status === "completed" ? "Completed" : "Cancelled"}
                       />
                     </td>
                   </tr>

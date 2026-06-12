@@ -49,7 +49,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.DTOs.Response
 
         /// <summary>
         /// Cac canh bao nghiep vu de FE hien thi cho thu ngan truoc khi thu tien.
-        /// Vi du: dong thuoc auto-compose chua co don gia (UnitPrice = 0).
+        /// Ví dụ: dòng thuốc auto-compose chưa có đơn giá (UnitPrice = 0).
         /// </summary>
         public List<string> Warnings { get; set; } = new();
 

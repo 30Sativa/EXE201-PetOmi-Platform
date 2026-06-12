@@ -195,3 +195,27 @@ export interface UpdatePetAccessRequest {
   accessRole: string
   expiresAt?: string | null
 }
+
+// ==================== PET TIMELINE ====================
+
+export interface PetActivityResponse {
+  activityId: string
+  petId: string
+  activityType: string
+  title: string
+  description: string | null
+  occurredAt: string
+  createdAt: string
+  sourceId: string | null
+  icon: string
+  color: string
+  metadata: string | null
+}
+
+export interface PetTimelineResponse {
+  activities: PetActivityResponse[]
+  totalCount: number
+  page: number
+  pageSize: number
+  hasNextPage: boolean
+}

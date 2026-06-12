@@ -72,7 +72,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 var service = await _serviceRepository.GetByIdAsync(req.ServiceId.Value)
                     ?? throw new NotFoundException("ClinicService", req.ServiceId.Value);
                 if (service.ClinicId != req.ClinicId || !service.IsActive)
-                    throw new ValidationException("ServiceId", "Dich vu khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("ServiceId", "Dịch vụ không thuộc phòng khám hoặc đã ngừng hoạt động.");
             }
 
             if (req.VetClinicId.HasValue)
@@ -81,7 +81,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     req.VetClinicId.Value,
                     req.ClinicId);
                 if (vetClinic == null)
-                    throw new ValidationException("VetClinicId", "VetClinicId khong thuoc clinic hoac da ngung hoat dong.");
+                    throw new ValidationException("VetClinicId", "VetClinicId không thuộc phòng khám hoặc đã ngừng hoạt động.");
             }
 
             var tempEmail = BuildTemporaryGuestEmail(req.ClinicId, req.OwnerPhone);
@@ -123,9 +123,12 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                 appointmentDate: req.AppointmentDate,
                 startTime: req.StartTime,
                 endTime: req.EndTime,
-                vetClinicId: req.VetClinicId,
-                serviceId: req.ServiceId,
-                notes: req.Notes);
+            vetClinicId: req.VetClinicId,
+            serviceId: req.ServiceId,
+            notes: req.Notes);
+
+            appointment.CheckIn(command.StaffUserId);
+
             await _appointmentRepository.AddAsync(appointment);
 
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -163,7 +166,7 @@ namespace PetOmiPlatform.Application.Features.Appointment.Handler
                     return code;
             }
 
-            throw new ConflictException("Khong the tao ma dinh danh thu cung. Vui long thu lai.");
+            throw new ConflictException("Không thể tạo mã định danh thú cưng. Vui lòng thử lại.");
         }
     }
 }

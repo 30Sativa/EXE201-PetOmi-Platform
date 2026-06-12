@@ -8,11 +8,11 @@ namespace PetOmiPlatform.Application.Features.Invoice.Validation
         public CancelInvoiceCommandValidator()
         {
             RuleFor(x => x.InvoiceId)
-                .NotEmpty().WithMessage("Invoice ID khong duoc de trong.");
+                .NotEmpty().WithMessage("Invoice ID không được để trống.");
 
             RuleFor(x => x.CancelReason)
                 .MaximumLength(500)
-                .WithMessage("Ly do huy khong duoc vuot qua 500 ky tu.");
+                .WithMessage("Lý do hủy không được vượt quá 500 ký tự.");
         }
     }
 }

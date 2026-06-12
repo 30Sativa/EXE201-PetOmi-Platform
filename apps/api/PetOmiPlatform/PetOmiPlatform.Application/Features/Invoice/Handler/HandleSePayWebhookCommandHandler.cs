@@ -151,7 +151,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 var inventory = await _inventoryRepository.GetByIdAsync(item.InventoryItemId!.Value)
                     ?? throw new NotFoundException("InventoryItem", item.InventoryItemId.Value);
                 if (inventory.ClinicId != invoice.ClinicId)
-                    throw new ForbiddenException("Hoa don co mat hang khong thuoc phong kham.");
+                    throw new ForbiddenException("Hóa đơn có mặt hàng không thuộc phòng khám.");
 
                 inventory.StockOut(item.Quantity);
                 await _inventoryRepository.UpdateAsync(inventory);
@@ -162,7 +162,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 var order = await _orderRepository.GetByIdAsync(invoice.OrderId.Value)
                     ?? throw new NotFoundException("Order", invoice.OrderId.Value);
                 if (order.ClinicId != invoice.ClinicId)
-                    throw new ForbiddenException("Hoa don gan voi order khong thuoc phong kham.");
+                    throw new ForbiddenException("Hóa đơn gắn với order không thuộc phòng khám.");
 
                 order.MarkPaid();
                 await _orderRepository.UpdateAsync(order);
@@ -173,7 +173,7 @@ namespace PetOmiPlatform.Application.Features.Invoice.Handler
                 var appointment = await _appointmentRepository.GetByIdAsync(invoice.AppointmentId.Value)
                     ?? throw new NotFoundException("Appointment", invoice.AppointmentId.Value);
                 if (appointment.ClinicId != invoice.ClinicId)
-                    throw new ForbiddenException("Hoa don gan voi appointment khong thuoc phong kham.");
+                    throw new ForbiddenException("Hóa đơn gắn với appointment không thuộc phòng khám.");
 
                 if (appointment.Status == AppointmentStatus.CheckedIn)
                 {

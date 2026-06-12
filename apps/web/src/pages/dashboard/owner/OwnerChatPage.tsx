@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import type { FormEvent } from "react"
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { Link } from "react-router-dom"
 import {
   AlertTriangle,
   Bot,
@@ -10,22 +11,18 @@ import {
   CalendarCheck,
   ChevronRight,
   Clock3,
-  CreditCard,
   Crown,
   ExternalLink,
   History,
-  Lightbulb,
   Loader2,
   MessageSquare,
   PawPrint,
   Plus,
-  RefreshCw,
   Send,
   Sparkles,
   Square,
   Syringe,
   Utensils,
-  X,
 } from "lucide-react"
 
 import { useAuth } from "@/contexts/AuthContext"
@@ -39,12 +36,9 @@ import {
   sendChatMessageApi,
 } from "@/services/chat.service"
 import {
-  createChatSubscriptionPaymentApi,
-  getChatSubscriptionPaymentStatusApi,
   getChatSubscriptionStatusApi,
 } from "@/services/chat-subscription.service"
 import type {
-  ChatSubscriptionPaymentResponse,
   ChatConversationResponse,
   ChatMessageResponse,
   SendChatMessageRequest,
@@ -115,26 +109,6 @@ const formatDateTime = (value?: string | null) => {
     minute: "2-digit",
   }).format(date)
 }
-
-const formatDate = (value?: string | null) => {
-  if (!value) return "Chua co"
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "Chua co"
-
-  return new Intl.DateTimeFormat("vi-VN", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date)
-}
-
-const formatCurrency = (value?: number | null) =>
-  new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-    maximumFractionDigits: 0,
-  }).format(value ?? 0)
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (axios.isAxiosError(error)) {
@@ -272,8 +246,6 @@ export default function OwnerChatPage() {
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null)
   const [isPetPickerOpen, setIsPetPickerOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [paymentRequest, setPaymentRequest] =
-    useState<ChatSubscriptionPaymentResponse | null>(null)
   const messagesEndRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
   const petPickerRef = useRef<HTMLDivElement | null>(null)
@@ -346,52 +318,11 @@ export default function OwnerChatPage() {
 
   const {
     data: subscriptionStatus,
-    isLoading: isLoadingSubscription,
   } = useQuery({
     queryKey: ["owner-chat-subscription", subscriptionPetId],
     queryFn: () => getChatSubscriptionStatusApi(subscriptionPetId),
     staleTime: 30 * 1000,
   })
-
-  const createPaymentMutation = useMutation({
-    mutationFn: createChatSubscriptionPaymentApi,
-    onSuccess: (payment) => {
-      setPaymentRequest(payment)
-      setError(null)
-    },
-    onError: (mutationError) => {
-      setError(
-        getApiErrorMessage(
-          mutationError,
-          "Khong tao duoc QR thanh toan Premium. Vui long thu lai sau.",
-        ),
-      )
-    },
-  })
-
-  const paymentStatusQuery = useQuery({
-    queryKey: ["owner-chat-subscription-payment", paymentRequest?.paymentId],
-    queryFn: () => getChatSubscriptionPaymentStatusApi(paymentRequest?.paymentId ?? ""),
-    enabled: Boolean(paymentRequest?.paymentId) &&
-      paymentRequest?.status.toLowerCase() === "pending",
-    refetchInterval: (query) => {
-      const latestPayment = query.state.data as ChatSubscriptionPaymentResponse | undefined
-      const status = latestPayment?.status?.toLowerCase()
-      return status && status !== "pending" ? false : 5000
-    },
-  })
-
-  useEffect(() => {
-    const latestPayment = paymentStatusQuery.data
-    if (!latestPayment) return
-
-    setPaymentRequest(latestPayment)
-    if (latestPayment.status.toLowerCase() === "paid") {
-      void queryClient.invalidateQueries({
-        queryKey: ["owner-chat-subscription"],
-      })
-    }
-  }, [paymentStatusQuery.data, queryClient])
 
   useEffect(() => {
     setMessages(history)
@@ -481,31 +412,6 @@ export default function OwnerChatPage() {
 
   const isAiBusy = sendMessageMutation.isPending || isWaitingForAi
   const quotaBlocked = Boolean(subscriptionStatus && !subscriptionStatus.canSend)
-  const quotaPercent = subscriptionStatus
-    ? Math.min(
-        100,
-        Math.round(
-          (subscriptionStatus.usage.usedMessages /
-            Math.max(subscriptionStatus.usage.monthlyMessageQuota, 1)) *
-            100,
-        ),
-      )
-    : 0
-  const premiumPlan = subscriptionStatus?.plans.find(
-    (plan) => plan.code.toLowerCase() === "premium",
-  )
-
-  const handleUpgradePremium = () => {
-    if (!subscriptionPetId) {
-      setError("Chon mot pet truoc khi nang cap Premium.")
-      return
-    }
-
-    createPaymentMutation.mutate({
-      planCode: "premium",
-      petId: subscriptionPetId,
-    })
-  }
 
   const abortPendingSend = () => {
     sendAbortControllerRef.current?.abort()
@@ -660,8 +566,115 @@ export default function OwnerChatPage() {
   }
 
   return (
-    <div className="grid gap-5 xl:h-[calc(100dvh-190px)] xl:min-h-[640px] xl:grid-cols-[minmax(0,1fr)_318px]">
-      <section className="flex min-h-[640px] min-w-0 flex-col overflow-hidden rounded-[24px] bg-white/92 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 xl:min-h-0">
+    <div className="grid gap-5 xl:h-[calc(100dvh-190px)] xl:min-h-[640px] xl:grid-cols-[302px_minmax(0,1fr)]">
+      <aside className="order-2 flex min-h-[360px] flex-col overflow-hidden rounded-[24px] bg-white/88 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 xl:order-1 xl:min-h-0">
+        <div className="flex items-center justify-between gap-3 border-b border-po-border/80 px-5 py-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <History className="size-4 text-po-primary" />
+              <h3 className="text-sm font-extrabold uppercase tracking-[0.12em] text-po-text-muted">
+                Lịch sử chat
+              </h3>
+            </div>
+            <p className="mt-1 truncate text-xs font-semibold text-po-text-subtle">
+              Chọn một cuộc trò chuyện cũ
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleNewConversation}
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full bg-po-primary px-3 text-xs font-bold text-white shadow-sm shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
+            aria-label="Tạo cuộc trò chuyện mới"
+            title="Tạo cuộc trò chuyện mới"
+          >
+            <Plus className="size-4" />
+            Chat mới
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 xl:max-h-none">
+          {isLoadingConversations ? (
+            <div className="grid gap-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-20 animate-pulse rounded-2xl bg-po-surface-muted"
+                />
+              ))}
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="grid min-h-[280px] place-items-center px-5 text-center">
+              <div>
+                <div className="mx-auto grid size-16 place-items-center rounded-full bg-po-surface-muted text-po-text-muted ring-1 ring-po-border/70">
+                  <MessageSquare className="size-7" />
+                </div>
+                <h4 className="mt-5 text-base font-extrabold text-po-text">
+                  Chưa có lịch sử chat
+                </h4>
+                <p className="mt-2 text-sm leading-6 text-po-text-muted">
+                  Gửi câu hỏi đầu tiên để PetOmi lưu lại cuộc trò chuyện của bạn.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-2">
+              {conversations.map((conversation) => {
+                const isActive = conversation.conversationId === conversationId
+                const pet = conversation.petId
+                  ? pets.find((item) => item.petId === conversation.petId)
+                  : null
+
+                return (
+                  <button
+                    key={conversation.conversationId}
+                    type="button"
+                    onClick={() =>
+                      handleSelectConversation(conversation.conversationId)
+                    }
+                    className={cn(
+                      "group min-w-0 rounded-2xl p-3 text-left transition",
+                      isActive
+                        ? "bg-po-primary text-white shadow-sm shadow-orange-200/40"
+                        : "bg-white text-po-text ring-1 ring-po-border/70 hover:bg-po-surface-muted",
+                    )}
+                  >
+                    <div className="flex min-w-0 items-start justify-between gap-2">
+                      <p className="line-clamp-2 min-w-0 text-sm font-extrabold leading-5">
+                        {getConversationTitle(conversation)}
+                      </p>
+                      <ChevronRight
+                        className={cn(
+                          "mt-0.5 size-4 shrink-0 transition group-hover:translate-x-0.5",
+                          isActive ? "text-white/80" : "text-po-text-subtle",
+                        )}
+                      />
+                    </div>
+                    <div
+                      className={cn(
+                        "mt-3 flex items-center gap-2 text-xs font-semibold",
+                        isActive ? "text-white/78" : "text-po-text-subtle",
+                      )}
+                    >
+                      <Clock3 className="size-3.5 shrink-0" />
+                      <span>{formatDateTime(conversation.createdAt)}</span>
+                    </div>
+                    <p
+                      className={cn(
+                        "mt-1 truncate text-xs font-semibold",
+                        isActive ? "text-white/78" : "text-po-text-muted",
+                      )}
+                    >
+                      {pet?.name ?? "Không gắn thú cưng"}
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </aside>
+
+      <section className="order-1 flex min-h-[640px] min-w-0 flex-col overflow-hidden rounded-[24px] bg-white/92 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 xl:order-2 xl:min-h-0">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-po-border/80 px-5 py-4">
           <div className="flex min-w-0 items-center gap-4">
             <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary shadow-sm shadow-orange-200">
@@ -675,27 +688,129 @@ export default function OwnerChatPage() {
                 Tư vấn chăm sóc thú cưng
               </h2>
               <p className="mt-1 text-sm font-medium text-po-text-muted">
-                Ai đồng hành cùng bạn chăm sóc thú cưng khỏe mạnh và hạnh phúc.
+                Chat gọn như trợ lý AI, không trộn phần gói dịch vụ vào hội thoại.
               </p>
             </div>
           </div>
 
-          <span
-            className={cn(
-              "inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[10px] font-bold uppercase tracking-[0.08em] ring-1",
-              isConnected
-                ? "bg-po-accent-soft/70 text-po-success ring-po-accent-soft"
-                : "bg-po-surface-muted text-po-text-muted ring-po-border",
-            )}
-          >
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+            <Link
+              to="/dashboard/owner/ai-plan"
+              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-po-primary-soft px-3 text-sm font-extrabold text-po-primary ring-1 ring-po-border/70 transition hover:bg-po-primary hover:text-white"
+            >
+              <Crown className="size-4" />
+              AI Plan
+            </Link>
+
+            <div ref={petPickerRef} className="relative z-30 min-w-[220px] flex-1 sm:w-64 sm:flex-none">
+              <button
+                type="button"
+                onClick={() => {
+                  if (canChangePet) {
+                    setIsPetPickerOpen((current) => !current)
+                  }
+                }}
+                className={cn(
+                  "flex h-10 w-full items-center justify-between gap-3 rounded-full border bg-white px-4 text-left text-sm font-semibold text-po-text shadow-sm shadow-orange-100/40 outline-none transition",
+                  isPetPickerOpen
+                    ? "border-po-primary ring-[var(--po-focus-ring)]"
+                    : "border-po-border hover:border-po-border-strong hover:bg-po-surface-muted/40",
+                  !canChangePet
+                    ? "cursor-not-allowed bg-po-surface-muted/70 text-po-text-muted"
+                    : "",
+                )}
+                aria-haspopup="listbox"
+                aria-expanded={isPetPickerOpen}
+                disabled={!canChangePet}
+              >
+                <span className="inline-flex min-w-0 items-center gap-2">
+                  <PawPrint className="size-4 shrink-0 text-po-primary" />
+                  <span className="min-w-0 truncate">{petPickerLabel}</span>
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "size-4 shrink-0 text-po-text-subtle transition",
+                    isPetPickerOpen ? "rotate-180 text-po-primary" : "",
+                  )}
+                />
+              </button>
+
+              {isPetPickerOpen ? (
+                <div
+                  role="listbox"
+                  className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-2xl border border-po-border bg-white p-1 shadow-xl shadow-orange-200/30"
+                >
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={!selectedPetId}
+                    onClick={() => {
+                      setSelectedPetId("")
+                      setIsPetPickerOpen(false)
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
+                      !selectedPetId
+                        ? "bg-po-primary-soft text-po-primary"
+                        : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text",
+                    )}
+                  >
+                    <span>Chưa chọn thú cưng</span>
+                    {!selectedPetId ? <Check className="size-4" /> : null}
+                  </button>
+
+                  {pets.length === 0 ? (
+                    <div className="px-3 py-3 text-sm font-medium text-po-text-muted">
+                      Bạn chưa có thú cưng nào.
+                    </div>
+                  ) : (
+                    pets.map((pet) => {
+                      const isSelected = selectedPetId === pet.petId
+
+                      return (
+                        <button
+                          key={pet.petId}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => {
+                            setSelectedPetId(pet.petId)
+                            setIsPetPickerOpen(false)
+                          }}
+                          className={cn(
+                            "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
+                            isSelected
+                              ? "bg-po-primary text-white"
+                              : "text-po-text hover:bg-po-surface-muted",
+                          )}
+                        >
+                          <span className="min-w-0 truncate">{pet.name}</span>
+                          {isSelected ? <Check className="size-4" /> : null}
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+              ) : null}
+            </div>
+
             <span
               className={cn(
-                "size-1.5 rounded-full",
-                isConnected ? "bg-po-success" : "bg-po-text-subtle",
+                "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-3 text-[10px] font-bold uppercase tracking-[0.08em] ring-1",
+                isConnected
+                  ? "bg-po-accent-soft/70 text-po-success ring-po-accent-soft"
+                  : "bg-po-surface-muted text-po-text-muted ring-po-border",
               )}
-            />
-            {isConnected ? "Realtime" : "Đang kết nối"}
-          </span>
+            >
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  isConnected ? "bg-po-success" : "bg-po-text-subtle",
+                )}
+              />
+              {isConnected ? "Realtime" : "Đang kết nối"}
+            </span>
+          </div>
         </div>
 
         <div className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto bg-gradient-to-b from-white to-po-surface-muted/20 px-4 py-6 sm:px-6">
@@ -834,6 +949,22 @@ export default function OwnerChatPage() {
             </p>
           ) : null}
 
+          {quotaBlocked ? (
+            <div className="mb-3 flex flex-col gap-2 rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                {subscriptionStatus?.blockReason ??
+                  "Bạn đã dùng hết quota PetOmi AI trong chu kỳ hiện tại."}
+              </span>
+              <Link
+                to="/dashboard/owner/ai-plan"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white px-3 py-1.5 text-xs font-extrabold text-po-primary ring-1 ring-po-border"
+              >
+                <Crown className="size-3.5" />
+                Mở AI Plan
+              </Link>
+            </div>
+          ) : null}
+
           <div className="relative">
             <textarea
               ref={inputRef}
@@ -841,8 +972,13 @@ export default function OwnerChatPage() {
               onChange={(event) => setInput(event.target.value)}
               rows={1}
               maxLength={10000}
-              placeholder="Nhập câu hỏi cho PetOmi AI..."
-              className="max-h-40 min-h-14 w-full resize-none overflow-y-auto rounded-2xl border border-po-border bg-white px-4 py-3 pr-16 text-sm leading-6 text-po-text outline-none transition placeholder:text-po-text-subtle focus:border-po-primary focus:ring-[var(--po-focus-ring)]"
+              disabled={!isAiBusy && quotaBlocked}
+              placeholder={
+                quotaBlocked
+                  ? "Hết quota. Mở AI Plan để nâng cấp hoặc chờ reset."
+                  : "Nhập câu hỏi cho PetOmi AI..."
+              }
+              className="max-h-40 min-h-14 w-full resize-none overflow-y-auto rounded-2xl border border-po-border bg-white px-4 py-3 pr-16 text-sm leading-6 text-po-text outline-none transition placeholder:text-po-text-subtle focus:border-po-primary focus:ring-[var(--po-focus-ring)] disabled:cursor-not-allowed disabled:bg-po-surface-muted/70"
             />
             <button
               type={isAiBusy ? "button" : "submit"}
@@ -870,403 +1006,6 @@ export default function OwnerChatPage() {
           </p>
         </form>
       </section>
-
-      <aside className="grid gap-5 xl:min-h-0 xl:grid-rows-[auto_minmax(0,1fr)]">
-        <section className="rounded-[24px] bg-white/88 p-5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-po-text-muted">
-            <PawPrint className="size-4 text-po-primary" />
-            Hỏi về
-          </div>
-          <h3 className="mt-3 text-xl font-extrabold text-po-text">
-            Chọn bé để tư vấn
-          </h3>
-
-          <div ref={petPickerRef} className="relative z-20 mt-4">
-            <button
-              type="button"
-              onClick={() => {
-                if (canChangePet) {
-                  setIsPetPickerOpen((current) => !current)
-                }
-              }}
-              className={cn(
-                "flex h-12 w-full items-center justify-between gap-3 rounded-2xl border bg-white px-4 text-left text-sm font-semibold text-po-text shadow-sm shadow-orange-100/40 outline-none transition",
-                isPetPickerOpen
-                  ? "border-po-primary ring-[var(--po-focus-ring)]"
-                  : "border-po-border hover:border-po-border-strong hover:bg-po-surface-muted/40",
-                !canChangePet
-                  ? "cursor-not-allowed bg-po-surface-muted/70 text-po-text-muted"
-                  : "",
-              )}
-              aria-haspopup="listbox"
-              aria-expanded={isPetPickerOpen}
-              disabled={!canChangePet}
-            >
-              <span className="min-w-0 truncate">{petPickerLabel}</span>
-              <ChevronDown
-                className={cn(
-                  "size-4 shrink-0 text-po-text-subtle transition",
-                  isPetPickerOpen ? "rotate-180 text-po-primary" : "",
-                )}
-              />
-            </button>
-
-            {isPetPickerOpen ? (
-              <div
-                role="listbox"
-                className="absolute left-0 right-0 top-[calc(100%+8px)] overflow-hidden rounded-2xl border border-po-border bg-white p-1 shadow-xl shadow-orange-200/30"
-              >
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={!selectedPetId}
-                  onClick={() => {
-                    setSelectedPetId("")
-                    setIsPetPickerOpen(false)
-                  }}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
-                    !selectedPetId
-                      ? "bg-po-primary-soft text-po-primary"
-                      : "text-po-text-muted hover:bg-po-surface-muted hover:text-po-text",
-                  )}
-                >
-                  <span>Chưa chọn thú cưng</span>
-                  {!selectedPetId ? <Check className="size-4" /> : null}
-                </button>
-
-                {pets.length === 0 ? (
-                  <div className="px-3 py-3 text-sm font-medium text-po-text-muted">
-                    Bạn chưa có thú cưng nào.
-                  </div>
-                ) : (
-                  pets.map((pet) => {
-                    const isSelected = selectedPetId === pet.petId
-
-                    return (
-                      <button
-                        key={pet.petId}
-                        type="button"
-                        role="option"
-                        aria-selected={isSelected}
-                        onClick={() => {
-                          setSelectedPetId(pet.petId)
-                          setIsPetPickerOpen(false)
-                        }}
-                        className={cn(
-                          "flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition",
-                          isSelected
-                            ? "bg-po-primary text-white"
-                            : "text-po-text hover:bg-po-surface-muted",
-                        )}
-                      >
-                        <span className="min-w-0 truncate">{pet.name}</span>
-                        {isSelected ? <Check className="size-4" /> : null}
-                      </button>
-                    )
-                  })
-                )}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-5 flex gap-3 rounded-2xl bg-po-surface-muted/80 p-4 ring-1 ring-po-border/70">
-            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-po-primary">
-              <Lightbulb className="size-4" />
-            </span>
-            <p className="text-sm leading-6 text-po-text-muted">
-              {conversationId
-                ? `Cuộc trò chuyện này đang hỏi về ${currentPetLabel}.`
-                : "Chọn bé để PetOmi tư vấn sát hơn với hồ sơ và thói quen của bé."}
-            </p>
-          </div>
-          <div className="mt-4 rounded-2xl border border-po-border bg-white p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.12em] text-po-text-muted">
-                  <Crown className="size-4 text-po-primary" />
-                  AI plan
-                </div>
-                <h4 className="mt-2 text-lg font-extrabold text-po-text">
-                  {isLoadingSubscription
-                    ? "Dang tai..."
-                    : subscriptionStatus?.currentPlanName ?? "Free"}
-                </h4>
-                <p className="mt-1 text-xs font-semibold text-po-text-subtle">
-                  {subscriptionStatus?.isPremium
-                    ? `Premium cho ${currentPetLabel} den ${formatDate(subscriptionStatus.subscriptionExpiresAt)}`
-                    : subscriptionPetId
-                      ? `Free quota account. Premium se gan rieng cho ${currentPetLabel}.`
-                      : "Chon pet de mua Premium theo tung be."}
-                </p>
-              </div>
-              <span
-                className={cn(
-                  "rounded-full px-2.5 py-1 text-xs font-extrabold uppercase",
-                  subscriptionStatus?.isPremium
-                    ? "bg-po-primary text-white"
-                    : "bg-po-surface-muted text-po-text-muted",
-                )}
-              >
-                {subscriptionStatus?.currentPlanCode ?? "free"}
-              </span>
-            </div>
-
-            <div className="mt-4">
-              <div className="flex items-center justify-between text-xs font-bold text-po-text-muted">
-                <span>Quota thang</span>
-                <span>
-                  {subscriptionStatus
-                    ? `${subscriptionStatus.usage.remainingMessages}/${subscriptionStatus.usage.monthlyMessageQuota} con lai`
-                    : "--"}
-                </span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-po-surface-muted">
-                <div
-                  className={cn(
-                    "h-full rounded-full",
-                    quotaBlocked ? "bg-po-danger" : "bg-po-primary",
-                  )}
-                  style={{ width: `${quotaPercent}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs font-medium text-po-text-subtle">
-                Reset: {formatDate(subscriptionStatus?.usage.resetAt)}
-              </p>
-            </div>
-
-            {subscriptionStatus?.blockReason ? (
-              <p className="mt-3 rounded-xl bg-po-danger-soft px-3 py-2 text-xs font-semibold text-po-danger">
-                {subscriptionStatus.blockReason}
-              </p>
-            ) : null}
-
-            <div className="mt-4 grid gap-2 text-xs font-semibold text-po-text-muted">
-              <div className="flex items-center justify-between gap-3">
-                <span>RAG sau</span>
-                <span>{subscriptionStatus?.capabilities.deepRagEnabled ? "Co" : "Khong"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span>Upload anh</span>
-                <span>
-                  {subscriptionStatus?.capabilities.imageUploadEnabled
-                    ? `${subscriptionStatus.capabilities.maxImageUploadsPerMonth}/thang`
-                    : "Premium"}
-                </span>
-              </div>
-            </div>
-
-            {!subscriptionStatus?.isPremium ? (
-              <button
-                type="button"
-                onClick={handleUpgradePremium}
-                disabled={!subscriptionPetId || createPaymentMutation.isPending}
-                className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-4 text-sm font-extrabold text-white shadow-sm shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {createPaymentMutation.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <CreditCard className="size-4" />
-                )}
-                Nang cap Premium
-                {premiumPlan ? ` - ${formatCurrency(premiumPlan.priceMonthly)}` : ""}
-              </button>
-            ) : null}
-
-            {subscriptionStatus?.ownerPetSubscriptions?.length ? (
-              <div className="mt-4 border-t border-po-border pt-3">
-                <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-po-text-muted">
-                  Premium pets
-                </p>
-                <div className="mt-2 grid gap-1.5">
-                  {subscriptionStatus.ownerPetSubscriptions
-                    .filter((item) => item.isUsable)
-                    .slice(0, 3)
-                    .map((item) => (
-                      <div
-                        key={item.subscriptionId}
-                        className="flex items-center justify-between gap-2 rounded-xl bg-po-surface-muted px-3 py-2 text-xs font-semibold text-po-text-muted"
-                      >
-                        <span className="truncate">{item.petName}</span>
-                        <span className="shrink-0 text-po-primary">
-                          den {formatDate(item.expiresAt)}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          {paymentRequest ? (
-            <div className="mt-4 rounded-2xl border border-po-border bg-po-surface-muted/70 p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-po-primary">
-                    SePay Premium
-                  </p>
-                  <h4 className="mt-1 text-base font-extrabold text-po-text">
-                    {paymentRequest.petName}
-                  </h4>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPaymentRequest(null)}
-                  className="grid size-8 place-items-center rounded-full bg-white text-po-text-muted ring-1 ring-po-border hover:text-po-text"
-                  aria-label="Dong thanh toan"
-                  title="Dong thanh toan"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-
-              {paymentRequest.status.toLowerCase() === "paid" ? (
-                <div className="mt-3 rounded-xl bg-po-success-soft px-3 py-2 text-sm font-bold text-po-success">
-                  Da thanh toan. Premium da kich hoat.
-                </div>
-              ) : (
-                <>
-                  <img
-                    src={paymentRequest.qrCodeUrl}
-                    alt="SePay QR"
-                    className="mt-3 aspect-square w-full rounded-2xl bg-white object-contain p-3 ring-1 ring-po-border"
-                  />
-                  <div className="mt-3 grid gap-1.5 text-xs font-semibold text-po-text-muted">
-                    <div className="flex justify-between gap-3">
-                      <span>So tien</span>
-                      <span className="text-po-text">{formatCurrency(paymentRequest.amount)}</span>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <span>Noi dung CK</span>
-                      <span className="text-po-primary">{paymentRequest.paymentReference}</span>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <span>Het han QR</span>
-                      <span>{formatDateTime(paymentRequest.expiresAt)}</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => paymentStatusQuery.refetch()}
-                    disabled={paymentStatusQuery.isFetching}
-                    className="mt-3 inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-white px-3 text-xs font-extrabold text-po-text ring-1 ring-po-border transition hover:bg-po-surface-muted disabled:opacity-60"
-                  >
-                    {paymentStatusQuery.isFetching ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="size-3.5" />
-                    )}
-                    Kiem tra thanh toan
-                  </button>
-                </>
-              )}
-            </div>
-          ) : null}
-        </section>
-
-        <section className="flex min-h-[390px] flex-col overflow-hidden rounded-[24px] bg-white/88 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 xl:min-h-0">
-          <div className="flex items-center justify-between gap-3 border-b border-po-border/80 px-5 py-4">
-            <div className="flex items-center gap-2">
-              <History className="size-4 text-po-primary" />
-              <h3 className="text-sm font-extrabold uppercase tracking-[0.12em] text-po-text-muted">
-                Lịch sử chat
-              </h3>
-            </div>
-            <button
-              type="button"
-              onClick={handleNewConversation}
-              className="inline-flex h-9 items-center gap-2 rounded-full bg-po-primary px-3 text-xs font-bold text-white shadow-sm shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
-              aria-label="Tạo cuộc trò chuyện mới"
-              title="Tạo cuộc trò chuyện mới"
-            >
-              <Plus className="size-4" />
-              Chat mới
-            </button>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto p-3 xl:max-h-none">
-            {isLoadingConversations ? (
-              <div className="grid gap-2">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-20 animate-pulse rounded-2xl bg-po-surface-muted"
-                  />
-                ))}
-              </div>
-            ) : conversations.length === 0 ? (
-              <div className="grid min-h-[280px] place-items-center px-5 text-center">
-                <div>
-                  <div className="mx-auto grid size-16 place-items-center rounded-full bg-po-surface-muted text-po-text-muted ring-1 ring-po-border/70">
-                    <MessageSquare className="size-7" />
-                  </div>
-                  <h4 className="mt-5 text-base font-extrabold text-po-text">
-                    Chưa có lịch sử chat
-                  </h4>
-                  <p className="mt-2 text-sm leading-6 text-po-text-muted">
-                    Gửi câu hỏi đầu tiên để PetOmi lưu lại cuộc trò chuyện của
-                    bạn.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid gap-2">
-                {conversations.map((conversation) => {
-                  const isActive = conversation.conversationId === conversationId
-                  const pet = conversation.petId
-                    ? pets.find((item) => item.petId === conversation.petId)
-                    : null
-
-                  return (
-                    <button
-                      key={conversation.conversationId}
-                      type="button"
-                      onClick={() =>
-                        handleSelectConversation(conversation.conversationId)
-                      }
-                      className={cn(
-                        "group min-w-0 rounded-2xl p-3 text-left transition",
-                        isActive
-                          ? "bg-po-primary text-white shadow-sm shadow-orange-200/40"
-                          : "bg-white text-po-text ring-1 ring-po-border/70 hover:bg-po-surface-muted",
-                      )}
-                    >
-                      <div className="flex min-w-0 items-start justify-between gap-2">
-                        <p className="line-clamp-2 min-w-0 text-sm font-extrabold leading-5">
-                          {getConversationTitle(conversation)}
-                        </p>
-                        <ChevronRight
-                          className={cn(
-                            "mt-0.5 size-4 shrink-0 transition group-hover:translate-x-0.5",
-                            isActive ? "text-white/80" : "text-po-text-subtle",
-                          )}
-                        />
-                      </div>
-                      <div
-                        className={cn(
-                          "mt-3 flex items-center gap-2 text-xs font-semibold",
-                          isActive ? "text-white/78" : "text-po-text-subtle",
-                        )}
-                      >
-                        <Clock3 className="size-3.5 shrink-0" />
-                        <span>{formatDateTime(conversation.createdAt)}</span>
-                      </div>
-                      <p
-                        className={cn(
-                          "mt-1 truncate text-xs font-semibold",
-                          isActive ? "text-white/78" : "text-po-text-muted",
-                        )}
-                      >
-                        {pet?.name ?? "Không gắn thú cưng"}
-                      </p>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-      </aside>
     </div>
   )
 }

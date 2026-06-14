@@ -24,7 +24,21 @@ export const tokenStorage = {
   },
 
   hasValidToken: (): boolean => {
-    return localStorage.getItem(TOKEN_KEY) !== null
+    const token = localStorage.getItem(TOKEN_KEY)
+    if (!token) return false
+    // Kiểm tra token chưa hết hạn (exp claim tính bằng giây)
+    try {
+      const base64Url = token.split(".")[1]
+      if (!base64Url) return false
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/")
+      const payload = JSON.parse(atob(base64)) as Record<string, unknown>
+      if (typeof payload.exp === "number") {
+        return payload.exp * 1000 > Date.now()
+      }
+    } catch {
+      return false
+    }
+    return true
   },
 }
 

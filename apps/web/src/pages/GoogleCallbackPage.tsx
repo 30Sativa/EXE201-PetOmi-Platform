@@ -2,6 +2,7 @@ import { useEffect } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 
 import { useGoogleLogin } from "@/hooks"
+import { exchangeAuthCodeApi } from "@/services/auth.service"
 
 export default function GoogleCallbackPage() {
   const navigate = useNavigate()
@@ -9,38 +10,50 @@ export default function GoogleCallbackPage() {
   const { handleCallback } = useGoogleLogin()
 
   useEffect(() => {
-    const accessToken = searchParams.get("accessToken")
-    const refreshToken = searchParams.get("refreshToken")
-    const email = searchParams.get("email")
-    const userId = searchParams.get("userId")
-    const activeRole = searchParams.get("activeRole") ?? undefined
-    const roles = searchParams.getAll("roles")
-    const isProfileCompleted = searchParams.get("isProfileCompleted") === "true"
-    const requiresPasswordSetup = searchParams.get("requiresPasswordSetup") === "true"
+    const code = searchParams.get("code")
 
-    if (accessToken && refreshToken) {
-      const payload = {
-        type: "GOOGLE_AUTH_SUCCESS",
-        accessToken,
-        refreshToken,
-        email: email ?? "",
-        userId: userId ?? "",
-        isProfileCompleted,
-        requiresPasswordSetup,
-        activeRole,
-        roles,
-      }
+    // Xoá code khỏi URL ngay lập tức — tránh lưu vào browser history
+    window.history.replaceState({}, "", window.location.pathname)
 
-      if (window.opener && !window.opener.closed) {
-        window.opener.postMessage(payload, window.location.origin)
-        window.close()
-        return
-      }
-
-      handleCallback(payload)
-    } else {
+    if (!code) {
       navigate("/login", { replace: true })
+      return
     }
+
+    exchangeAuthCodeApi(code)
+      .then((result) => {
+        const payload = {
+          type: "GOOGLE_AUTH_SUCCESS" as const,
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          email: result.email,
+          userId: result.userId,
+          isProfileCompleted: result.isProfileCompleted,
+          requiresPasswordSetup: result.requiresPasswordSetup,
+          activeRole: result.activeRole,
+          roles: result.roles,
+        }
+
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage(payload, window.location.origin)
+          window.close()
+          return
+        }
+
+        handleCallback({
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          email: result.email,
+          userId: result.userId,
+          isProfileCompleted: result.isProfileCompleted,
+          requiresPasswordSetup: result.requiresPasswordSetup,
+          activeRole: result.activeRole,
+          roles: result.roles,
+        })
+      })
+      .catch(() => {
+        navigate("/login", { replace: true })
+      })
   }, [navigate, searchParams, handleCallback])
 
   return (

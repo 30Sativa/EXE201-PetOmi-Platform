@@ -59,6 +59,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -67,7 +69,7 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.ContentType = "application/json";
 
         var response = BaseResponse<object>.Fail(
-            "Too many HealthShareCode attempts. Please wait a minute and try again.",
+            "Quá nhiều yêu cầu. Vui lòng chờ một phút rồi thử lại.",
             StatusCodes.Status429TooManyRequests);
 
         await context.HttpContext.Response.WriteAsync(
@@ -78,6 +80,18 @@ builder.Services.AddRateLimiter(options =>
             }),
             cancellationToken);
     };
+
+    // Giới hạn 10 request/phút theo IP cho các endpoint xác thực
+    options.AddPolicy("AuthPolicy", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+            }));
 
     options.AddPolicy("HealthShareResolve", httpContext =>
     {
@@ -160,7 +174,7 @@ builder.Services.AddScoped<IAuthorizationHandler, ActiveRoleHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, InternalApiKeyHandler>();
 
 // Infrastructure layer
-builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 
 // SignalR broadcaster (API layer)
 builder.Services.AddScoped<INotificationBroadcaster, SignalRNotificationBroadcaster>();
@@ -179,6 +193,16 @@ var app = builder.Build();
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseForwardedHeaders();
 
+// Security headers
+app.Use(async (ctx, next) =>
+{
+    ctx.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    ctx.Response.Headers.Append("X-Frame-Options", "DENY");
+    ctx.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    ctx.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    await next();
+});
+
 // Swagger — bật khi Development hoặc EnableSwagger=true trong config
 var enableSwagger = app.Environment.IsDevelopment()
     || builder.Configuration.GetValue<bool>("EnableSwagger");
@@ -193,6 +217,7 @@ app.MapGet("/", () => Results.Redirect("/swagger/index.html"))
 app.UseCors();
 if (!app.Environment.IsDevelopment())
 {
+    app.UseHsts();
     app.UseHttpsRedirection();
 }
 

@@ -145,3 +145,8 @@ export const resendVerificationApi = async (
   const response = await api.post("/auth/resend-verification", { email })
   return unwrapResponse<ResendVerificationResponse>(response)
 }
+
+export const exchangeAuthCodeApi = async (code: string): Promise<LoginResponse> => {
+  const response = await api.get(`/auth/exchange-code?code=${encodeURIComponent(code)}`)
+  return unwrapResponse<LoginResponse>(response)
+}

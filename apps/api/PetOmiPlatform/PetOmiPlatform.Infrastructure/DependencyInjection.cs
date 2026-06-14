@@ -3,7 +3,9 @@
 
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -35,7 +37,8 @@ namespace PetOmiPlatform.Infrastructure
 
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IWebHostEnvironment environment)
         {
             // DbContext
             services.AddDbContext<PetOmniDbContext>(options =>
@@ -101,7 +104,9 @@ namespace PetOmiPlatform.Infrastructure
                     options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
                     options.SlidingExpiration = false;
                     options.Cookie.SameSite = SameSiteMode.Lax;
-                    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                    options.Cookie.SecurePolicy = environment.IsProduction()
+                        ? CookieSecurePolicy.Always
+                        : CookieSecurePolicy.SameAsRequest;
                 })
                 .AddGoogle(GoogleDefaults.AuthenticationScheme, options =>
                 {
@@ -112,7 +117,9 @@ namespace PetOmiPlatform.Infrastructure
                     options.SignInScheme = GoogleExternalCookieScheme;
                     options.SaveTokens = true;
                     options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                    options.CorrelationCookie.SecurePolicy = environment.IsProduction()
+                        ? CookieSecurePolicy.Always
+                        : CookieSecurePolicy.SameAsRequest;
                 });
 
 

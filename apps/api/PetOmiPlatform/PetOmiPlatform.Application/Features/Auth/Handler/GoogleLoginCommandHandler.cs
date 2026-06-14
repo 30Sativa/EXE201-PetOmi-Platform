@@ -111,8 +111,9 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             var userAgent = string.IsNullOrWhiteSpace(command.UserAgent)
                 ? "Unknown"
                 : command.UserAgent;
+            // Bao gồm user.Id để tránh va chạm fingerprint giữa các user cùng IP/UA
             var deviceFingerprint = "google-oauth:" + _tokenGenerator.HashToken(
-                $"{userAgent}|{command.IpAddress ?? "unknown"}");
+                $"{user.Id}:{userAgent}|{command.IpAddress ?? "unknown"}");
 
             var device = await _userDeviceRepository.GetByFingerprintAsync(user.Id, deviceFingerprint);
 

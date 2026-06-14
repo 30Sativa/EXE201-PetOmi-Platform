@@ -79,25 +79,24 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             var user = await _userRepository.GetByIdAsync(token.UserId)
                 ?? throw new NotFoundException("User không tồn tại.");
 
-            // 6. Tạo token mới
+            // 6–8. Tạo token mới, revoke token cũ, cập nhật session trong 1 transaction
+            //       Thứ tự: revoke trước, tạo mới sau → nếu crash, token cũ đã bị thu hồi
             var newTokenRaw = _tokenGenerator.GenerateRefreshToken();
             var newTokenHash = _tokenGenerator.HashToken(newTokenRaw);
 
-            var newToken = RefreshTokensDomain.Create(userId: token.UserId,tokenHash: newTokenHash, deviceId: token.DeviceId);
+            var newToken = RefreshTokensDomain.Create(userId: token.UserId, tokenHash: newTokenHash, deviceId: token.DeviceId);
 
             await _refreshTokenRepository.AddAsync(newToken);
-            await _unitOfWork.SaveChangesAsync(cancellationToken); // ← save để có Id
+            await _unitOfWork.SaveChangesAsync(cancellationToken); // save để có Id cho ReplaceBy
 
-            // 7. Revoke token cũ
             token.ReplaceBy(newToken.Id);
             await _refreshTokenRepository.UpdateAsync(token);
 
-            // 8. Update session → gắn token mới
             session.AssignToken(newToken.Id);
             await _sessionRepository.UpdateAsync(session);
 
-            // 9. Save tất cả
-            await _unitOfWork.SaveChangesAsync(cancellationToken);  
+            // Commit revoke cũ + session update cùng 1 lần
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 10. Generate access token mới
             var roles = await _userRoleRepository.GetRolesByUserIdAsync(user.Id);

@@ -1,9 +1,11 @@
-﻿using MediatR;
+using MediatR;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Caching.Memory;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Exceptions;
@@ -14,6 +16,7 @@ using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Features.Auth.Queries;
 using PetOmiPlatform.Application.Features.Auth.Services;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace PetOmiPlatform.API.Controllers
 {
@@ -22,17 +25,35 @@ namespace PetOmiPlatform.API.Controllers
     public class AuthController : BaseController
     {
         private const string GoogleExternalCookieScheme = "GoogleExternal";
-        private readonly IConfiguration _configuration;
+        private const string AuthCodeCachePrefix = "auth:code:";
+        private static readonly Regex AuthCodePattern = new(@"^[a-f0-9]{32}$", RegexOptions.Compiled);
 
-        public AuthController(IMediator mediator, IConfiguration configuration) : base(mediator)
+        private readonly IConfiguration _configuration;
+        private readonly IMemoryCache _cache;
+
+        public AuthController(IMediator mediator, IConfiguration configuration, IMemoryCache cache)
+            : base(mediator)
         {
             _configuration = configuration;
+            _cache = cache;
         }
+
+        // Lưu kết quả auth tạm thời cho exchange-code flow (token không xuất hiện trong URL).
+        private sealed record AuthCodeData(
+            string AccessToken,
+            string RefreshToken,
+            string Email,
+            Guid UserId,
+            string ActiveRole,
+            IList<string> Roles,
+            bool IsProfileCompleted,
+            bool RequiresPasswordSetup);
 
         /// <summary>
         /// Đăng ký tài khoản mới. User được gán role Owner mặc định và hệ thống gửi email xác minh.
         /// </summary>
         [HttpPost("register")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request, [FromQuery] string? client)
         {
             var result = await Mediator.Send(new RegisterCommand(request, client));
@@ -43,6 +64,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Đăng nhập bằng email/password, tạo access token, refresh token, device và session.
         /// </summary>
         [HttpPost("login")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
@@ -59,6 +81,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Làm mới access token bằng refresh token còn hiệu lực.
         /// </summary>
         [HttpPost("refresh-token")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             var result = await Mediator.Send(new RefreshTokenCommand(request));
@@ -114,6 +137,7 @@ namespace PetOmiPlatform.API.Controllers
         /// Gửi email đặt lại mật khẩu nếu email tồn tại trong hệ thống.
         /// </summary>
         [HttpPost("forgot-password")]
+        [EnableRateLimiting("AuthPolicy")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
             await Mediator.Send(new ForgotPasswordCommand(request));
@@ -167,7 +191,8 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         /// <summary>
-        /// Google callback — nhận code, xử lý login/register, trả JWT.
+        /// Google callback — lưu kết quả vào IMemoryCache với mã 1 lần dùng (TTL 30s),
+        /// redirect về frontend với ?code= thay vì truyền token thẳng lên URL.
         /// </summary>
         [HttpGet("google/callback")]
         public async Task<IActionResult> GoogleCallback()
@@ -186,32 +211,62 @@ namespace PetOmiPlatform.API.Controllers
 
             await HttpContext.SignOutAsync(GoogleExternalCookieScheme);
 
-            var query = new QueryBuilder
-            {
-                { "accessToken", result.AccessToken },
-                { "refreshToken", result.RefreshToken },
-                { "email", result.Email },
-                { "userId", result.UserId.ToString() },
-                { "activeRole", result.ActiveRole },
-                { "isProfileCompleted", result.IsProfileCompleted.ToString().ToLowerInvariant() },
-                { "requiresPasswordSetup", result.RequiresPasswordSetup.ToString().ToLowerInvariant() }
-            };
-
-            foreach (var role in result.Roles)
-            {
-                query.Add("roles", role);
-            }
+            // Lưu vào cache với TTL 30s — token không xuất hiện trong URL, không lọt vào log hay browser history
+            var code = Guid.NewGuid().ToString("N");
+            _cache.Set(
+                $"{AuthCodeCachePrefix}{code}",
+                new AuthCodeData(
+                    result.AccessToken,
+                    result.RefreshToken,
+                    result.Email,
+                    result.UserId,
+                    result.ActiveRole,
+                    result.Roles,
+                    result.IsProfileCompleted,
+                    result.RequiresPasswordSetup),
+                TimeSpan.FromSeconds(30));
 
             var client = authenticateResult.Properties?.Items.TryGetValue("client", out var storedClient) == true
                 ? storedClient
                 : null;
+
             var redirectUrl = AuthRedirectUrlBuilder.Build(
                 client,
                 _configuration["FrontendUrl"],
                 _configuration["MobileDeepLink"],
-                $"auth/callback{query.ToQueryString()}");
+                $"auth/callback?code={code}");
 
             return Redirect(redirectUrl);
+        }
+
+        /// <summary>
+        /// Đổi mã trao đổi 1 lần (từ Google callback) lấy access token + refresh token.
+        /// Mã có hiệu lực 30 giây và bị thu hồi ngay sau khi sử dụng.
+        /// </summary>
+        [HttpGet("exchange-code")]
+        public IActionResult ExchangeCode([FromQuery] string code)
+        {
+            if (string.IsNullOrWhiteSpace(code) || !AuthCodePattern.IsMatch(code))
+                throw new UnauthorizedException("Code không hợp lệ.");
+
+            var cacheKey = $"{AuthCodeCachePrefix}{code}";
+
+            if (!_cache.TryGetValue(cacheKey, out AuthCodeData? data) || data is null)
+                throw new UnauthorizedException("Code không hợp lệ hoặc đã hết hạn.");
+
+            _cache.Remove(cacheKey); // Dùng 1 lần rồi xoá
+
+            return Ok(BaseResponse<object>.Ok(new
+            {
+                accessToken = data.AccessToken,
+                refreshToken = data.RefreshToken,
+                email = data.Email,
+                userId = data.UserId.ToString(),
+                activeRole = data.ActiveRole,
+                roles = data.Roles,
+                isProfileCompleted = data.IsProfileCompleted,
+                requiresPasswordSetup = data.RequiresPasswordSetup,
+            }));
         }
     }
 }

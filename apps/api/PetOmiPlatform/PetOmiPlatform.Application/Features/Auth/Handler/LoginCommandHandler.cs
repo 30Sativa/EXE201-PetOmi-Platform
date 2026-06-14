@@ -49,9 +49,11 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         }
         public async Task<LoginResponse> Handle(LoginCommand request, CancellationToken cancellationToken)
         {
-            // 1. Find user
-            var user = await _userRepository.GetByEmailAsync(new Email(request.Request.Email))
-                ?? throw new NotFoundException("User không tồn tại");
+            // 1. Find user — dùng cùng message cho cả "không tồn tại" và "sai mật khẩu"
+            //    để tránh user enumeration qua status code khác nhau
+            var user = await _userRepository.GetByEmailAsync(new Email(request.Request.Email));
+            if (user == null)
+                throw new UnauthorizedException("Email hoặc mật khẩu không đúng.");
 
             // 2. Validate login — domain xử lý
             user.ValidateLogin(request.Request.Password, _passwordHasher);

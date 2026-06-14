@@ -9,7 +9,7 @@ using System.Text;
 
 namespace PetOmiPlatform.Application.Features.Auth.Command
 {
-    public record RegisterCommand(RegisterRequest Request) : IRequest<RegisterResponse>, IAuditableCommand
+    public record RegisterCommand(RegisterRequest Request, string? Client = null) : IRequest<RegisterResponse>, IAuditableCommand
     {
         public Guid? UserId => null;
         public string Action => "Register";

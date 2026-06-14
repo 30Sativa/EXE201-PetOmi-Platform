@@ -13,6 +13,7 @@ using System.Text;
 using Microsoft.Extensions.Configuration;
 using PetOmiPlatform.Domain.Common.Constants;
 using PetOmiPlatform.Application.Feature.Auth.DTOs.Response;
+using PetOmiPlatform.Application.Features.Auth.Services;
 namespace PetOmiPlatform.Application.Features.Auth.Handler
 {
     public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterResponse>
@@ -79,8 +80,11 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // 5. Gửi email
-            var frontendUrl = _configuration["FrontendUrl"] ?? "http://localhost:5173";
-            var verificationLink = $"{frontendUrl}/verify-email?token={Uri.EscapeDataString(rawToken)}";
+            var verificationLink = AuthRedirectUrlBuilder.Build(
+                request.Client,
+                _configuration["FrontendUrl"],
+                _configuration["MobileDeepLink"],
+                $"verify-email?token={Uri.EscapeDataString(rawToken)}");
             await _emailService.SendEmailVerificationAsync(user.Email.Value, verificationLink);
 
             return new RegisterResponse

@@ -88,6 +88,10 @@ class OwnerPet {
     required this.dateOfBirth,
     required this.avatarUrl,
     required this.color,
+    this.isNeutered,
+    this.isBirthDateEstimated = false,
+    this.createdAt,
+    this.updatedAt,
   });
 
   factory OwnerPet.fromJson(Map<String, dynamic> json) {
@@ -100,6 +104,10 @@ class OwnerPet {
       dateOfBirth: json.nullableString('dateOfBirth'),
       avatarUrl: json.nullableString('avatarUrl'),
       color: json.nullableString('color'),
+      isNeutered: json.nullableString('isNeutered'),
+      isBirthDateEstimated: json.boolValue('isBirthDateEstimated'),
+      createdAt: json.nullableString('createdAt'),
+      updatedAt: json.nullableString('updatedAt'),
     );
   }
 
@@ -111,6 +119,41 @@ class OwnerPet {
   final String? dateOfBirth;
   final String? avatarUrl;
   final String? color;
+  final String? isNeutered;
+  final bool isBirthDateEstimated;
+  final String? createdAt;
+  final String? updatedAt;
+
+  String get genderLabel {
+    switch (gender) {
+      case 'Male':
+        return 'Đực';
+      case 'Female':
+        return 'Cái';
+      case 'Other':
+        return 'Khác';
+    }
+    return gender ?? 'Chưa rõ';
+  }
+
+  String get neuteredLabel {
+    switch (isNeutered) {
+      case 'Yes':
+        return 'Đã triệt sản';
+      case 'No':
+        return 'Chưa triệt sản';
+      case 'Unknown':
+        return 'Không rõ';
+    }
+    return isNeutered ?? 'Không rõ';
+  }
+
+  String get speciesEmoji {
+    final normalized = species.toLowerCase();
+    if (normalized == 'dog') return '🐶';
+    if (normalized == 'cat') return '🐱';
+    return '🐾';
+  }
 
   String get speciesLabel {
     final normalized = species.toLowerCase();
@@ -180,6 +223,136 @@ class OwnerAppointment {
   final String status;
 
   DateTime? get date => DateTime.tryParse(appointmentDate);
+}
+
+class OwnerClinic {
+  const OwnerClinic({
+    required this.clinicId,
+    required this.clinicName,
+    required this.address,
+    required this.logoUrl,
+    required this.description,
+  });
+
+  factory OwnerClinic.fromJson(Map<String, dynamic> json) {
+    return OwnerClinic(
+      clinicId: json.stringValue('clinicId'),
+      clinicName: json.stringValue('clinicName', fallback: 'Clinic'),
+      address: json.nullableString('address'),
+      logoUrl: json.nullableString('logoUrl'),
+      description: json.nullableString('description'),
+    );
+  }
+
+  final String clinicId;
+  final String clinicName;
+  final String? address;
+  final String? logoUrl;
+  final String? description;
+}
+
+class OwnerClinicService {
+  const OwnerClinicService({
+    required this.serviceId,
+    required this.serviceName,
+    required this.description,
+    required this.price,
+    required this.durationMins,
+    required this.isActive,
+  });
+
+  factory OwnerClinicService.fromJson(Map<String, dynamic> json) {
+    return OwnerClinicService(
+      serviceId: json.stringValue('serviceId'),
+      serviceName: json.stringValue('serviceName', fallback: 'Service'),
+      description: json.nullableString('description'),
+      price: json.numberValue('price'),
+      durationMins: json.intValue('durationMins', fallback: 30),
+      isActive: json.boolValue('isActive', fallback: true),
+    );
+  }
+
+  final String serviceId;
+  final String serviceName;
+  final String? description;
+  final double price;
+  final int durationMins;
+  final bool isActive;
+}
+
+class OwnerClinicProfile {
+  const OwnerClinicProfile({required this.clinic, required this.services});
+
+  factory OwnerClinicProfile.fromJson(Map<String, dynamic> json) {
+    final services = json['services'];
+    return OwnerClinicProfile(
+      clinic: OwnerClinic.fromJson(json),
+      services: services is List
+          ? services
+                .whereType<Map<String, dynamic>>()
+                .map(OwnerClinicService.fromJson)
+                .where((service) => service.isActive)
+                .toList()
+          : const [],
+    );
+  }
+
+  final OwnerClinic clinic;
+  final List<OwnerClinicService> services;
+}
+
+class OwnerDoctor {
+  const OwnerDoctor({
+    required this.vetClinicId,
+    required this.fullName,
+    required this.avatarUrl,
+    required this.specialization,
+    required this.roleName,
+  });
+
+  factory OwnerDoctor.fromJson(Map<String, dynamic> json) {
+    return OwnerDoctor(
+      vetClinicId: json.stringValue('vetClinicId'),
+      fullName: json.stringValue('fullName', fallback: 'Doctor'),
+      avatarUrl: json.nullableString('avatarUrl'),
+      specialization: json.nullableString('specialization'),
+      roleName: json.stringValue('roleName'),
+    );
+  }
+
+  final String vetClinicId;
+  final String fullName;
+  final String? avatarUrl;
+  final String? specialization;
+  final String roleName;
+}
+
+class OwnerAvailableSlot {
+  const OwnerAvailableSlot({
+    required this.vetClinicId,
+    required this.doctorName,
+    required this.startTime,
+    required this.endTime,
+    required this.isAvailable,
+  });
+
+  factory OwnerAvailableSlot.fromJson(Map<String, dynamic> json) {
+    return OwnerAvailableSlot(
+      vetClinicId: json.stringValue('vetClinicId'),
+      doctorName: json.stringValue('doctorName', fallback: 'Doctor'),
+      startTime: json.stringValue('startTime'),
+      endTime: json.stringValue('endTime'),
+      isAvailable: json.boolValue('isAvailable', fallback: true),
+    );
+  }
+
+  final String vetClinicId;
+  final String doctorName;
+  final String startTime;
+  final String endTime;
+  final bool isAvailable;
+
+  String get rangeLabel => '$startTime - $endTime';
 }
 
 class OwnerReminder {
@@ -259,6 +432,368 @@ class OwnerHomeData {
   }
 }
 
+class PetHealthProfile {
+  const PetHealthProfile({
+    required this.petHealthProfileId,
+    required this.petId,
+    required this.currentWeightKg,
+    required this.color,
+    required this.isNeutered,
+    required this.allergies,
+    required this.chronicConditions,
+    required this.microchipNumber,
+    required this.updatedAt,
+  });
+
+  factory PetHealthProfile.fromJson(Map<String, dynamic> json) {
+    return PetHealthProfile(
+      petHealthProfileId: json.stringValue('petHealthProfileId'),
+      petId: json.stringValue('petId'),
+      currentWeightKg: json['currentWeightKg'] == null
+          ? null
+          : json.numberValue('currentWeightKg'),
+      color: json.nullableString('color'),
+      isNeutered: json.nullableString('isNeutered'),
+      allergies: json.nullableString('allergies'),
+      chronicConditions: json.nullableString('chronicConditions'),
+      microchipNumber: json.nullableString('microchipNumber'),
+      updatedAt: json.nullableString('updatedAt'),
+    );
+  }
+
+  final String petHealthProfileId;
+  final String petId;
+  final double? currentWeightKg;
+  final String? color;
+  final String? isNeutered;
+  final String? allergies;
+  final String? chronicConditions;
+  final String? microchipNumber;
+  final String? updatedAt;
+
+  String get neuteredLabel {
+    switch (isNeutered) {
+      case 'Yes':
+        return 'Đã triệt sản';
+      case 'No':
+        return 'Chưa triệt sản';
+      case 'Unknown':
+        return 'Không rõ';
+    }
+    return isNeutered ?? 'Không rõ';
+  }
+}
+
+class PetWeightLog {
+  const PetWeightLog({
+    required this.weightLogId,
+    required this.petId,
+    required this.weightKg,
+    required this.measuredAt,
+    required this.source,
+    required this.note,
+  });
+
+  factory PetWeightLog.fromJson(Map<String, dynamic> json) {
+    return PetWeightLog(
+      weightLogId: json.stringValue('weightLogId'),
+      petId: json.stringValue('petId'),
+      weightKg: json.numberValue('weightKg'),
+      measuredAt: json.stringValue('measuredAt'),
+      source: json.nullableString('source'),
+      note: json.nullableString('note'),
+    );
+  }
+
+  final String weightLogId;
+  final String petId;
+  final double weightKg;
+  final String measuredAt;
+  final String? source;
+  final String? note;
+
+  DateTime? get measuredDate => DateTime.tryParse(measuredAt);
+}
+
+class PetMedicalRecord {
+  const PetMedicalRecord({
+    required this.medicalRecordId,
+    required this.petId,
+    required this.recordType,
+    required this.title,
+    required this.description,
+    required this.recordDate,
+    required this.vetName,
+    required this.clinicName,
+    required this.medicationName,
+    required this.dosage,
+  });
+
+  factory PetMedicalRecord.fromJson(Map<String, dynamic> json) {
+    return PetMedicalRecord(
+      medicalRecordId: json.stringValue('medicalRecordId'),
+      petId: json.stringValue('petId'),
+      recordType: json.stringValue('recordType'),
+      title: json.stringValue('title', fallback: 'Hồ sơ y tế'),
+      description: json.nullableString('description'),
+      recordDate: json.stringValue('recordDate'),
+      vetName: json.nullableString('vetName'),
+      clinicName: json.nullableString('clinicName'),
+      medicationName: json.nullableString('medicationName'),
+      dosage: json.nullableString('dosage'),
+    );
+  }
+
+  final String medicalRecordId;
+  final String petId;
+  final String recordType;
+  final String title;
+  final String? description;
+  final String recordDate;
+  final String? vetName;
+  final String? clinicName;
+  final String? medicationName;
+  final String? dosage;
+
+  DateTime? get date => DateTime.tryParse(recordDate);
+}
+
+class PetPhoto {
+  const PetPhoto({
+    required this.photoId,
+    required this.petId,
+    required this.imageUrl,
+    required this.caption,
+    required this.isAvatar,
+  });
+
+  factory PetPhoto.fromJson(Map<String, dynamic> json) {
+    return PetPhoto(
+      photoId: json.stringValue('photoId'),
+      petId: json.stringValue('petId'),
+      imageUrl: json.stringValue('imageUrl'),
+      caption: json.nullableString('caption'),
+      isAvatar: json.boolValue('isAvatar'),
+    );
+  }
+
+  final String photoId;
+  final String petId;
+  final String imageUrl;
+  final String? caption;
+  final bool isAvatar;
+}
+
+class PetUserAccess {
+  const PetUserAccess({
+    required this.petUserAccessId,
+    required this.petId,
+    required this.userId,
+    required this.accessRole,
+    required this.isExpired,
+  });
+
+  factory PetUserAccess.fromJson(Map<String, dynamic> json) {
+    return PetUserAccess(
+      petUserAccessId: json.stringValue('petUserAccessId'),
+      petId: json.stringValue('petId'),
+      userId: json.stringValue('userId'),
+      accessRole: json.stringValue('accessRole', fallback: 'Viewer'),
+      isExpired: json.boolValue('isExpired'),
+    );
+  }
+
+  final String petUserAccessId;
+  final String petId;
+  final String userId;
+  final String accessRole;
+  final bool isExpired;
+}
+
+class ChatMessage {
+  const ChatMessage({
+    required this.messageId,
+    required this.conversationId,
+    required this.senderRole,
+    required this.status,
+    required this.content,
+    required this.createdAt,
+  });
+
+  factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    return ChatMessage(
+      messageId: json.stringValue('messageId'),
+      conversationId: json.stringValue('conversationId'),
+      senderRole: json.stringValue('senderRole', fallback: 'User'),
+      status: json.stringValue('status', fallback: 'Completed'),
+      content: json.stringValue('content'),
+      createdAt: json.stringValue('createdAt'),
+    );
+  }
+
+  final String messageId;
+  final String conversationId;
+  final String senderRole;
+  final String status;
+  final String content;
+  final String createdAt;
+
+  bool get isAi {
+    final role = senderRole.toLowerCase();
+    return role == 'ai' || role == 'assistant';
+  }
+
+  bool get isPending {
+    final s = status.toLowerCase();
+    return s == 'pending' || s == 'processing';
+  }
+}
+
+class SendChatResult {
+  const SendChatResult({
+    required this.messageId,
+    required this.conversationId,
+    required this.status,
+  });
+
+  factory SendChatResult.fromJson(Map<String, dynamic> json) {
+    return SendChatResult(
+      messageId: json.stringValue('messageId'),
+      conversationId: json.stringValue('conversationId'),
+      status: json.stringValue('status', fallback: 'Pending'),
+    );
+  }
+
+  final String messageId;
+  final String conversationId;
+  final String status;
+}
+
+class ChatPlan {
+  const ChatPlan({
+    required this.code,
+    required this.name,
+    required this.description,
+    required this.priceMonthly,
+    required this.billingCycleDays,
+    required this.monthlyMessageQuota,
+    required this.deepRagEnabled,
+    required this.imageUploadEnabled,
+  });
+
+  factory ChatPlan.fromJson(Map<String, dynamic> json) {
+    return ChatPlan(
+      code: json.stringValue('code'),
+      name: json.stringValue('name', fallback: 'Gói'),
+      description: json.nullableString('description'),
+      priceMonthly: json.numberValue('priceMonthly'),
+      billingCycleDays: json.intValue('billingCycleDays', fallback: 30),
+      monthlyMessageQuota: json.intValue('monthlyMessageQuota'),
+      deepRagEnabled: json.boolValue('deepRagEnabled'),
+      imageUploadEnabled: json.boolValue('imageUploadEnabled'),
+    );
+  }
+
+  final String code;
+  final String name;
+  final String? description;
+  final double priceMonthly;
+  final int billingCycleDays;
+  final int monthlyMessageQuota;
+  final bool deepRagEnabled;
+  final bool imageUploadEnabled;
+}
+
+class ChatSubscriptionStatus {
+  const ChatSubscriptionStatus({
+    required this.currentPlanCode,
+    required this.currentPlanName,
+    required this.isPremium,
+    required this.canSend,
+    required this.blockReason,
+    required this.usedMessages,
+    required this.remainingMessages,
+    required this.monthlyMessageQuota,
+    required this.deepRagEnabled,
+    required this.plans,
+  });
+
+  factory ChatSubscriptionStatus.fromJson(Map<String, dynamic> json) {
+    final usage = json['usage'];
+    final usageMap = usage is Map<String, dynamic>
+        ? usage
+        : <String, dynamic>{};
+    final caps = json['capabilities'];
+    final capsMap = caps is Map<String, dynamic>
+        ? caps
+        : <String, dynamic>{};
+    final plansRaw = json['plans'];
+    return ChatSubscriptionStatus(
+      currentPlanCode: json.stringValue('currentPlanCode', fallback: 'free'),
+      currentPlanName: json.stringValue('currentPlanName', fallback: 'Miễn phí'),
+      isPremium: json.boolValue('isPremium'),
+      canSend: json.boolValue('canSend', fallback: true),
+      blockReason: json.nullableString('blockReason'),
+      usedMessages: usageMap.intValue('usedMessages'),
+      remainingMessages: usageMap.intValue('remainingMessages'),
+      monthlyMessageQuota: usageMap.intValue('monthlyMessageQuota'),
+      deepRagEnabled: capsMap.boolValue('deepRagEnabled'),
+      plans: plansRaw is List
+          ? plansRaw
+                .whereType<Map<String, dynamic>>()
+                .map(ChatPlan.fromJson)
+                .toList()
+          : const [],
+    );
+  }
+
+  final String currentPlanCode;
+  final String currentPlanName;
+  final bool isPremium;
+  final bool canSend;
+  final String? blockReason;
+  final int usedMessages;
+  final int remainingMessages;
+  final int monthlyMessageQuota;
+  final bool deepRagEnabled;
+  final List<ChatPlan> plans;
+}
+
+class ChatPayment {
+  const ChatPayment({
+    required this.paymentId,
+    required this.planName,
+    required this.status,
+    required this.amount,
+    required this.qrCodeUrl,
+    required this.bankAccountNo,
+    required this.bankCode,
+    required this.paymentReference,
+  });
+
+  factory ChatPayment.fromJson(Map<String, dynamic> json) {
+    return ChatPayment(
+      paymentId: json.stringValue('paymentId'),
+      planName: json.stringValue('planName', fallback: 'Gói Premium'),
+      status: json.stringValue('status', fallback: 'Pending'),
+      amount: json.numberValue('amount'),
+      qrCodeUrl: json.nullableString('qrCodeUrl'),
+      bankAccountNo: json.nullableString('bankAccountNo'),
+      bankCode: json.nullableString('bankCode'),
+      paymentReference: json.nullableString('paymentReference'),
+    );
+  }
+
+  final String paymentId;
+  final String planName;
+  final String status;
+  final double amount;
+  final String? qrCodeUrl;
+  final String? bankAccountNo;
+  final String? bankCode;
+  final String? paymentReference;
+}
+
 extension JsonMapReader on Map<String, dynamic> {
   String stringValue(String key, {String fallback = ''}) {
     final value = this[key];
@@ -284,6 +819,21 @@ extension JsonMapReader on Map<String, dynamic> {
     final value = this[key];
     if (value is List) return value.map((item) => item.toString()).toList();
     return const [];
+  }
+
+  int intValue(String key, {int fallback = 0}) {
+    final value = this[key];
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? fallback;
+    return fallback;
+  }
+
+  double numberValue(String key, {double fallback = 0}) {
+    final value = this[key];
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? fallback;
+    return fallback;
   }
 }
 

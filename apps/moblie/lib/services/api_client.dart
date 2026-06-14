@@ -54,6 +54,11 @@ class TokenStore {
     await prefs.setString(_refreshTokenKey, refreshToken);
   }
 
+  Future<void> saveEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_emailKey, email);
+  }
+
   Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_accessTokenKey);
@@ -116,6 +121,38 @@ class ApiClient {
     return _decodeMap(response);
   }
 
+  Future<Map<String, dynamic>> putMap(
+    String path, {
+    Map<String, dynamic>? body,
+    bool authorized = true,
+  }) async {
+    final response = await _sendWithRefresh(
+      'PUT',
+      path,
+      body: body,
+      authorized: authorized,
+    );
+    return _decodeMap(response);
+  }
+
+  Future<Map<String, dynamic>> patchMap(
+    String path, {
+    Map<String, dynamic>? body,
+    bool authorized = true,
+  }) async {
+    final response = await _sendWithRefresh(
+      'PATCH',
+      path,
+      body: body,
+      authorized: authorized,
+    );
+    return _decodeMap(response);
+  }
+
+  Future<void> delete(String path, {bool authorized = true}) async {
+    await _sendWithRefresh('DELETE', path, authorized: authorized);
+  }
+
   Future<http.Response> _sendWithRefresh(
     String method,
     String path, {
@@ -171,6 +208,9 @@ class ApiClient {
     return switch (method) {
       'GET' => _httpClient.get(uri, headers: headers),
       'POST' => _httpClient.post(uri, headers: headers, body: encodedBody),
+      'PUT' => _httpClient.put(uri, headers: headers, body: encodedBody),
+      'PATCH' => _httpClient.patch(uri, headers: headers, body: encodedBody),
+      'DELETE' => _httpClient.delete(uri, headers: headers, body: encodedBody),
       _ => throw UnsupportedError('Unsupported method $method'),
     };
   }

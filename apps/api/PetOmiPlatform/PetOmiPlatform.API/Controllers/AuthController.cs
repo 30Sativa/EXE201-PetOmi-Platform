@@ -12,6 +12,7 @@ using PetOmiPlatform.Application.Features.Auth.Command;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Request;
 using PetOmiPlatform.Application.Features.Auth.DTOs.Response;
 using PetOmiPlatform.Application.Features.Auth.Queries;
+using PetOmiPlatform.Application.Features.Auth.Services;
 using System.Security.Claims;
 
 namespace PetOmiPlatform.API.Controllers
@@ -32,9 +33,9 @@ namespace PetOmiPlatform.API.Controllers
         /// Đăng ký tài khoản mới. User được gán role Owner mặc định và hệ thống gửi email xác minh.
         /// </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request, [FromQuery] string? client)
         {
-            var result = await Mediator.Send(new RegisterCommand(request));
+            var result = await Mediator.Send(new RegisterCommand(request, client));
             return Ok(BaseResponse<RegisterResponse>.Ok(result));
         }
 
@@ -157,10 +158,11 @@ namespace PetOmiPlatform.API.Controllers
         /// Redirect user đến Google consent screen.
         /// </summary>
         [HttpGet("google/login")]
-        public IActionResult GoogleLogin()
+        public IActionResult GoogleLogin([FromQuery] string? client)
         {
             var redirectUrl = Url.Action(nameof(GoogleCallback), "Auth", null, Request.Scheme);
             var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            properties.Items["client"] = AuthRedirectUrlBuilder.NormalizeClient(client);
             return Challenge(properties, "Google");
         }
 
@@ -184,7 +186,6 @@ namespace PetOmiPlatform.API.Controllers
 
             await HttpContext.SignOutAsync(GoogleExternalCookieScheme);
 
-            var frontendUrl = (_configuration["FrontendUrl"] ?? "http://localhost:5173").TrimEnd('/');
             var query = new QueryBuilder
             {
                 { "accessToken", result.AccessToken },
@@ -201,7 +202,16 @@ namespace PetOmiPlatform.API.Controllers
                 query.Add("roles", role);
             }
 
-            return Redirect($"{frontendUrl}/auth/callback{query.ToQueryString()}");
+            var client = authenticateResult.Properties?.Items.TryGetValue("client", out var storedClient) == true
+                ? storedClient
+                : null;
+            var redirectUrl = AuthRedirectUrlBuilder.Build(
+                client,
+                _configuration["FrontendUrl"],
+                _configuration["MobileDeepLink"],
+                $"auth/callback{query.ToQueryString()}");
+
+            return Redirect(redirectUrl);
         }
     }
 }

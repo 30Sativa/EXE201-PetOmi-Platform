@@ -22,6 +22,8 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<Clinic> Clinics { get; set; }
 
+    public virtual DbSet<ClinicReview> ClinicReviews { get; set; }
+
     public virtual DbSet<ClinicPaymentAccount> ClinicPaymentAccounts { get; set; }
 
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
@@ -1617,6 +1619,35 @@ public partial class PetOmniDbContext : DbContext
             entity.HasOne(d => d.Conversation).WithMany(p => p.ChatMessages)
                 .HasForeignKey(d => d.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ClinicReview>(entity =>
+        {
+            entity.HasKey(e => e.ClinicReviewId).HasName("PK_ClinicReviews");
+
+            entity.ToTable("ClinicReviews");
+
+            entity.HasIndex(e => new { e.ClinicId, e.IsActive }, "IX_ClinicReviews_Clinic_Active");
+            entity.HasIndex(e => new { e.OwnerUserId, e.CreatedAt }, "IX_ClinicReviews_Owner_Created");
+
+            entity.Property(e => e.ClinicReviewId)
+                .HasColumnName("ClinicReviewID")
+                .ValueGeneratedNever();
+            entity.Property(e => e.ClinicId).HasColumnName("ClinicID");
+            entity.Property(e => e.OwnerUserId).HasColumnName("OwnerUserID");
+            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentID");
+            entity.Property(e => e.ReviewContent).HasMaxLength(1000);
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasDefaultValue("Approved");
+            entity.Property(e => e.RejectionReason).HasMaxLength(500);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.DeletedAt).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
         });
 
         OnModelCreatingPartial(modelBuilder);

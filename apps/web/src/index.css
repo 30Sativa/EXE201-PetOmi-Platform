@@ -585,15 +585,16 @@ dialog.fixed.inset-0.z-50.flex.items-center.justify-center {
 /* ==================== TOASTS ==================== */
 
 .po-toast {
+  display: flex !important;
+  flex-direction: row !important;
   width: fit-content !important;
-  min-width: 320px !important;
-  max-width: min(420px, calc(100vw - 24px)) !important;
-  min-height: 56px !important;
+  min-width: 300px !important;
+  max-width: min(440px, calc(100vw - 24px)) !important;
   align-items: center !important;
   gap: 12px !important;
   border: 1px solid var(--po-color-border) !important;
-  border-radius: 20px !important;
-  padding: 12px 16px !important;
+  border-radius: 16px !important;
+  padding: 14px 18px !important;
   background: rgb(255 255 255 / 96%) !important;
   color: var(--po-color-text) !important;
   box-shadow: 0 14px 34px rgb(74 47 33 / 10%), 0 1px 0 rgb(255 255 255 / 90%) inset !important;
@@ -613,6 +614,9 @@ dialog.fixed.inset-0.z-50.flex.items-center.justify-center {
 }
 
 .po-toast-content {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  flex-direction: column !important;
   min-width: 0 !important;
   gap: 3px !important;
 }
@@ -621,7 +625,9 @@ dialog.fixed.inset-0.z-50.flex.items-center.justify-center {
   color: var(--po-color-text) !important;
   font-size: 14px !important;
   font-weight: 750 !important;
-  line-height: 1.35 !important;
+  line-height: 1.4 !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
 }
 
 .po-toast-description {
@@ -629,6 +635,8 @@ dialog.fixed.inset-0.z-50.flex.items-center.justify-center {
   font-size: 13px !important;
   font-weight: 500 !important;
   line-height: 1.5 !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
 }
 
 .po-toast-success {

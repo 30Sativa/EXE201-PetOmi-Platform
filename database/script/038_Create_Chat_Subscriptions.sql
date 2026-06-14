@@ -38,8 +38,8 @@ GO
 
 MERGE dbo.ChatSubscriptionPlans AS target
 USING (VALUES
-    ('free', 'Free', 'Goi mien phi cho PetOmi AI chat, gioi han theo account moi thang.', CAST(0 AS DECIMAL(18,2)), 30, 20, 100000, 0, CAST(0 AS BIT), CAST(0 AS BIT), 0, CAST(1 AS BIT), 1),
-    ('premium', 'Premium', 'Goi tra phi theo tung pet: quota cao hon, uu tien xu ly, RAG sau hon va san sang cho upload anh.', CAST(99000 AS DECIMAL(18,2)), 30, 500, 1000000, 10, CAST(1 AS BIT), CAST(1 AS BIT), 30, CAST(1 AS BIT), 2)
+    ('free', 'Free', N'Trò chuyện cùng PetOmi AI miễn phí, có giới hạn lượt nhắn mỗi tháng.', CAST(0 AS DECIMAL(18,2)), 30, 20, 100000, 0, CAST(0 AS BIT), CAST(0 AS BIT), 0, CAST(1 AS BIT), 1),
+    ('premium', 'Premium', N'Dành riêng cho từng bé: nhiều lượt nhắn hơn, phản hồi nhanh hơn, tư vấn sâu theo hồ sơ và gửi được ảnh cho AI xem.', CAST(99000 AS DECIMAL(18,2)), 30, 500, 1000000, 10, CAST(1 AS BIT), CAST(1 AS BIT), 30, CAST(1 AS BIT), 2)
 ) AS source (
     Code,
     Name,

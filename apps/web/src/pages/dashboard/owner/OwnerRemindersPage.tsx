@@ -336,20 +336,27 @@ function ReminderCard({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-3">
         <button
+          type="button"
+          role="switch"
+          aria-checked={reminder.isEnabled}
+          aria-label={reminder.isEnabled ? "Tắt nhắc nhở" : "Bật nhắc nhở"}
+          title={reminder.isEnabled ? "Tắt nhắc nhở" : "Bật nhắc nhở"}
           onClick={onToggle}
           disabled={isToggling || isDismissed}
-          title={reminder.isEnabled ? "Tắt nhắc nhở" : "Bật nhắc nhở"}
           className={cn(
-            "grid size-8 place-items-center rounded-full border text-xs transition",
-            reminder.isEnabled
-              ? "border-po-success text-po-success hover:bg-po-success-soft"
-              : "border-po-border text-po-text-subtle hover:bg-po-surface-muted",
-            (isToggling || isDismissed) && "opacity-50",
+            "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-po-primary/40",
+            reminder.isEnabled ? "bg-po-success" : "bg-po-border",
+            (isToggling || isDismissed) && "cursor-not-allowed opacity-50",
           )}
         >
-          {reminder.isEnabled ? "🔔" : "🔕"}
+          <span
+            className={cn(
+              "inline-block size-5 transform rounded-full bg-white shadow-sm transition-transform duration-200",
+              reminder.isEnabled ? "translate-x-[22px]" : "translate-x-[2px]",
+            )}
+          />
         </button>
         {!isDismissed && (
           <button

@@ -2,6 +2,7 @@ import { X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
+import axios from "axios"
 import {
   createPetMedicalRecordApi,
   updatePetMedicalRecordApi,
@@ -12,15 +13,23 @@ import type {
   UpdatePetMedicalRecordRequest,
 } from "@/types"
 
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as
+      | { errors?: string[]; message?: string }
+      | undefined
+    return data?.errors?.[0] ?? data?.message ?? fallback
+  }
+  return fallback
+}
+
 const RECORD_TYPES = [
-  { value: "Vaccination", label: "Tiêm phòng" },
-  { value: "Checkup", label: "Khám định kỳ" },
+  { value: "Vaccine", label: "Tiêm phòng" },
+  { value: "Visit", label: "Khám bệnh" },
+  { value: "Medication", label: "Dùng thuốc" },
   { value: "Surgery", label: "Phẫu thuật" },
+  { value: "Allergy", label: "Dị ứng" },
   { value: "Illness", label: "Bệnh lý" },
-  { value: "Medication", label: "Thuốc" },
-  { value: "LabTest", label: "Xét nghiệm" },
-  { value: "Dental", label: "Răng miệng" },
-  { value: "Grooming", label: "Vệ sinh" },
 ]
 
 interface MedicalRecordModalProps {
@@ -39,7 +48,7 @@ export default function MedicalRecordModal({
   const queryClient = useQueryClient()
   const isEdit = Boolean(editingRecord)
 
-  const [recordType, setRecordType] = useState("Checkup")
+  const [recordType, setRecordType] = useState("Visit")
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [recordDate, setRecordDate] = useState(new Date().toISOString().split("T")[0])
@@ -65,7 +74,7 @@ export default function MedicalRecordModal({
       setEndDate(editingRecord.endDate?.split("T")[0] ?? "")
       setAttachmentUrl(editingRecord.attachmentUrl ?? "")
     } else {
-      setRecordType("Checkup")
+      setRecordType("Visit")
       setTitle("")
       setDescription("")
       setRecordDate(new Date().toISOString().split("T")[0])
@@ -87,8 +96,10 @@ export default function MedicalRecordModal({
       toast.success("Thêm hồ sơ y tế thành công!")
       onClose()
     },
-    onError: () => {
-      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
+    onError: (error) => {
+      toast.error(
+        getApiErrorMessage(error, "Không thêm được hồ sơ y tế. Vui lòng thử lại."),
+      )
     },
   })
 
@@ -100,8 +111,10 @@ export default function MedicalRecordModal({
       toast.success("Cập nhật hồ sơ y tế thành công!")
       onClose()
     },
-    onError: () => {
-      toast.error("Đã xảy ra lỗi. Vui lòng thử lại.")
+    onError: (error) => {
+      toast.error(
+        getApiErrorMessage(error, "Không cập nhật được hồ sơ y tế. Vui lòng thử lại."),
+      )
     },
   })
 

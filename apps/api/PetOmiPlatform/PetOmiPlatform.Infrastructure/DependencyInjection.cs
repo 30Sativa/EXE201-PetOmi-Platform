@@ -142,6 +142,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IUserProfileRepository, UserProfileRepository>();
             services.AddScoped<IVetProfileRepository, VetProfileRepository>();
             services.AddScoped<IClinicRepository, ClinicRepository>();
+            services.AddScoped<IClinicReviewRepository, ClinicReviewRepository>();
             services.AddScoped<IClinicServiceRepository, ClinicServiceRepository>();
             services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>();
             services.AddScoped<IInventoryRepository, InventoryRepository>();

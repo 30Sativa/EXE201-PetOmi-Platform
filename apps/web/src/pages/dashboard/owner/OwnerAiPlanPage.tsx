@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react"
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
+import { toast } from "sonner"
 import {
   Bot,
+  Check,
   CheckCircle2,
   CreditCard,
   Crown,
@@ -27,7 +29,11 @@ import {
   getChatSubscriptionPaymentStatusApi,
   getChatSubscriptionStatusApi,
 } from "@/services/chat-subscription.service"
-import type { ChatSubscriptionPaymentResponse } from "@/types"
+import type {
+  ChatSubscriptionPaymentResponse,
+  ChatSubscriptionPlanResponse,
+  ChatSubscriptionStatusResponse,
+} from "@/types"
 
 const getApiErrorMessage = (error: unknown, fallback: string) => {
   if (axios.isAxiosError(error)) {
@@ -61,7 +67,6 @@ export default function OwnerAiPlanPage() {
   const [selectedPetId, setSelectedPetId] = useState("")
   const [paymentRequest, setPaymentRequest] =
     useState<ChatSubscriptionPaymentResponse | null>(null)
-  const [error, setError] = useState<string | null>(null)
 
   const { data: pets = [], isLoading: isLoadingPets } = useQuery({
     queryKey: ["owner-pets"],
@@ -91,13 +96,13 @@ export default function OwnerAiPlanPage() {
     mutationFn: createChatSubscriptionPaymentApi,
     onSuccess: (payment) => {
       setPaymentRequest(payment)
-      setError(null)
+      toast.success("Đã tạo mã thanh toán. Quét QR để hoàn tất nâng cấp nhé!")
     },
     onError: (mutationError) => {
-      setError(
+      toast.error(
         getApiErrorMessage(
           mutationError,
-          "Không tạo được QR thanh toán Premium. Vui lòng thử lại sau.",
+          "Không tạo được mã thanh toán Premium. Vui lòng thử lại sau.",
         ),
       )
     },
@@ -123,12 +128,18 @@ export default function OwnerAiPlanPage() {
     const latestPayment = paymentStatusQuery.data
     if (!latestPayment) return
 
-    setPaymentRequest(latestPayment)
-    if (latestPayment.status.toLowerCase() === "paid") {
-      void queryClient.invalidateQueries({
-        queryKey: ["owner-chat-subscription"],
-      })
-    }
+    setPaymentRequest((prev) => {
+      const justPaid =
+        latestPayment.status.toLowerCase() === "paid" &&
+        prev?.status.toLowerCase() !== "paid"
+      if (justPaid) {
+        toast.success(`Đã kích hoạt Premium cho ${latestPayment.petName}! 🎉`)
+        void queryClient.invalidateQueries({
+          queryKey: ["owner-chat-subscription"],
+        })
+      }
+      return latestPayment
+    })
   }, [paymentStatusQuery.data, queryClient])
 
   useEffect(() => {
@@ -154,7 +165,7 @@ export default function OwnerAiPlanPage() {
 
   const handleUpgradePremium = () => {
     if (!selectedPetId) {
-      setError("Chọn một bé trước khi nâng cấp Premium.")
+      toast.error("Hãy chọn một bé trước khi nâng cấp Premium.")
       return
     }
 
@@ -164,55 +175,61 @@ export default function OwnerAiPlanPage() {
     })
   }
 
+  const quotaIsBlocked = Boolean(subscriptionStatus && !subscriptionStatus.canSend)
+
   return (
     <div className="grid gap-6">
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="inline-flex rounded-md bg-po-primary-soft px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-po-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-po-primary-soft px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-po-primary">
+            <Sparkles className="size-3" />
             PetOmi AI
-          </p>
-          <h2 className="mt-2 text-2xl font-extrabold leading-tight text-po-text">
-            AI Plan
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-po-text-muted">
-            Quản lý gói Free/Premium, quota tháng và thanh toán Premium theo
-            từng thú cưng.
+          </span>
+          <h1 className="mt-2 text-2xl font-bold leading-tight text-po-text">
+            Gói AI cho thú cưng
+          </h1>
+          <p className="mt-1 max-w-xl text-sm leading-6 text-po-text-muted">
+            Mỗi bé có gói riêng. Nâng cấp Premium để có thêm lượt nhắn và tính
+            năng tư vấn nâng cao.
           </p>
         </div>
 
         <Link
           to="/dashboard/owner/chat"
-          className="inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-sm font-extrabold text-po-text shadow-sm ring-1 ring-po-border transition hover:-translate-y-0.5 hover:bg-po-surface-muted"
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text transition hover:bg-po-surface-muted"
         >
           <Bot className="size-4 text-po-primary" />
           Quay lại Chat
         </Link>
       </div>
 
-      <section className="grid gap-4 rounded-[26px] bg-white/90 p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+      {/* Hero: pet selector + current status */}
+      <section className="overflow-hidden rounded-3xl bg-white ring-1 ring-po-border/80">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-po-border/70 bg-po-surface-muted/50 px-5 py-4">
+          <div className="flex items-center gap-3">
+            <span className="grid size-11 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
+              <PawPrint className="size-5" />
+            </span>
             <div>
-              <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-po-text-muted">
-                <PawPrint className="size-4 text-po-primary" />
-                Chọn bé
-              </div>
-              <h3 className="mt-2 text-xl font-extrabold text-po-text">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-po-text-subtle">
+                Đang xem gói của
+              </p>
+              <p className="text-base font-bold text-po-text">
                 {selectedPet?.name ?? "Chưa chọn thú cưng"}
-              </h3>
-              <p className="mt-1 text-sm leading-6 text-po-text-muted">
-                Premium được gắn riêng theo từng bé để tư vấn sát hồ sơ hơn.
               </p>
             </div>
+          </div>
 
+          <label className="flex items-center gap-2 text-sm">
+            <span className="font-semibold text-po-text-muted">Chọn bé</span>
             <select
               value={selectedPetId}
               onChange={(event) => {
                 setSelectedPetId(event.target.value)
-                setError(null)
               }}
               disabled={isLoadingPets || pets.length === 0}
-              className="h-11 min-w-[220px] rounded-2xl border border-po-border bg-white px-4 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary focus:ring-[var(--po-focus-ring)] disabled:cursor-not-allowed disabled:bg-po-surface-muted"
+              className="h-10 min-w-[200px] rounded-xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary focus:ring-[var(--po-focus-ring)] disabled:cursor-not-allowed disabled:bg-po-surface-muted"
             >
               <option value="">Chưa chọn thú cưng</option>
               {pets.map((pet) => (
@@ -221,338 +238,213 @@ export default function OwnerAiPlanPage() {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[22px] bg-po-surface-muted p-4 ring-1 ring-po-border/70">
-              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-po-text-muted">
-                Gói hiện tại
-              </p>
-              <p className="mt-2 text-2xl font-extrabold text-po-text">
-                {isLoadingSubscription
-                  ? "Đang tải..."
-                  : subscriptionStatus?.currentPlanName ?? "Free"}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-po-text-subtle">
-                {subscriptionStatus?.isPremium
-                  ? `Hết hạn ${formatDate(subscriptionStatus.subscriptionExpiresAt)}`
-                  : "Free quota mặc định"}
-              </p>
-            </div>
-
-            <div className="rounded-[22px] bg-po-primary-soft p-4 ring-1 ring-po-border/70">
-              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-po-primary">
-                Quota còn lại
-              </p>
-              <p className="mt-2 text-2xl font-extrabold text-po-primary">
-                {subscriptionStatus
-                  ? subscriptionStatus.usage.remainingMessages
-                  : "--"}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-po-text-subtle">
-                / {subscriptionStatus?.usage.monthlyMessageQuota ?? "--"} tin nhắn tháng
-              </p>
-            </div>
-
-            <div className="rounded-[22px] bg-po-success-soft p-4 ring-1 ring-po-border/70">
-              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-po-success">
-                Reset quota
-              </p>
-              <p className="mt-2 text-2xl font-extrabold text-po-success">
-                {formatDate(subscriptionStatus?.usage.resetAt)}
-              </p>
-              <p className="mt-1 text-xs font-semibold text-po-text-subtle">
-                Tự động làm mới theo chu kỳ
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-xs font-bold text-po-text-muted">
-              <span>Đã dùng trong tháng</span>
-              <span>{quotaPercent}%</span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-po-surface-muted">
-              <div
-                className={cn(
-                  "h-full rounded-full",
-                  subscriptionStatus && !subscriptionStatus.canSend
-                    ? "bg-po-danger"
-                    : "bg-po-primary",
-                )}
-                style={{ width: `${quotaPercent}%` }}
-              />
-            </div>
-            {subscriptionStatus?.blockReason ? (
-              <p className="mt-3 rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">
-                {subscriptionStatus.blockReason}
-              </p>
-            ) : null}
-          </div>
+          </label>
         </div>
 
-        <div className="rounded-[22px] bg-po-surface-muted/80 p-4 ring-1 ring-po-border/70">
-          <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-[0.14em] text-po-text-muted">
-            <Sparkles className="size-4 text-po-primary" />
-            Khả năng hiện tại
+        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+          <div className="min-w-0">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StatCard
+                label="Gói hiện tại"
+                value={
+                  isLoadingSubscription
+                    ? "Đang tải…"
+                    : subscriptionStatus?.currentPlanName ?? "Free"
+                }
+                hint={
+                  subscriptionStatus?.isPremium
+                    ? `Hết hạn ${formatDate(subscriptionStatus.subscriptionExpiresAt)}`
+                    : "Gói miễn phí mặc định"
+                }
+                tone={subscriptionStatus?.isPremium ? "primary" : "muted"}
+              />
+              <StatCard
+                label="Lượt nhắn còn lại"
+                value={
+                  subscriptionStatus
+                    ? String(subscriptionStatus.usage.remainingMessages)
+                    : "--"
+                }
+                hint={`/ ${subscriptionStatus?.usage.monthlyMessageQuota ?? "--"} tin nhắn`}
+                tone="primary"
+              />
+              <StatCard
+                label="Làm mới vào"
+                value={formatDate(subscriptionStatus?.usage.resetAt)}
+                hint="Tự đặt lại theo chu kỳ"
+                tone="success"
+              />
+            </div>
+
+            <div className="mt-5">
+              <div className="flex items-center justify-between text-xs font-semibold text-po-text-muted">
+                <span>Đã dùng trong tháng</span>
+                <span className={cn(quotaIsBlocked && "text-po-danger")}>
+                  {quotaPercent}%
+                </span>
+              </div>
+              <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-po-surface-muted">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all",
+                    quotaIsBlocked ? "bg-po-danger" : "bg-po-primary",
+                  )}
+                  style={{ width: `${quotaPercent}%` }}
+                />
+              </div>
+              {subscriptionStatus?.blockReason ? (
+                <p className="mt-3 rounded-xl bg-po-danger-soft px-3 py-2.5 text-sm font-semibold text-po-danger">
+                  {subscriptionStatus.blockReason}
+                </p>
+              ) : null}
+            </div>
           </div>
-          <div className="mt-4 grid gap-3">
-            <CapabilityRow
-              icon={Database}
-              label="RAG sâu"
-              value={subscriptionStatus?.capabilities.deepRagEnabled ? "Có" : "Không"}
-            />
-            <CapabilityRow
-              icon={ImageIcon}
-              label="Upload ảnh"
-              value={
-                subscriptionStatus?.capabilities.imageUploadEnabled
-                  ? `${subscriptionStatus.capabilities.maxImageUploadsPerMonth}/tháng`
-                  : "Premium"
-              }
-            />
-            <CapabilityRow
-              icon={Zap}
-              label="Ưu tiên xử lý"
-              value={`Level ${subscriptionStatus?.capabilities.priorityLevel ?? 0}`}
-            />
+
+          {/* Capabilities */}
+          <div className="rounded-2xl bg-po-surface-muted/60 p-4 ring-1 ring-po-border/60">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-po-text-subtle">
+              <Sparkles className="size-3.5 text-po-primary" />
+              Bé đang được hỗ trợ
+            </p>
+            <div className="mt-3 grid gap-2">
+              <CapabilityRow
+                icon={Database}
+                label="Tư vấn sâu theo hồ sơ bé"
+                value={subscriptionStatus?.capabilities.deepRagEnabled ? "Có" : "Chưa"}
+                active={subscriptionStatus?.capabilities.deepRagEnabled}
+              />
+              <CapabilityRow
+                icon={ImageIcon}
+                label="Gửi ảnh cho AI xem"
+                value={
+                  subscriptionStatus?.capabilities.imageUploadEnabled
+                    ? `${subscriptionStatus.capabilities.maxImageUploadsPerMonth} ảnh/tháng`
+                    : "Chưa"
+                }
+                active={subscriptionStatus?.capabilities.imageUploadEnabled}
+              />
+              <CapabilityRow
+                icon={Zap}
+                label="Tốc độ phản hồi"
+                value={
+                  subscriptionStatus?.capabilities.priorityLevel
+                    ? "Ưu tiên"
+                    : "Tiêu chuẩn"
+                }
+                active={Boolean(subscriptionStatus?.capabilities.priorityLevel)}
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      {error ? (
-        <p className="rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">
-          {error}
-        </p>
-      ) : null}
-
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <DashboardSection
-          title="Chọn gói AI"
-          subtitle="Free vẫn dùng được chat cơ bản. Premium mở quota và tính năng nâng cao theo từng bé."
-        >
-          <div className="grid gap-4 md:grid-cols-2">
-            {(subscriptionStatus?.plans ?? []).map((plan) => {
-              const normalizedCode = plan.code.toLowerCase()
-              const isPremium = normalizedCode === "premium"
-              const isCurrent =
-                normalizedCode ===
-                subscriptionStatus?.currentPlanCode?.toLowerCase()
-
-              return (
-                <article
-                  key={plan.planId}
-                  className={cn(
-                    "flex min-h-[280px] flex-col rounded-[22px] border p-5",
-                    isPremium
-                      ? "border-po-primary bg-po-primary-soft/45"
-                      : "border-po-border bg-white",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "grid size-10 place-items-center rounded-2xl",
-                            isPremium
-                              ? "bg-po-primary text-white"
-                              : "bg-po-surface-muted text-po-text-muted",
-                          )}
-                        >
-                          {isPremium ? (
-                            <Crown className="size-5" />
-                          ) : (
-                            <MessageSquare className="size-5" />
-                          )}
-                        </span>
-                        <div>
-                          <h4 className="text-xl font-extrabold text-po-text">
-                            {plan.name}
-                          </h4>
-                          <p className="text-xs font-bold uppercase tracking-[0.12em] text-po-text-subtle">
-                            {plan.code}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="mt-4 text-3xl font-extrabold text-po-text">
-                        {formatCurrency(plan.priceMonthly)}
-                      </p>
-                    </div>
-
-                    {isCurrent ? (
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-extrabold text-po-primary ring-1 ring-po-border">
-                        Đang dùng
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <p className="mt-4 text-sm leading-6 text-po-text-muted">
-                    {plan.description ??
-                      `${plan.monthlyMessageQuota} tin nhắn trong ${plan.billingCycleDays} ngày.`}
-                  </p>
-
-                  <div className="mt-5 grid gap-2 text-sm font-semibold text-po-text-muted">
-                    <PlanFeature label="Tin nhắn" value={`${plan.monthlyMessageQuota}/tháng`} />
-                    <PlanFeature label="RAG sâu" value={plan.deepRagEnabled ? "Có" : "Không"} />
-                    <PlanFeature
-                      label="Upload ảnh"
-                      value={
-                        plan.imageUploadEnabled
-                          ? `${plan.maxImageUploadsPerMonth}/tháng`
-                          : "Không"
-                      }
-                    />
-                  </div>
-
-                  <div className="mt-auto pt-5">
-                    {isPremium ? (
-                      <button
-                        type="button"
-                        onClick={handleUpgradePremium}
-                        disabled={
-                          subscriptionStatus?.isPremium ||
-                          !selectedPetId ||
-                          createPaymentMutation.isPending
-                        }
-                        className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-4 text-sm font-extrabold text-white shadow-sm shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {createPaymentMutation.isPending ? (
-                          <Loader2 className="size-4 animate-spin" />
-                        ) : (
-                          <CreditCard className="size-4" />
-                        )}
-                        {subscriptionStatus?.isPremium
-                          ? "Premium đang hoạt động"
-                          : "Nâng cấp Premium"}
-                      </button>
-                    ) : (
-                      <div className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-extrabold text-po-text-muted ring-1 ring-po-border">
-                        <CheckCircle2 className="size-4 text-po-success" />
-                        Gói mặc định
-                      </div>
-                    )}
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        </DashboardSection>
-
-        <div className="grid gap-6">
-          <DashboardSection
-            title="Thanh toán"
-            subtitle="QR Premium sẽ tự kiểm tra trạng thái vài giây một lần."
-            className="xl:sticky xl:top-6"
-          >
-            {paymentRequest ? (
-              <div className="grid gap-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-po-primary">
-                      SePay Premium
-                    </p>
-                    <h4 className="mt-1 text-lg font-extrabold text-po-text">
-                      {paymentRequest.petName}
-                    </h4>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPaymentRequest(null)}
-                    className="grid size-8 place-items-center rounded-full bg-white text-po-text-muted ring-1 ring-po-border hover:text-po-text"
-                    aria-label="Đóng thanh toán"
-                    title="Đóng thanh toán"
-                  >
-                    <X className="size-4" />
-                  </button>
-                </div>
-
-                {paymentRequest.status.toLowerCase() === "paid" ? (
-                  <div className="rounded-2xl bg-po-success-soft px-4 py-3 text-sm font-bold text-po-success">
-                    Đã thanh toán. Premium đã kích hoạt.
-                  </div>
-                ) : (
-                  <>
-                    <img
-                      src={paymentRequest.qrCodeUrl}
-                      alt="SePay QR"
-                      className="aspect-square w-full rounded-2xl bg-white object-contain p-3 ring-1 ring-po-border"
-                    />
-                    <div className="grid gap-2 text-sm font-semibold text-po-text-muted">
-                      <PlanFeature
-                        label="Số tiền"
-                        value={formatCurrency(paymentRequest.amount)}
-                      />
-                      <PlanFeature
-                        label="Nội dung CK"
-                        value={paymentRequest.paymentReference}
-                      />
-                      <PlanFeature
-                        label="Hết hạn QR"
-                        value={formatDateTime(paymentRequest.expiresAt)}
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => paymentStatusQuery.refetch()}
-                      disabled={paymentStatusQuery.isFetching}
-                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-white px-3 text-xs font-extrabold text-po-text ring-1 ring-po-border transition hover:bg-po-surface-muted disabled:opacity-60"
-                    >
-                      {paymentStatusQuery.isFetching ? (
-                        <Loader2 className="size-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="size-3.5" />
-                      )}
-                      Kiểm tra thanh toán
-                    </button>
-                  </>
-                )}
-              </div>
-            ) : (
-              <div className="grid min-h-[260px] place-items-center rounded-2xl bg-po-surface-muted/70 px-5 text-center ring-1 ring-po-border/70">
-                <div>
-                  <div className="mx-auto grid size-14 place-items-center rounded-full bg-white text-po-primary ring-1 ring-po-border">
-                    <CreditCard className="size-6" />
-                  </div>
-                  <h4 className="mt-4 text-base font-extrabold text-po-text">
-                    Chưa có QR thanh toán
-                  </h4>
-                  <p className="mt-2 text-sm leading-6 text-po-text-muted">
-                    Chọn thú cưng và bấm nâng cấp Premium để tạo QR.
-                  </p>
-                </div>
-              </div>
-            )}
-          </DashboardSection>
-
-          <DashboardSection
-            title="Premium pets"
-            subtitle="Các bé đang có Premium còn hiệu lực."
-          >
-            {activePremiumPets.length ? (
-              <div className="grid gap-2">
-                {activePremiumPets.map((item) => (
-                  <div
-                    key={item.subscriptionId}
-                    className="flex items-center justify-between gap-3 rounded-2xl bg-po-surface-muted px-3 py-3 text-sm font-semibold"
-                  >
-                    <span className="min-w-0 truncate text-po-text">
-                      {item.petName}
-                    </span>
-                    <span className="shrink-0 text-po-primary">
-                      đến {formatDate(item.expiresAt)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="rounded-2xl bg-po-surface-muted px-4 py-4 text-sm font-semibold leading-6 text-po-text-muted">
-                Chưa có bé nào đang dùng Premium.
-              </p>
-            )}
-          </DashboardSection>
+      {/* Plan picker */}
+      <DashboardSection
+        title="Chọn gói AI"
+        subtitle="Free dùng được chat cơ bản. Premium cho nhiều lượt nhắn hơn và tính năng tư vấn nâng cao cho từng bé."
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          {(subscriptionStatus?.plans ?? []).map((plan) => (
+            <PlanCard
+              key={plan.planId}
+              plan={plan}
+              subscriptionStatus={subscriptionStatus}
+              isUpgrading={createPaymentMutation.isPending}
+              canUpgrade={Boolean(selectedPetId)}
+              onUpgrade={handleUpgradePremium}
+            />
+          ))}
+          {!isLoadingSubscription && !subscriptionStatus?.plans?.length ? (
+            <p className="md:col-span-2 rounded-2xl bg-po-surface-muted px-4 py-6 text-center text-sm font-semibold text-po-text-muted">
+              Chưa có gói nào khả dụng.
+            </p>
+          ) : null}
         </div>
-      </div>
+      </DashboardSection>
+
+      {/* Active premium pets */}
+      <DashboardSection
+        title="Thú cưng đang dùng Premium"
+        subtitle="Danh sách các bé còn hiệu lực Premium."
+      >
+        {activePremiumPets.length ? (
+          <div className="grid gap-2 sm:grid-cols-2">
+            {activePremiumPets.map((item) => (
+              <div
+                key={item.subscriptionId}
+                className="flex items-center justify-between gap-3 rounded-2xl bg-po-surface-muted px-4 py-3"
+              >
+                <span className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-po-text">
+                  <Crown className="size-4 shrink-0 text-po-primary" />
+                  <span className="truncate">{item.petName}</span>
+                </span>
+                <span className="shrink-0 text-xs font-bold text-po-text-muted">
+                  đến {formatDate(item.expiresAt)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="rounded-2xl bg-po-surface-muted px-4 py-5 text-center text-sm font-semibold text-po-text-muted">
+            Chưa có bé nào đang dùng Premium.
+          </p>
+        )}
+      </DashboardSection>
+
+      {/* Payment modal */}
+      {paymentRequest ? (
+        <PaymentModal
+          payment={paymentRequest}
+          isChecking={paymentStatusQuery.isFetching}
+          onCheck={() => paymentStatusQuery.refetch()}
+          onClose={() => setPaymentRequest(null)}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+/* ----------------------------- Sub-components ----------------------------- */
+
+type StatTone = "primary" | "success" | "muted"
+
+function StatCard({
+  label,
+  value,
+  hint,
+  tone,
+}: {
+  label: string
+  value: string
+  hint: string
+  tone: StatTone
+}) {
+  const tones: Record<StatTone, { wrap: string; label: string; value: string }> = {
+    primary: {
+      wrap: "bg-po-primary-soft/60 ring-po-primary/15",
+      label: "text-po-primary",
+      value: "text-po-primary",
+    },
+    success: {
+      wrap: "bg-po-success-soft/60 ring-po-success/15",
+      label: "text-po-success",
+      value: "text-po-success",
+    },
+    muted: {
+      wrap: "bg-po-surface-muted ring-po-border/60",
+      label: "text-po-text-subtle",
+      value: "text-po-text",
+    },
+  }
+  const t = tones[tone]
+
+  return (
+    <div className={cn("rounded-2xl p-4 ring-1", t.wrap)}>
+      <p className={cn("text-[11px] font-bold uppercase tracking-[0.1em]", t.label)}>
+        {label}
+      </p>
+      <p className={cn("mt-1.5 truncate text-xl font-bold", t.value)}>{value}</p>
+      <p className="mt-0.5 truncate text-xs font-medium text-po-text-subtle">{hint}</p>
     </div>
   )
 }
@@ -563,27 +455,293 @@ function CapabilityRow({
   icon: Icon,
   label,
   value,
+  active,
 }: {
   icon: CapabilityIcon
   label: string
   value: string
+  active?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-2xl bg-white px-3 py-3 text-sm font-semibold ring-1 ring-po-border/70">
-      <span className="inline-flex min-w-0 items-center gap-2 text-po-text-muted">
-        <Icon className="size-4 shrink-0 text-po-primary" />
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5 text-sm ring-1 ring-po-border/60">
+      <span className="inline-flex min-w-0 items-center gap-2 font-medium text-po-text-muted">
+        <Icon
+          className={cn(
+            "size-4 shrink-0",
+            active ? "text-po-primary" : "text-po-text-subtle",
+          )}
+        />
         <span className="truncate">{label}</span>
       </span>
-      <span className="shrink-0 font-extrabold text-po-text">{value}</span>
+      <span
+        className={cn(
+          "shrink-0 text-sm font-bold",
+          active ? "text-po-text" : "text-po-text-subtle",
+        )}
+      >
+        {value}
+      </span>
     </div>
   )
 }
 
-function PlanFeature({ label, value }: { label: string; value: string }) {
+function PlanCard({
+  plan,
+  subscriptionStatus,
+  isUpgrading,
+  canUpgrade,
+  onUpgrade,
+}: {
+  plan: ChatSubscriptionPlanResponse
+  subscriptionStatus?: ChatSubscriptionStatusResponse
+  isUpgrading: boolean
+  canUpgrade: boolean
+  onUpgrade: () => void
+}) {
+  const normalizedCode = plan.code.toLowerCase()
+  const isPremium = normalizedCode === "premium"
+  const isCurrent =
+    normalizedCode === subscriptionStatus?.currentPlanCode?.toLowerCase()
+  const alreadyPremium = Boolean(subscriptionStatus?.isPremium)
+
+  return (
+    <article
+      className={cn(
+        "relative flex flex-col rounded-3xl border p-5 transition",
+        isPremium
+          ? "border-po-primary/40 bg-po-primary-soft/30 shadow-sm shadow-orange-200/20"
+          : "border-po-border bg-white",
+      )}
+    >
+      {isPremium ? (
+        <span className="absolute -top-2.5 right-5 inline-flex items-center gap-1 rounded-full bg-po-primary px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white shadow-sm">
+          <Sparkles className="size-3" />
+          Phổ biến
+        </span>
+      ) : null}
+
+      <div className="flex items-center gap-3">
+        <span
+          className={cn(
+            "grid size-11 place-items-center rounded-2xl",
+            isPremium ? "bg-po-primary text-white" : "bg-po-surface-muted text-po-text-muted",
+          )}
+        >
+          {isPremium ? <Crown className="size-5" /> : <MessageSquare className="size-5" />}
+        </span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-lg font-bold text-po-text">{plan.name}</h3>
+            {isCurrent ? (
+              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-po-primary ring-1 ring-po-border">
+                Đang dùng
+              </span>
+            ) : null}
+          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-po-text-subtle">
+            {plan.code}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-baseline gap-1">
+        <span className="text-3xl font-bold text-po-text">
+          {plan.priceMonthly > 0 ? formatCurrency(plan.priceMonthly) : "Miễn phí"}
+        </span>
+        {plan.priceMonthly > 0 ? (
+          <span className="text-sm font-medium text-po-text-subtle">/ tháng</span>
+        ) : null}
+      </div>
+
+      {plan.description ? (
+        <p className="mt-2 text-sm leading-6 text-po-text-muted">{plan.description}</p>
+      ) : null}
+
+      <ul className="mt-4 grid gap-2.5 text-sm">
+        <PlanFeature label={`${plan.monthlyMessageQuota} tin nhắn mỗi tháng`} included />
+        <PlanFeature label="Tư vấn sâu theo hồ sơ của bé" included={plan.deepRagEnabled} />
+        <PlanFeature
+          label={
+            plan.imageUploadEnabled
+              ? `Gửi ảnh cho AI xem — ${plan.maxImageUploadsPerMonth} ảnh/tháng`
+              : "Gửi ảnh cho AI xem"
+          }
+          included={plan.imageUploadEnabled}
+        />
+        <PlanFeature
+          label={plan.priorityLevel > 0 ? "Phản hồi ưu tiên, nhanh hơn" : "Tốc độ phản hồi tiêu chuẩn"}
+          included={plan.priorityLevel > 0}
+        />
+      </ul>
+
+      <div className="mt-auto pt-5">
+        {isPremium ? (
+          <button
+            type="button"
+            onClick={onUpgrade}
+            disabled={alreadyPremium || !canUpgrade || isUpgrading}
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-4 text-sm font-bold text-white shadow-sm shadow-orange-200/40 transition hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isUpgrading ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : alreadyPremium ? (
+              <CheckCircle2 className="size-4" />
+            ) : (
+              <CreditCard className="size-4" />
+            )}
+            {alreadyPremium
+              ? "Premium đang hoạt động"
+              : !canUpgrade
+                ? "Chọn bé để nâng cấp"
+                : "Nâng cấp Premium"}
+          </button>
+        ) : (
+          <div className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-po-surface-muted px-4 text-sm font-bold text-po-text-muted">
+            <CheckCircle2 className="size-4 text-po-success" />
+            Gói mặc định
+          </div>
+        )}
+      </div>
+    </article>
+  )
+}
+
+function PlanFeature({ label, included }: { label: string; included?: boolean }) {
+  return (
+    <li className="flex items-center gap-2.5">
+      <span
+        className={cn(
+          "grid size-5 shrink-0 place-items-center rounded-full",
+          included ? "bg-po-success-soft text-po-success" : "bg-po-surface-muted text-po-text-subtle",
+        )}
+      >
+        {included ? <Check className="size-3" /> : <X className="size-3" />}
+      </span>
+      <span className={cn(included ? "text-po-text" : "text-po-text-subtle line-through")}>
+        {label}
+      </span>
+    </li>
+  )
+}
+
+function PaymentModal({
+  payment,
+  isChecking,
+  onCheck,
+  onClose,
+}: {
+  payment: ChatSubscriptionPaymentResponse
+  isChecking: boolean
+  onCheck: () => void
+  onClose: () => void
+}) {
+  const isPaid = payment.status.toLowerCase() === "paid"
+
+  const handleBackdrop = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) onClose()
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 animate-dialog-in"
+      onClick={handleBackdrop}
+    >
+      <div className="m-auto w-[min(440px,100%)] overflow-hidden rounded-3xl border border-po-border bg-white shadow-2xl shadow-black/20 animate-dialog-content-in">
+        <div className="flex items-start justify-between gap-4 border-b border-po-border/70 bg-po-surface-muted/50 px-5 py-4">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-po-primary">
+              Thanh toán Premium · SePay
+            </p>
+            <h3 className="mt-1 text-lg font-bold text-po-text">{payment.petName}</h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 rounded-full p-1.5 text-po-text-muted transition hover:bg-white hover:text-po-text"
+            aria-label="Đóng thanh toán"
+          >
+            <X className="size-5" />
+          </button>
+        </div>
+
+        <div className="p-5">
+          {isPaid ? (
+            <div className="grid place-items-center gap-3 py-6 text-center">
+              <span className="grid size-14 place-items-center rounded-full bg-po-success-soft text-po-success">
+                <CheckCircle2 className="size-7" />
+              </span>
+              <p className="text-base font-bold text-po-text">Thanh toán thành công</p>
+              <p className="text-sm text-po-text-muted">
+                Premium cho {payment.petName} đã được kích hoạt.
+              </p>
+              <button
+                type="button"
+                onClick={onClose}
+                className="mt-2 inline-flex h-10 items-center rounded-full bg-po-primary px-6 text-sm font-bold text-white transition hover:bg-po-primary-hover"
+              >
+                Hoàn tất
+              </button>
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              <p className="text-center text-sm text-po-text-muted">
+                Quét mã QR bằng app ngân hàng để thanh toán. Trạng thái sẽ tự cập
+                nhật sau vài giây.
+              </p>
+              <img
+                src={payment.qrCodeUrl}
+                alt="Mã QR thanh toán SePay"
+                className="mx-auto aspect-square w-56 rounded-2xl bg-white object-contain p-2 ring-1 ring-po-border"
+              />
+              <div className="grid gap-2 rounded-2xl bg-po-surface-muted/70 p-3 text-sm">
+                <DetailRow label="Số tiền" value={formatCurrency(payment.amount)} strong />
+                <DetailRow label="Nội dung CK" value={payment.paymentReference} mono />
+                <DetailRow label="Hết hạn QR" value={formatDateTime(payment.expiresAt)} />
+              </div>
+              <button
+                type="button"
+                onClick={onCheck}
+                disabled={isChecking}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-bold text-po-text transition hover:bg-po-surface-muted disabled:opacity-60"
+              >
+                {isChecking ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                Kiểm tra thanh toán
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DetailRow({
+  label,
+  value,
+  strong,
+  mono,
+}: {
+  label: string
+  value: string
+  strong?: boolean
+  mono?: boolean
+}) {
   return (
     <div className="flex items-center justify-between gap-3">
-      <span className="min-w-0 truncate">{label}</span>
-      <span className="shrink-0 font-extrabold text-po-text">{value}</span>
+      <span className="shrink-0 font-medium text-po-text-muted">{label}</span>
+      <span
+        className={cn(
+          "min-w-0 truncate text-right font-bold text-po-text",
+          strong && "text-po-primary",
+          mono && "font-mono text-xs",
+        )}
+      >
+        {value}
+      </span>
     </div>
   )
 }

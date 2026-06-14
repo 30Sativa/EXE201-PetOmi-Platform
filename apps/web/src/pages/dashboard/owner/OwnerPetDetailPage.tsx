@@ -14,6 +14,7 @@ import {
   Share2,
   Trash2,
   Weight,
+  X,
 } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
@@ -111,15 +112,22 @@ const formatIsNeutered = (v: string | null | undefined) => {
 
 const MEDICAL_RECORD_TYPES = [
   { value: "all", label: "Tất cả" },
-  { value: "Vaccination", label: "Tiêm phòng" },
-  { value: "Checkup", label: "Khám định kỳ" },
+  { value: "Vaccine", label: "Tiêm phòng" },
+  { value: "Visit", label: "Khám bệnh" },
+  { value: "Medication", label: "Dùng thuốc" },
   { value: "Surgery", label: "Phẫu thuật" },
+  { value: "Allergy", label: "Dị ứng" },
   { value: "Illness", label: "Bệnh lý" },
-  { value: "Medication", label: "Thuốc" },
-  { value: "LabTest", label: "Xét nghiệm" },
-  { value: "Dental", label: "Răng miệng" },
-  { value: "Grooming", label: "Vệ sinh" },
 ]
+
+const MEDICAL_RECORD_TYPE_LABELS: Record<string, string> = {
+  Vaccine: "Tiêm phòng",
+  Visit: "Khám bệnh",
+  Medication: "Dùng thuốc",
+  Surgery: "Phẫu thuật",
+  Allergy: "Dị ứng",
+  Illness: "Bệnh lý",
+}
 
 type TabValue = "overview" | "health" | "weight" | "medical" | "photos" | "sharing" | "reminders"
 
@@ -904,7 +912,7 @@ function MedicalTab({
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-bold text-po-text">{record.title}</p>
                     <span className="rounded-full bg-po-primary-soft px-2.5 py-0.5 text-xs font-semibold text-po-primary">
-                      {record.recordType}
+                      {MEDICAL_RECORD_TYPE_LABELS[record.recordType] ?? record.recordType}
                     </span>
                   </div>
                   {record.description && (
@@ -1189,28 +1197,37 @@ function RemindersTab({
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-3">
           {!isDismissed && (
             <>
               <button
+                type="button"
+                role="switch"
+                aria-checked={r.isEnabled}
+                aria-label={r.isEnabled ? "Tắt nhắc nhở" : "Bật nhắc nhở"}
+                title={r.isEnabled ? "Tắt nhắc nhở" : "Bật nhắc nhở"}
                 onClick={() => onToggle(r.reminderId)}
                 disabled={isToggling}
                 className={cn(
-                  "grid size-7 place-items-center rounded-full border text-xs transition",
-                  r.isEnabled
-                    ? "border-po-success text-po-success hover:bg-po-success-soft"
-                    : "border-po-border text-po-text-subtle hover:bg-po-surface-muted",
-                  isToggling && "opacity-50",
+                  "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-po-primary/40",
+                  r.isEnabled ? "bg-po-success" : "bg-po-border",
+                  isToggling && "cursor-not-allowed opacity-50",
                 )}
               >
-                {r.isEnabled ? "🔔" : "🔕"}
+                <span
+                  className={cn(
+                    "inline-block size-5 transform rounded-full bg-white shadow-sm transition-transform duration-200",
+                    r.isEnabled ? "translate-x-[22px]" : "translate-x-[2px]",
+                  )}
+                />
               </button>
               <button
                 onClick={() => onDismiss(r)}
                 disabled={isDismissing}
-                className="grid size-7 place-items-center rounded-full border border-po-border text-po-text-subtle transition hover:border-po-danger hover:bg-po-danger-soft hover:text-po-danger"
+                title="Bỏ qua nhắc nhở"
+                className="grid size-8 place-items-center rounded-full border border-po-border text-po-text-subtle transition hover:border-po-danger hover:bg-po-danger-soft hover:text-po-danger"
               >
-                ✕
+                <X className="size-3.5" />
               </button>
             </>
           )}
@@ -1257,4 +1274,3 @@ function RemindersTab({
     </div>
   )
 }
-

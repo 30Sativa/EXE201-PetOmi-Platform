@@ -151,14 +151,7 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _openPlans() {
-    final status = _subscription;
-    if (status == null) return;
-    showChatPlansSheet(
-      context: context,
-      status: status,
-      petId: _petId,
-      onChanged: _loadSubscription,
-    );
+    openAiPlanPage(context);
   }
 
   @override
@@ -220,9 +213,9 @@ class _ChatPageState extends State<ChatPage> {
                         : 'Gói ${sub.currentPlanName} • còn ${sub.remainingMessages} tin nhắn',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                   ),
                 ],
               ),
@@ -231,7 +224,10 @@ class _ChatPageState extends State<ChatPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primarySoft,
                 foregroundColor: AppColors.primaryHover,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -429,10 +425,7 @@ class _ChatBubble extends StatelessWidget {
             : MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isAi) ...[
-            const _Avatar(isAi: true),
-            const SizedBox(width: 8),
-          ],
+          if (isAi) ...[const _Avatar(isAi: true), const SizedBox(width: 8)],
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -529,7 +522,9 @@ class _ChatPlansSheet extends StatefulWidget {
 class _ChatPlansSheetState extends State<_ChatPlansSheet> {
   String? _petId;
   ChatPayment? _payment;
+  Timer? _paymentTimer;
   bool _loading = false;
+  bool _checkingPayment = false;
   String? _error;
 
   @override
@@ -538,6 +533,12 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
     _petId =
         widget.initialPetId ??
         (widget.pets.isEmpty ? null : widget.pets.first.petId);
+  }
+
+  @override
+  void dispose() {
+    _paymentTimer?.cancel();
+    super.dispose();
   }
 
   String _formatMoney(double value) {
@@ -565,7 +566,11 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
         planCode: plan.code,
         petId: petId,
       );
-      if (mounted) setState(() => _payment = payment as ChatPayment);
+      if (mounted) {
+        final typedPayment = payment as ChatPayment;
+        setState(() => _payment = typedPayment);
+        _startPaymentPolling(typedPayment);
+      }
       await widget.onChanged();
     } catch (error) {
       if (mounted) {
@@ -575,6 +580,42 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _startPaymentPolling(ChatPayment payment) {
+    _paymentTimer?.cancel();
+    if (!payment.isPending) return;
+    _paymentTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _refreshPayment(showError: false);
+    });
+  }
+
+  Future<void> _refreshPayment({bool showError = true}) async {
+    final payment = _payment;
+    if (payment == null || _checkingPayment) return;
+    setState(() {
+      _checkingPayment = true;
+      if (showError) _error = null;
+    });
+    try {
+      final updated = await widget.repository.getChatPaymentStatus(
+        payment.paymentId,
+      );
+      if (!mounted) return;
+      setState(() => _payment = updated as ChatPayment);
+      if (!updated.isPending) {
+        _paymentTimer?.cancel();
+        await widget.onChanged();
+      }
+    } catch (error) {
+      if (mounted && showError) {
+        setState(
+          () => _error = error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _checkingPayment = false);
     }
   }
 
@@ -610,9 +651,9 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
                     const SizedBox(height: 4),
                     Text(
                       'Đã dùng ${status.usedMessages}/${status.monthlyMessageQuota} tin nhắn tháng này',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                     ),
                   ],
                 ),
@@ -692,7 +733,8 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
           const SizedBox(height: 10),
           _PlanFeature(text: '${plan.monthlyMessageQuota} tin nhắn / tháng'),
           _PlanFeature(
-            text: 'Tư vấn chuyên sâu (RAG): ${plan.deepRagEnabled ? "Có" : "Không"}',
+            text:
+                'Tư vấn chuyên sâu (RAG): ${plan.deepRagEnabled ? "Có" : "Không"}',
           ),
           _PlanFeature(
             text: 'Gửi ảnh: ${plan.imageUploadEnabled ? "Có" : "Không"}',
@@ -714,10 +756,25 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
   }
 
   Widget _buildPayment(ChatPayment payment) {
+    final statusColor = payment.isPaid
+        ? AppColors.success
+        : payment.isPending
+        ? AppColors.warning
+        : AppColors.danger;
+    final statusBackground = payment.isPaid
+        ? AppColors.successSoft
+        : payment.isPending
+        ? AppColors.warningSoft
+        : AppColors.dangerSoft;
     return OwnerSheetFrame(
       title: 'Thanh toán ${payment.planName}',
-      subtitle: 'Quét mã QR để hoàn tất nâng cấp gói.',
+      subtitle: payment.isPending
+          ? 'Quét mã QR để hoàn tất nâng cấp gói. Trạng thái được tự động cập nhật.'
+          : payment.isPaid
+          ? 'Thanh toán đã hoàn tất và gói đang được cập nhật.'
+          : 'Yêu cầu thanh toán không còn hiệu lực.',
       icon: Icons.qr_code_rounded,
+      error: _error,
       children: [
         Center(
           child: Text(
@@ -754,19 +811,45 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
               if (payment.bankAccountNo != null)
                 InfoRow(label: 'Số tài khoản', value: payment.bankAccountNo!),
               if (payment.paymentReference != null)
-                InfoRow(
-                  label: 'Nội dung',
-                  value: payment.paymentReference!,
-                ),
+                InfoRow(label: 'Nội dung', value: payment.paymentReference!),
               InfoRow(label: 'Trạng thái', value: payment.status),
+              if (payment.expiresAt != null)
+                InfoRow(
+                  label: 'Hết hạn',
+                  value: formatDateTime(DateTime.tryParse(payment.expiresAt!)),
+                ),
             ],
           ),
         ),
         const SizedBox(height: 16),
+        Center(
+          child: StatusChip(
+            label: payment.isPaid
+                ? 'Đã thanh toán'
+                : payment.isPending
+                ? 'Đang chờ thanh toán'
+                : payment.isExpired
+                ? 'Đã hết hạn'
+                : 'Đã hủy',
+            color: statusColor,
+            background: statusBackground,
+          ),
+        ),
+        const SizedBox(height: 16),
         SoftButton(
-          label: 'Tôi đã thanh toán xong',
-          icon: Icons.check_circle_rounded,
-          onTap: () => Navigator.of(context).pop(),
+          label: _checkingPayment
+              ? 'Đang kiểm tra...'
+              : payment.isPending
+              ? 'Kiểm tra thanh toán'
+              : 'Đóng',
+          icon: payment.isPending
+              ? Icons.refresh_rounded
+              : Icons.check_circle_rounded,
+          onTap: _checkingPayment
+              ? null
+              : payment.isPending
+              ? _refreshPayment
+              : () => Navigator.of(context).pop(),
         ),
       ],
     );
@@ -830,9 +913,9 @@ class _TypingBubble extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   'Đang soạn câu trả lời...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                 ),
               ],
             ),

@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'chat_page.dart';
@@ -9,6 +11,8 @@ import 'models/owner_models.dart';
 import 'pet_detail_page.dart';
 import 'services/api_client.dart';
 import 'services/owner_repository.dart';
+
+part 'owner_secondary_pages.dart';
 
 /// Hiển thị snackbar toàn cục (dùng khi xử lý deep link).
 final GlobalKey<ScaffoldMessengerState> rootMessengerKey =
@@ -42,9 +46,7 @@ class PetOmiOwnerApp extends StatelessWidget {
           menuStyle: MenuStyle(
             backgroundColor: const WidgetStatePropertyAll(AppColors.surface),
             shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
         ),
@@ -174,9 +176,7 @@ class _AuthGateState extends State<AuthGate> {
         );
       } catch (error) {
         messenger?.showSnackBar(
-          SnackBar(
-            content: Text('Xác minh thất bại: ${error.toString()}'),
-          ),
+          SnackBar(content: Text('Xác minh thất bại: ${error.toString()}')),
         );
       }
       return;
@@ -562,7 +562,9 @@ class _LoginPageState extends State<LoginPage> {
                     const Eyebrow('PetOmi'),
                     const SizedBox(height: 10),
                     Text(
-                      _register ? 'Tạo tài khoản mới' : 'Chào mừng bạn quay lại!',
+                      _register
+                          ? 'Tạo tài khoản mới'
+                          : 'Chào mừng bạn quay lại!',
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
                     const SizedBox(height: 10),
@@ -839,11 +841,7 @@ class _OwnerShellState extends State<OwnerShell> {
       icon: Icons.event_available_rounded,
       page: AppointmentsPage(),
     ),
-    OwnerTab(
-      label: 'Trợ lý',
-      icon: Icons.smart_toy_rounded,
-      page: ChatPage(),
-    ),
+    OwnerTab(label: 'Trợ lý', icon: Icons.smart_toy_rounded, page: ChatPage()),
     OwnerTab(
       label: 'Nhắc nhở',
       icon: Icons.notifications_active_rounded,
@@ -1050,7 +1048,8 @@ class _PetsPageState extends State<PetsPage> {
           EmptyOwnerState(
             icon: Icons.filter_alt_off_rounded,
             title: 'Không có thú cưng phù hợp',
-            message: 'Không có thú cưng nào khớp bộ lọc "${_filters[_filterIndex]}".',
+            message:
+                'Không có thú cưng nào khớp bộ lọc "${_filters[_filterIndex]}".',
             compact: true,
           )
         else
@@ -1218,6 +1217,22 @@ class _RemindersPageState extends State<RemindersPage> {
           trailingLabel: 'Thêm',
           onAction: () => showCreateReminderSheet(context),
         ),
+        const SizedBox(height: 14),
+        SurfaceCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const IconBubble(icon: Icons.tune_rounded),
+            title: Text(
+              'Cài đặt nhắc nhở',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            subtitle: const Text(
+              'Chọn loại thông báo, thời gian báo trước và kênh nhận.',
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => openReminderPreferencesPage(context),
+          ),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 12),
           ErrorBanner(message: _error!),
@@ -1314,6 +1329,8 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 14),
+        const OwnerFeatureMenu(),
         const SizedBox(height: 14),
         PrimaryButton(
           label: 'Đăng xuất',
@@ -1685,6 +1702,30 @@ class QuickActions extends StatelessWidget {
                 title: 'Sửa hồ sơ',
                 subtitle: 'Cập nhật thông tin cá nhân của bạn.',
                 onTap: () => showEditProfileSheet(context),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: QuickActionCard(
+                key: const ValueKey('quick_owner_history'),
+                icon: Icons.history_rounded,
+                title: 'Lịch sử khám',
+                subtitle: 'Xem lại các lần khám và hoạt động y tế.',
+                onTap: () => openOwnerHistoryPage(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: QuickActionCard(
+                key: const ValueKey('quick_owner_sharing'),
+                icon: Icons.link_rounded,
+                title: 'Chia sẻ',
+                subtitle: 'Quản lý người thân và mã hồ sơ sức khỏe.',
+                onTap: () => openOwnerSharingPage(context),
               ),
             ),
           ],
@@ -2095,29 +2136,26 @@ class PetCard extends StatelessWidget {
               ],
             ),
             if (detailed) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: PetStat(label: 'Tuổi', value: pet.ageLabel),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: PetStat(
-                    label: 'Màu',
-                    value: pet.color ?? 'Chưa cập nhật',
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: PetStat(label: 'Tuổi', value: pet.ageLabel),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: PetStat(
-                    label: 'Giới tính',
-                    value: pet.genderLabel,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PetStat(
+                      label: 'Màu',
+                      value: pet.color ?? 'Chưa cập nhật',
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PetStat(label: 'Giới tính', value: pet.genderLabel),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -3236,11 +3274,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
           label: 'Giới tính',
           icon: Icons.transgender_rounded,
           value: _gender,
-          options: const [
-            ('Other', 'Khác'),
-            ('Male', 'Nam'),
-            ('Female', 'Nữ'),
-          ],
+          options: const [('Other', 'Khác'), ('Male', 'Nam'), ('Female', 'Nữ')],
           onChanged: _saving
               ? null
               : (value) => setState(() => _gender = value),
@@ -3661,7 +3695,8 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
           const EmptyOwnerState(
             icon: Icons.local_hospital_rounded,
             title: 'Chưa có phòng khám',
-            message: 'Hiện chưa có phòng khám nào để đặt lịch. Vui lòng thử lại sau.',
+            message:
+                'Hiện chưa có phòng khám nào để đặt lịch. Vui lòng thử lại sau.',
             compact: true,
           )
         else ...[

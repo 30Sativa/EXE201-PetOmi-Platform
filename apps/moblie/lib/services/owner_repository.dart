@@ -212,7 +212,10 @@ class OwnerRepository {
     required String petId,
     required String photoId,
   }) async {
-    await _apiClient.patchMap('/pets/$petId/avatar', body: {'photoId': photoId});
+    await _apiClient.patchMap(
+      '/pets/$petId/avatar',
+      body: {'photoId': photoId},
+    );
   }
 
   Future<List<PetUserAccess>> getPetAccess(String petId) async {
@@ -221,6 +224,39 @@ class OwnerRepository {
         .whereType<Map<String, dynamic>>()
         .map(PetUserAccess.fromJson)
         .toList();
+  }
+
+  Future<PetUserAccess> grantPetAccess({
+    required String petId,
+    required String userEmail,
+    required String accessRole,
+    DateTime? expiresAt,
+  }) async {
+    final data = await _apiClient.postMap(
+      '/pets/$petId/access',
+      body: {
+        'userEmail': userEmail,
+        'accessRole': accessRole,
+        'expiresAt': expiresAt?.toIso8601String(),
+      },
+    );
+    return PetUserAccess.fromJson(data);
+  }
+
+  Future<PetUserAccess> updatePetAccess({
+    required String petId,
+    required String accessId,
+    required String accessRole,
+    DateTime? expiresAt,
+  }) async {
+    final data = await _apiClient.putMap(
+      '/pets/$petId/access/$accessId',
+      body: {
+        'accessRole': accessRole,
+        'expiresAt': expiresAt?.toIso8601String(),
+      },
+    );
+    return PetUserAccess.fromJson(data);
   }
 
   Future<void> revokePetAccess({
@@ -233,6 +269,79 @@ class OwnerRepository {
   Future<List<OwnerReminder>> getPetReminders(String petId) async {
     final all = await getReminders();
     return all.where((reminder) => reminder.petId == petId).toList();
+  }
+
+  Future<PetTimeline> getPetTimeline(
+    String petId, {
+    int page = 1,
+    int pageSize = 100,
+  }) async {
+    final data = await _apiClient.getMap(
+      '/pets/$petId/timeline?page=$page&pageSize=$pageSize',
+    );
+    return PetTimeline.fromJson(data);
+  }
+
+  Future<List<PetHealthShare>> getPetHealthShares(String petId) async {
+    final data = await _apiClient.getList('/pets/$petId/health-shares');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(PetHealthShare.fromJson)
+        .toList();
+  }
+
+  Future<PetHealthShare> createPetHealthShare({
+    required String petId,
+    required String scope,
+    required String accessMode,
+    required DateTime expiresAt,
+    int? maxUses,
+    String? note,
+  }) async {
+    final data = await _apiClient.postMap(
+      '/pets/$petId/health-shares',
+      body: {
+        'scope': scope,
+        'accessMode': accessMode,
+        'expiresAt': expiresAt.toUtc().toIso8601String(),
+        'maxUses': maxUses,
+        'note': note,
+      },
+    );
+    return PetHealthShare.fromJson(data);
+  }
+
+  Future<void> revokePetHealthShare({
+    required String petId,
+    required String shareTokenId,
+  }) async {
+    await _apiClient.delete('/pets/$petId/health-shares/$shareTokenId');
+  }
+
+  Future<List<ReminderPreference>> getReminderPreferences() async {
+    final data = await _apiClient.getList('/reminders/preferences');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(ReminderPreference.fromJson)
+        .toList();
+  }
+
+  Future<ReminderPreference> updateReminderPreference({
+    required String reminderType,
+    required bool isEnabled,
+    required int? remindBeforeMinutes,
+    required String channel,
+  }) async {
+    final data = await _apiClient.putMap(
+      '/reminders/preferences',
+      body: {
+        'reminderType': reminderType,
+        'isEnabled': isEnabled,
+        'remindBeforeMinutes': remindBeforeMinutes,
+        'channel': channel,
+      },
+    );
+    return ReminderPreference.fromJson(data);
   }
 
   // ==================== CHAT AI ====================

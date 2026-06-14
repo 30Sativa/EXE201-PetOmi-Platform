@@ -342,16 +342,14 @@ class _PetDetailPageState extends State<PetDetailPage> {
     if (_loadingTab) {
       return const Padding(
         padding: EdgeInsets.symmetric(vertical: 40),
-        child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        child: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
     switch (_tab) {
       case _PetTab.overview:
-        return _OverviewTab(
-          pet: pet,
-          health: _health,
-          weightLogs: _weightLogs,
-        );
+        return _OverviewTab(pet: pet, health: _health, weightLogs: _weightLogs);
       case _PetTab.health:
         return _HealthTab(health: _health, weightLogs: _weightLogs);
       case _PetTab.weight:
@@ -375,9 +373,9 @@ class _PetDetailPageState extends State<PetDetailPage> {
               }
             } catch (error) {
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(error.toString())),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(error.toString())));
               }
             }
           },
@@ -386,6 +384,8 @@ class _PetDetailPageState extends State<PetDetailPage> {
         return _SharingTab(
           access: _access ?? const [],
           petName: pet.name,
+          onManage: () =>
+              openOwnerSharingPage(context, initialPetId: widget.petId),
           onRevoke: (a) => _confirmRevoke(a),
         );
       case _PetTab.reminders:
@@ -477,12 +477,16 @@ class _PetHero extends StatelessWidget {
                         pet.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(fontSize: 22),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineMedium?.copyWith(fontSize: 22),
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(pet.speciesEmoji, style: const TextStyle(fontSize: 20)),
+                    Text(
+                      pet.speciesEmoji,
+                      style: const TextStyle(fontSize: 20),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -667,8 +671,14 @@ class _OverviewTab extends StatelessWidget {
               InfoRow(label: 'Loài', value: pet.speciesLabel),
               InfoRow(label: 'Giống', value: pet.breed ?? '—'),
               InfoRow(label: 'Giới tính', value: pet.genderLabel),
-              InfoRow(label: 'Ngày sinh', value: petFormatDate(pet.dateOfBirth)),
-              InfoRow(label: 'Màu lông', value: health?.color ?? pet.color ?? '—'),
+              InfoRow(
+                label: 'Ngày sinh',
+                value: petFormatDate(pet.dateOfBirth),
+              ),
+              InfoRow(
+                label: 'Màu lông',
+                value: health?.color ?? pet.color ?? '—',
+              ),
               InfoRow(label: 'Triệt sản', value: pet.neuteredLabel),
               InfoRow(label: 'Tạo hồ sơ', value: petFormatDate(pet.createdAt)),
             ],
@@ -784,7 +794,8 @@ class _HealthTab extends StatelessWidget {
           ? const EmptyOwnerState(
               icon: Icons.favorite_border_rounded,
               title: 'Chưa có hồ sơ sức khỏe',
-              message: 'Tạo hồ sơ sức khỏe để theo dõi tình trạng của thú cưng.',
+              message:
+                  'Tạo hồ sơ sức khỏe để theo dõi tình trạng của thú cưng.',
               compact: true,
             )
           : Column(
@@ -912,7 +923,9 @@ class _WeightTab extends StatelessWidget {
                                     '${petFormatDate(log.measuredAt)}${log.note != null ? ' • ${log.note}' : ''}',
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodyMedium
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
                                         ?.copyWith(fontSize: 12),
                                   ),
                                 ],
@@ -1125,9 +1138,10 @@ class _MetaText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: Theme.of(
-        context,
-      ).textTheme.bodyMedium?.copyWith(fontSize: 11, color: AppColors.textSubtle),
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        fontSize: 11,
+        color: AppColors.textSubtle,
+      ),
     );
   }
 }
@@ -1149,7 +1163,8 @@ class _PhotosTab extends StatelessWidget {
           ? const EmptyOwnerState(
               icon: Icons.photo_library_rounded,
               title: 'Chưa có ảnh nào',
-              message: 'Chưa có ảnh nào. Thêm ảnh để lưu giữ khoảnh khắc của bé.',
+              message:
+                  'Chưa có ảnh nào. Thêm ảnh để lưu giữ khoảnh khắc của bé.',
               compact: true,
             )
           : GridView.builder(
@@ -1244,11 +1259,13 @@ class _SharingTab extends StatelessWidget {
   const _SharingTab({
     required this.access,
     required this.petName,
+    required this.onManage,
     required this.onRevoke,
   });
 
   final List<PetUserAccess> access;
   final String petName;
+  final VoidCallback onManage;
   final ValueChanged<PetUserAccess> onRevoke;
 
   @override
@@ -1274,6 +1291,11 @@ class _SharingTab extends StatelessWidget {
         SectionCard(
           title: 'Quản lý chia sẻ $petName',
           subtitle: 'Người dùng đang có quyền truy cập hồ sơ.',
+          action: IconButton(
+            tooltip: 'Mở quản lý chia sẻ',
+            onPressed: onManage,
+            icon: const Icon(Icons.manage_accounts_rounded),
+          ),
           child: access.isEmpty
               ? EmptyOwnerState(
                   icon: Icons.link_rounded,
@@ -1303,9 +1325,10 @@ class _SharingTab extends StatelessWidget {
                                     a.userId,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium?.copyWith(fontSize: 14),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontSize: 14),
                                   ),
                                   const SizedBox(height: 6),
                                   Row(
@@ -1351,6 +1374,15 @@ class _SharingTab extends StatelessWidget {
                     );
                   }).toList(),
                 ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: SoftButton(
+            label: 'Mời người dùng hoặc tạo mã sức khỏe',
+            icon: Icons.share_rounded,
+            onTap: onManage,
+          ),
         ),
       ],
     );

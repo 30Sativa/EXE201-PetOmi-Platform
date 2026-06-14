@@ -14,7 +14,7 @@ void main() {
     await tester.pumpWidget(PetOmiOwnerApp(repository: OwnerRepository()));
     await tester.pumpAndSettle();
 
-    expect(find.text('PETOMI OWNER MOBILE'), findsOneWidget);
+    expect(find.text('Chào mừng bạn quay lại!'), findsOneWidget);
     expect(find.byIcon(Icons.login_rounded), findsOneWidget);
   });
 
@@ -55,7 +55,25 @@ void main() {
     );
     await tester.tap(addReminder);
     await tester.pumpAndSettle();
-    expect(find.text('Loại reminder'), findsOneWidget);
+    expect(find.text('Loại nhắc nhở'), findsOneWidget);
+  });
+
+  testWidgets('history quick action opens the owner history page', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(PetOmiOwnerApp(repository: _FakeOwnerRepository()));
+    await tester.pumpAndSettle();
+
+    final overviewScroll = find.byType(Scrollable).first;
+    final history = find.byKey(const ValueKey('quick_owner_history'));
+    await tester.scrollUntilVisible(history, 500, scrollable: overviewScroll);
+    tester.widget<QuickActionCard>(history).onTap();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lịch sử khám'), findsWidgets);
+    expect(find.text('Chưa có lịch sử phù hợp'), findsOneWidget);
   });
 }
 
@@ -152,5 +170,14 @@ class _FakeOwnerRepository extends OwnerRepository {
         isAvailable: true,
       ),
     ];
+  }
+
+  @override
+  Future<PetTimeline> getPetTimeline(
+    String petId, {
+    int page = 1,
+    int pageSize = 100,
+  }) async {
+    return const PetTimeline(activities: [], totalCount: 0, hasNextPage: false);
   }
 }

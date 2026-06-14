@@ -591,6 +591,8 @@ class PetUserAccess {
     required this.userId,
     required this.accessRole,
     required this.isExpired,
+    required this.expiresAt,
+    required this.createdAt,
   });
 
   factory PetUserAccess.fromJson(Map<String, dynamic> json) {
@@ -600,6 +602,8 @@ class PetUserAccess {
       userId: json.stringValue('userId'),
       accessRole: json.stringValue('accessRole', fallback: 'Viewer'),
       isExpired: json.boolValue('isExpired'),
+      expiresAt: json.nullableString('expiresAt'),
+      createdAt: json.nullableString('createdAt'),
     );
   }
 
@@ -608,6 +612,148 @@ class PetUserAccess {
   final String userId;
   final String accessRole;
   final bool isExpired;
+  final String? expiresAt;
+  final String? createdAt;
+}
+
+class PetActivity {
+  const PetActivity({
+    required this.activityId,
+    required this.petId,
+    required this.activityType,
+    required this.title,
+    required this.description,
+    required this.occurredAt,
+    required this.icon,
+    required this.metadata,
+  });
+
+  factory PetActivity.fromJson(Map<String, dynamic> json) {
+    return PetActivity(
+      activityId: json.stringValue('activityId'),
+      petId: json.stringValue('petId'),
+      activityType: json.stringValue('activityType'),
+      title: json.stringValue('title', fallback: 'Hoạt động'),
+      description: json.nullableString('description'),
+      occurredAt: json.stringValue('occurredAt'),
+      icon: json.stringValue('icon'),
+      metadata: json.nullableString('metadata'),
+    );
+  }
+
+  final String activityId;
+  final String petId;
+  final String activityType;
+  final String title;
+  final String? description;
+  final String occurredAt;
+  final String icon;
+  final String? metadata;
+
+  DateTime? get date => DateTime.tryParse(occurredAt);
+}
+
+class PetTimeline {
+  const PetTimeline({
+    required this.activities,
+    required this.totalCount,
+    required this.hasNextPage,
+  });
+
+  factory PetTimeline.fromJson(Map<String, dynamic> json) {
+    final raw = json['activities'];
+    return PetTimeline(
+      activities: raw is List
+          ? raw
+                .whereType<Map<String, dynamic>>()
+                .map(PetActivity.fromJson)
+                .toList()
+          : const [],
+      totalCount: json.intValue('totalCount'),
+      hasNextPage: json.boolValue('hasNextPage'),
+    );
+  }
+
+  final List<PetActivity> activities;
+  final int totalCount;
+  final bool hasNextPage;
+}
+
+class PetHealthShare {
+  const PetHealthShare({
+    required this.shareTokenId,
+    required this.petId,
+    required this.displayCode,
+    required this.scope,
+    required this.accessMode,
+    required this.expiresAt,
+    required this.maxUses,
+    required this.usedCount,
+    required this.note,
+    required this.isExpired,
+    required this.isRevoked,
+    required this.hasReachedMaxUses,
+  });
+
+  factory PetHealthShare.fromJson(Map<String, dynamic> json) {
+    return PetHealthShare(
+      shareTokenId: json.stringValue('shareTokenId'),
+      petId: json.stringValue('petId'),
+      displayCode: json.stringValue('displayCode'),
+      scope: json.stringValue('scope', fallback: 'ClinicVisit'),
+      accessMode: json.stringValue('accessMode', fallback: 'Temporary'),
+      expiresAt: json.stringValue('expiresAt'),
+      maxUses: json['maxUses'] == null ? null : json.intValue('maxUses'),
+      usedCount: json.intValue('usedCount'),
+      note: json.nullableString('note'),
+      isExpired: json.boolValue('isExpired'),
+      isRevoked: json.boolValue('isRevoked'),
+      hasReachedMaxUses: json.boolValue('hasReachedMaxUses'),
+    );
+  }
+
+  final String shareTokenId;
+  final String petId;
+  final String displayCode;
+  final String scope;
+  final String accessMode;
+  final String expiresAt;
+  final int? maxUses;
+  final int usedCount;
+  final String? note;
+  final bool isExpired;
+  final bool isRevoked;
+  final bool hasReachedMaxUses;
+
+  bool get isActive => !isExpired && !isRevoked && !hasReachedMaxUses;
+}
+
+class ReminderPreference {
+  const ReminderPreference({
+    required this.preferenceId,
+    required this.reminderType,
+    required this.isEnabled,
+    required this.remindBeforeMinutes,
+    required this.channel,
+  });
+
+  factory ReminderPreference.fromJson(Map<String, dynamic> json) {
+    return ReminderPreference(
+      preferenceId: json.stringValue('preferenceId'),
+      reminderType: json.stringValue('reminderType'),
+      isEnabled: json.boolValue('isEnabled', fallback: true),
+      remindBeforeMinutes: json['remindBeforeMinutes'] == null
+          ? null
+          : json.intValue('remindBeforeMinutes'),
+      channel: json.stringValue('channel', fallback: 'PushEmail'),
+    );
+  }
+
+  final String preferenceId;
+  final String reminderType;
+  final bool isEnabled;
+  final int? remindBeforeMinutes;
+  final String channel;
 }
 
 class ChatMessage {
@@ -715,6 +861,8 @@ class ChatSubscriptionStatus {
     required this.remainingMessages,
     required this.monthlyMessageQuota,
     required this.deepRagEnabled,
+    required this.resetAt,
+    required this.subscriptionExpiresAt,
     required this.plans,
   });
 
@@ -724,13 +872,14 @@ class ChatSubscriptionStatus {
         ? usage
         : <String, dynamic>{};
     final caps = json['capabilities'];
-    final capsMap = caps is Map<String, dynamic>
-        ? caps
-        : <String, dynamic>{};
+    final capsMap = caps is Map<String, dynamic> ? caps : <String, dynamic>{};
     final plansRaw = json['plans'];
     return ChatSubscriptionStatus(
       currentPlanCode: json.stringValue('currentPlanCode', fallback: 'free'),
-      currentPlanName: json.stringValue('currentPlanName', fallback: 'Miễn phí'),
+      currentPlanName: json.stringValue(
+        'currentPlanName',
+        fallback: 'Miễn phí',
+      ),
       isPremium: json.boolValue('isPremium'),
       canSend: json.boolValue('canSend', fallback: true),
       blockReason: json.nullableString('blockReason'),
@@ -738,6 +887,8 @@ class ChatSubscriptionStatus {
       remainingMessages: usageMap.intValue('remainingMessages'),
       monthlyMessageQuota: usageMap.intValue('monthlyMessageQuota'),
       deepRagEnabled: capsMap.boolValue('deepRagEnabled'),
+      resetAt: usageMap.nullableString('resetAt'),
+      subscriptionExpiresAt: json.nullableString('subscriptionExpiresAt'),
       plans: plansRaw is List
           ? plansRaw
                 .whereType<Map<String, dynamic>>()
@@ -756,6 +907,8 @@ class ChatSubscriptionStatus {
   final int remainingMessages;
   final int monthlyMessageQuota;
   final bool deepRagEnabled;
+  final String? resetAt;
+  final String? subscriptionExpiresAt;
   final List<ChatPlan> plans;
 }
 
@@ -769,6 +922,8 @@ class ChatPayment {
     required this.bankAccountNo,
     required this.bankCode,
     required this.paymentReference,
+    required this.expiresAt,
+    required this.paidAt,
   });
 
   factory ChatPayment.fromJson(Map<String, dynamic> json) {
@@ -781,6 +936,8 @@ class ChatPayment {
       bankAccountNo: json.nullableString('bankAccountNo'),
       bankCode: json.nullableString('bankCode'),
       paymentReference: json.nullableString('paymentReference'),
+      expiresAt: json.nullableString('expiresAt'),
+      paidAt: json.nullableString('paidAt'),
     );
   }
 
@@ -792,6 +949,13 @@ class ChatPayment {
   final String? bankAccountNo;
   final String? bankCode;
   final String? paymentReference;
+  final String? expiresAt;
+  final String? paidAt;
+
+  bool get isPending => status.toLowerCase() == 'pending';
+  bool get isPaid => status.toLowerCase() == 'paid';
+  bool get isExpired => status.toLowerCase() == 'expired';
+  bool get isCancelled => status.toLowerCase() == 'cancelled';
 }
 
 extension JsonMapReader on Map<String, dynamic> {

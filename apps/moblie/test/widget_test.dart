@@ -3,9 +3,31 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:petomi_owner_mobile/main.dart';
 import 'package:petomi_owner_mobile/models/owner_models.dart';
 import 'package:petomi_owner_mobile/services/owner_repository.dart';
+import 'package:petomi_owner_mobile/services/notification_center.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
+  test('notification center deduplicates reminder events by ID', () {
+    final center = OwnerNotificationCenter.disabled();
+    final payload = <String, dynamic>{
+      'reminderId': 'reminder-1',
+      'title': 'Lịch tiêm của Milo',
+      'message': 'Đã đến giờ chuẩn bị.',
+      'reminderType': 'Vaccine',
+      'entityType': 'Pet',
+      'remindAt': '2026-06-15T10:00:00Z',
+    };
+
+    center.ingestReminder(payload);
+    center.ingestReminder(payload);
+
+    expect(center.items, hasLength(1));
+    expect(center.unreadCount, 1);
+    center.markRead('reminder-1');
+    expect(center.unreadCount, 0);
+    center.dispose();
+  });
+
   testWidgets('renders owner login gate when no token is stored', (
     tester,
   ) async {
@@ -16,6 +38,32 @@ void main() {
 
     expect(find.text('Chào mừng bạn quay lại!'), findsOneWidget);
     expect(find.byIcon(Icons.login_rounded), findsOneWidget);
+  });
+
+  testWidgets('forgot password entry opens recovery sheet', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(PetOmiOwnerApp(repository: OwnerRepository()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Quên mật khẩu?'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Khôi phục mật khẩu'), findsOneWidget);
+    expect(find.text('Email tài khoản'), findsOneWidget);
+  });
+
+  testWidgets('incomplete profile is gated before owner dashboard', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+
+    await tester.pumpWidget(
+      PetOmiOwnerApp(repository: _FakeOwnerRepository(profileCompleted: false)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hoàn thiện hồ sơ'), findsOneWidget);
+    expect(find.text('Hoàn tất và tiếp tục'), findsOneWidget);
   });
 
   testWidgets('overview quick actions open owner API sheets', (tester) async {
@@ -78,7 +126,9 @@ void main() {
 }
 
 class _FakeOwnerRepository extends OwnerRepository {
-  _FakeOwnerRepository();
+  _FakeOwnerRepository({this.profileCompleted = true});
+
+  final bool profileCompleted;
 
   static const _petId = '00000000-0000-0000-0000-000000000001';
   static const _clinicId = '00000000-0000-0000-0000-000000000002';
@@ -86,12 +136,16 @@ class _FakeOwnerRepository extends OwnerRepository {
   static const _vetClinicId = '00000000-0000-0000-0000-000000000004';
 
   @override
+  OwnerNotificationCenter createNotificationCenter() =>
+      OwnerNotificationCenter.disabled();
+
+  @override
   Future<bool> hasSession() async => true;
 
   @override
   Future<OwnerHomeData> getOwnerHomeData() async {
-    return const OwnerHomeData(
-      profile: OwnerProfile(
+    return OwnerHomeData(
+      profile: const OwnerProfile(
         userId: 'owner-1',
         fullName: 'Owner Test',
         phone: '0900000000',
@@ -101,7 +155,7 @@ class _FakeOwnerRepository extends OwnerRepository {
         address: 'HCM',
       ),
       email: 'owner@test.local',
-      pets: [
+      pets: const [
         OwnerPet(
           petId: _petId,
           name: 'Milo',
@@ -115,6 +169,7 @@ class _FakeOwnerRepository extends OwnerRepository {
       ],
       appointments: [],
       reminders: [],
+      isProfileCompleted: profileCompleted,
     );
   }
 

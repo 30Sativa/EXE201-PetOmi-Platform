@@ -7,6 +7,7 @@ Future<void> _openOwnerPage(BuildContext context, Widget page) {
       builder: (_) => OwnerScope(
         data: scope.data,
         repository: scope.repository,
+        notificationCenter: scope.notificationCenter,
         onRefresh: scope.onRefresh,
         onLogout: scope.onLogout,
         child: page,
@@ -89,11 +90,20 @@ class OwnerFeatureMenu extends StatelessWidget {
             subtitle: 'Thời gian báo trước và kênh nhận',
             onTap: () => openReminderPreferencesPage(context),
           ),
-          _OwnerMenuTile(
-            icon: Icons.notifications_rounded,
-            title: 'Thông báo',
-            subtitle: 'Đang phát triển',
-            onTap: () => openNotificationsPage(context),
+          AnimatedBuilder(
+            animation: OwnerScope.of(context).notificationCenter,
+            builder: (context, _) {
+              final center = OwnerScope.of(context).notificationCenter;
+              final unread = center.unreadCount;
+              return _OwnerMenuTile(
+                icon: Icons.notifications_rounded,
+                title: 'Thông báo',
+                subtitle: unread == 0
+                    ? 'Nhắc nhở nhận trong phiên hiện tại'
+                    : '$unread thông báo chưa đọc',
+                onTap: () => openNotificationsPage(context),
+              );
+            },
           ),
           _OwnerMenuTile(
             icon: Icons.star_rounded,
@@ -1524,13 +1534,223 @@ class OwnerNotificationsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _DevelopmentPage(
+    final center = OwnerScope.of(context).notificationCenter;
+    return _OwnerSecondaryScaffold(
       title: 'Thông báo',
-      icon: Icons.notifications_rounded,
-      description:
-          'Thông báo real-time trên mobile đang được phát triển. Dữ liệu giả sẽ không được hiển thị.',
-      dependency:
-          'Cần hoàn thiện SignalR mobile. Lịch sử thông báo persistent vẫn cần backend REST API.',
+      child: AnimatedBuilder(
+        animation: center,
+        builder: (context, _) {
+          final items = center.items;
+          return OwnerScrollView(
+            children: [
+              PageHeader(
+                eyebrow: 'SignalR theo thời gian thực',
+                title: 'Thông báo của bạn',
+                subtitle:
+                    'Nhắc nhở mới được nhận khi ứng dụng đang mở trong phiên đăng nhập này.',
+                trailingIcon: Icons.done_all_rounded,
+                trailingLabel: 'Đọc hết',
+                onAction: center.unreadCount == 0 ? null : center.markAllRead,
+              ),
+              const SizedBox(height: 14),
+              _NotificationConnectionCard(center: center),
+              const SizedBox(height: 14),
+              SurfaceCard(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.info_outline_rounded,
+                      color: AppColors.primaryHover,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Backend chưa có API lịch sử và trạng thái đã đọc. Danh sách này không được đồng bộ qua thiết bị hoặc giữ lại sau khi đăng xuất.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (items.isEmpty)
+                const EmptyOwnerState(
+                  icon: Icons.notifications_none_rounded,
+                  title: 'Chưa có thông báo trong phiên',
+                  message:
+                      'Các reminder đến hạn sẽ xuất hiện tại đây ngay khi backend gửi sự kiện ReceiveReminder.',
+                )
+              else
+                ...items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _OwnerNotificationCard(
+                      item: item,
+                      onTap: () => center.markRead(item.id),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _NotificationConnectionCard extends StatelessWidget {
+  const _NotificationConnectionCard({required this.center});
+
+  final OwnerNotificationCenter center;
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, title, message, color) = switch (center.status) {
+      NotificationConnectionStatus.connected => (
+        Icons.wifi_rounded,
+        'Đang kết nối',
+        'Sẵn sàng nhận reminder mới.',
+        AppColors.success,
+      ),
+      NotificationConnectionStatus.connecting => (
+        Icons.sync_rounded,
+        'Đang kết nối',
+        'PetOmi đang mở kênh thông báo.',
+        AppColors.primaryHover,
+      ),
+      NotificationConnectionStatus.reconnecting => (
+        Icons.sync_problem_rounded,
+        'Đang kết nối lại',
+        'Kết nối bị gián đoạn, ứng dụng đang thử lại.',
+        AppColors.warning,
+      ),
+      NotificationConnectionStatus.disabled => (
+        Icons.notifications_off_rounded,
+        'Đã tắt trong môi trường này',
+        'Kênh thông báo không được khởi chạy.',
+        AppColors.textSubtle,
+      ),
+      NotificationConnectionStatus.disconnected => (
+        Icons.cloud_off_rounded,
+        'Chưa kết nối',
+        center.errorMessage == null
+            ? 'Nhấn thử lại để kết nối kênh thông báo.'
+            : 'Không thể kết nối. Kiểm tra mạng rồi thử lại.',
+        AppColors.danger,
+      ),
+    };
+    return SurfaceCard(
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(icon, color: color),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 3),
+                Text(message, style: Theme.of(context).textTheme.bodyMedium),
+              ],
+            ),
+          ),
+          if (center.status == NotificationConnectionStatus.disconnected)
+            TextButton(onPressed: center.retry, child: const Text('Thử lại')),
+        ],
+      ),
+    );
+  }
+}
+
+class _OwnerNotificationCard extends StatelessWidget {
+  const _OwnerNotificationCard({required this.item, required this.onTap});
+
+  final OwnerNotification item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return SurfaceCard(
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: item.isRead
+                      ? AppColors.surfaceMuted
+                      : AppColors.primarySoft,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.notifications_active_rounded,
+                  color: item.isRead
+                      ? AppColors.textSubtle
+                      : AppColors.primaryHover,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        if (!item.isRead)
+                          Container(
+                            width: 9,
+                            height: 9,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (item.message.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        item.message,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Text(
+                      '${item.reminderType} • ${formatDateTime(item.remindAt ?? item.receivedAt)}',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSubtle,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

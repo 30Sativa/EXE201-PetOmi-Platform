@@ -399,6 +399,7 @@ class OwnerHomeData {
     required this.pets,
     required this.appointments,
     required this.reminders,
+    this.isProfileCompleted = true,
   });
 
   final OwnerProfile? profile;
@@ -406,6 +407,7 @@ class OwnerHomeData {
   final List<OwnerPet> pets;
   final List<OwnerAppointment> appointments;
   final List<OwnerReminder> reminders;
+  final bool isProfileCompleted;
 
   int get upcomingAppointmentCount {
     final now = DateTime.now();
@@ -527,6 +529,9 @@ class PetMedicalRecord {
     required this.clinicName,
     required this.medicationName,
     required this.dosage,
+    required this.startDate,
+    required this.endDate,
+    required this.attachmentUrl,
   });
 
   factory PetMedicalRecord.fromJson(Map<String, dynamic> json) {
@@ -541,6 +546,9 @@ class PetMedicalRecord {
       clinicName: json.nullableString('clinicName'),
       medicationName: json.nullableString('medicationName'),
       dosage: json.nullableString('dosage'),
+      startDate: json.nullableString('startDate'),
+      endDate: json.nullableString('endDate'),
+      attachmentUrl: json.nullableString('attachmentUrl'),
     );
   }
 
@@ -554,6 +562,9 @@ class PetMedicalRecord {
   final String? clinicName;
   final String? medicationName;
   final String? dosage;
+  final String? startDate;
+  final String? endDate;
+  final String? attachmentUrl;
 
   DateTime? get date => DateTime.tryParse(recordDate);
 }
@@ -565,6 +576,8 @@ class PetPhoto {
     required this.imageUrl,
     required this.caption,
     required this.isAvatar,
+    required this.takenAt,
+    required this.cloudinaryPublicId,
   });
 
   factory PetPhoto.fromJson(Map<String, dynamic> json) {
@@ -574,6 +587,8 @@ class PetPhoto {
       imageUrl: json.stringValue('imageUrl'),
       caption: json.nullableString('caption'),
       isAvatar: json.boolValue('isAvatar'),
+      takenAt: json.nullableString('takenAt'),
+      cloudinaryPublicId: json.nullableString('cloudinaryPublicId'),
     );
   }
 
@@ -582,6 +597,37 @@ class PetPhoto {
   final String imageUrl;
   final String? caption;
   final bool isAvatar;
+  final String? takenAt;
+  final String? cloudinaryPublicId;
+}
+
+class ChatConversation {
+  const ChatConversation({
+    required this.conversationId,
+    required this.petId,
+    required this.title,
+    required this.isActive,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory ChatConversation.fromJson(Map<String, dynamic> json) {
+    return ChatConversation(
+      conversationId: json.stringValue('conversationId'),
+      petId: json.nullableString('petId'),
+      title: json.nullableString('title'),
+      isActive: json.boolValue('isActive', fallback: true),
+      createdAt: json.nullableString('createdAt'),
+      updatedAt: json.nullableString('updatedAt'),
+    );
+  }
+
+  final String conversationId;
+  final String? petId;
+  final String? title;
+  final bool isActive;
+  final String? createdAt;
+  final String? updatedAt;
 }
 
 class PetUserAccess {

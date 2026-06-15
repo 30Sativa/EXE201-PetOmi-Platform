@@ -39,6 +39,8 @@ dependencies:
   # Mở trình duyệt cho luồng đăng nhập Google + bắt deep link quay lại app.
   url_launcher: ^6.3.0
   app_links: ^6.3.2
+  image_picker: ^1.1.2
+  signalr_netcore: ^1.4.4
 
 dev_dependencies:
   flutter_test:

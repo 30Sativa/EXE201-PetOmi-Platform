@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'main.dart';
 import 'models/owner_models.dart';
@@ -204,6 +205,147 @@ class _PetDetailPageState extends State<PetDetailPage> {
     }
   }
 
+  Future<bool> _confirmAction(String title, String message) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Đóng'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                ),
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Xác nhận'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _editPet() async {
+    final pet = _pet;
+    if (pet == null) return;
+    final changed = await showOwnerActionSheet<bool>(
+      context: context,
+      child: _EditPetSheet(repository: _repo, pet: pet),
+    );
+    if (changed == true) {
+      await widget.onChanged();
+      await _loadCore();
+    }
+  }
+
+  Future<void> _editHealth() async {
+    final changed = await showOwnerActionSheet<bool>(
+      context: context,
+      child: _HealthProfileSheet(
+        repository: _repo,
+        petId: widget.petId,
+        profile: _health,
+      ),
+    );
+    if (changed == true) {
+      _health = await _repo.getPetHealthProfile(widget.petId);
+      await widget.onChanged();
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _deleteWeight(PetWeightLog log) async {
+    if (!await _confirmAction(
+      'Xóa bản ghi cân nặng?',
+      'Bản ghi ${log.weightKg} kg sẽ bị xóa khỏi lịch sử.',
+    )) {
+      return;
+    }
+    await _repo.deleteWeightLog(
+      petId: widget.petId,
+      weightLogId: log.weightLogId,
+    );
+    _weightLogs = await _repo.getPetWeightLogs(widget.petId);
+    await widget.onChanged();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openMedicalSheet([PetMedicalRecord? record]) async {
+    final changed = await showOwnerActionSheet<bool>(
+      context: context,
+      child: _MedicalRecordSheet(
+        repository: _repo,
+        petId: widget.petId,
+        record: record,
+      ),
+    );
+    if (changed == true) {
+      _medicalRecords = await _repo.getPetMedicalRecords(widget.petId);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _deleteMedical(PetMedicalRecord record) async {
+    if (!await _confirmAction(
+      'Xóa hồ sơ y tế?',
+      'Bản ghi “${record.title}” sẽ bị xóa vĩnh viễn.',
+    )) {
+      return;
+    }
+    await _repo.deleteMedicalRecord(
+      petId: widget.petId,
+      medicalRecordId: record.medicalRecordId,
+    );
+    _medicalRecords = await _repo.getPetMedicalRecords(widget.petId);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _addPhoto() async {
+    final changed = await showOwnerActionSheet<bool>(
+      context: context,
+      child: _PetPhotoSheet(repository: _repo, petId: widget.petId),
+    );
+    if (changed == true) {
+      _photos = await _repo.getPetPhotos(widget.petId);
+      _pet = await _repo.getPetById(widget.petId);
+      await widget.onChanged();
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _editPhoto(PetPhoto photo) async {
+    final changed = await showOwnerActionSheet<bool>(
+      context: context,
+      child: _PetPhotoSheet(
+        repository: _repo,
+        petId: widget.petId,
+        photo: photo,
+      ),
+    );
+    if (changed == true) {
+      _photos = await _repo.getPetPhotos(widget.petId);
+      if (mounted) setState(() {});
+    }
+  }
+
+  Future<void> _deletePhoto(PetPhoto photo) async {
+    if (!await _confirmAction(
+      'Xóa ảnh?',
+      'Ảnh này sẽ bị xóa khỏi thư viện của thú cưng.',
+    )) {
+      return;
+    }
+    await _repo.deletePetPhoto(petId: widget.petId, photoId: photo.photoId);
+    _photos = await _repo.getPetPhotos(widget.petId);
+    _pet = await _repo.getPetById(widget.petId);
+    await widget.onChanged();
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final pet = _pet;
@@ -325,6 +467,16 @@ class _PetDetailPageState extends State<PetDetailPage> {
             ),
           ),
           IconButton.filledTonal(
+            tooltip: 'Sửa',
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.primarySoft,
+              foregroundColor: AppColors.primaryHover,
+            ),
+            onPressed: _editPet,
+            icon: const Icon(Icons.edit_rounded),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
             tooltip: 'Xóa',
             style: IconButton.styleFrom(
               backgroundColor: AppColors.dangerSoft,
@@ -351,14 +503,30 @@ class _PetDetailPageState extends State<PetDetailPage> {
       case _PetTab.overview:
         return _OverviewTab(pet: pet, health: _health, weightLogs: _weightLogs);
       case _PetTab.health:
-        return _HealthTab(health: _health, weightLogs: _weightLogs);
+        return _HealthTab(
+          health: _health,
+          weightLogs: _weightLogs,
+          onEdit: _editHealth,
+        );
       case _PetTab.weight:
-        return _WeightTab(logs: _weightLogs, onAdd: _addWeight);
+        return _WeightTab(
+          logs: _weightLogs,
+          onAdd: _addWeight,
+          onDelete: _deleteWeight,
+        );
       case _PetTab.medical:
-        return _MedicalTab(records: _medicalRecords ?? const []);
+        return _MedicalTab(
+          records: _medicalRecords ?? const [],
+          onAdd: () => _openMedicalSheet(),
+          onEdit: _openMedicalSheet,
+          onDelete: _deleteMedical,
+        );
       case _PetTab.photos:
         return _PhotosTab(
           photos: _photos ?? const [],
+          onAdd: _addPhoto,
+          onEdit: _editPhoto,
+          onDelete: _deletePhoto,
           onSetAvatar: (photoId) async {
             try {
               await _repo.setPetAvatar(petId: widget.petId, photoId: photoId);
@@ -391,6 +559,12 @@ class _PetDetailPageState extends State<PetDetailPage> {
       case _PetTab.reminders:
         return _RemindersTab(
           reminders: _reminders ?? const [],
+          onAdd: () async {
+            await showCreateReminderSheet(context, petId: widget.petId);
+            _reminders = await _repo.getPetReminders(widget.petId);
+            if (mounted) setState(() {});
+          },
+          onPreferences: () => openReminderPreferencesPage(context),
           onToggle: (id) async {
             await _repo.toggleReminder(id);
             await widget.onChanged();
@@ -778,10 +952,15 @@ class _OverviewMetric extends StatelessWidget {
 // ==================== HEALTH TAB ====================
 
 class _HealthTab extends StatelessWidget {
-  const _HealthTab({required this.health, required this.weightLogs});
+  const _HealthTab({
+    required this.health,
+    required this.weightLogs,
+    required this.onEdit,
+  });
 
   final PetHealthProfile? health;
   final List<PetWeightLog> weightLogs;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -790,6 +969,11 @@ class _HealthTab extends StatelessWidget {
     return SectionCard(
       title: 'Hồ sơ sức khỏe',
       subtitle: 'Tổng hợp tình trạng sức khỏe của thú cưng.',
+      action: IconButton(
+        tooltip: profile == null ? 'Tạo hồ sơ' : 'Sửa hồ sơ',
+        onPressed: onEdit,
+        icon: Icon(profile == null ? Icons.add_rounded : Icons.edit_rounded),
+      ),
       child: profile == null
           ? const EmptyOwnerState(
               icon: Icons.favorite_border_rounded,
@@ -831,10 +1015,15 @@ class _HealthTab extends StatelessWidget {
 // ==================== WEIGHT TAB ====================
 
 class _WeightTab extends StatelessWidget {
-  const _WeightTab({required this.logs, required this.onAdd});
+  const _WeightTab({
+    required this.logs,
+    required this.onAdd,
+    required this.onDelete,
+  });
 
   final List<PetWeightLog> logs;
   final VoidCallback onAdd;
+  final ValueChanged<PetWeightLog> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -931,6 +1120,14 @@ class _WeightTab extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            IconButton(
+                              tooltip: 'Xóa bản ghi',
+                              onPressed: () => onDelete(log),
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: AppColors.danger,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -986,9 +1183,17 @@ class _WeightStat extends StatelessWidget {
 // ==================== MEDICAL TAB ====================
 
 class _MedicalTab extends StatefulWidget {
-  const _MedicalTab({required this.records});
+  const _MedicalTab({
+    required this.records,
+    required this.onAdd,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final List<PetMedicalRecord> records;
+  final VoidCallback onAdd;
+  final ValueChanged<PetMedicalRecord> onEdit;
+  final ValueChanged<PetMedicalRecord> onDelete;
 
   @override
   State<_MedicalTab> createState() => _MedicalTabState();
@@ -1054,6 +1259,11 @@ class _MedicalTabState extends State<_MedicalTab> {
         SectionCard(
           title: 'Hồ sơ y tế',
           subtitle: 'Lịch sử khám, tiêm phòng và điều trị.',
+          action: IconButton(
+            tooltip: 'Thêm hồ sơ y tế',
+            onPressed: widget.onAdd,
+            icon: const Icon(Icons.add_rounded),
+          ),
           child: filtered.isEmpty
               ? const EmptyOwnerState(
                   icon: Icons.medical_information_rounded,
@@ -1092,6 +1302,19 @@ class _MedicalTabState extends State<_MedicalTab> {
                                   label: r.recordType,
                                   color: AppColors.primaryHover,
                                   background: AppColors.primarySoft,
+                                ),
+                                IconButton(
+                                  tooltip: 'Sửa',
+                                  onPressed: () => widget.onEdit(r),
+                                  icon: const Icon(Icons.edit_rounded),
+                                ),
+                                IconButton(
+                                  tooltip: 'Xóa',
+                                  onPressed: () => widget.onDelete(r),
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: AppColors.danger,
+                                  ),
                                 ),
                               ],
                             ),
@@ -1149,9 +1372,18 @@ class _MetaText extends StatelessWidget {
 // ==================== PHOTOS TAB ====================
 
 class _PhotosTab extends StatelessWidget {
-  const _PhotosTab({required this.photos, required this.onSetAvatar});
+  const _PhotosTab({
+    required this.photos,
+    required this.onAdd,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onSetAvatar,
+  });
 
   final List<PetPhoto> photos;
+  final VoidCallback onAdd;
+  final ValueChanged<PetPhoto> onEdit;
+  final ValueChanged<PetPhoto> onDelete;
   final ValueChanged<String> onSetAvatar;
 
   @override
@@ -1159,6 +1391,11 @@ class _PhotosTab extends StatelessWidget {
     return SectionCard(
       title: 'Thư viện ảnh',
       subtitle: '${photos.length} ảnh.',
+      action: IconButton(
+        tooltip: 'Thêm ảnh',
+        onPressed: onAdd,
+        icon: const Icon(Icons.add_photo_alternate_rounded),
+      ),
       child: photos.isEmpty
           ? const EmptyOwnerState(
               icon: Icons.photo_library_rounded,
@@ -1224,6 +1461,24 @@ class _PhotosTab extends StatelessWidget {
                             ),
                           ),
                         ),
+                      Positioned(
+                        right: 8,
+                        bottom: 8,
+                        child: Row(
+                          children: [
+                            _PhotoAction(
+                              icon: Icons.edit_rounded,
+                              onTap: () => onEdit(photo),
+                            ),
+                            const SizedBox(width: 6),
+                            _PhotoAction(
+                              icon: Icons.delete_outline_rounded,
+                              color: AppColors.danger,
+                              onTap: () => onDelete(photo),
+                            ),
+                          ],
+                        ),
+                      ),
                       if (photo.caption != null)
                         Positioned(
                           left: 0,
@@ -1394,93 +1649,757 @@ class _SharingTab extends StatelessWidget {
 class _RemindersTab extends StatelessWidget {
   const _RemindersTab({
     required this.reminders,
+    required this.onAdd,
+    required this.onPreferences,
     required this.onToggle,
     required this.onDismiss,
   });
 
   final List<OwnerReminder> reminders;
+  final VoidCallback onAdd;
+  final VoidCallback onPreferences;
   final Future<void> Function(String) onToggle;
   final Future<void> Function(String) onDismiss;
 
   @override
   Widget build(BuildContext context) {
-    return SectionCard(
-      title: 'Nhắc nhở của thú cưng',
-      subtitle: '${reminders.length} nhắc nhở liên quan.',
-      child: reminders.isEmpty
-          ? const EmptyOwnerState(
-              icon: Icons.notifications_none_rounded,
-              title: 'Chưa có nhắc nhở',
-              message:
-                  'Tạo nhắc nhở để không bỏ lỡ lịch tiêm phòng, uống thuốc hay tái khám.',
-              compact: true,
-            )
-          : Column(
-              children: reminders.map((r) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      children: [
-                        IconBubble(
-                          icon: reminderIcon(r.reminderType),
-                          background: r.isEnabled
-                              ? AppColors.primarySoft
-                              : AppColors.surfaceMuted,
-                          foreground: r.isEnabled
-                              ? AppColors.primaryHover
-                              : AppColors.textSubtle,
+    return Column(
+      children: [
+        SectionCard(
+          title: 'Nhắc nhở của thú cưng',
+          subtitle: '${reminders.length} nhắc nhở liên quan.',
+          action: IconButton(
+            tooltip: 'Tạo nhắc nhở',
+            onPressed: onAdd,
+            icon: const Icon(Icons.add_alert_rounded),
+          ),
+          child: reminders.isEmpty
+              ? const EmptyOwnerState(
+                  icon: Icons.notifications_none_rounded,
+                  title: 'Chưa có nhắc nhở',
+                  message:
+                      'Tạo nhắc nhở để không bỏ lỡ lịch tiêm phòng, uống thuốc hay tái khám.',
+                  compact: true,
+                )
+              : Column(
+                  children: reminders.map((r) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceMuted.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(color: AppColors.border),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                r.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium,
+                        child: Row(
+                          children: [
+                            IconBubble(
+                              icon: reminderIcon(r.reminderType),
+                              background: r.isEnabled
+                                  ? AppColors.primarySoft
+                                  : AppColors.surfaceMuted,
+                              foreground: r.isEnabled
+                                  ? AppColors.primaryHover
+                                  : AppColors.textSubtle,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    r.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    formatDateTime(r.dueAt),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          fontSize: 12,
+                                          color: AppColors.textSubtle,
+                                        ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                formatDateTime(r.dueAt),
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      fontSize: 12,
-                                      color: AppColors.textSubtle,
-                                    ),
-                              ),
-                            ],
-                          ),
+                            ),
+                            Switch.adaptive(
+                              value: r.isEnabled,
+                              activeThumbColor: AppColors.primary,
+                              onChanged: (_) => onToggle(r.reminderId),
+                            ),
+                            IconButton(
+                              tooltip: 'Bỏ qua',
+                              onPressed: () => onDismiss(r.reminderId),
+                              icon: const Icon(Icons.done_all_rounded),
+                            ),
+                          ],
                         ),
-                        Switch.adaptive(
-                          value: r.isEnabled,
-                          activeThumbColor: AppColors.primary,
-                          onChanged: (_) => onToggle(r.reminderId),
-                        ),
-                        IconButton(
-                          tooltip: 'Bỏ qua',
-                          onPressed: () => onDismiss(r.reminderId),
-                          icon: const Icon(Icons.done_all_rounded),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: SoftButton(
+            label: 'Cài đặt nhắc nhở',
+            icon: Icons.tune_rounded,
+            onTap: onPreferences,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PhotoAction extends StatelessWidget {
+  const _PhotoAction({
+    required this.icon,
+    required this.onTap,
+    this.color = AppColors.text,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, size: 18, color: color),
+      ),
     );
   }
 }
 
 // ==================== WEIGHT LOG SHEET ====================
+
+class _EditPetSheet extends StatefulWidget {
+  const _EditPetSheet({required this.repository, required this.pet});
+
+  final OwnerRepository repository;
+  final OwnerPet pet;
+
+  @override
+  State<_EditPetSheet> createState() => _EditPetSheetState();
+}
+
+class _EditPetSheetState extends State<_EditPetSheet> {
+  late final TextEditingController _name;
+  late final TextEditingController _breed;
+  late final TextEditingController _color;
+  late String _species;
+  late String _gender;
+  late String _neutered;
+  late bool _estimated;
+  DateTime? _birthDate;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final pet = widget.pet;
+    _name = TextEditingController(text: pet.name);
+    _breed = TextEditingController(text: pet.breed ?? '');
+    _color = TextEditingController(text: pet.color ?? '');
+    _species = pet.species;
+    _gender = pet.gender ?? 'Unknown';
+    _neutered = pet.isNeutered ?? 'Unknown';
+    _estimated = pet.isBirthDateEstimated;
+    _birthDate = DateTime.tryParse(pet.dateOfBirth ?? '');
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _breed.dispose();
+    _color.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_name.text.trim().isEmpty) {
+      setState(() => _error = 'Tên thú cưng không được để trống.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.updatePet(
+        petId: widget.pet.petId,
+        name: _name.text.trim(),
+        species: _species,
+        breed: optionalInput(_breed),
+        gender: _gender,
+        isNeutered: _neutered,
+        dateOfBirth: _birthDate,
+        isBirthDateEstimated: _estimated,
+        color: optionalInput(_color),
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OwnerSheetFrame(
+      title: 'Sửa hồ sơ thú cưng',
+      subtitle: 'Cập nhật thông tin cơ bản của ${widget.pet.name}.',
+      icon: Icons.edit_rounded,
+      error: _error,
+      children: [
+        SheetTextField(
+          controller: _name,
+          label: 'Tên',
+          icon: Icons.badge_rounded,
+        ),
+        const SizedBox(height: 12),
+        SheetChoiceField(
+          label: 'Loài',
+          icon: Icons.category_rounded,
+          value: _species,
+          options: const [('Dog', 'Chó'), ('Cat', 'Mèo')],
+          onChanged: _saving ? null : (v) => setState(() => _species = v),
+        ),
+        const SizedBox(height: 12),
+        SheetChoiceField(
+          label: 'Giới tính',
+          icon: Icons.transgender_rounded,
+          value: _gender,
+          options: const [
+            ('Unknown', 'Không rõ'),
+            ('Male', 'Đực'),
+            ('Female', 'Cái'),
+          ],
+          onChanged: _saving ? null : (v) => setState(() => _gender = v),
+        ),
+        const SizedBox(height: 12),
+        SheetChoiceField(
+          label: 'Triệt sản',
+          icon: Icons.health_and_safety_rounded,
+          value: _neutered,
+          options: const [
+            ('Unknown', 'Không rõ'),
+            ('Yes', 'Đã triệt sản'),
+            ('No', 'Chưa triệt sản'),
+          ],
+          onChanged: _saving ? null : (v) => setState(() => _neutered = v),
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _breed,
+          label: 'Giống',
+          icon: Icons.pets_rounded,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _color,
+          label: 'Màu lông',
+          icon: Icons.palette_rounded,
+        ),
+        const SizedBox(height: 12),
+        SoftButton(
+          label: _birthDate == null
+              ? 'Chọn ngày sinh'
+              : 'Ngày sinh ${formatDateOnly(_birthDate!)}',
+          icon: Icons.cake_rounded,
+          onTap: _saving
+              ? null
+              : () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _birthDate ?? DateTime.now(),
+                    firstDate: DateTime(1990),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) setState(() => _birthDate = date);
+                },
+        ),
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Ngày sinh ước tính'),
+          value: _estimated,
+          onChanged: _saving ? null : (v) => setState(() => _estimated = v),
+        ),
+        PrimaryButton(
+          label: _saving ? 'Đang lưu...' : 'Lưu thay đổi',
+          icon: Icons.save_rounded,
+          onTap: _saving ? null : _submit,
+        ),
+      ],
+    );
+  }
+}
+
+class _HealthProfileSheet extends StatefulWidget {
+  const _HealthProfileSheet({
+    required this.repository,
+    required this.petId,
+    required this.profile,
+  });
+
+  final OwnerRepository repository;
+  final String petId;
+  final PetHealthProfile? profile;
+
+  @override
+  State<_HealthProfileSheet> createState() => _HealthProfileSheetState();
+}
+
+class _HealthProfileSheetState extends State<_HealthProfileSheet> {
+  late final TextEditingController _weight;
+  late final TextEditingController _color;
+  late final TextEditingController _allergies;
+  late final TextEditingController _chronic;
+  late final TextEditingController _microchip;
+  late String _neutered;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final p = widget.profile;
+    _weight = TextEditingController(text: p?.currentWeightKg?.toString() ?? '');
+    _color = TextEditingController(text: p?.color ?? '');
+    _allergies = TextEditingController(text: p?.allergies ?? '');
+    _chronic = TextEditingController(text: p?.chronicConditions ?? '');
+    _microchip = TextEditingController(text: p?.microchipNumber ?? '');
+    _neutered = p?.isNeutered ?? 'Unknown';
+  }
+
+  @override
+  void dispose() {
+    _weight.dispose();
+    _color.dispose();
+    _allergies.dispose();
+    _chronic.dispose();
+    _microchip.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final rawWeight = _weight.text.trim().replaceAll(',', '.');
+    final weight = rawWeight.isEmpty ? null : double.tryParse(rawWeight);
+    if (rawWeight.isNotEmpty && (weight == null || weight <= 0)) {
+      setState(() => _error = 'Cân nặng không hợp lệ.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.savePetHealthProfile(
+        petId: widget.petId,
+        create: widget.profile == null,
+        currentWeightKg: weight,
+        color: optionalInput(_color),
+        isNeutered: _neutered,
+        allergies: optionalInput(_allergies),
+        chronicConditions: optionalInput(_chronic),
+        microchipNumber: optionalInput(_microchip),
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OwnerSheetFrame(
+      title: widget.profile == null
+          ? 'Tạo hồ sơ sức khỏe'
+          : 'Sửa hồ sơ sức khỏe',
+      subtitle: 'Dị ứng, bệnh nền, microchip và tình trạng hiện tại.',
+      icon: Icons.favorite_rounded,
+      error: _error,
+      children: [
+        SheetTextField(
+          controller: _weight,
+          label: 'Cân nặng hiện tại (kg)',
+          icon: Icons.scale_rounded,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _color,
+          label: 'Màu lông',
+          icon: Icons.palette_rounded,
+        ),
+        const SizedBox(height: 12),
+        SheetChoiceField(
+          label: 'Triệt sản',
+          icon: Icons.health_and_safety_rounded,
+          value: _neutered,
+          options: const [
+            ('Unknown', 'Không rõ'),
+            ('Yes', 'Đã triệt sản'),
+            ('No', 'Chưa triệt sản'),
+          ],
+          onChanged: _saving ? null : (v) => setState(() => _neutered = v),
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _microchip,
+          label: 'Mã microchip',
+          icon: Icons.nfc_rounded,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _allergies,
+          label: 'Dị ứng',
+          icon: Icons.warning_amber_rounded,
+          maxLines: 2,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _chronic,
+          label: 'Bệnh mãn tính',
+          icon: Icons.medical_information_rounded,
+          maxLines: 2,
+        ),
+        const SizedBox(height: 18),
+        PrimaryButton(
+          label: _saving ? 'Đang lưu...' : 'Lưu hồ sơ',
+          icon: Icons.save_rounded,
+          onTap: _saving ? null : _submit,
+        ),
+      ],
+    );
+  }
+}
+
+class _MedicalRecordSheet extends StatefulWidget {
+  const _MedicalRecordSheet({
+    required this.repository,
+    required this.petId,
+    this.record,
+  });
+
+  final OwnerRepository repository;
+  final String petId;
+  final PetMedicalRecord? record;
+
+  @override
+  State<_MedicalRecordSheet> createState() => _MedicalRecordSheetState();
+}
+
+class _MedicalRecordSheetState extends State<_MedicalRecordSheet> {
+  late final TextEditingController _title;
+  late final TextEditingController _description;
+  late final TextEditingController _vet;
+  late final TextEditingController _clinic;
+  late final TextEditingController _medication;
+  late final TextEditingController _dosage;
+  late String _type;
+  late DateTime _date;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final r = widget.record;
+    _title = TextEditingController(text: r?.title ?? '');
+    _description = TextEditingController(text: r?.description ?? '');
+    _vet = TextEditingController(text: r?.vetName ?? '');
+    _clinic = TextEditingController(text: r?.clinicName ?? '');
+    _medication = TextEditingController(text: r?.medicationName ?? '');
+    _dosage = TextEditingController(text: r?.dosage ?? '');
+    _type = r?.recordType ?? 'Checkup';
+    _date = r?.date ?? DateTime.now();
+  }
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _description.dispose();
+    _vet.dispose();
+    _clinic.dispose();
+    _medication.dispose();
+    _dosage.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_title.text.trim().isEmpty) {
+      setState(() => _error = 'Nhập tiêu đề hồ sơ.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.saveMedicalRecord(
+        petId: widget.petId,
+        medicalRecordId: widget.record?.medicalRecordId,
+        recordType: _type,
+        title: _title.text.trim(),
+        recordDate: _date,
+        description: optionalInput(_description),
+        vetName: optionalInput(_vet),
+        clinicName: optionalInput(_clinic),
+        medicationName: optionalInput(_medication),
+        dosage: optionalInput(_dosage),
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OwnerSheetFrame(
+      title: widget.record == null ? 'Thêm hồ sơ y tế' : 'Sửa hồ sơ y tế',
+      subtitle: 'Lưu thông tin khám, tiêm phòng hoặc điều trị.',
+      icon: Icons.medical_information_rounded,
+      error: _error,
+      children: [
+        SheetChoiceField(
+          label: 'Loại hồ sơ',
+          icon: Icons.category_rounded,
+          value: _type,
+          options: const [
+            ('Vaccination', 'Tiêm phòng'),
+            ('Checkup', 'Khám định kỳ'),
+            ('Surgery', 'Phẫu thuật'),
+            ('Illness', 'Bệnh lý'),
+            ('Medication', 'Thuốc'),
+            ('LabTest', 'Xét nghiệm'),
+            ('Dental', 'Răng miệng'),
+            ('Grooming', 'Vệ sinh'),
+          ],
+          onChanged: _saving ? null : (v) => setState(() => _type = v),
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _title,
+          label: 'Tiêu đề',
+          icon: Icons.title_rounded,
+        ),
+        const SizedBox(height: 12),
+        SoftButton(
+          label: 'Ngày ${formatDateOnly(_date)}',
+          icon: Icons.calendar_today_rounded,
+          onTap: _saving
+              ? null
+              : () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _date,
+                    firstDate: DateTime(2000),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) setState(() => _date = date);
+                },
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _description,
+          label: 'Mô tả',
+          icon: Icons.notes_rounded,
+          maxLines: 3,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _clinic,
+          label: 'Phòng khám',
+          icon: Icons.local_hospital_rounded,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _vet,
+          label: 'Bác sĩ',
+          icon: Icons.person_rounded,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _medication,
+          label: 'Tên thuốc',
+          icon: Icons.medication_rounded,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _dosage,
+          label: 'Liều dùng',
+          icon: Icons.science_rounded,
+        ),
+        const SizedBox(height: 18),
+        PrimaryButton(
+          label: _saving ? 'Đang lưu...' : 'Lưu hồ sơ',
+          icon: Icons.save_rounded,
+          onTap: _saving ? null : _submit,
+        ),
+      ],
+    );
+  }
+}
+
+class _PetPhotoSheet extends StatefulWidget {
+  const _PetPhotoSheet({
+    required this.repository,
+    required this.petId,
+    this.photo,
+  });
+
+  final OwnerRepository repository;
+  final String petId;
+  final PetPhoto? photo;
+
+  @override
+  State<_PetPhotoSheet> createState() => _PetPhotoSheetState();
+}
+
+class _PetPhotoSheetState extends State<_PetPhotoSheet> {
+  late final TextEditingController _caption;
+  XFile? _file;
+  DateTime _takenAt = DateTime.now();
+  bool _avatar = false;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _caption = TextEditingController(text: widget.photo?.caption ?? '');
+    _avatar = widget.photo?.isAvatar ?? false;
+    _takenAt = DateTime.tryParse(widget.photo?.takenAt ?? '') ?? DateTime.now();
+  }
+
+  @override
+  void dispose() {
+    _caption.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (widget.photo == null && _file == null) {
+      setState(() => _error = 'Chọn ảnh trước khi tải lên.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      if (widget.photo == null) {
+        await widget.repository.uploadPetPhoto(
+          petId: widget.petId,
+          filePath: _file!.path,
+          caption: optionalInput(_caption),
+          takenAt: _takenAt,
+          isAvatar: _avatar,
+        );
+      } else {
+        await widget.repository.updatePetPhoto(
+          petId: widget.petId,
+          photoId: widget.photo!.photoId,
+          caption: optionalInput(_caption),
+          setAsAvatar: _avatar && !widget.photo!.isAvatar ? true : null,
+        );
+      }
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OwnerSheetFrame(
+      title: widget.photo == null ? 'Thêm ảnh' : 'Sửa thông tin ảnh',
+      subtitle: 'Ảnh được upload trực tiếp vào kho lưu trữ PetOmi.',
+      icon: Icons.add_photo_alternate_rounded,
+      error: _error,
+      children: [
+        if (widget.photo == null)
+          SoftButton(
+            label: _file == null ? 'Chọn ảnh từ thiết bị' : _file!.name,
+            icon: Icons.photo_library_rounded,
+            onTap: _saving
+                ? null
+                : () async {
+                    final file = await ImagePicker().pickImage(
+                      source: ImageSource.gallery,
+                      imageQuality: 88,
+                      maxWidth: 1800,
+                    );
+                    if (file != null) setState(() => _file = file);
+                  },
+          ),
+        if (widget.photo == null) const SizedBox(height: 12),
+        SheetTextField(
+          controller: _caption,
+          label: 'Chú thích',
+          icon: Icons.notes_rounded,
+          maxLines: 2,
+        ),
+        if (widget.photo == null) ...[
+          const SizedBox(height: 12),
+          SoftButton(
+            label: 'Ngày chụp ${formatDateOnly(_takenAt)}',
+            icon: Icons.calendar_today_rounded,
+            onTap: _saving
+                ? null
+                : () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: _takenAt,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) setState(() => _takenAt = date);
+                  },
+          ),
+        ],
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Đặt làm ảnh đại diện'),
+          value: _avatar,
+          onChanged: _saving ? null : (v) => setState(() => _avatar = v),
+        ),
+        PrimaryButton(
+          label: _saving ? 'Đang lưu...' : 'Lưu ảnh',
+          icon: Icons.cloud_upload_rounded,
+          onTap: _saving ? null : _submit,
+        ),
+      ],
+    );
+  }
+}
 
 Future<bool?> showWeightLogSheet({
   required BuildContext context,

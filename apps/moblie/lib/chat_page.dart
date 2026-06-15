@@ -18,8 +18,10 @@ class _ChatPageState extends State<ChatPage> {
   final _scrollController = ScrollController();
 
   String? _conversationId;
+  String? _pendingMessageId;
   String? _petId;
   List<ChatMessage> _messages = const [];
+  List<ChatConversation> _conversations = const [];
   ChatSubscriptionStatus? _subscription;
 
   bool _sending = false;
@@ -34,6 +36,7 @@ class _ChatPageState extends State<ChatPage> {
       final pets = OwnerScope.of(context).data.pets;
       if (pets.length == 1) _petId = pets.first.petId;
       _loadSubscription();
+      _loadConversations();
     });
   }
 
@@ -53,6 +56,28 @@ class _ChatPageState extends State<ChatPage> {
       if (mounted) setState(() => _subscription = status);
     } catch (_) {
       // Không chặn chat nếu không lấy được trạng thái gói.
+    }
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      final repository = OwnerScope.of(context).repository;
+      final results = await Future.wait<dynamic>([
+        repository.getChatConversations(),
+        repository.getSavedChatConversationId(),
+      ]);
+      final conversations = results[0] as List<ChatConversation>;
+      final savedId = results[1] as String?;
+      if (!mounted) return;
+      setState(() => _conversations = conversations);
+      if (_conversationId == null && savedId != null) {
+        final matches = conversations.where(
+          (item) => item.conversationId == savedId,
+        );
+        if (matches.isNotEmpty) await _selectConversation(matches.first);
+      }
+    } catch (_) {
+      // Chat mới vẫn hoạt động nếu lịch sử tạm thời không tải được.
     }
   }
 
@@ -99,6 +124,8 @@ class _ChatPageState extends State<ChatPage> {
         petId: _petId,
       );
       _conversationId = result.conversationId;
+      _pendingMessageId = result.messageId;
+      await repo.saveChatConversationId(result.conversationId);
       if (mounted) {
         setState(() {
           _sending = false;
@@ -138,13 +165,22 @@ class _ChatPageState extends State<ChatPage> {
         _scrollToBottom();
         if (hasReadyAi || attempts >= 30) {
           timer.cancel();
-          setState(() => _waitingAi = false);
+          setState(() {
+            _waitingAi = false;
+            _pendingMessageId = null;
+          });
           _loadSubscription();
+          _loadConversations();
         }
       } catch (_) {
         if (attempts >= 30) {
           timer.cancel();
-          if (mounted) setState(() => _waitingAi = false);
+          if (mounted) {
+            setState(() {
+              _waitingAi = false;
+              _pendingMessageId = null;
+            });
+          }
         }
       }
     });
@@ -152,6 +188,158 @@ class _ChatPageState extends State<ChatPage> {
 
   void _openPlans() {
     openAiPlanPage(context);
+  }
+
+  Future<void> _cancelPending() async {
+    final messageId = _pendingMessageId;
+    if (messageId == null) return;
+    try {
+      await OwnerScope.of(context).repository.cancelChatMessage(messageId);
+      _pollTimer?.cancel();
+      if (mounted) {
+        setState(() {
+          _waitingAi = false;
+          _pendingMessageId = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã hủy yêu cầu AI đang xử lý.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    }
+  }
+
+  Future<void> _selectConversation(ChatConversation conversation) async {
+    final repository = OwnerScope.of(context).repository;
+    setState(() {
+      _conversationId = conversation.conversationId;
+      _petId = conversation.petId;
+      _messages = const [];
+      _error = null;
+    });
+    await repository.saveChatConversationId(conversation.conversationId);
+    try {
+      final messages = await repository.getConversationMessages(
+        conversation.conversationId,
+      );
+      if (mounted) {
+        setState(() => _messages = messages);
+        _scrollToBottom();
+        _loadSubscription();
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    }
+  }
+
+  void _newConversation() {
+    _pollTimer?.cancel();
+    setState(() {
+      _conversationId = null;
+      _pendingMessageId = null;
+      _messages = const [];
+      _waitingAi = false;
+      _error = null;
+    });
+    OwnerScope.of(context).repository.saveChatConversationId(null);
+  }
+
+  Future<void> _openHistory() async {
+    await _loadConversations();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.45,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Lịch sử trò chuyện',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Cuộc trò chuyện mới',
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _newConversation();
+                      },
+                      icon: const Icon(Icons.add_comment_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _conversations.isEmpty
+                    ? const EmptyOwnerState(
+                        icon: Icons.forum_outlined,
+                        title: 'Chưa có cuộc trò chuyện',
+                        message: 'Bắt đầu hỏi AI để tạo lịch sử đầu tiên.',
+                      )
+                    : ListView.separated(
+                        controller: controller,
+                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                        itemCount: _conversations.length,
+                        separatorBuilder: (_, _) =>
+                            const Divider(color: AppColors.border),
+                        itemBuilder: (_, index) {
+                          final item = _conversations[index];
+                          final petName = item.petId == null
+                              ? 'Hỏi chung'
+                              : petNameFor(
+                                  OwnerScope.of(context).data,
+                                  item.petId!,
+                                );
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const IconBubble(
+                              icon: Icons.chat_bubble_rounded,
+                            ),
+                            title: Text(
+                              item.title?.trim().isNotEmpty == true
+                                  ? item.title!
+                                  : 'Cuộc trò chuyện',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '$petName • ${formatDateTime(DateTime.tryParse(item.updatedAt ?? item.createdAt ?? ''))}',
+                            ),
+                            trailing: item.conversationId == _conversationId
+                                ? const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.success,
+                                  )
+                                : const Icon(Icons.chevron_right_rounded),
+                            onTap: () {
+                              Navigator.of(sheetContext).pop();
+                              _selectConversation(item);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -219,6 +407,11 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              tooltip: 'Lịch sử trò chuyện',
+              onPressed: _openHistory,
+              icon: const Icon(Icons.history_rounded),
             ),
             FilledButton.tonalIcon(
               style: FilledButton.styleFrom(
@@ -382,16 +575,24 @@ class _ChatPageState extends State<ChatPage> {
                 ),
                 const SizedBox(width: 8),
                 _sending || _waitingAi
-                    ? const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
-                        ),
+                    ? IconButton(
+                        tooltip: _waitingAi ? 'Hủy xử lý' : 'Đang gửi',
+                        onPressed: _waitingAi && _pendingMessageId != null
+                            ? _cancelPending
+                            : null,
+                        icon: _waitingAi
+                            ? const Icon(
+                                Icons.stop_circle_rounded,
+                                color: AppColors.danger,
+                              )
+                            : const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              ),
                       )
                     : IconButton.filled(
                         style: IconButton.styleFrom(

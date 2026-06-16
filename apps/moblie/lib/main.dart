@@ -1,14 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'chat_page.dart';
 import 'models/owner_models.dart';
 import 'pet_detail_page.dart';
 import 'services/api_client.dart';
+import 'services/notification_center.dart';
 import 'services/owner_repository.dart';
+
+part 'owner_secondary_pages.dart';
 
 /// Hiển thị snackbar toàn cục (dùng khi xử lý deep link).
 final GlobalKey<ScaffoldMessengerState> rootMessengerKey =
@@ -42,9 +47,7 @@ class PetOmiOwnerApp extends StatelessWidget {
           menuStyle: MenuStyle(
             backgroundColor: const WidgetStatePropertyAll(AppColors.surface),
             shape: WidgetStatePropertyAll(
-              RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
           ),
         ),
@@ -124,6 +127,7 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   late Future<bool> _sessionFuture;
   bool _authenticated = false;
+  String? _resetToken;
 
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
@@ -161,6 +165,16 @@ class _AuthGateState extends State<AuthGate> {
     final isCallback =
         uri.host == 'auth' && uri.pathSegments.contains('callback') ||
         uri.host == 'callback';
+    final isReset =
+        uri.host == 'reset-password' || uri.path.contains('reset-password');
+
+    if (isReset) {
+      final token = uri.queryParameters['token'];
+      if (token != null && token.isNotEmpty && mounted) {
+        setState(() => _resetToken = token);
+      }
+      return;
+    }
 
     if (isVerify) {
       final token = uri.queryParameters['token'];
@@ -174,9 +188,7 @@ class _AuthGateState extends State<AuthGate> {
         );
       } catch (error) {
         messenger?.showSnackBar(
-          SnackBar(
-            content: Text('Xác minh thất bại: ${error.toString()}'),
-          ),
+          SnackBar(content: Text('Xác minh thất bại: ${error.toString()}')),
         );
       }
       return;
@@ -224,6 +236,14 @@ class _AuthGateState extends State<AuthGate> {
         }
         final hasSession = _authenticated || (snapshot.data ?? false);
         if (!hasSession) {
+          final resetToken = _resetToken;
+          if (resetToken != null) {
+            return ResetPasswordPage(
+              repository: widget.repository,
+              token: resetToken,
+              onCompleted: () => setState(() => _resetToken = null),
+            );
+          }
           return LoginPage(
             repository: widget.repository,
             onLoggedIn: () => _setAuthenticated(true),
@@ -253,6 +273,7 @@ class OwnerDataView extends StatefulWidget {
 }
 
 class _OwnerDataViewState extends State<OwnerDataView> {
+  late final OwnerNotificationCenter _notificationCenter;
   OwnerHomeData? _data;
   Object? _error;
   bool _loading = true;
@@ -260,6 +281,7 @@ class _OwnerDataViewState extends State<OwnerDataView> {
   @override
   void initState() {
     super.initState();
+    _notificationCenter = widget.repository.createNotificationCenter();
     _load();
   }
 
@@ -279,6 +301,10 @@ class _OwnerDataViewState extends State<OwnerDataView> {
         _error = null;
         _loading = false;
       });
+      final userId = data.profile?.userId;
+      if (userId != null && userId.isNotEmpty) {
+        unawaited(_notificationCenter.connect(userId));
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {
@@ -300,8 +326,15 @@ class _OwnerDataViewState extends State<OwnerDataView> {
   Future<void> _refresh() => _load(isRefresh: true);
 
   Future<void> _logout() async {
+    await _notificationCenter.disconnect(clearItems: true);
     await widget.repository.logout();
     widget.onLoggedOut();
+  }
+
+  @override
+  void dispose() {
+    _notificationCenter.dispose();
+    super.dispose();
   }
 
   @override
@@ -313,9 +346,17 @@ class _OwnerDataViewState extends State<OwnerDataView> {
       if (_loading) return const AppSplash();
       return ApiErrorPage(error: _error, onRetry: _refresh, onLogout: _logout);
     }
+    if (!data.isProfileCompleted) {
+      return CompleteProfilePage(
+        repository: widget.repository,
+        onCompleted: _refresh,
+        onLogout: _logout,
+      );
+    }
     return OwnerScope(
       data: data,
       repository: widget.repository,
+      notificationCenter: _notificationCenter,
       onRefresh: _refresh,
       onLogout: _logout,
       child: const OwnerShell(),
@@ -327,6 +368,7 @@ class OwnerScope extends InheritedWidget {
   const OwnerScope({
     required this.data,
     required this.repository,
+    required this.notificationCenter,
     required this.onRefresh,
     required this.onLogout,
     required super.child,
@@ -335,6 +377,7 @@ class OwnerScope extends InheritedWidget {
 
   final OwnerHomeData data;
   final OwnerRepository repository;
+  final OwnerNotificationCenter notificationCenter;
   final Future<void> Function() onRefresh;
   final Future<void> Function() onLogout;
 
@@ -345,7 +388,9 @@ class OwnerScope extends InheritedWidget {
   }
 
   @override
-  bool updateShouldNotify(OwnerScope oldWidget) => data != oldWidget.data;
+  bool updateShouldNotify(OwnerScope oldWidget) =>
+      data != oldWidget.data ||
+      notificationCenter != oldWidget.notificationCenter;
 }
 
 class AppSplash extends StatelessWidget {
@@ -562,7 +607,9 @@ class _LoginPageState extends State<LoginPage> {
                     const Eyebrow('PetOmi'),
                     const SizedBox(height: 10),
                     Text(
-                      _register ? 'Tạo tài khoản mới' : 'Chào mừng bạn quay lại!',
+                      _register
+                          ? 'Tạo tài khoản mới'
+                          : 'Chào mừng bạn quay lại!',
                       style: Theme.of(context).textTheme.headlineLarge,
                     ),
                     const SizedBox(height: 10),
@@ -625,6 +672,36 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                       ),
                     ],
+                    if (!_register)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: _loading
+                                ? null
+                                : () => showOwnerActionSheet<void>(
+                                    context: context,
+                                    child: ManualResetPasswordSheet(
+                                      repository: widget.repository,
+                                    ),
+                                  ),
+                            child: const Text('Đã có mã reset'),
+                          ),
+                          TextButton(
+                            onPressed: _loading
+                                ? null
+                                : () => showOwnerActionSheet<void>(
+                                    context: context,
+                                    child: ForgotPasswordSheet(
+                                      repository: widget.repository,
+                                      initialEmail: _emailController.text
+                                          .trim(),
+                                    ),
+                                  ),
+                            child: const Text('Quên mật khẩu?'),
+                          ),
+                        ],
+                      ),
                     if (_success != null) ...[
                       const SizedBox(height: 14),
                       Container(
@@ -744,6 +821,472 @@ class _LoginPageState extends State<LoginPage> {
   }
 }
 
+class ForgotPasswordSheet extends StatefulWidget {
+  const ForgotPasswordSheet({
+    required this.repository,
+    required this.initialEmail,
+    super.key,
+  });
+
+  final OwnerRepository repository;
+  final String initialEmail;
+
+  @override
+  State<ForgotPasswordSheet> createState() => _ForgotPasswordSheetState();
+}
+
+class _ForgotPasswordSheetState extends State<ForgotPasswordSheet> {
+  late final TextEditingController _email;
+  bool _saving = false;
+  bool _sent = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _email = TextEditingController(text: widget.initialEmail);
+  }
+
+  @override
+  void dispose() {
+    _email.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final email = _email.text.trim();
+    if (!email.contains('@')) {
+      setState(() => _error = 'Nhập email hợp lệ.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.forgotPassword(email);
+      if (mounted) setState(() => _sent = true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OwnerSheetFrame(
+      title: 'Khôi phục mật khẩu',
+      subtitle: _sent
+          ? 'Kiểm tra hộp thư và mở link đặt lại mật khẩu.'
+          : 'PetOmi sẽ gửi link đặt lại mật khẩu nếu email tồn tại.',
+      icon: Icons.lock_reset_rounded,
+      error: _error,
+      children: _sent
+          ? [
+              const EmptyOwnerState(
+                icon: Icons.mark_email_read_rounded,
+                title: 'Đã gửi yêu cầu',
+                message: 'Bạn có thể đóng cửa sổ này và kiểm tra email.',
+                compact: true,
+              ),
+              const SizedBox(height: 16),
+              PrimaryButton(
+                label: 'Đóng',
+                icon: Icons.check_rounded,
+                onTap: () => Navigator.of(context).pop(),
+              ),
+            ]
+          : [
+              SheetTextField(
+                controller: _email,
+                label: 'Email tài khoản',
+                icon: Icons.email_rounded,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              const SizedBox(height: 18),
+              PrimaryButton(
+                label: _saving ? 'Đang gửi...' : 'Gửi link khôi phục',
+                icon: Icons.send_rounded,
+                onTap: _saving ? null : _submit,
+              ),
+            ],
+    );
+  }
+}
+
+class ResetPasswordPage extends StatefulWidget {
+  const ResetPasswordPage({
+    required this.repository,
+    required this.token,
+    required this.onCompleted,
+    super.key,
+  });
+
+  final OwnerRepository repository;
+  final String token;
+  final VoidCallback onCompleted;
+
+  @override
+  State<ResetPasswordPage> createState() => _ResetPasswordPageState();
+}
+
+class ManualResetPasswordSheet extends StatefulWidget {
+  const ManualResetPasswordSheet({required this.repository, super.key});
+
+  final OwnerRepository repository;
+
+  @override
+  State<ManualResetPasswordSheet> createState() =>
+      _ManualResetPasswordSheetState();
+}
+
+class _ManualResetPasswordSheetState extends State<ManualResetPasswordSheet> {
+  final _token = TextEditingController();
+  final _password = TextEditingController();
+  final _confirm = TextEditingController();
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _token.dispose();
+    _password.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  String _normalizedToken() {
+    final raw = _token.text.trim();
+    final uri = Uri.tryParse(raw);
+    return uri?.queryParameters['token'] ?? raw;
+  }
+
+  Future<void> _submit() async {
+    final token = _normalizedToken();
+    if (token.isEmpty) {
+      setState(() => _error = 'Dán mã hoặc link đặt lại mật khẩu.');
+      return;
+    }
+    if (_password.text.length < 6 || _password.text != _confirm.text) {
+      setState(() => _error = 'Mật khẩu cần ít nhất 6 ký tự và phải khớp.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.resetPassword(
+        token: token,
+        newPassword: _password.text,
+        confirmPassword: _confirm.text,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đặt lại mật khẩu thành công.')),
+      );
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return OwnerSheetFrame(
+      title: 'Đặt lại bằng mã',
+      subtitle: 'Dán token hoặc toàn bộ link nhận được trong email.',
+      icon: Icons.password_rounded,
+      error: _error,
+      children: [
+        SheetTextField(
+          controller: _token,
+          label: 'Token hoặc link reset',
+          icon: Icons.link_rounded,
+          maxLines: 2,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _password,
+          label: 'Mật khẩu mới',
+          icon: Icons.lock_rounded,
+          obscureText: true,
+        ),
+        const SizedBox(height: 12),
+        SheetTextField(
+          controller: _confirm,
+          label: 'Xác nhận mật khẩu',
+          icon: Icons.lock_outline_rounded,
+          obscureText: true,
+        ),
+        const SizedBox(height: 18),
+        PrimaryButton(
+          label: _saving ? 'Đang lưu...' : 'Đặt lại mật khẩu',
+          icon: Icons.save_rounded,
+          onTap: _saving ? null : _submit,
+        ),
+      ],
+    );
+  }
+}
+
+class _ResetPasswordPageState extends State<ResetPasswordPage> {
+  final _password = TextEditingController();
+  final _confirm = TextEditingController();
+  bool _saving = false;
+  bool _obscure = true;
+  String? _error;
+
+  @override
+  void dispose() {
+    _password.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_password.text.length < 6) {
+      setState(() => _error = 'Mật khẩu cần ít nhất 6 ký tự.');
+      return;
+    }
+    if (_password.text != _confirm.text) {
+      setState(() => _error = 'Mật khẩu xác nhận không khớp.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.resetPassword(
+        token: widget.token,
+        newPassword: _password.text,
+        confirmPassword: _confirm.text,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đặt lại mật khẩu thành công.')),
+      );
+      widget.onCompleted();
+    } catch (error) {
+      if (mounted) {
+        setState(
+          () => _error =
+              'Link có thể đã hết hạn hoặc không hợp lệ. ${error.toString()}',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: DecoratedGradient(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(22),
+            children: [
+              const SizedBox(height: 50),
+              SurfaceCard(
+                radius: 30,
+                child: Column(
+                  children: [
+                    const IconBubble(icon: Icons.lock_reset_rounded),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Đặt lại mật khẩu',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tạo mật khẩu mới cho tài khoản PetOmi.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _password,
+                      obscureText: _obscure,
+                      decoration: InputDecoration(
+                        labelText: 'Mật khẩu mới',
+                        prefixIcon: const Icon(Icons.lock_rounded),
+                        suffixIcon: IconButton(
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_rounded
+                                : Icons.visibility_off_rounded,
+                          ),
+                        ),
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _confirm,
+                      obscureText: _obscure,
+                      decoration: const InputDecoration(
+                        labelText: 'Xác nhận mật khẩu',
+                        prefixIcon: Icon(Icons.lock_outline_rounded),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      ErrorBanner(message: _error!),
+                    ],
+                    const SizedBox(height: 18),
+                    PrimaryButton(
+                      label: _saving ? 'Đang lưu...' : 'Đặt lại mật khẩu',
+                      icon: Icons.save_rounded,
+                      onTap: _saving ? null : _submit,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class CompleteProfilePage extends StatefulWidget {
+  const CompleteProfilePage({
+    required this.repository,
+    required this.onCompleted,
+    required this.onLogout,
+    super.key,
+  });
+
+  final OwnerRepository repository;
+  final Future<void> Function() onCompleted;
+  final Future<void> Function() onLogout;
+
+  @override
+  State<CompleteProfilePage> createState() => _CompleteProfilePageState();
+}
+
+class _CompleteProfilePageState extends State<CompleteProfilePage> {
+  final _name = TextEditingController();
+  final _phone = TextEditingController();
+  final _address = TextEditingController();
+  String _gender = 'Other';
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _phone.dispose();
+    _address.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_name.text.trim().isEmpty) {
+      setState(() => _error = 'Nhập họ tên để tiếp tục.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.repository.completeProfile(
+        fullName: _name.text.trim(),
+        phone: optionalInput(_phone),
+        gender: _gender,
+        address: optionalInput(_address),
+      );
+      await widget.onCompleted();
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: DecoratedGradient(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(22),
+            children: [
+              PageHeader(
+                eyebrow: 'Bước cuối',
+                title: 'Hoàn thiện hồ sơ',
+                subtitle: 'Thông tin này được dùng cho lịch hẹn và liên hệ.',
+                trailingIcon: Icons.logout_rounded,
+                trailingLabel: 'Đăng xuất',
+                onAction: widget.onLogout,
+              ),
+              const SizedBox(height: 16),
+              SurfaceCard(
+                child: Column(
+                  children: [
+                    SheetTextField(
+                      controller: _name,
+                      label: 'Họ tên',
+                      icon: Icons.person_rounded,
+                    ),
+                    const SizedBox(height: 12),
+                    SheetTextField(
+                      controller: _phone,
+                      label: 'Số điện thoại',
+                      icon: Icons.phone_rounded,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 12),
+                    SheetChoiceField(
+                      label: 'Giới tính',
+                      icon: Icons.transgender_rounded,
+                      value: _gender,
+                      options: const [
+                        ('Other', 'Khác'),
+                        ('Male', 'Nam'),
+                        ('Female', 'Nữ'),
+                      ],
+                      onChanged: _saving
+                          ? null
+                          : (v) => setState(() => _gender = v),
+                    ),
+                    const SizedBox(height: 12),
+                    SheetTextField(
+                      controller: _address,
+                      label: 'Địa chỉ',
+                      icon: Icons.location_on_rounded,
+                      maxLines: 2,
+                    ),
+                    if (_error != null) ...[
+                      const SizedBox(height: 12),
+                      ErrorBanner(message: _error!),
+                    ],
+                    const SizedBox(height: 18),
+                    PrimaryButton(
+                      label: _saving ? 'Đang lưu...' : 'Hoàn tất và tiếp tục',
+                      icon: Icons.check_circle_rounded,
+                      onTap: _saving ? null : _submit,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class ApiErrorPage extends StatelessWidget {
   const ApiErrorPage({
     required this.error,
@@ -839,11 +1382,7 @@ class _OwnerShellState extends State<OwnerShell> {
       icon: Icons.event_available_rounded,
       page: AppointmentsPage(),
     ),
-    OwnerTab(
-      label: 'Trợ lý',
-      icon: Icons.smart_toy_rounded,
-      page: ChatPage(),
-    ),
+    OwnerTab(label: 'Trợ lý', icon: Icons.smart_toy_rounded, page: ChatPage()),
     OwnerTab(
       label: 'Nhắc nhở',
       icon: Icons.notifications_active_rounded,
@@ -1050,7 +1589,8 @@ class _PetsPageState extends State<PetsPage> {
           EmptyOwnerState(
             icon: Icons.filter_alt_off_rounded,
             title: 'Không có thú cưng phù hợp',
-            message: 'Không có thú cưng nào khớp bộ lọc "${_filters[_filterIndex]}".',
+            message:
+                'Không có thú cưng nào khớp bộ lọc "${_filters[_filterIndex]}".',
             compact: true,
           )
         else
@@ -1218,6 +1758,22 @@ class _RemindersPageState extends State<RemindersPage> {
           trailingLabel: 'Thêm',
           onAction: () => showCreateReminderSheet(context),
         ),
+        const SizedBox(height: 14),
+        SurfaceCard(
+          child: ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const IconBubble(icon: Icons.tune_rounded),
+            title: Text(
+              'Cài đặt nhắc nhở',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            subtitle: const Text(
+              'Chọn loại thông báo, thời gian báo trước và kênh nhận.',
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () => openReminderPreferencesPage(context),
+          ),
+        ),
         if (_error != null) ...[
           const SizedBox(height: 12),
           ErrorBanner(message: _error!),
@@ -1314,6 +1870,8 @@ class ProfilePage extends StatelessWidget {
             ],
           ),
         ),
+        const SizedBox(height: 14),
+        const OwnerFeatureMenu(),
         const SizedBox(height: 14),
         PrimaryButton(
           label: 'Đăng xuất',
@@ -1414,6 +1972,10 @@ class OwnerHeader extends StatelessWidget {
               ],
             ),
           ),
+          NotificationBellButton(
+            center: OwnerScope.of(context).notificationCenter,
+          ),
+          const SizedBox(width: 4),
           IconButton.filledTonal(
             style: IconButton.styleFrom(
               backgroundColor: AppColors.surfaceMuted,
@@ -1424,6 +1986,63 @@ class OwnerHeader extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class NotificationBellButton extends StatelessWidget {
+  const NotificationBellButton({required this.center, super.key});
+
+  final OwnerNotificationCenter center;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: center,
+      builder: (context, _) {
+        final unread = center.unreadCount;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton.filledTonal(
+              key: const ValueKey('owner_notifications'),
+              style: IconButton.styleFrom(
+                backgroundColor: AppColors.primarySoft,
+                foregroundColor: AppColors.primaryHover,
+              ),
+              tooltip: 'Thông báo',
+              onPressed: () => openNotificationsPage(context),
+              icon: const Icon(Icons.notifications_rounded),
+            ),
+            if (unread > 0)
+              Positioned(
+                right: -2,
+                top: -4,
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minWidth: 20,
+                    minHeight: 20,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger,
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: AppColors.surface, width: 2),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    unread > 99 ? '99+' : '$unread',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1685,6 +2304,30 @@ class QuickActions extends StatelessWidget {
                 title: 'Sửa hồ sơ',
                 subtitle: 'Cập nhật thông tin cá nhân của bạn.',
                 onTap: () => showEditProfileSheet(context),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: QuickActionCard(
+                key: const ValueKey('quick_owner_history'),
+                icon: Icons.history_rounded,
+                title: 'Lịch sử khám',
+                subtitle: 'Xem lại các lần khám và hoạt động y tế.',
+                onTap: () => openOwnerHistoryPage(context),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: QuickActionCard(
+                key: const ValueKey('quick_owner_sharing'),
+                icon: Icons.link_rounded,
+                title: 'Chia sẻ',
+                subtitle: 'Quản lý người thân và mã hồ sơ sức khỏe.',
+                onTap: () => openOwnerSharingPage(context),
               ),
             ),
           ],
@@ -2095,29 +2738,26 @@ class PetCard extends StatelessWidget {
               ],
             ),
             if (detailed) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: PetStat(label: 'Tuổi', value: pet.ageLabel),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: PetStat(
-                    label: 'Màu',
-                    value: pet.color ?? 'Chưa cập nhật',
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: PetStat(label: 'Tuổi', value: pet.ageLabel),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: PetStat(
-                    label: 'Giới tính',
-                    value: pet.genderLabel,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PetStat(
+                      label: 'Màu',
+                      value: pet.color ?? 'Chưa cập nhật',
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PetStat(label: 'Giới tính', value: pet.genderLabel),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -2677,11 +3317,11 @@ Future<void> showEditProfileSheet(BuildContext context) {
   );
 }
 
-Future<void> showCreateReminderSheet(BuildContext context) {
+Future<void> showCreateReminderSheet(BuildContext context, {String? petId}) {
   final scope = OwnerScope.of(context);
   return showOwnerActionSheet(
     context: context,
-    child: CreateReminderSheet(scope: scope),
+    child: CreateReminderSheet(scope: scope, initialPetId: petId),
   );
 }
 
@@ -2872,6 +3512,7 @@ class SheetTextField extends StatelessWidget {
     this.keyboardType,
     this.textInputAction,
     this.maxLines = 1,
+    this.obscureText = false,
     super.key,
   });
 
@@ -2881,6 +3522,7 @@ class SheetTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final int maxLines;
+  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
@@ -2889,6 +3531,7 @@ class SheetTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textInputAction: textInputAction,
       maxLines: maxLines,
+      obscureText: obscureText,
       decoration: sheetInputDecoration(label: label, icon: icon),
     );
   }
@@ -3030,6 +3673,9 @@ class _CreatePetSheetState extends State<CreatePetSheet> {
 
   String _species = 'Dog';
   String _gender = 'Unknown';
+  String _neutered = 'Unknown';
+  DateTime? _birthDate;
+  bool _estimated = false;
   String? _error;
   bool _saving = false;
 
@@ -3061,6 +3707,9 @@ class _CreatePetSheetState extends State<CreatePetSheet> {
         breed: optionalInput(_breedController),
         gender: _gender,
         color: optionalInput(_colorController),
+        isNeutered: _neutered,
+        dateOfBirth: _birthDate,
+        isBirthDateEstimated: _estimated,
       );
       if (!mounted) return;
       widget.scope.onRefresh();
@@ -3114,6 +3763,20 @@ class _CreatePetSheetState extends State<CreatePetSheet> {
               : (value) => setState(() => _gender = value),
         ),
         const SizedBox(height: 12),
+        SheetChoiceField(
+          label: 'Triệt sản',
+          icon: Icons.health_and_safety_rounded,
+          value: _neutered,
+          options: const [
+            ('Unknown', 'Không rõ'),
+            ('Yes', 'Đã triệt sản'),
+            ('No', 'Chưa triệt sản'),
+          ],
+          onChanged: _saving
+              ? null
+              : (value) => setState(() => _neutered = value),
+        ),
+        const SizedBox(height: 12),
         SheetTextField(
           controller: _breedController,
           label: 'Giống (tuỳ chọn)',
@@ -3125,6 +3788,30 @@ class _CreatePetSheetState extends State<CreatePetSheet> {
           controller: _colorController,
           label: 'Màu lông / đặc điểm',
           icon: Icons.palette_rounded,
+        ),
+        const SizedBox(height: 12),
+        SoftButton(
+          label: _birthDate == null
+              ? 'Chọn ngày sinh'
+              : 'Ngày sinh ${formatDateOnly(_birthDate!)}',
+          icon: Icons.cake_rounded,
+          onTap: _saving
+              ? null
+              : () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: _birthDate ?? DateTime.now(),
+                    firstDate: DateTime(1990),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) setState(() => _birthDate = date);
+                },
+        ),
+        SwitchListTile.adaptive(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Ngày sinh ước tính'),
+          value: _estimated,
+          onChanged: _saving ? null : (v) => setState(() => _estimated = v),
         ),
         const SizedBox(height: 20),
         PrimaryButton(
@@ -3236,11 +3923,7 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
           label: 'Giới tính',
           icon: Icons.transgender_rounded,
           value: _gender,
-          options: const [
-            ('Other', 'Khác'),
-            ('Male', 'Nam'),
-            ('Female', 'Nữ'),
-          ],
+          options: const [('Other', 'Khác'), ('Male', 'Nam'), ('Female', 'Nữ')],
           onChanged: _saving
               ? null
               : (value) => setState(() => _gender = value),
@@ -3264,9 +3947,14 @@ class _EditProfileSheetState extends State<EditProfileSheet> {
 }
 
 class CreateReminderSheet extends StatefulWidget {
-  const CreateReminderSheet({required this.scope, super.key});
+  const CreateReminderSheet({
+    required this.scope,
+    this.initialPetId,
+    super.key,
+  });
 
   final OwnerScope scope;
+  final String? initialPetId;
 
   @override
   State<CreateReminderSheet> createState() => _CreateReminderSheetState();
@@ -3281,6 +3969,12 @@ class _CreateReminderSheetState extends State<CreateReminderSheet> {
   DateTime _remindAt = DateTime.now().add(const Duration(days: 1));
   String? _error;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _petId = widget.initialPetId ?? '';
+  }
 
   @override
   void dispose() {
@@ -3661,7 +4355,8 @@ class _BookAppointmentSheetState extends State<BookAppointmentSheet> {
           const EmptyOwnerState(
             icon: Icons.local_hospital_rounded,
             title: 'Chưa có phòng khám',
-            message: 'Hiện chưa có phòng khám nào để đặt lịch. Vui lòng thử lại sau.',
+            message:
+                'Hiện chưa có phòng khám nào để đặt lịch. Vui lòng thử lại sau.',
             compact: true,
           )
         else ...[

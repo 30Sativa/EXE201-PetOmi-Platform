@@ -18,8 +18,10 @@ class _ChatPageState extends State<ChatPage> {
   final _scrollController = ScrollController();
 
   String? _conversationId;
+  String? _pendingMessageId;
   String? _petId;
   List<ChatMessage> _messages = const [];
+  List<ChatConversation> _conversations = const [];
   ChatSubscriptionStatus? _subscription;
 
   bool _sending = false;
@@ -34,6 +36,7 @@ class _ChatPageState extends State<ChatPage> {
       final pets = OwnerScope.of(context).data.pets;
       if (pets.length == 1) _petId = pets.first.petId;
       _loadSubscription();
+      _loadConversations();
     });
   }
 
@@ -53,6 +56,28 @@ class _ChatPageState extends State<ChatPage> {
       if (mounted) setState(() => _subscription = status);
     } catch (_) {
       // Không chặn chat nếu không lấy được trạng thái gói.
+    }
+  }
+
+  Future<void> _loadConversations() async {
+    try {
+      final repository = OwnerScope.of(context).repository;
+      final results = await Future.wait<dynamic>([
+        repository.getChatConversations(),
+        repository.getSavedChatConversationId(),
+      ]);
+      final conversations = results[0] as List<ChatConversation>;
+      final savedId = results[1] as String?;
+      if (!mounted) return;
+      setState(() => _conversations = conversations);
+      if (_conversationId == null && savedId != null) {
+        final matches = conversations.where(
+          (item) => item.conversationId == savedId,
+        );
+        if (matches.isNotEmpty) await _selectConversation(matches.first);
+      }
+    } catch (_) {
+      // Chat mới vẫn hoạt động nếu lịch sử tạm thời không tải được.
     }
   }
 
@@ -99,6 +124,8 @@ class _ChatPageState extends State<ChatPage> {
         petId: _petId,
       );
       _conversationId = result.conversationId;
+      _pendingMessageId = result.messageId;
+      await repo.saveChatConversationId(result.conversationId);
       if (mounted) {
         setState(() {
           _sending = false;
@@ -138,26 +165,180 @@ class _ChatPageState extends State<ChatPage> {
         _scrollToBottom();
         if (hasReadyAi || attempts >= 30) {
           timer.cancel();
-          setState(() => _waitingAi = false);
+          setState(() {
+            _waitingAi = false;
+            _pendingMessageId = null;
+          });
           _loadSubscription();
+          _loadConversations();
         }
       } catch (_) {
         if (attempts >= 30) {
           timer.cancel();
-          if (mounted) setState(() => _waitingAi = false);
+          if (mounted) {
+            setState(() {
+              _waitingAi = false;
+              _pendingMessageId = null;
+            });
+          }
         }
       }
     });
   }
 
   void _openPlans() {
-    final status = _subscription;
-    if (status == null) return;
-    showChatPlansSheet(
+    openAiPlanPage(context);
+  }
+
+  Future<void> _cancelPending() async {
+    final messageId = _pendingMessageId;
+    if (messageId == null) return;
+    try {
+      await OwnerScope.of(context).repository.cancelChatMessage(messageId);
+      _pollTimer?.cancel();
+      if (mounted) {
+        setState(() {
+          _waitingAi = false;
+          _pendingMessageId = null;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã hủy yêu cầu AI đang xử lý.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    }
+  }
+
+  Future<void> _selectConversation(ChatConversation conversation) async {
+    final repository = OwnerScope.of(context).repository;
+    setState(() {
+      _conversationId = conversation.conversationId;
+      _petId = conversation.petId;
+      _messages = const [];
+      _error = null;
+    });
+    await repository.saveChatConversationId(conversation.conversationId);
+    try {
+      final messages = await repository.getConversationMessages(
+        conversation.conversationId,
+      );
+      if (mounted) {
+        setState(() => _messages = messages);
+        _scrollToBottom();
+        _loadSubscription();
+      }
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    }
+  }
+
+  void _newConversation() {
+    _pollTimer?.cancel();
+    setState(() {
+      _conversationId = null;
+      _pendingMessageId = null;
+      _messages = const [];
+      _waitingAi = false;
+      _error = null;
+    });
+    OwnerScope.of(context).repository.saveChatConversationId(null);
+  }
+
+  Future<void> _openHistory() async {
+    await _loadConversations();
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
       context: context,
-      status: status,
-      petId: _petId,
-      onChanged: _loadSubscription,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.45,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (_, controller) => Container(
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Lịch sử trò chuyện',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Cuộc trò chuyện mới',
+                      onPressed: () {
+                        Navigator.of(sheetContext).pop();
+                        _newConversation();
+                      },
+                      icon: const Icon(Icons.add_comment_rounded),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _conversations.isEmpty
+                    ? const EmptyOwnerState(
+                        icon: Icons.forum_outlined,
+                        title: 'Chưa có cuộc trò chuyện',
+                        message: 'Bắt đầu hỏi AI để tạo lịch sử đầu tiên.',
+                      )
+                    : ListView.separated(
+                        controller: controller,
+                        padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
+                        itemCount: _conversations.length,
+                        separatorBuilder: (_, _) =>
+                            const Divider(color: AppColors.border),
+                        itemBuilder: (_, index) {
+                          final item = _conversations[index];
+                          final petName = item.petId == null
+                              ? 'Hỏi chung'
+                              : petNameFor(
+                                  OwnerScope.of(context).data,
+                                  item.petId!,
+                                );
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const IconBubble(
+                              icon: Icons.chat_bubble_rounded,
+                            ),
+                            title: Text(
+                              item.title?.trim().isNotEmpty == true
+                                  ? item.title!
+                                  : 'Cuộc trò chuyện',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '$petName • ${formatDateTime(DateTime.tryParse(item.updatedAt ?? item.createdAt ?? ''))}',
+                            ),
+                            trailing: item.conversationId == _conversationId
+                                ? const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: AppColors.success,
+                                  )
+                                : const Icon(Icons.chevron_right_rounded),
+                            onTap: () {
+                              Navigator.of(sheetContext).pop();
+                              _selectConversation(item);
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -220,18 +401,26 @@ class _ChatPageState extends State<ChatPage> {
                         : 'Gói ${sub.currentPlanName} • còn ${sub.remainingMessages} tin nhắn',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                   ),
                 ],
               ),
+            ),
+            IconButton(
+              tooltip: 'Lịch sử trò chuyện',
+              onPressed: _openHistory,
+              icon: const Icon(Icons.history_rounded),
             ),
             FilledButton.tonalIcon(
               style: FilledButton.styleFrom(
                 backgroundColor: AppColors.primarySoft,
                 foregroundColor: AppColors.primaryHover,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -386,16 +575,24 @@ class _ChatPageState extends State<ChatPage> {
                 ),
                 const SizedBox(width: 8),
                 _sending || _waitingAi
-                    ? const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
-                        ),
+                    ? IconButton(
+                        tooltip: _waitingAi ? 'Hủy xử lý' : 'Đang gửi',
+                        onPressed: _waitingAi && _pendingMessageId != null
+                            ? _cancelPending
+                            : null,
+                        icon: _waitingAi
+                            ? const Icon(
+                                Icons.stop_circle_rounded,
+                                color: AppColors.danger,
+                              )
+                            : const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primary,
+                                ),
+                              ),
                       )
                     : IconButton.filled(
                         style: IconButton.styleFrom(
@@ -429,10 +626,7 @@ class _ChatBubble extends StatelessWidget {
             : MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (isAi) ...[
-            const _Avatar(isAi: true),
-            const SizedBox(width: 8),
-          ],
+          if (isAi) ...[const _Avatar(isAi: true), const SizedBox(width: 8)],
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -529,7 +723,9 @@ class _ChatPlansSheet extends StatefulWidget {
 class _ChatPlansSheetState extends State<_ChatPlansSheet> {
   String? _petId;
   ChatPayment? _payment;
+  Timer? _paymentTimer;
   bool _loading = false;
+  bool _checkingPayment = false;
   String? _error;
 
   @override
@@ -538,6 +734,12 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
     _petId =
         widget.initialPetId ??
         (widget.pets.isEmpty ? null : widget.pets.first.petId);
+  }
+
+  @override
+  void dispose() {
+    _paymentTimer?.cancel();
+    super.dispose();
   }
 
   String _formatMoney(double value) {
@@ -565,7 +767,11 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
         planCode: plan.code,
         petId: petId,
       );
-      if (mounted) setState(() => _payment = payment as ChatPayment);
+      if (mounted) {
+        final typedPayment = payment as ChatPayment;
+        setState(() => _payment = typedPayment);
+        _startPaymentPolling(typedPayment);
+      }
       await widget.onChanged();
     } catch (error) {
       if (mounted) {
@@ -575,6 +781,42 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
       }
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _startPaymentPolling(ChatPayment payment) {
+    _paymentTimer?.cancel();
+    if (!payment.isPending) return;
+    _paymentTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _refreshPayment(showError: false);
+    });
+  }
+
+  Future<void> _refreshPayment({bool showError = true}) async {
+    final payment = _payment;
+    if (payment == null || _checkingPayment) return;
+    setState(() {
+      _checkingPayment = true;
+      if (showError) _error = null;
+    });
+    try {
+      final updated = await widget.repository.getChatPaymentStatus(
+        payment.paymentId,
+      );
+      if (!mounted) return;
+      setState(() => _payment = updated as ChatPayment);
+      if (!updated.isPending) {
+        _paymentTimer?.cancel();
+        await widget.onChanged();
+      }
+    } catch (error) {
+      if (mounted && showError) {
+        setState(
+          () => _error = error.toString().replaceFirst('Exception: ', ''),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _checkingPayment = false);
     }
   }
 
@@ -610,9 +852,9 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
                     const SizedBox(height: 4),
                     Text(
                       'Đã dùng ${status.usedMessages}/${status.monthlyMessageQuota} tin nhắn tháng này',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 12,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                     ),
                   ],
                 ),
@@ -692,7 +934,8 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
           const SizedBox(height: 10),
           _PlanFeature(text: '${plan.monthlyMessageQuota} tin nhắn / tháng'),
           _PlanFeature(
-            text: 'Tư vấn chuyên sâu (RAG): ${plan.deepRagEnabled ? "Có" : "Không"}',
+            text:
+                'Tư vấn chuyên sâu (RAG): ${plan.deepRagEnabled ? "Có" : "Không"}',
           ),
           _PlanFeature(
             text: 'Gửi ảnh: ${plan.imageUploadEnabled ? "Có" : "Không"}',
@@ -714,10 +957,25 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
   }
 
   Widget _buildPayment(ChatPayment payment) {
+    final statusColor = payment.isPaid
+        ? AppColors.success
+        : payment.isPending
+        ? AppColors.warning
+        : AppColors.danger;
+    final statusBackground = payment.isPaid
+        ? AppColors.successSoft
+        : payment.isPending
+        ? AppColors.warningSoft
+        : AppColors.dangerSoft;
     return OwnerSheetFrame(
       title: 'Thanh toán ${payment.planName}',
-      subtitle: 'Quét mã QR để hoàn tất nâng cấp gói.',
+      subtitle: payment.isPending
+          ? 'Quét mã QR để hoàn tất nâng cấp gói. Trạng thái được tự động cập nhật.'
+          : payment.isPaid
+          ? 'Thanh toán đã hoàn tất và gói đang được cập nhật.'
+          : 'Yêu cầu thanh toán không còn hiệu lực.',
       icon: Icons.qr_code_rounded,
+      error: _error,
       children: [
         Center(
           child: Text(
@@ -754,19 +1012,45 @@ class _ChatPlansSheetState extends State<_ChatPlansSheet> {
               if (payment.bankAccountNo != null)
                 InfoRow(label: 'Số tài khoản', value: payment.bankAccountNo!),
               if (payment.paymentReference != null)
-                InfoRow(
-                  label: 'Nội dung',
-                  value: payment.paymentReference!,
-                ),
+                InfoRow(label: 'Nội dung', value: payment.paymentReference!),
               InfoRow(label: 'Trạng thái', value: payment.status),
+              if (payment.expiresAt != null)
+                InfoRow(
+                  label: 'Hết hạn',
+                  value: formatDateTime(DateTime.tryParse(payment.expiresAt!)),
+                ),
             ],
           ),
         ),
         const SizedBox(height: 16),
+        Center(
+          child: StatusChip(
+            label: payment.isPaid
+                ? 'Đã thanh toán'
+                : payment.isPending
+                ? 'Đang chờ thanh toán'
+                : payment.isExpired
+                ? 'Đã hết hạn'
+                : 'Đã hủy',
+            color: statusColor,
+            background: statusBackground,
+          ),
+        ),
+        const SizedBox(height: 16),
         SoftButton(
-          label: 'Tôi đã thanh toán xong',
-          icon: Icons.check_circle_rounded,
-          onTap: () => Navigator.of(context).pop(),
+          label: _checkingPayment
+              ? 'Đang kiểm tra...'
+              : payment.isPending
+              ? 'Kiểm tra thanh toán'
+              : 'Đóng',
+          icon: payment.isPending
+              ? Icons.refresh_rounded
+              : Icons.check_circle_rounded,
+          onTap: _checkingPayment
+              ? null
+              : payment.isPending
+              ? _refreshPayment
+              : () => Navigator.of(context).pop(),
         ),
       ],
     );
@@ -830,9 +1114,9 @@ class _TypingBubble extends StatelessWidget {
                 const SizedBox(width: 10),
                 Text(
                   'Đang soạn câu trả lời...',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 12,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                 ),
               ],
             ),

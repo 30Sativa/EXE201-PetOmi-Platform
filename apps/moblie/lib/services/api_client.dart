@@ -22,6 +22,7 @@ class TokenStore {
   static const _refreshTokenKey = 'petomi.refreshToken';
   static const _emailKey = 'petomi.email';
   static const _deviceFingerprintKey = 'petomi.deviceFingerprint';
+  static const _chatConversationKey = 'petomi.chatConversationId';
 
   Future<String?> getAccessToken() async {
     final prefs = await SharedPreferences.getInstance();
@@ -59,11 +60,26 @@ class TokenStore {
     await prefs.setString(_emailKey, email);
   }
 
+  Future<String?> getChatConversationId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_chatConversationKey);
+  }
+
+  Future<void> saveChatConversationId(String? conversationId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (conversationId == null || conversationId.isEmpty) {
+      await prefs.remove(_chatConversationKey);
+    } else {
+      await prefs.setString(_chatConversationKey, conversationId);
+    }
+  }
+
   Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_accessTokenKey);
     await prefs.remove(_refreshTokenKey);
     await prefs.remove(_emailKey);
+    await prefs.remove(_chatConversationKey);
   }
 
   Future<String> getOrCreateDeviceFingerprint() async {
@@ -151,6 +167,39 @@ class ApiClient {
 
   Future<void> delete(String path, {bool authorized = true}) async {
     await _sendWithRefresh('DELETE', path, authorized: authorized);
+  }
+
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    required String filePath,
+    required Map<String, String> fields,
+    bool retrying = false,
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse('$_baseUrl$path'));
+    request.headers['Accept'] = 'application/json';
+    final token = await _tokenStore.getAccessToken();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.fields.addAll(fields);
+    request.files.add(await http.MultipartFile.fromPath('file', filePath));
+    final streamed = await _httpClient.send(request);
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode == 401 && !retrying && await _refreshToken()) {
+      return postMultipart(
+        path,
+        filePath: filePath,
+        fields: fields,
+        retrying: true,
+      );
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw ApiException(
+        _extractError(response),
+        statusCode: response.statusCode,
+      );
+    }
+    return _decodeMap(response);
   }
 
   Future<http.Response> _sendWithRefresh(

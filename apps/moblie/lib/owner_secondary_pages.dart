@@ -108,7 +108,7 @@ class OwnerFeatureMenu extends StatelessWidget {
           _OwnerMenuTile(
             icon: Icons.star_rounded,
             title: 'Đánh giá phòng khám',
-            subtitle: 'Đang phát triển',
+            subtitle: 'Sẵn sàng khi API review được deploy',
             onTap: () => openReviewsPage(context),
             showDivider: false,
           ),
@@ -1755,78 +1755,568 @@ class _OwnerNotificationCard extends StatelessWidget {
   }
 }
 
-class OwnerReviewsPage extends StatelessWidget {
+class OwnerReviewsPage extends StatefulWidget {
   const OwnerReviewsPage({super.key});
 
   @override
+  State<OwnerReviewsPage> createState() => _OwnerReviewsPageState();
+}
+
+class _OwnerReviewsPageState extends State<OwnerReviewsPage> {
+  final _search = TextEditingController();
+  bool _loading = true;
+  bool _apiMissing = false;
+  Object? _error;
+  List<OwnerClinicReview> _reviews = const [];
+  List<OwnerClinic> _clinics = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+      _apiMissing = false;
+    });
+    try {
+      final repo = OwnerScope.of(context).repository;
+      final results = await Future.wait<dynamic>([
+        repo.getMyClinicReviews(),
+        repo.getPublicClinics(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        _reviews = results[0] as List<OwnerClinicReview>;
+        _clinics = results[1] as List<OwnerClinic>;
+        _loading = false;
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _apiMissing = error.statusCode == 404;
+        _error = error;
+        _loading = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error;
+        _loading = false;
+      });
+    }
+  }
+
+  List<OwnerAppointment> _eligibleAppointments(OwnerHomeData data) {
+    final reviewedClinics = _reviews.map((item) => item.clinicId).toSet();
+    return data.appointments
+        .where(
+          (item) =>
+              item.status.toLowerCase() == 'completed' &&
+              item.clinicId.isNotEmpty &&
+              !reviewedClinics.contains(item.clinicId),
+        )
+        .toList();
+  }
+
+  List<OwnerAppointment> _completedAppointments(OwnerHomeData data) {
+    return data.appointments
+        .where((item) => item.status.toLowerCase() == 'completed')
+        .toList();
+  }
+
+  List<OwnerAppointment> _filterAppointments(
+    OwnerHomeData data,
+    List<OwnerAppointment> appointments,
+  ) {
+    final query = _search.text.trim().toLowerCase();
+    if (query.isEmpty) return appointments;
+    return appointments.where((appointment) {
+      return _petName(data, appointment.petId).toLowerCase().contains(query) ||
+          _clinicName(appointment.clinicId).toLowerCase().contains(query) ||
+          appointment.appointmentType.toLowerCase().contains(query);
+    }).toList();
+  }
+
+  double? get _averageRating {
+    if (_reviews.isEmpty) return null;
+    final sum = _reviews.fold<int>(0, (total, item) => total + item.rating);
+    return (sum / _reviews.length * 10).round() / 10;
+  }
+
+  String _clinicName(String clinicId) {
+    for (final clinic in _clinics) {
+      if (clinic.clinicId == clinicId) return clinic.clinicName;
+    }
+    if (clinicId.length <= 8) return clinicId;
+    return 'Phòng khám ${clinicId.substring(0, 8)}';
+  }
+
+  String _petName(OwnerHomeData data, String petId) {
+    for (final pet in data.pets) {
+      if (pet.petId == petId) return pet.name;
+    }
+    return 'Thú cưng';
+  }
+
+  Future<void> _openReviewSheet(OwnerAppointment appointment) async {
+    final refreshHome = OwnerScope.of(context).onRefresh;
+    final changed = await showOwnerActionSheet<bool>(
+      context: context,
+      child: _CreateClinicReviewSheet(
+        appointment: appointment,
+        clinicName: _clinicName(appointment.clinicId),
+      ),
+    );
+    if (changed == true) {
+      await refreshHome();
+      await _load();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const _DevelopmentPage(
+    final data = OwnerScope.of(context).data;
+    final eligible = _eligibleAppointments(data);
+    final filteredEligible = _filterAppointments(data, eligible);
+    final completed = _completedAppointments(data);
+    final averageRating = _averageRating;
+    return _OwnerSecondaryScaffold(
       title: 'Đánh giá phòng khám',
-      icon: Icons.star_rounded,
-      description:
-          'Gửi đánh giá đang bị khóa để tránh tạo cảm giác đã lưu dữ liệu khi backend chưa hỗ trợ.',
-      dependency:
-          'Cần owner review API để kiểm tra appointment đủ điều kiện, tạo review và chống gửi trùng.',
+      child: OwnerScrollView(
+        onRefresh: _load,
+        children: [
+          PageHeader(
+            eyebrow: 'Sau buổi khám',
+            title: 'Đánh giá phòng khám',
+            subtitle:
+                'Gửi phản hồi cho phòng khám sau lịch hẹn đã hoàn thành. Mobile sẽ tự khóa khi API deploy chưa sẵn sàng.',
+            trailingIcon: Icons.refresh_rounded,
+            trailingLabel: 'Tải lại',
+            onAction: _loading ? null : _load,
+          ),
+          const SizedBox(height: 14),
+          if (_loading)
+            const SurfaceCard(child: Center(child: CircularProgressIndicator()))
+          else if (_apiMissing)
+            _ReviewApiBlockedCard(onRetry: _load)
+          else if (_error != null)
+            SurfaceCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ErrorBanner(message: _error.toString()),
+                  const SizedBox(height: 12),
+                  SoftButton(
+                    label: 'Thử lại',
+                    icon: Icons.refresh_rounded,
+                    onTap: _load,
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _ReviewMetricCard(
+                    label: 'Đã gửi',
+                    value: '${_reviews.length}',
+                    icon: Icons.rate_review_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ReviewMetricCard(
+                    label: 'Điểm TB',
+                    value: averageRating == null ? '-' : '$averageRating',
+                    icon: Icons.star_rounded,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _ReviewMetricCard(
+                    label: 'Đủ điều kiện',
+                    value: '${eligible.length}',
+                    icon: Icons.assignment_turned_in_rounded,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SurfaceCard(
+              padding: const EdgeInsets.all(14),
+              child: TextField(
+                controller: _search,
+                onChanged: (_) => setState(() {}),
+                decoration: sheetInputDecoration(
+                  label: 'Tìm theo pet, phòng khám hoặc loại lịch',
+                  icon: Icons.search_rounded,
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+            SectionCard(
+              title: '${filteredEligible.length} lượt khám có thể đánh giá',
+              subtitle:
+                  'Chỉ hiển thị lịch Completed chưa review clinic. Tổng Completed: ${completed.length}.',
+              child: filteredEligible.isEmpty
+                  ? const EmptyOwnerState(
+                      icon: Icons.rate_review_outlined,
+                      title: 'Chưa có lượt khám phù hợp',
+                      message:
+                          'Hoàn thành một lịch khám mới, chọn clinic chưa từng đánh giá hoặc đổi từ khóa tìm kiếm.',
+                      compact: true,
+                    )
+                  : Column(
+                      children: [
+                        for (
+                          var index = 0;
+                          index < filteredEligible.length;
+                          index++
+                        )
+                          _ReviewEligibleAppointmentTile(
+                            appointment: filteredEligible[index],
+                            petName: _petName(
+                              data,
+                              filteredEligible[index].petId,
+                            ),
+                            clinicName: _clinicName(
+                              filteredEligible[index].clinicId,
+                            ),
+                            onTap: () =>
+                                _openReviewSheet(filteredEligible[index]),
+                            showDivider: index != filteredEligible.length - 1,
+                          ),
+                      ],
+                    ),
+            ),
+            const SizedBox(height: 14),
+            SectionCard(
+              title: 'Đã gửi',
+              subtitle: 'Review của owner đang đăng nhập.',
+              child: _reviews.isEmpty
+                  ? const EmptyOwnerState(
+                      icon: Icons.star_border_rounded,
+                      title: 'Chưa có đánh giá',
+                      message:
+                          'Khi API review đã deploy và bạn gửi phản hồi, lịch sử sẽ xuất hiện tại đây.',
+                      compact: true,
+                    )
+                  : Column(
+                      children: [
+                        for (var index = 0; index < _reviews.length; index++)
+                          _OwnerClinicReviewTile(
+                            review: _reviews[index],
+                            clinicName: _clinicName(_reviews[index].clinicId),
+                            showDivider: index != _reviews.length - 1,
+                          ),
+                      ],
+                    ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
 
-class _DevelopmentPage extends StatelessWidget {
-  const _DevelopmentPage({
-    required this.title,
+class _ReviewMetricCard extends StatelessWidget {
+  const _ReviewMetricCard({
+    required this.label,
+    required this.value,
     required this.icon,
-    required this.description,
-    required this.dependency,
   });
 
-  final String title;
+  final String label;
+  final String value;
   final IconData icon;
-  final String description;
-  final String dependency;
 
   @override
   Widget build(BuildContext context) {
-    return _OwnerSecondaryScaffold(
-      title: title,
-      child: OwnerScrollView(
+    return SurfaceCard(
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 40),
-          SurfaceCard(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                IconBubble(
-                  icon: icon,
-                  background: AppColors.warningSoft,
-                  foreground: AppColors.warning,
-                ),
-                const SizedBox(height: 16),
-                Text(title, style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 10),
-                const StatusChip(
-                  label: 'Đang phát triển',
-                  color: AppColors.warning,
-                  background: AppColors.warningSoft,
-                ),
-                const SizedBox(height: 14),
-                Text(description, textAlign: TextAlign.center),
-                const SizedBox(height: 14),
-                Text(
-                  dependency,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 18),
-                PrimaryButton(
-                  label: 'Đang phát triển',
-                  icon: Icons.lock_clock_rounded,
-                  onTap: null,
-                ),
-              ],
+          Icon(icon, color: AppColors.primaryHover),
+          const SizedBox(height: 10),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontSize: 22, height: 1),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSubtle,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ReviewApiBlockedCard extends StatelessWidget {
+  const _ReviewApiBlockedCard({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return SurfaceCard(
+      padding: const EdgeInsets.all(22),
+      child: Column(
+        children: [
+          const IconBubble(
+            icon: Icons.lock_clock_rounded,
+            background: AppColors.warningSoft,
+            foreground: AppColors.warning,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'API review chưa deploy',
+            style: Theme.of(context).textTheme.headlineMedium,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 10),
+          const StatusChip(
+            label: 'Đang phát triển',
+            color: AppColors.warning,
+            background: AppColors.warningSoft,
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Source backend đã có ClinicReviewController, nhưng domain deploy hiện trả 404 cho /api/clinic-reviews. Mobile đã chuẩn bị UI và repository, submit sẽ tự mở khi route được deploy.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 18),
+          SoftButton(
+            label: 'Kiểm tra lại API',
+            icon: Icons.refresh_rounded,
+            onTap: onRetry,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewEligibleAppointmentTile extends StatelessWidget {
+  const _ReviewEligibleAppointmentTile({
+    required this.appointment,
+    required this.petName,
+    required this.clinicName,
+    required this.onTap,
+    required this.showDivider,
+  });
+
+  final OwnerAppointment appointment;
+  final String petName;
+  final String clinicName;
+  final VoidCallback onTap;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const IconBubble(icon: Icons.rate_review_rounded),
+          title: Text(clinicName),
+          subtitle: Text(
+            '$petName • ${formatDateOnly(appointment.date ?? DateTime.now())}',
+          ),
+          trailing: FilledButton.tonal(
+            onPressed: onTap,
+            child: const Text('Đánh giá'),
+          ),
+        ),
+        if (showDivider) const Divider(height: 1),
+      ],
+    );
+  }
+}
+
+class _OwnerClinicReviewTile extends StatelessWidget {
+  const _OwnerClinicReviewTile({
+    required this.review,
+    required this.clinicName,
+    required this.showDivider,
+  });
+
+  final OwnerClinicReview review;
+  final String clinicName;
+  final bool showDivider;
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, background) = appointmentStatusStyle(review.status);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const IconBubble(icon: Icons.star_rounded),
+          title: Text(clinicName),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 4),
+              Text(_stars(review.rating)),
+              const SizedBox(height: 4),
+              Text(review.reviewContent),
+              const SizedBox(height: 4),
+              Text(formatDateTime(review.createdDate)),
+            ],
+          ),
+          trailing: StatusChip(
+            label: review.status,
+            color: color,
+            background: background,
+          ),
+        ),
+        if (showDivider) const Divider(height: 1),
+      ],
+    );
+  }
+
+  String _stars(int rating) {
+    final safeRating = rating.clamp(1, 5);
+    return '${List.filled(safeRating, '★').join()}'
+        '${List.filled(5 - safeRating, '☆').join()}';
+  }
+}
+
+class _CreateClinicReviewSheet extends StatefulWidget {
+  const _CreateClinicReviewSheet({
+    required this.appointment,
+    required this.clinicName,
+  });
+
+  final OwnerAppointment appointment;
+  final String clinicName;
+
+  @override
+  State<_CreateClinicReviewSheet> createState() =>
+      _CreateClinicReviewSheetState();
+}
+
+class _CreateClinicReviewSheetState extends State<_CreateClinicReviewSheet> {
+  final _content = TextEditingController();
+  int _rating = 0;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _content.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final text = _content.text.trim();
+    if (_rating < 1) {
+      setState(() => _error = 'Vui lòng chọn số sao đánh giá.');
+      return;
+    }
+    if (text.isEmpty) {
+      setState(() => _error = 'Vui lòng nhập nội dung đánh giá.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await OwnerScope.of(context).repository.createClinicReview(
+        clinicId: widget.appointment.clinicId,
+        appointmentId: widget.appointment.appointmentId,
+        rating: _rating,
+        reviewContent: text,
+      );
+      if (mounted) Navigator.of(context).pop(true);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final activeLabel = const [
+      '',
+      'Tệ',
+      'Chưa tốt',
+      'Bình thường',
+      'Tốt',
+      'Tuyệt vời',
+    ][_rating];
+    return OwnerSheetFrame(
+      title: 'Gửi đánh giá',
+      subtitle: widget.clinicName,
+      icon: Icons.star_rounded,
+      error: _error,
+      children: [
+        Text('Mức hài lòng', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          children: [
+            for (var rating = 1; rating <= 5; rating++)
+              ChoiceChip(
+                selected: _rating == rating,
+                label: Text('$rating ★'),
+                onSelected: _saving
+                    ? null
+                    : (_) => setState(() => _rating = rating),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _rating == 0 ? 'Chạm để chọn sao' : activeLabel,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSubtle,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _content,
+          enabled: !_saving,
+          maxLines: 4,
+          maxLength: 1000,
+          decoration: sheetInputDecoration(
+            label: 'Nhận xét',
+            icon: Icons.notes_rounded,
+          ),
+        ),
+        const SizedBox(height: 16),
+        PrimaryButton(
+          label: _saving ? 'Đang gửi...' : 'Gửi đánh giá',
+          icon: Icons.send_rounded,
+          onTap: _saving ? null : _submit,
+        ),
+      ],
     );
   }
 }

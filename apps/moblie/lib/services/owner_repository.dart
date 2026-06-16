@@ -652,6 +652,32 @@ class OwnerRepository {
     return OwnerClinicProfile.fromJson(data);
   }
 
+  Future<List<OwnerClinicReview>> getMyClinicReviews() async {
+    final data = await _apiClient.getList('/clinic-reviews/mine');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(OwnerClinicReview.fromJson)
+        .toList();
+  }
+
+  Future<OwnerClinicReview> createClinicReview({
+    required String clinicId,
+    String? appointmentId,
+    required int rating,
+    required String reviewContent,
+  }) async {
+    final data = await _apiClient.postMap(
+      '/clinic-reviews',
+      body: {
+        'clinicId': clinicId,
+        'appointmentId': appointmentId,
+        'rating': rating,
+        'reviewContent': reviewContent,
+      },
+    );
+    return OwnerClinicReview.fromJson(data);
+  }
+
   Future<List<OwnerDoctor>> getClinicDoctors(String clinicId) async {
     final data = await _apiClient.getList(
       _pathWithQuery('/appointments/owner/doctors', {'clinicId': clinicId}),

@@ -1004,6 +1004,46 @@ class ChatPayment {
   bool get isCancelled => status.toLowerCase() == 'cancelled';
 }
 
+class OwnerClinicReview {
+  const OwnerClinicReview({
+    required this.reviewId,
+    required this.clinicId,
+    required this.ownerUserId,
+    required this.appointmentId,
+    required this.rating,
+    required this.reviewContent,
+    required this.status,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory OwnerClinicReview.fromJson(Map<String, dynamic> json) {
+    return OwnerClinicReview(
+      reviewId: json.stringValue('reviewId'),
+      clinicId: json.stringValue('clinicId'),
+      ownerUserId: json.stringValue('ownerUserId'),
+      appointmentId: json.nullableString('appointmentId'),
+      rating: json.intValue('rating'),
+      reviewContent: json.stringValue('reviewContent'),
+      status: json.stringValue('status', fallback: 'Pending'),
+      createdAt: json.stringValue('createdAt'),
+      updatedAt: json.nullableString('updatedAt'),
+    );
+  }
+
+  final String reviewId;
+  final String clinicId;
+  final String ownerUserId;
+  final String? appointmentId;
+  final int rating;
+  final String reviewContent;
+  final String status;
+  final String createdAt;
+  final String? updatedAt;
+
+  DateTime? get createdDate => DateTime.tryParse(createdAt);
+}
+
 extension JsonMapReader on Map<String, dynamic> {
   String stringValue(String key, {String fallback = ''}) {
     final value = this[key];

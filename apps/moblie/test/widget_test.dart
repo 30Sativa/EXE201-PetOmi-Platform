@@ -28,6 +28,25 @@ void main() {
     center.dispose();
   });
 
+  test('clinic review model parses backend contract', () {
+    final review = OwnerClinicReview.fromJson(const {
+      'reviewId': 'review-1',
+      'clinicId': 'clinic-1',
+      'ownerUserId': 'owner-1',
+      'appointmentId': 'appointment-1',
+      'rating': 5,
+      'reviewContent': 'Dịch vụ tốt',
+      'status': 'Pending',
+      'createdAt': '2026-06-16T10:00:00Z',
+      'updatedAt': null,
+    });
+
+    expect(review.clinicId, 'clinic-1');
+    expect(review.rating, 5);
+    expect(review.appointmentId, 'appointment-1');
+    expect(review.createdDate, isNotNull);
+  });
+
   testWidgets('renders owner login gate when no token is stored', (
     tester,
   ) async {

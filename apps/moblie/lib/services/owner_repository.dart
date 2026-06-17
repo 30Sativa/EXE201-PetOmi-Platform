@@ -1,5 +1,6 @@
 import '../models/owner_models.dart';
 import 'api_client.dart';
+import 'notification_center.dart';
 
 class OwnerRepository {
   OwnerRepository({ApiClient? apiClient})
@@ -8,6 +9,13 @@ class OwnerRepository {
   final ApiClient _apiClient;
 
   ApiClient get apiClient => _apiClient;
+
+  OwnerNotificationCenter createNotificationCenter() {
+    return OwnerNotificationCenter(
+      tokenStore: _apiClient.tokenStore,
+      apiBaseUrl: _apiClient.baseUrl,
+    );
+  }
 
   Future<LoginSession> login({
     required String email,
@@ -45,6 +53,56 @@ class OwnerRepository {
         'password': password,
         'confirmPassword': confirmPassword,
       },
+    );
+  }
+
+  Future<void> forgotPassword(String email) async {
+    await _apiClient.postMap(
+      '/auth/forgot-password',
+      authorized: false,
+      body: {'email': email},
+    );
+  }
+
+  Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    await _apiClient.postMap(
+      '/auth/reset-password',
+      authorized: false,
+      body: {
+        'token': token,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      },
+    );
+  }
+
+  Future<bool> isProfileCompleted() async {
+    final data = await _apiClient.getMap('/auth/me');
+    return data.boolValue('isProfileCompleted');
+  }
+
+  Future<OwnerProfile> completeProfile({
+    required String fullName,
+    String? phone,
+    String? gender,
+    String? address,
+  }) async {
+    final data = await _apiClient.postMap(
+      '/profile/complete',
+      body: {
+        'fullName': fullName,
+        'phone': phone,
+        'gender': gender,
+        'address': address,
+      },
+    );
+    final profile = data['profile'];
+    return OwnerProfile.fromJson(
+      profile is Map<String, dynamic> ? profile : data,
     );
   }
 
@@ -99,6 +157,7 @@ class OwnerRepository {
       getPets(),
       getOwnerAppointments(),
       getReminders(),
+      isProfileCompleted(),
     ]);
     return OwnerHomeData(
       profile: results[0] as OwnerProfile?,
@@ -106,13 +165,19 @@ class OwnerRepository {
       pets: results[1] as List<OwnerPet>,
       appointments: results[2] as List<OwnerAppointment>,
       reminders: results[3] as List<OwnerReminder>,
+      isProfileCompleted: results[4] as bool,
     );
   }
 
   Future<OwnerProfile?> getProfile() async {
-    final data = await _apiClient.getMap('/profile');
-    if (data.isEmpty) return null;
-    return OwnerProfile.fromJson(data);
+    try {
+      final data = await _apiClient.getMap('/profile');
+      if (data.isEmpty) return null;
+      return OwnerProfile.fromJson(data);
+    } on ApiException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   Future<List<OwnerPet>> getPets() async {
@@ -154,6 +219,33 @@ class OwnerRepository {
     await _apiClient.delete('/pets/$petId');
   }
 
+  Future<OwnerPet> updatePet({
+    required String petId,
+    required String name,
+    required String species,
+    String? breed,
+    String? gender,
+    String? isNeutered,
+    DateTime? dateOfBirth,
+    bool? isBirthDateEstimated,
+    String? color,
+  }) async {
+    final data = await _apiClient.putMap(
+      '/pets/$petId',
+      body: {
+        'name': name,
+        'species': species,
+        'breed': breed,
+        'gender': gender,
+        'isNeutered': isNeutered,
+        'dateOfBirth': dateOfBirth == null ? null : _dateOnly(dateOfBirth),
+        'isBirthDateEstimated': isBirthDateEstimated,
+        'color': color,
+      },
+    );
+    return OwnerPet.fromJson(data);
+  }
+
   Future<PetHealthProfile?> getPetHealthProfile(String petId) async {
     try {
       final data = await _apiClient.getMap('/pets/$petId/health-profile');
@@ -174,6 +266,30 @@ class OwnerRepository {
         .toList();
   }
 
+  Future<PetHealthProfile> savePetHealthProfile({
+    required String petId,
+    required bool create,
+    double? currentWeightKg,
+    String? color,
+    String? isNeutered,
+    String? allergies,
+    String? chronicConditions,
+    String? microchipNumber,
+  }) async {
+    final body = {
+      'currentWeightKg': currentWeightKg,
+      'color': color,
+      'isNeutered': isNeutered,
+      'allergies': allergies,
+      'chronicConditions': chronicConditions,
+      'microchipNumber': microchipNumber,
+    };
+    final data = create
+        ? await _apiClient.postMap('/pets/$petId/health-profile', body: body)
+        : await _apiClient.putMap('/pets/$petId/health-profile', body: body);
+    return PetHealthProfile.fromJson(data);
+  }
+
   Future<PetWeightLog> createWeightLog({
     required String petId,
     required double weightKg,
@@ -192,12 +308,61 @@ class OwnerRepository {
     return PetWeightLog.fromJson(data);
   }
 
+  Future<void> deleteWeightLog({
+    required String petId,
+    required String weightLogId,
+  }) async {
+    await _apiClient.delete('/pets/$petId/weight-logs/$weightLogId');
+  }
+
   Future<List<PetMedicalRecord>> getPetMedicalRecords(String petId) async {
     final data = await _apiClient.getList('/pets/$petId/medical-records');
     return data
         .whereType<Map<String, dynamic>>()
         .map(PetMedicalRecord.fromJson)
         .toList();
+  }
+
+  Future<PetMedicalRecord> saveMedicalRecord({
+    required String petId,
+    String? medicalRecordId,
+    required String recordType,
+    required String title,
+    required DateTime recordDate,
+    String? description,
+    String? vetName,
+    String? clinicName,
+    String? medicationName,
+    String? dosage,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    final body = {
+      'recordType': recordType,
+      'title': title,
+      'description': description,
+      'recordDate': _dateOnly(recordDate),
+      'vetName': vetName,
+      'clinicName': clinicName,
+      'medicationName': medicationName,
+      'dosage': dosage,
+      'startDate': startDate == null ? null : _dateOnly(startDate),
+      'endDate': endDate == null ? null : _dateOnly(endDate),
+    };
+    final data = medicalRecordId == null
+        ? await _apiClient.postMap('/pets/$petId/medical-records', body: body)
+        : await _apiClient.putMap(
+            '/pets/$petId/medical-records/$medicalRecordId',
+            body: body,
+          );
+    return PetMedicalRecord.fromJson(data);
+  }
+
+  Future<void> deleteMedicalRecord({
+    required String petId,
+    required String medicalRecordId,
+  }) async {
+    await _apiClient.delete('/pets/$petId/medical-records/$medicalRecordId');
   }
 
   Future<List<PetPhoto>> getPetPhotos(String petId) async {
@@ -208,11 +373,59 @@ class OwnerRepository {
         .toList();
   }
 
+  Future<PetPhoto> uploadPetPhoto({
+    required String petId,
+    required String filePath,
+    String? caption,
+    DateTime? takenAt,
+    bool isAvatar = false,
+  }) async {
+    final upload = await _apiClient.postMultipart(
+      '/images',
+      filePath: filePath,
+      fields: {'imageType': 'pet_photo', 'resourceId': petId},
+    );
+    final data = await _apiClient.postMap(
+      '/pets/$petId/photos',
+      body: {
+        'imageUrl': upload.stringValue('secureUrl'),
+        'cloudinaryPublicId': upload.nullableString('publicId'),
+        'caption': caption,
+        'isAvatar': isAvatar,
+        'takenAt': takenAt?.toIso8601String(),
+      },
+    );
+    return PetPhoto.fromJson(data);
+  }
+
+  Future<PetPhoto> updatePetPhoto({
+    required String petId,
+    required String photoId,
+    String? caption,
+    bool? setAsAvatar,
+  }) async {
+    final data = await _apiClient.putMap(
+      '/pets/$petId/photos/$photoId',
+      body: {'caption': caption, 'setAsAvatar': setAsAvatar},
+    );
+    return PetPhoto.fromJson(data);
+  }
+
+  Future<void> deletePetPhoto({
+    required String petId,
+    required String photoId,
+  }) async {
+    await _apiClient.delete('/pets/$petId/photos/$photoId');
+  }
+
   Future<void> setPetAvatar({
     required String petId,
     required String photoId,
   }) async {
-    await _apiClient.patchMap('/pets/$petId/avatar', body: {'photoId': photoId});
+    await _apiClient.patchMap(
+      '/pets/$petId/avatar',
+      body: {'photoId': photoId},
+    );
   }
 
   Future<List<PetUserAccess>> getPetAccess(String petId) async {
@@ -221,6 +434,39 @@ class OwnerRepository {
         .whereType<Map<String, dynamic>>()
         .map(PetUserAccess.fromJson)
         .toList();
+  }
+
+  Future<PetUserAccess> grantPetAccess({
+    required String petId,
+    required String userEmail,
+    required String accessRole,
+    DateTime? expiresAt,
+  }) async {
+    final data = await _apiClient.postMap(
+      '/pets/$petId/access',
+      body: {
+        'userEmail': userEmail,
+        'accessRole': accessRole,
+        'expiresAt': expiresAt?.toIso8601String(),
+      },
+    );
+    return PetUserAccess.fromJson(data);
+  }
+
+  Future<PetUserAccess> updatePetAccess({
+    required String petId,
+    required String accessId,
+    required String accessRole,
+    DateTime? expiresAt,
+  }) async {
+    final data = await _apiClient.putMap(
+      '/pets/$petId/access/$accessId',
+      body: {
+        'accessRole': accessRole,
+        'expiresAt': expiresAt?.toIso8601String(),
+      },
+    );
+    return PetUserAccess.fromJson(data);
   }
 
   Future<void> revokePetAccess({
@@ -233,6 +479,79 @@ class OwnerRepository {
   Future<List<OwnerReminder>> getPetReminders(String petId) async {
     final all = await getReminders();
     return all.where((reminder) => reminder.petId == petId).toList();
+  }
+
+  Future<PetTimeline> getPetTimeline(
+    String petId, {
+    int page = 1,
+    int pageSize = 100,
+  }) async {
+    final data = await _apiClient.getMap(
+      '/pets/$petId/timeline?page=$page&pageSize=$pageSize',
+    );
+    return PetTimeline.fromJson(data);
+  }
+
+  Future<List<PetHealthShare>> getPetHealthShares(String petId) async {
+    final data = await _apiClient.getList('/pets/$petId/health-shares');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(PetHealthShare.fromJson)
+        .toList();
+  }
+
+  Future<PetHealthShare> createPetHealthShare({
+    required String petId,
+    required String scope,
+    required String accessMode,
+    required DateTime expiresAt,
+    int? maxUses,
+    String? note,
+  }) async {
+    final data = await _apiClient.postMap(
+      '/pets/$petId/health-shares',
+      body: {
+        'scope': scope,
+        'accessMode': accessMode,
+        'expiresAt': expiresAt.toUtc().toIso8601String(),
+        'maxUses': maxUses,
+        'note': note,
+      },
+    );
+    return PetHealthShare.fromJson(data);
+  }
+
+  Future<void> revokePetHealthShare({
+    required String petId,
+    required String shareTokenId,
+  }) async {
+    await _apiClient.delete('/pets/$petId/health-shares/$shareTokenId');
+  }
+
+  Future<List<ReminderPreference>> getReminderPreferences() async {
+    final data = await _apiClient.getList('/reminders/preferences');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(ReminderPreference.fromJson)
+        .toList();
+  }
+
+  Future<ReminderPreference> updateReminderPreference({
+    required String reminderType,
+    required bool isEnabled,
+    required int? remindBeforeMinutes,
+    required String channel,
+  }) async {
+    final data = await _apiClient.putMap(
+      '/reminders/preferences',
+      body: {
+        'reminderType': reminderType,
+        'isEnabled': isEnabled,
+        'remindBeforeMinutes': remindBeforeMinutes,
+        'channel': channel,
+      },
+    );
+    return ReminderPreference.fromJson(data);
   }
 
   // ==================== CHAT AI ====================
@@ -264,6 +583,24 @@ class OwnerRepository {
         .whereType<Map<String, dynamic>>()
         .map(ChatMessage.fromJson)
         .toList();
+  }
+
+  Future<List<ChatConversation>> getChatConversations({int take = 50}) async {
+    final data = await _apiClient.getList('/chat/conversations?take=$take');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(ChatConversation.fromJson)
+        .toList();
+  }
+
+  Future<String?> getSavedChatConversationId() =>
+      _apiClient.tokenStore.getChatConversationId();
+
+  Future<void> saveChatConversationId(String? conversationId) =>
+      _apiClient.tokenStore.saveChatConversationId(conversationId);
+
+  Future<void> cancelChatMessage(String messageId) async {
+    await _apiClient.postMap('/chat/messages/$messageId/cancel');
   }
 
   Future<ChatSubscriptionStatus> getChatSubscriptionStatus({
@@ -313,6 +650,32 @@ class OwnerRepository {
   Future<OwnerClinicProfile> getClinicProfile(String clinicId) async {
     final data = await _apiClient.getMap('/public/clinics/$clinicId/profile');
     return OwnerClinicProfile.fromJson(data);
+  }
+
+  Future<List<OwnerClinicReview>> getMyClinicReviews() async {
+    final data = await _apiClient.getList('/clinic-reviews/mine');
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(OwnerClinicReview.fromJson)
+        .toList();
+  }
+
+  Future<OwnerClinicReview> createClinicReview({
+    required String clinicId,
+    String? appointmentId,
+    required int rating,
+    required String reviewContent,
+  }) async {
+    final data = await _apiClient.postMap(
+      '/clinic-reviews',
+      body: {
+        'clinicId': clinicId,
+        'appointmentId': appointmentId,
+        'rating': rating,
+        'reviewContent': reviewContent,
+      },
+    );
+    return OwnerClinicReview.fromJson(data);
   }
 
   Future<List<OwnerDoctor>> getClinicDoctors(String clinicId) async {
@@ -371,6 +734,9 @@ class OwnerRepository {
     String? breed,
     String? gender,
     String? color,
+    String isNeutered = 'Unknown',
+    DateTime? dateOfBirth,
+    bool isBirthDateEstimated = false,
   }) async {
     final data = await _apiClient.postMap(
       '/pets',
@@ -379,8 +745,9 @@ class OwnerRepository {
         'species': species,
         'breed': breed,
         'gender': gender,
-        'isNeutered': 'Unknown',
-        'isBirthDateEstimated': true,
+        'isNeutered': isNeutered,
+        'dateOfBirth': dateOfBirth == null ? null : _dateOnly(dateOfBirth),
+        'isBirthDateEstimated': isBirthDateEstimated,
         'color': color,
       },
     );

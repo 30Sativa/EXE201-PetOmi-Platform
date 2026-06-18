@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:petomi_owner_mobile/main.dart';
 import 'package:petomi_owner_mobile/models/owner_models.dart';
+import 'package:petomi_owner_mobile/services/api_client.dart';
 import 'package:petomi_owner_mobile/services/owner_repository.dart';
 import 'package:petomi_owner_mobile/services/notification_center.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,6 +48,50 @@ void main() {
     expect(review.rating, 5);
     expect(review.appointmentId, 'appointment-1');
     expect(review.createdDate, isNotNull);
+  });
+
+  test('chat messages are normalized oldest first', () async {
+    SharedPreferences.setMockInitialValues({});
+    final apiClient = ApiClient(
+      baseUrl: 'https://api.test/api',
+      httpClient: MockClient((request) async {
+        expect(
+          request.url.path,
+          '/api/chat/conversations/conversation-1/messages',
+        );
+        return http.Response(
+          '''
+{
+  "data": [
+    {
+      "messageId": "message-2",
+      "conversationId": "conversation-1",
+      "senderRole": "AI",
+      "status": "Completed",
+      "content": "second",
+      "createdAt": "2026-06-18T10:01:00Z"
+    },
+    {
+      "messageId": "message-1",
+      "conversationId": "conversation-1",
+      "senderRole": "User",
+      "status": "Completed",
+      "content": "first",
+      "createdAt": "2026-06-18T10:00:00Z"
+    }
+  ]
+}
+''',
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+    final repository = OwnerRepository(apiClient: apiClient);
+
+    final messages = await repository.getConversationMessages('conversation-1');
+
+    expect(messages.map((message) => message.content), ['first', 'second']);
   });
 
   testWidgets('renders owner login gate when no token is stored', (

@@ -36,6 +36,7 @@ class PetOmiOwnerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        splashFactory: InkRipple.splashFactory,
         scaffoldBackgroundColor: AppColors.background,
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
@@ -1926,7 +1927,7 @@ class DecoratedGradient extends StatelessWidget {
           colors: [AppColors.background, Color(0xFFFFF4D7), Color(0xFFEFFDF5)],
         ),
       ),
-      child: child,
+      child: Material(type: MaterialType.transparency, child: child),
     );
   }
 }
@@ -3126,7 +3127,7 @@ class SurfaceCard extends StatelessWidget {
           ),
         ],
       ),
-      child: child,
+      child: Material(type: MaterialType.transparency, child: child),
     );
   }
 }

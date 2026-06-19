@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'app_config.dart';
 import 'chat_page.dart';
 import 'models/owner_models.dart';
 import 'pet_detail_page.dart';
@@ -2325,9 +2327,9 @@ class QuickActions extends StatelessWidget {
             Expanded(
               child: QuickActionCard(
                 key: const ValueKey('quick_owner_sharing'),
-                icon: Icons.link_rounded,
-                title: 'Chia sẻ',
-                subtitle: 'Quản lý người thân và mã hồ sơ sức khỏe.',
+                icon: Icons.qr_code_2_rounded,
+                title: 'Share pet profile',
+                subtitle: 'Tạo QR/link hồ sơ sức khỏe cho phòng khám.',
                 onTap: () => openOwnerSharingPage(context),
               ),
             ),

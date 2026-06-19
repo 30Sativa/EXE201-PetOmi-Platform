@@ -41,6 +41,7 @@ dependencies:
   app_links: ^6.3.2
   image_picker: ^1.1.2
   signalr_netcore: ^1.4.4
+  qr_flutter: ^4.1.0
 
 dev_dependencies:
   flutter_test:

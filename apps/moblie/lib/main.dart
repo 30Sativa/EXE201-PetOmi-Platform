@@ -1459,40 +1459,47 @@ class _BottomNavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: tab.label,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 9),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(22),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                tab.icon,
-                size: 20,
-                color: selected ? Colors.white : AppColors.textSubtle,
-              ),
-              const SizedBox(height: 3),
-              Text(
-                tab.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
+    return Tooltip(
+      message: tab.label,
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: tab.label,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22),
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            constraints: const BoxConstraints(minHeight: 52),
+            padding: EdgeInsets.symmetric(vertical: selected ? 8 : 12),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  tab.icon,
+                  size: 21,
                   color: selected ? Colors.white : AppColors.textSubtle,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
                 ),
-              ),
-            ],
+                if (selected) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    tab.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),
@@ -2262,82 +2269,94 @@ class QuickActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: QuickActionCard(
-                key: const ValueKey('quick_add_pet'),
-                icon: Icons.add_rounded,
-                title: 'Thêm thú cưng',
-                subtitle: 'Tạo hồ sơ cho bé cưng mới.',
-                onTap: () => showCreatePetSheet(context),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: QuickActionCard(
-                key: const ValueKey('quick_book_appointment'),
-                icon: Icons.event_available_rounded,
-                title: 'Đặt lịch',
-                subtitle: 'Chọn phòng khám, dịch vụ và giờ trống.',
-                onTap: () => showBookAppointmentSheet(context),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: QuickActionCard(
-                key: const ValueKey('quick_add_reminder'),
-                icon: Icons.notifications_active_rounded,
-                title: 'Thêm nhắc nhở',
-                subtitle: 'Đừng quên lịch chăm sóc quan trọng.',
-                onTap: () => showCreateReminderSheet(context),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: QuickActionCard(
-                key: const ValueKey('quick_edit_profile'),
-                icon: Icons.person_rounded,
-                title: 'Sửa hồ sơ',
-                subtitle: 'Cập nhật thông tin cá nhân của bạn.',
-                onTap: () => showEditProfileSheet(context),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: QuickActionCard(
-                key: const ValueKey('quick_owner_history'),
-                icon: Icons.history_rounded,
-                title: 'Lịch sử khám',
-                subtitle: 'Xem lại các lần khám và hoạt động y tế.',
-                onTap: () => openOwnerHistoryPage(context),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: QuickActionCard(
-                key: const ValueKey('quick_owner_sharing'),
-                icon: Icons.qr_code_2_rounded,
-                title: 'Share pet profile',
-                subtitle: 'Tạo QR/link hồ sơ sức khỏe cho phòng khám.',
-                onTap: () => openOwnerSharingPage(context),
-              ),
-            ),
-          ],
-        ),
-      ],
+    final actions = [
+      QuickActionData(
+        key: const ValueKey('quick_add_pet'),
+        icon: Icons.add_rounded,
+        title: 'Thêm thú cưng',
+        subtitle: 'Tạo hồ sơ cho bé cưng mới.',
+        onTap: () => showCreatePetSheet(context),
+      ),
+      QuickActionData(
+        key: const ValueKey('quick_book_appointment'),
+        icon: Icons.event_available_rounded,
+        title: 'Đặt lịch',
+        subtitle: 'Chọn phòng khám, dịch vụ và giờ trống.',
+        onTap: () => showBookAppointmentSheet(context),
+      ),
+      QuickActionData(
+        key: const ValueKey('quick_add_reminder'),
+        icon: Icons.notifications_active_rounded,
+        title: 'Thêm nhắc nhở',
+        subtitle: 'Đừng quên lịch chăm sóc quan trọng.',
+        onTap: () => showCreateReminderSheet(context),
+      ),
+      QuickActionData(
+        key: const ValueKey('quick_edit_profile'),
+        icon: Icons.person_rounded,
+        title: 'Sửa hồ sơ',
+        subtitle: 'Cập nhật thông tin cá nhân của bạn.',
+        onTap: () => showEditProfileSheet(context),
+      ),
+      QuickActionData(
+        key: const ValueKey('quick_owner_history'),
+        icon: Icons.history_rounded,
+        title: 'Lịch sử khám',
+        subtitle: 'Xem lại các lần khám và hoạt động y tế.',
+        onTap: () => openOwnerHistoryPage(context),
+      ),
+      QuickActionData(
+        key: const ValueKey('quick_owner_sharing'),
+        icon: Icons.qr_code_2_rounded,
+        title: 'Share pet profile',
+        subtitle: 'Tạo QR/link hồ sơ sức khỏe cho phòng khám.',
+        onTap: () => openOwnerSharingPage(context),
+      ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 340;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: actions.length,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: compact ? 1 : 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: compact ? 126 : 154,
+          ),
+          itemBuilder: (context, index) {
+            final action = actions[index];
+            return QuickActionCard(
+              key: action.key,
+              icon: action.icon,
+              title: action.title,
+              subtitle: action.subtitle,
+              onTap: action.onTap,
+            );
+          },
+        );
+      },
     );
   }
+}
+
+class QuickActionData {
+  const QuickActionData({
+    required this.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final Key key;
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 }
 
 class QuickActionCard extends StatelessWidget {
@@ -2367,15 +2386,22 @@ class QuickActionCard extends StatelessWidget {
           children: [
             IconBubble(icon: icon),
             const SizedBox(height: 12),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 6),
             Text(
-              subtitle,
-              maxLines: 3,
+              title,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontSize: 12),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              child: Text(
+                subtitle,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontSize: 12),
+              ),
             ),
           ],
         ),
@@ -2474,37 +2500,55 @@ class PageHeader extends StatelessWidget {
     return SurfaceCard(
       radius: 30,
       padding: const EdgeInsets.all(18),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 330;
+          final textBlock = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Eyebrow(eyebrow),
+              const SizedBox(height: 8),
+              Text(title, style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 8),
+              Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+            ],
+          );
+
+          if (compact) {
+            return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Eyebrow(eyebrow),
-                const SizedBox(height: 8),
-                Text(title, style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: 8),
-                Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+                textBlock,
+                const SizedBox(height: 14),
+                SizedBox(width: double.infinity, child: _buildActionButton()),
               ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          FilledButton.tonalIcon(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.primarySoft,
-              foregroundColor: AppColors.primaryHover,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-              ),
-            ),
-            onPressed: onAction,
-            icon: Icon(trailingIcon, size: 18),
-            label: Text(trailingLabel),
-          ),
-        ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: textBlock),
+              const SizedBox(width: 12),
+              _buildActionButton(),
+            ],
+          );
+        },
       ),
+    );
+  }
+
+  Widget _buildActionButton() {
+    return FilledButton.tonalIcon(
+      style: FilledButton.styleFrom(
+        backgroundColor: AppColors.primarySoft,
+        foregroundColor: AppColors.primaryHover,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      ),
+      onPressed: onAction,
+      icon: Icon(trailingIcon, size: 18),
+      label: Text(trailingLabel, maxLines: 1, overflow: TextOverflow.ellipsis),
     );
   }
 }
@@ -2547,7 +2591,7 @@ class SectionCard extends StatelessWidget {
                   ],
                 ),
               ),
-              ?action,
+              if (action != null) ...[const SizedBox(width: 12), action!],
             ],
           ),
           const SizedBox(height: 14),
@@ -3029,11 +3073,15 @@ class ProfileIdentityCard extends StatelessWidget {
               children: [
                 Text(
                   profile?.displayName ?? 'PetOmi Owner',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   '${data.email} • ${data.pets.length} thú cưng',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 10),

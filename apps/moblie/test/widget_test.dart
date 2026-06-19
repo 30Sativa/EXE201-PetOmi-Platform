@@ -132,6 +132,22 @@ void main() {
     expect(find.text('Hoàn tất và tiếp tục'), findsOneWidget);
   });
 
+  testWidgets('owner shell fits a compact mobile viewport', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    tester.view.physicalSize = const Size(320, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(PetOmiOwnerApp(repository: _FakeOwnerRepository()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OwnerShell), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('overview quick actions open owner API sheets', (tester) async {
     SharedPreferences.setMockInitialValues({});
 

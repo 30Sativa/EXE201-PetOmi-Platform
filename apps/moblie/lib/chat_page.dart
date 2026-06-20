@@ -158,9 +158,7 @@ class _ChatPageState extends State<ChatPage> {
           context,
         ).repository.getConversationMessages(convId);
         if (!mounted) return;
-        final hasReadyAi = messages.any(
-          (m) => m.isAi && !m.isPending && m.content.trim().isNotEmpty,
-        );
+        final hasReadyAi = _hasReadyAiResponseAfterPending(messages);
         setState(() => _messages = messages);
         _scrollToBottom();
         if (hasReadyAi || attempts >= 30) {
@@ -184,6 +182,23 @@ class _ChatPageState extends State<ChatPage> {
         }
       }
     });
+  }
+
+  bool _hasReadyAiResponseAfterPending(List<ChatMessage> messages) {
+    final pendingId = _pendingMessageId;
+    final pendingIndex = pendingId == null
+        ? -1
+        : messages.indexWhere((message) => message.messageId == pendingId);
+    final responseCandidates = pendingIndex >= 0
+        ? messages.skip(pendingIndex + 1)
+        : messages;
+
+    return responseCandidates.any(
+      (message) =>
+          message.isAi &&
+          !message.isPending &&
+          message.content.trim().isNotEmpty,
+    );
   }
 
   void _openPlans() {

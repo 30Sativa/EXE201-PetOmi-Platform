@@ -72,7 +72,9 @@ class OwnerNotificationCenter extends ChangeNotifier {
   OwnerNotificationCenter({
     required TokenStore tokenStore,
     required String apiBaseUrl,
-  }) : _tokenStore = tokenStore,
+  })
+    // ignore: prefer_initializing_formals
+    : _tokenStore = tokenStore,
        _hubUrl = _buildHubUrl(apiBaseUrl),
        _enabled = true;
 

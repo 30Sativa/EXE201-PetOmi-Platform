@@ -24,6 +24,12 @@ Future<void> openOwnerSharingPage(
   String? initialPetId,
 }) => _openOwnerPage(context, OwnerSharingPage(initialPetId: initialPetId));
 
+String buildPetHealthShareLink(String displayCode) {
+  final baseUrl = AppConfig.webBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+  final encodedCode = Uri.encodeQueryComponent(displayCode);
+  return '$baseUrl/dashboard/clinic/pet-intake?shareCode=$encodedCode';
+}
+
 Future<void> openAiPlanPage(BuildContext context) =>
     _openOwnerPage(context, const OwnerAiPlanPage());
 
@@ -73,9 +79,9 @@ class OwnerFeatureMenu extends StatelessWidget {
             onTap: () => openOwnerHistoryPage(context),
           ),
           _OwnerMenuTile(
-            icon: Icons.link_rounded,
-            title: 'Chia sẻ thú cưng',
-            subtitle: 'Quyền người thân và mã hồ sơ sức khỏe',
+            icon: Icons.qr_code_2_rounded,
+            title: 'Share pet profile',
+            subtitle: 'Tạo QR/link để bác sĩ xem nhanh hồ sơ sức khỏe',
             onTap: () => openOwnerSharingPage(context),
           ),
           _OwnerMenuTile(
@@ -499,14 +505,24 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
       ),
     );
     if (share != null) {
-      await Clipboard.setData(ClipboardData(text: share.displayCode));
+      await Clipboard.setData(
+        ClipboardData(text: buildPetHealthShareLink(share.displayCode)),
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã tạo và sao chép mã chia sẻ.')),
+          const SnackBar(content: Text('Đã tạo và sao chép link chia sẻ.')),
         );
       }
-      _load();
+      if (mounted) await _showShareQr(share);
+      if (mounted) _load();
     }
+  }
+
+  Future<void> _showShareQr(PetHealthShare share) {
+    return showOwnerActionSheet<void>(
+      context: context,
+      child: _PetHealthShareQrSheet(share: share),
+    );
   }
 
   Future<void> _editAccess(PetUserAccess access) async {
@@ -587,17 +603,18 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
   Widget build(BuildContext context) {
     final pets = OwnerScope.of(context).data.pets;
     return _OwnerSecondaryScaffold(
-      title: 'Chia sẻ thú cưng',
+      title: 'Share pet profile',
       child: OwnerScrollView(
         onRefresh: _load,
         children: [
           PageHeader(
-            eyebrow: 'Quyền truy cập',
-            title: 'Chia sẻ thú cưng',
-            subtitle: 'Mời người thân hoặc tạo mã hồ sơ sức khỏe tạm thời.',
-            trailingIcon: Icons.person_add_alt_1_rounded,
-            trailingLabel: 'Mời',
-            onAction: _petId == null ? null : _invite,
+            eyebrow: 'Pet health QR',
+            title: 'Share pet profile',
+            subtitle:
+                'Tạo QR/link để phòng khám xem nhanh thông tin cơ bản và hồ sơ sức khỏe của thú cưng.',
+            trailingIcon: Icons.qr_code_2_rounded,
+            trailingLabel: 'Tạo QR',
+            onAction: _petId == null ? null : _createShare,
           ),
           const SizedBox(height: 14),
           if (pets.isEmpty)
@@ -708,10 +725,10 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
               ),
               const SizedBox(height: 14),
               SectionCard(
-                title: 'Mã hồ sơ sức khỏe',
+                title: 'QR/link hồ sơ sức khỏe',
                 subtitle: 'Mã tạm thời dành cho phòng khám hoặc cấp cứu.',
                 action: IconButton(
-                  tooltip: 'Tạo mã',
+                  tooltip: 'Tạo QR',
                   onPressed: _createShare,
                   icon: const Icon(Icons.add_link_rounded),
                 ),
@@ -727,7 +744,26 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
                             .map(
                               (share) => _HealthShareTile(
                                 share: share,
-                                onCopy: () async {
+                                onOpenQr: () => _showShareQr(share),
+                                onCopyLink: () async {
+                                  await Clipboard.setData(
+                                    ClipboardData(
+                                      text: buildPetHealthShareLink(
+                                        share.displayCode,
+                                      ),
+                                    ),
+                                  );
+                                  if (context.mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Đã sao chép link chia sẻ.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                onCopyCode: () async {
                                   await Clipboard.setData(
                                     ClipboardData(text: share.displayCode),
                                   );
@@ -1039,7 +1075,7 @@ class _CreateHealthShareSheetState extends State<_CreateHealthShareSheet> {
         ),
         const SizedBox(height: 16),
         PrimaryButton(
-          label: _saving ? 'Đang tạo...' : 'Tạo và sao chép mã',
+          label: _saving ? 'Đang tạo...' : 'Tạo QR và sao chép link',
           icon: Icons.qr_code_2_rounded,
           onTap: _saving ? null : _submit,
         ),
@@ -1051,16 +1087,21 @@ class _CreateHealthShareSheetState extends State<_CreateHealthShareSheet> {
 class _HealthShareTile extends StatelessWidget {
   const _HealthShareTile({
     required this.share,
-    required this.onCopy,
+    required this.onOpenQr,
+    required this.onCopyLink,
+    required this.onCopyCode,
     required this.onRevoke,
   });
 
   final PetHealthShare share;
-  final VoidCallback onCopy;
+  final VoidCallback onOpenQr;
+  final VoidCallback onCopyLink;
+  final VoidCallback onCopyCode;
   final VoidCallback? onRevoke;
 
   @override
   Widget build(BuildContext context) {
+    final link = buildPetHealthShareLink(share.displayCode);
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -1074,17 +1115,31 @@ class _HealthShareTile extends StatelessWidget {
         children: [
           Row(
             children: [
+              const IconBubble(icon: Icons.qr_code_2_rounded),
+              const SizedBox(width: 10),
               Expanded(
-                child: SelectableText(
-                  share.displayCode,
-                  style: Theme.of(context).textTheme.titleLarge,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SelectableText(
+                      share.displayCode,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${_shareScopeLabel(share.scope)} • ${_shareModeLabel(share.accessMode)}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ),
               IconButton(
-                onPressed: onCopy,
-                icon: const Icon(Icons.copy_rounded),
+                tooltip: 'Mở QR',
+                onPressed: onOpenQr,
+                icon: const Icon(Icons.visibility_rounded),
               ),
               IconButton(
+                tooltip: 'Thu hồi',
                 onPressed: onRevoke,
                 icon: const Icon(
                   Icons.delete_outline_rounded,
@@ -1093,19 +1148,296 @@ class _HealthShareTile extends StatelessWidget {
               ),
             ],
           ),
-          Text('${share.scope} • ${share.accessMode}'),
           const SizedBox(height: 8),
-          StatusChip(
-            label: share.isActive ? 'Đang hoạt động' : 'Không còn hiệu lực',
-            color: share.isActive ? AppColors.success : AppColors.danger,
-            background: share.isActive
-                ? AppColors.successSoft
-                : AppColors.dangerSoft,
+          SelectableText(
+            link,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              StatusChip(
+                label: share.isActive ? 'Đang hoạt động' : 'Không còn hiệu lực',
+                color: share.isActive ? AppColors.success : AppColors.danger,
+                background: share.isActive
+                    ? AppColors.successSoft
+                    : AppColors.dangerSoft,
+              ),
+              StatusChip(
+                label: _shareUsageText(share),
+                color: AppColors.textMuted,
+                background: AppColors.surface,
+              ),
+              StatusChip(
+                label: _shareExpiryText(share.expiresAt),
+                color: AppColors.textMuted,
+                background: AppColors.surface,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ShareActionButton(
+                label: 'QR',
+                icon: Icons.qr_code_2_rounded,
+                onPressed: onOpenQr,
+              ),
+              _ShareActionButton(
+                label: 'Copy link',
+                icon: Icons.link_rounded,
+                onPressed: onCopyLink,
+              ),
+              _ShareActionButton(
+                label: 'Copy mã',
+                icon: Icons.copy_rounded,
+                onPressed: onCopyCode,
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+}
+
+class _ShareActionButton extends StatelessWidget {
+  const _ShareActionButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.text,
+        side: const BorderSide(color: AppColors.border),
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      ),
+      onPressed: onPressed,
+      icon: Icon(icon, size: 17),
+      label: Text(label, style: const TextStyle(fontWeight: FontWeight.w800)),
+    );
+  }
+}
+
+class _PetHealthShareQrSheet extends StatelessWidget {
+  const _PetHealthShareQrSheet({required this.share});
+
+  final PetHealthShare share;
+
+  Future<void> _copy(
+    BuildContext context, {
+    required String value,
+    required String message,
+  }) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _openLink(BuildContext context, String link) async {
+    final uri = Uri.parse(link);
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không mở được link chia sẻ.')),
+        );
+      }
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final link = buildPetHealthShareLink(share.displayCode);
+    return OwnerSheetFrame(
+      title: 'QR hồ sơ sức khỏe',
+      subtitle: 'Đưa mã này cho phòng khám để xem nhanh hồ sơ thú cưng.',
+      icon: Icons.qr_code_2_rounded,
+      children: [
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  blurRadius: 22,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final qrSize = constraints.maxWidth < 240
+                    ? constraints.maxWidth
+                    : 240.0;
+                return QrImageView(
+                  data: link,
+                  version: QrVersions.auto,
+                  size: qrSize,
+                  backgroundColor: Colors.white,
+                  eyeStyle: const QrEyeStyle(
+                    eyeShape: QrEyeShape.square,
+                    color: AppColors.text,
+                  ),
+                  dataModuleStyle: const QrDataModuleStyle(
+                    dataModuleShape: QrDataModuleShape.square,
+                    color: AppColors.text,
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Mã chia sẻ', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 6),
+              SelectableText(
+                share.displayCode,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text('Link web', style: Theme.of(context).textTheme.labelLarge),
+              const SizedBox(height: 6),
+              SelectableText(
+                link,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.verified_user_rounded, color: AppColors.primary),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'QR mở trang Clinic Intake trên web. Bác sĩ cần đăng nhập tài khoản phòng khám để xem hồ sơ theo quyền được cấp.',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            PrimaryButton(
+              label: 'Copy link',
+              icon: Icons.link_rounded,
+              onTap: () => _copy(
+                context,
+                value: link,
+                message: 'Đã sao chép link chia sẻ.',
+              ),
+            ),
+            SoftButton(
+              label: 'Copy mã',
+              icon: Icons.copy_rounded,
+              onTap: () => _copy(
+                context,
+                value: share.displayCode,
+                message: 'Đã sao chép mã chia sẻ.',
+              ),
+            ),
+            SoftButton(
+              label: 'Mở link',
+              icon: Icons.open_in_new_rounded,
+              onTap: () => _openLink(context, link),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+String _shareScopeLabel(String value) {
+  switch (value) {
+    case 'EmergencySummary':
+      return 'Tóm tắt cấp cứu';
+    case 'FullHealthProfile':
+      return 'Toàn bộ hồ sơ';
+    case 'ClinicVisit':
+      return 'Dùng khi khám';
+    default:
+      return value;
+  }
+}
+
+String _shareModeLabel(String value) {
+  switch (value) {
+    case 'OneTime':
+      return 'Một lần';
+    case 'Temporary':
+      return 'Tạm thời';
+    default:
+      return value;
+  }
+}
+
+String _shareUsageText(PetHealthShare share) {
+  final limit = share.maxUses;
+  if (limit == null) return 'Đã dùng ${share.usedCount} lần';
+  return 'Đã dùng ${share.usedCount}/$limit lần';
+}
+
+String _shareExpiryText(String value) {
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return 'Có thời hạn';
+  return 'Hết hạn ${formatDateOnly(parsed.toLocal())}';
 }
 
 class OwnerAiPlanPage extends StatefulWidget {

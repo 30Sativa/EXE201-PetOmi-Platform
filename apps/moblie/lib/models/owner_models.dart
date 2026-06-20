@@ -839,6 +839,8 @@ class ChatMessage {
     final s = status.toLowerCase();
     return s == 'pending' || s == 'processing';
   }
+
+  DateTime? get createdDate => DateTime.tryParse(createdAt);
 }
 
 class SendChatResult {

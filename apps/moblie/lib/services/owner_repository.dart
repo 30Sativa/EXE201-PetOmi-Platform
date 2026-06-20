@@ -579,10 +579,23 @@ class OwnerRepository {
     final data = await _apiClient.getList(
       '/chat/conversations/$conversationId/messages?skip=0&take=$take',
     );
-    return data
+    final messages = data
         .whereType<Map<String, dynamic>>()
         .map(ChatMessage.fromJson)
         .toList();
+    messages.sort(_compareChatMessages);
+    return messages;
+  }
+
+  int _compareChatMessages(ChatMessage left, ChatMessage right) {
+    final leftDate = left.createdDate;
+    final rightDate = right.createdDate;
+    if (leftDate != null && rightDate != null) {
+      return leftDate.compareTo(rightDate);
+    }
+    if (leftDate != null) return -1;
+    if (rightDate != null) return 1;
+    return left.createdAt.compareTo(right.createdAt);
   }
 
   Future<List<ChatConversation>> getChatConversations({int take = 50}) async {

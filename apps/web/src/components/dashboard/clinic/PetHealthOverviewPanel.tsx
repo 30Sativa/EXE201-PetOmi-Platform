@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   CalendarClock,
+  Download,
   FileText,
   HeartPulse,
   Pill,
@@ -53,11 +54,21 @@ export default function PetHealthOverviewPanel({
             </p>
           </div>
         </div>
-        <div className="grid content-center gap-1 rounded-2xl bg-po-surface-muted px-4 py-3 text-sm">
-          <span className="font-semibold text-po-text">Access window</span>
-          <span className="text-po-text-muted">
-            {access.expiresAt ? formatDate(access.expiresAt) : "Clinic relationship"}
-          </span>
+        <div className="grid content-center gap-3">
+          <div className="grid gap-1 rounded-2xl bg-po-surface-muted px-4 py-3 text-sm">
+            <span className="font-semibold text-po-text">Access window</span>
+            <span className="text-po-text-muted">
+              {access.expiresAt ? formatDate(access.expiresAt) : "Clinic relationship"}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text"
+          >
+            <Download className="size-4" />
+            Tải/In hồ sơ
+          </button>
         </div>
       </section>
 

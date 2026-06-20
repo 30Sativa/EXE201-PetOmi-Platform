@@ -1,4 +1,4 @@
-import { Heart, PawPrint } from "lucide-react"
+import { Heart, PawPrint, Stethoscope } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import type { NavLink } from "@/types"
@@ -9,7 +9,6 @@ interface NavbarProps {
 
 const defaultLinks: NavLink[] = [
   { label: "Tính năng", href: "#services" },
-  { label: "Phòng khám", href: "#clinic" },
   { label: "Đặt lịch", href: "#booking" },
   { label: "Bác sĩ", href: "#veterinary" },
   { label: "Quản trị", href: "#admin" },
@@ -36,6 +35,13 @@ export default function Navbar({ links = defaultLinks }: NavbarProps) {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            to="/login"
+            className="hidden items-center gap-1.5 rounded-full border border-po-border px-3 py-2 text-sm font-semibold text-po-text-muted transition hover:border-po-primary hover:text-po-text lg:inline-flex"
+          >
+            <Stethoscope className="size-4" />
+            Dành cho phòng khám
+          </Link>
           <Link
             to="/login"
             className="hidden rounded-full px-3 py-2 text-sm font-semibold text-po-text-muted transition hover:text-po-text md:inline-flex"

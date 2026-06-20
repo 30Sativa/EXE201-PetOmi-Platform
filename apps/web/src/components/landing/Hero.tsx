@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { ArrowUpRight, CalendarCheck, MessageCircleHeart, ShieldCheck, Sparkles } from "lucide-react"
+import { CalendarCheck, Info, MessageCircleHeart, ShieldCheck, Sparkles } from "lucide-react"
 import { Link } from "react-router-dom"
 
 interface Highlight {
@@ -50,25 +50,19 @@ export default function Hero() {
           <span className="w-fit border-l-2 border-po-primary pl-3 text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
             Pet-care cho chủ nuôi bận rộn
           </span>
-          <h1 className="mt-5 max-w-[11ch] text-5xl font-extrabold leading-[0.98] text-po-text text-balance max-[480px]:max-w-full sm:text-6xl lg:text-7xl">
-            Hiểu thú cưng hơn từ dấu hiệu nhỏ.
+          <h1 className="mt-5 max-w-[14ch] text-5xl font-extrabold leading-[0.98] text-po-text text-balance max-[480px]:max-w-full sm:text-6xl lg:text-7xl">
+            Trợ lý AI cho sức khỏe thú cưng.
           </h1>
           <p className="mt-6 max-w-xl min-w-0 text-base leading-8 text-po-text-muted md:text-lg">
-            PetOmi giúp chủ nuôi ghi lại triệu chứng, lưu hồ sơ, đặt lịch và gửi trước thông tin cần thiết để bác sĩ thú y nắm tình hình nhanh hơn.
+            PetOmi giúp chủ nuôi chat với AI để ghi triệu chứng, lưu hồ sơ, nhắc lịch và chuẩn bị thông tin trước khi gặp bác sĩ thú y.
           </p>
           <div className={`mt-8 flex w-full flex-wrap items-center gap-3 transition-all duration-700 delay-100 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             <Link
               to="/register"
               className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl focus-visible:shadow-[var(--po-focus-ring)] active:translate-y-0 max-[480px]:w-full"
             >
-              Dùng PetOmi miễn phí
-              <ArrowUpRight className="size-4" />
-            </Link>
-            <Link
-              to="/login"
-              className="inline-flex h-12 items-center justify-center rounded-full border border-po-border bg-white px-6 text-sm font-semibold text-po-text transition hover:-translate-y-0.5 hover:bg-po-surface-muted focus-visible:shadow-[var(--po-focus-ring)] active:translate-y-0 max-[480px]:w-full"
-            >
-              Dành cho phòng khám
+              <MessageCircleHeart className="size-4" />
+              Chat với AI ngay
             </Link>
             <a
               href="#services"
@@ -77,6 +71,10 @@ export default function Hero() {
               Xem cách PetOmi hỗ trợ
             </a>
           </div>
+          <p className={`mt-4 flex max-w-xl items-start gap-2 text-xs leading-5 text-po-text-subtle transition-all duration-700 delay-150 ease-out ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+            <Info className="mt-0.5 size-3.5 shrink-0 text-po-text-subtle" />
+            PetOmi chỉ hỗ trợ ghi nhận và tham khảo thông tin ban đầu, không thay thế bác sĩ thú y.
+          </p>
           <div className={`mt-10 grid max-w-xl gap-4 transition-all duration-700 delay-200 ease-out sm:grid-cols-2 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
             {highlights.map((item) => {
               const Icon = item.icon

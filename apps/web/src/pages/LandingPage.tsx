@@ -4,6 +4,7 @@ import FAQ from "@/components/landing/FAQ"
 import Footer from "@/components/landing/Footer"
 import Hero from "@/components/landing/Hero"
 import Navbar from "@/components/landing/Navbar"
+import PainPoints from "@/components/landing/PainPoints"
 import Services from "@/components/landing/Services"
 import Testimonials from "@/components/landing/Testimonials"
 import TrustedStats from "@/components/landing/TrustedStats"
@@ -15,6 +16,7 @@ export default function LandingPage() {
       <Navbar />
       <Hero />
       <TrustedStats />
+      <PainPoints />
       <Services />
       <BookingPreview />
       <VetConsultation />

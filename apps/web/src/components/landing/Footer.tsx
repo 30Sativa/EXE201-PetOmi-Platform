@@ -73,7 +73,7 @@ export default function Footer() {
               <span className="text-base">PetOmi</span>
             </Link>
             <p className="mt-4 text-sm leading-6 text-po-text-muted">
-              Nền tảng chăm sóc thú cưng kết nối chủ nuôi, bác sĩ thú y và quản trị viên để thông tin sức khỏe không bị rơi rớt giữa các lần khám.
+              PetOmi giúp chủ nuôi ghi triệu chứng, lưu hồ sơ và chuẩn bị thông tin cần thiết trước khi gặp bác sĩ thú y.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-3">

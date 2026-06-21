@@ -38,6 +38,7 @@ public class SearchClinicPetsQueryHandler
         {
             PetId = pet.PetId,
             OwnerUserId = pet.OwnerUserId,
+            PublicPetCode = pet.PublicPetCode,
             PetName = pet.PetName,
             Species = pet.Species,
             Breed = pet.Breed,

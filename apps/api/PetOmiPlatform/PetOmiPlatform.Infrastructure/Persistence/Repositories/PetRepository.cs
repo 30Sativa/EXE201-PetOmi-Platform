@@ -58,6 +58,9 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 var normalizedLike = $"%{normalizedKeyword}%";
 
                 query = query.Where(p =>
+                    (p.PublicPetCode != null && (
+                        EF.Functions.Like(p.PublicPetCode, like) ||
+                        EF.Functions.Like(p.PublicPetCode.Replace("-", string.Empty), normalizedLike))) ||
                     EF.Functions.Like(p.PetId.ToString(), like) ||
                     EF.Functions.Like(p.PetId.ToString().Replace("-", string.Empty), normalizedLike) ||
                     EF.Functions.Like(p.Name, like) ||
@@ -79,6 +82,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
                 {
                     PetId = p.PetId,
                     OwnerUserId = p.OwnerUserId,
+                    PublicPetCode = p.PublicPetCode,
                     PetName = p.Name,
                     Species = p.Species,
                     Breed = p.Breed,

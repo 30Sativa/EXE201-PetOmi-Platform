@@ -88,6 +88,7 @@ class OwnerPet {
     required this.dateOfBirth,
     required this.avatarUrl,
     required this.color,
+    this.publicPetCode,
     this.isNeutered,
     this.isBirthDateEstimated = false,
     this.createdAt,
@@ -97,6 +98,7 @@ class OwnerPet {
   factory OwnerPet.fromJson(Map<String, dynamic> json) {
     return OwnerPet(
       petId: json.stringValue('petId'),
+      publicPetCode: json.nullableString('publicPetCode'),
       name: json.stringValue('name', fallback: 'Thú cưng'),
       species: json.stringValue('species'),
       breed: json.nullableString('breed'),
@@ -112,6 +114,7 @@ class OwnerPet {
   }
 
   final String petId;
+  final String? publicPetCode;
   final String name;
   final String species;
   final String? breed;

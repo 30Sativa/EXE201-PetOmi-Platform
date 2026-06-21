@@ -4,22 +4,38 @@ import { Camera, CameraOff, ScanLine } from "lucide-react"
 
 import { getErrorMessage } from "@/lib/utils"
 
+export type PetIntakeQrPayload =
+  | { type: "health-share"; code: string }
+  | { type: "pet-code"; code: string }
+
 interface PetHealthQrScannerProps {
-  onCodeScanned: (shareCode: string) => void
+  onCodeScanned: (payload: PetIntakeQrPayload) => void
 }
 
-const extractShareCode = (rawValue: string) => {
+const normalizeCode = (value: string) => value.trim().toUpperCase()
+
+const classifyRawCode = (value: string): PetIntakeQrPayload => {
+  const code = normalizeCode(value)
+  return code.startsWith("PO-")
+    ? { type: "pet-code", code }
+    : { type: "health-share", code }
+}
+
+const extractQrPayload = (rawValue: string): PetIntakeQrPayload => {
   const value = rawValue.trim()
 
   try {
     const url = new URL(value)
     const shareCode = url.searchParams.get("shareCode")
-    if (shareCode) return shareCode.trim().toUpperCase()
+    if (shareCode) return { type: "health-share", code: normalizeCode(shareCode) }
+
+    const petCode = url.searchParams.get("petCode")
+    if (petCode) return { type: "pet-code", code: normalizeCode(petCode) }
   } catch {
     // Raw codes are valid too.
   }
 
-  return value.toUpperCase()
+  return classifyRawCode(value)
 }
 
 export default function PetHealthQrScanner({
@@ -58,9 +74,9 @@ export default function PetHealthQrScanner({
         (result) => {
           if (!result) return
 
-          const code = extractShareCode(result.getText())
+          const payload = extractQrPayload(result.getText())
           stopScanner()
-          onCodeScanned(code)
+          onCodeScanned(payload)
         },
       )
 
@@ -69,7 +85,7 @@ export default function PetHealthQrScanner({
       setErrorMessage(
         getErrorMessage(
           error,
-          "Camera is unavailable. Please enter the HealthShareCode manually.",
+          "Camera is unavailable. Please enter the PetOmi ID or HealthShareCode manually.",
         ),
       )
       setIsScanning(false)
@@ -86,7 +102,7 @@ export default function PetHealthQrScanner({
           <div>
             <h2 className="text-lg font-extrabold text-po-text">Scan QR code</h2>
             <p className="mt-1 text-sm text-po-text-muted">
-              Point the camera at the owner's health share QR. Manual code entry stays available below.
+              Point the camera at the pet passport QR. HealthShare links are still accepted as a backup.
             </p>
           </div>
         </div>

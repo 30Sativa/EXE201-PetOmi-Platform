@@ -2307,9 +2307,9 @@ class QuickActions extends StatelessWidget {
       ),
       QuickActionData(
         key: const ValueKey('quick_owner_sharing'),
-        icon: Icons.qr_code_2_rounded,
-        title: 'Share pet profile',
-        subtitle: 'Tạo QR/link hồ sơ sức khỏe cho phòng khám.',
+        icon: Icons.badge_rounded,
+        title: 'Hộ chiếu thú cưng',
+        subtitle: 'Một QR để phòng khám nhận diện pet khi tái khám.',
         onTap: () => openOwnerSharingPage(context),
       ),
     ];

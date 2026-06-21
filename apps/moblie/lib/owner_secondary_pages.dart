@@ -30,6 +30,12 @@ String buildPetHealthShareLink(String displayCode) {
   return '$baseUrl/dashboard/clinic/pet-intake?shareCode=$encodedCode';
 }
 
+String buildPetPassportLink(String publicPetCode) {
+  final baseUrl = AppConfig.webBaseUrl.replaceFirst(RegExp(r'/+$'), '');
+  final encodedCode = Uri.encodeQueryComponent(publicPetCode);
+  return '$baseUrl/dashboard/clinic/pet-intake?petCode=$encodedCode';
+}
+
 Future<void> openAiPlanPage(BuildContext context) =>
     _openOwnerPage(context, const OwnerAiPlanPage());
 
@@ -79,9 +85,9 @@ class OwnerFeatureMenu extends StatelessWidget {
             onTap: () => openOwnerHistoryPage(context),
           ),
           _OwnerMenuTile(
-            icon: Icons.qr_code_2_rounded,
-            title: 'Share pet profile',
-            subtitle: 'Tạo QR/link để bác sĩ xem nhanh hồ sơ sức khỏe',
+            icon: Icons.badge_rounded,
+            title: 'Hộ chiếu thú cưng',
+            subtitle: 'Một QR để phòng khám nhận diện pet khi tái khám',
             onTap: () => openOwnerSharingPage(context),
           ),
           _OwnerMenuTile(
@@ -505,23 +511,135 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
       ),
     );
     if (share != null) {
-      await Clipboard.setData(
-        ClipboardData(text: buildPetHealthShareLink(share.displayCode)),
-      );
+      await Clipboard.setData(ClipboardData(text: share.displayCode));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã tạo và sao chép link chia sẻ.')),
+          const SnackBar(
+            content: Text(
+              'Đã cấp quyền sức khỏe tạm thời và sao chép mã dự phòng.',
+            ),
+          ),
         );
       }
-      if (mounted) await _showShareQr(share);
       if (mounted) _load();
     }
   }
 
-  Future<void> _showShareQr(PetHealthShare share) {
+  OwnerPet? _selectedPet(List<OwnerPet> pets) {
+    final petId = _petId;
+    if (petId == null) return null;
+    for (final pet in pets) {
+      if (pet.petId == petId) return pet;
+    }
+    return null;
+  }
+
+  Future<void> _showPetPassport(OwnerPet pet, String publicPetCode) {
     return showOwnerActionSheet<void>(
       context: context,
-      child: _PetHealthShareQrSheet(share: share),
+      child: _OwnerPetPassportSheet(pet: pet, publicPetCode: publicPetCode),
+    );
+  }
+
+  Widget _buildPassportCard(OwnerPet? pet, String? publicPetCode) {
+    final hasPassport =
+        pet != null && publicPetCode != null && publicPetCode.isNotEmpty;
+
+    return SectionCard(
+      title: 'Hộ chiếu thú cưng',
+      subtitle:
+          'Một QR dùng khi tái khám để phòng khám nhận diện pet và mở đúng hồ sơ được cấp quyền.',
+      action: IconButton(
+        tooltip: 'Xem QR hộ chiếu',
+        onPressed: hasPassport
+            ? () => _showPetPassport(pet, publicPetCode)
+            : null,
+        icon: const Icon(Icons.badge_rounded),
+      ),
+      child: hasPassport
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    PetOmiAvatar(
+                      label: pet.initials,
+                      icon: Icons.pets_rounded,
+                      size: 54,
+                      imageUrl: pet.avatarUrl,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            pet.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${pet.speciesLabel} • ${pet.genderLabel} • ${pet.ageLabel}',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          StatusChip(
+                            label: publicPetCode,
+                            color: AppColors.primaryHover,
+                            background: AppColors.primarySoft,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _ShareActionButton(
+                      label: 'Xem QR',
+                      icon: Icons.qr_code_2_rounded,
+                      onPressed: () => _showPetPassport(pet, publicPetCode),
+                    ),
+                    _ShareActionButton(
+                      label: 'Cấp quyền sức khỏe',
+                      icon: Icons.health_and_safety_rounded,
+                      onPressed: _createShare,
+                    ),
+                    _ShareActionButton(
+                      label: 'Copy link',
+                      icon: Icons.link_rounded,
+                      onPressed: () async {
+                        await Clipboard.setData(
+                          ClipboardData(
+                            text: buildPetPassportLink(publicPetCode),
+                          ),
+                        );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Đã sao chép link hộ chiếu.'),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : const EmptyOwnerState(
+              icon: Icons.badge_outlined,
+              title: 'Chưa có PetOmi ID',
+              message:
+                  'Thú cưng cần có mã định danh công khai trước khi tạo hộ chiếu QR.',
+              compact: true,
+            ),
     );
   }
 
@@ -602,19 +720,26 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
   @override
   Widget build(BuildContext context) {
     final pets = OwnerScope.of(context).data.pets;
+    final selectedPet = _selectedPet(pets);
+    final selectedPublicPetCode = selectedPet?.publicPetCode?.trim();
     return _OwnerSecondaryScaffold(
-      title: 'Share pet profile',
+      title: 'Hộ chiếu thú cưng',
       child: OwnerScrollView(
         onRefresh: _load,
         children: [
           PageHeader(
-            eyebrow: 'Pet health QR',
-            title: 'Share pet profile',
+            eyebrow: 'Pet passport QR',
+            title: 'Hộ chiếu thú cưng',
             subtitle:
-                'Tạo QR/link để phòng khám xem nhanh thông tin cơ bản và hồ sơ sức khỏe của thú cưng.',
-            trailingIcon: Icons.qr_code_2_rounded,
-            trailingLabel: 'Tạo QR',
-            onAction: _petId == null ? null : _createShare,
+                'Một mã QR để phòng khám nhận diện thú cưng khi tái khám; quyền xem sức khỏe được cấp riêng khi cần.',
+            trailingIcon: Icons.badge_rounded,
+            trailingLabel: 'Xem QR',
+            onAction:
+                selectedPet != null &&
+                    selectedPublicPetCode != null &&
+                    selectedPublicPetCode.isNotEmpty
+                ? () => _showPetPassport(selectedPet, selectedPublicPetCode)
+                : null,
           ),
           const SizedBox(height: 14),
           if (pets.isEmpty)
@@ -658,6 +783,8 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
                 ),
               )
             else ...[
+              _buildPassportCard(selectedPet, selectedPublicPetCode),
+              const SizedBox(height: 14),
               SectionCard(
                 title: 'Người được chia sẻ',
                 subtitle: '${_access.length} quyền truy cập',
@@ -725,18 +852,20 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
               ),
               const SizedBox(height: 14),
               SectionCard(
-                title: 'QR/link hồ sơ sức khỏe',
-                subtitle: 'Mã tạm thời dành cho phòng khám hoặc cấp cứu.',
+                title: 'Quyền xem hồ sơ sức khỏe',
+                subtitle:
+                    'Cấp quyền tạm thời phía sau QR hộ chiếu khi phòng khám cần xem dữ liệu riêng tư.',
                 action: IconButton(
-                  tooltip: 'Tạo QR',
+                  tooltip: 'Cấp quyền sức khỏe',
                   onPressed: _createShare,
-                  icon: const Icon(Icons.add_link_rounded),
+                  icon: const Icon(Icons.health_and_safety_rounded),
                 ),
                 child: _shares.isEmpty
                     ? const EmptyOwnerState(
-                        icon: Icons.qr_code_2_rounded,
-                        title: 'Chưa có mã chia sẻ',
-                        message: 'Tạo mã có hạn dùng tối đa 7 ngày.',
+                        icon: Icons.health_and_safety_rounded,
+                        title: 'Chưa cấp quyền sức khỏe',
+                        message:
+                            'QR hộ chiếu vẫn dùng để nhận diện pet. Khi cần, hãy cấp quyền sức khỏe tạm thời tối đa 7 ngày.',
                         compact: true,
                       )
                     : Column(
@@ -744,7 +873,6 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
                             .map(
                               (share) => _HealthShareTile(
                                 share: share,
-                                onOpenQr: () => _showShareQr(share),
                                 onCopyLink: () async {
                                   await Clipboard.setData(
                                     ClipboardData(
@@ -757,7 +885,7 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
-                                          'Đã sao chép link chia sẻ.',
+                                          'Đã sao chép link dự phòng.',
                                         ),
                                       ),
                                     );
@@ -771,7 +899,7 @@ class _OwnerSharingPageState extends State<OwnerSharingPage> {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text(
-                                          'Đã sao chép mã chia sẻ.',
+                                          'Đã sao chép mã dự phòng.',
                                         ),
                                       ),
                                     );
@@ -1034,9 +1162,10 @@ class _CreateHealthShareSheetState extends State<_CreateHealthShareSheet> {
   @override
   Widget build(BuildContext context) {
     return OwnerSheetFrame(
-      title: 'Tạo mã hồ sơ sức khỏe',
-      subtitle: 'Mã hết hạn tối đa sau 7 ngày.',
-      icon: Icons.add_link_rounded,
+      title: 'Cấp quyền sức khỏe',
+      subtitle:
+          'Quyền này bổ sung cho QR hộ chiếu và hết hạn tối đa sau 7 ngày.',
+      icon: Icons.health_and_safety_rounded,
       error: _error,
       children: [
         SheetChoiceField(
@@ -1075,8 +1204,8 @@ class _CreateHealthShareSheetState extends State<_CreateHealthShareSheet> {
         ),
         const SizedBox(height: 16),
         PrimaryButton(
-          label: _saving ? 'Đang tạo...' : 'Tạo QR và sao chép link',
-          icon: Icons.qr_code_2_rounded,
+          label: _saving ? 'Đang cấp quyền...' : 'Cấp quyền và copy mã',
+          icon: Icons.verified_user_rounded,
           onTap: _saving ? null : _submit,
         ),
       ],
@@ -1087,14 +1216,12 @@ class _CreateHealthShareSheetState extends State<_CreateHealthShareSheet> {
 class _HealthShareTile extends StatelessWidget {
   const _HealthShareTile({
     required this.share,
-    required this.onOpenQr,
     required this.onCopyLink,
     required this.onCopyCode,
     required this.onRevoke,
   });
 
   final PetHealthShare share;
-  final VoidCallback onOpenQr;
   final VoidCallback onCopyLink;
   final VoidCallback onCopyCode;
   final VoidCallback? onRevoke;
@@ -1115,7 +1242,7 @@ class _HealthShareTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              const IconBubble(icon: Icons.qr_code_2_rounded),
+              const IconBubble(icon: Icons.health_and_safety_rounded),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
@@ -1132,11 +1259,6 @@ class _HealthShareTile extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                tooltip: 'Mở QR',
-                onPressed: onOpenQr,
-                icon: const Icon(Icons.visibility_rounded),
               ),
               IconButton(
                 tooltip: 'Thu hồi',
@@ -1186,12 +1308,7 @@ class _HealthShareTile extends StatelessWidget {
             runSpacing: 8,
             children: [
               _ShareActionButton(
-                label: 'QR',
-                icon: Icons.qr_code_2_rounded,
-                onPressed: onOpenQr,
-              ),
-              _ShareActionButton(
-                label: 'Copy link',
+                label: 'Copy link dự phòng',
                 icon: Icons.link_rounded,
                 onPressed: onCopyLink,
               ),
@@ -1236,10 +1353,14 @@ class _ShareActionButton extends StatelessWidget {
   }
 }
 
-class _PetHealthShareQrSheet extends StatelessWidget {
-  const _PetHealthShareQrSheet({required this.share});
+class _OwnerPetPassportSheet extends StatelessWidget {
+  const _OwnerPetPassportSheet({
+    required this.pet,
+    required this.publicPetCode,
+  });
 
-  final PetHealthShare share;
+  final OwnerPet pet;
+  final String publicPetCode;
 
   Future<void> _copy(
     BuildContext context, {
@@ -1259,7 +1380,7 @@ class _PetHealthShareQrSheet extends StatelessWidget {
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!ok && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không mở được link chia sẻ.')),
+          const SnackBar(content: Text('Không mở được link hộ chiếu.')),
         );
       }
     } catch (error) {
@@ -1272,12 +1393,59 @@ class _PetHealthShareQrSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final link = buildPetHealthShareLink(share.displayCode);
+    final link = buildPetPassportLink(publicPetCode);
     return OwnerSheetFrame(
-      title: 'QR hồ sơ sức khỏe',
-      subtitle: 'Đưa mã này cho phòng khám để xem nhanh hồ sơ thú cưng.',
-      icon: Icons.qr_code_2_rounded,
+      title: 'Hộ chiếu thú cưng',
+      subtitle:
+          'Một QR dùng khi tái khám để phòng khám nhận diện thú cưng và mở hồ sơ được cấp quyền.',
+      icon: Icons.badge_rounded,
       children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              PetOmiAvatar(
+                label: pet.initials,
+                icon: Icons.pets_rounded,
+                size: 58,
+                imageUrl: pet.avatarUrl,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pet.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${pet.speciesLabel} • ${pet.genderLabel} • ${pet.ageLabel}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    StatusChip(
+                      label: publicPetCode,
+                      color: AppColors.primaryHover,
+                      background: AppColors.primarySoft,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
         Center(
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -1328,10 +1496,13 @@ class _PetHealthShareQrSheet extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Mã chia sẻ', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                'Mã hộ chiếu',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               const SizedBox(height: 6),
               SelectableText(
-                share.displayCode,
+                publicPetCode,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w900,
@@ -1380,7 +1551,7 @@ class _PetHealthShareQrSheet extends StatelessWidget {
               onTap: () => _copy(
                 context,
                 value: link,
-                message: 'Đã sao chép link chia sẻ.',
+                message: 'Đã sao chép link hộ chiếu.',
               ),
             ),
             SoftButton(
@@ -1388,8 +1559,8 @@ class _PetHealthShareQrSheet extends StatelessWidget {
               icon: Icons.copy_rounded,
               onTap: () => _copy(
                 context,
-                value: share.displayCode,
-                message: 'Đã sao chép mã chia sẻ.',
+                value: publicPetCode,
+                message: 'Đã sao chép mã hộ chiếu.',
               ),
             ),
             SoftButton(

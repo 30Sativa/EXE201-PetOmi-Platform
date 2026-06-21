@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { IdCard, Search } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
 
@@ -11,29 +11,18 @@ import type { ClinicPetSearchItemResponse, PetHealthOverviewResponse } from "@/t
 
 interface PublicPetCodeLookupProps {
   clinicId: string
+  initialCode?: string
   onOverviewLoaded: (overview: PetHealthOverviewResponse) => void
 }
 
 export default function PublicPetCodeLookup({
   clinicId,
+  initialCode = "",
   onOverviewLoaded,
 }: PublicPetCodeLookupProps) {
-  const [code, setCode] = useState("")
+  const [code, setCode] = useState(initialCode)
   const [matches, setMatches] = useState<ClinicPetSearchItemResponse[]>([])
   const [errorMessage, setErrorMessage] = useState("")
-
-  const lookupMutation = useMutation({
-    mutationFn: (search: string) =>
-      searchClinicPetsApi(clinicId, { search, limit: 10 }),
-    onSuccess: (items) => {
-      setMatches(items)
-      setErrorMessage("")
-    },
-    onError: (error) => {
-      setMatches([])
-      setErrorMessage(getErrorMessage(error, "Không thể tra cứu PetOmi ID này."))
-    },
-  })
 
   const overviewMutation = useMutation({
     mutationFn: (petId: string) =>
@@ -46,17 +35,43 @@ export default function PublicPetCodeLookup({
       setErrorMessage(
         getErrorMessage(
           error,
-          "Thú cưng này cần HealthShareCode hợp lệ trước khi hiển thị hồ sơ sức khỏe riêng tư.",
+          "Đã nhận diện thú cưng, nhưng hồ sơ sức khỏe riêng tư cần chủ nuôi cấp quyền sức khỏe trong app hoặc cần quan hệ phòng khám hợp lệ.",
         ),
       )
     },
   })
 
+  const lookupMutation = useMutation({
+    mutationFn: ({ search }: { search: string; autoOpen: boolean }) =>
+      searchClinicPetsApi(clinicId, { search, limit: 10 }),
+    onSuccess: (items, variables) => {
+      setMatches(items)
+      setErrorMessage("")
+      if (variables.autoOpen && items.length === 1) {
+        overviewMutation.mutate(items[0].petId)
+      }
+    },
+    onError: (error) => {
+      setMatches([])
+      setErrorMessage(getErrorMessage(error, "Không thể tra cứu PetOmi ID này."))
+    },
+  })
+
+  useEffect(() => {
+    const normalizedCode = initialCode.trim().toUpperCase()
+    if (!normalizedCode || !clinicId) return
+
+    setCode(normalizedCode)
+    lookupMutation.mutate({ search: normalizedCode, autoOpen: true })
+    // Chạy khi scanner hoặc URL đưa vào PetOmi ID mới.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clinicId, initialCode])
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     const normalizedCode = code.trim().toUpperCase()
     if (!normalizedCode) return
-    lookupMutation.mutate(normalizedCode)
+    lookupMutation.mutate({ search: normalizedCode, autoOpen: false })
   }
 
   return (
@@ -68,7 +83,7 @@ export default function PublicPetCodeLookup({
         <div>
           <h2 className="text-lg font-extrabold text-po-text">Tra cứu PetOmi ID</h2>
           <p className="mt-1 text-sm text-po-text-muted">
-            Chỉ dùng để tìm thú cưng đã biết. Hồ sơ sức khỏe riêng tư vẫn cần mã chia sẻ hoặc quan hệ phòng khám hợp lệ.
+            Dùng PetOmi ID từ QR hộ chiếu để nhận diện thú cưng. Hồ sơ sức khỏe riêng tư chỉ mở khi chủ nuôi đã cấp quyền hoặc phòng khám có quan hệ hợp lệ.
           </p>
         </div>
       </div>
@@ -109,7 +124,7 @@ export default function PublicPetCodeLookup({
                 <div className="min-w-0">
                   <p className="truncate font-bold text-po-text">{pet.petName}</p>
                   <p className="truncate text-xs text-po-text-muted">
-                    {[pet.species, pet.breed, pet.ownerFullName ?? pet.ownerEmail].filter(Boolean).join(" · ")}
+                    {[pet.publicPetCode, pet.species, pet.breed, pet.ownerFullName ?? pet.ownerEmail].filter(Boolean).join(" · ")}
                   </p>
                 </div>
               </div>
@@ -127,7 +142,7 @@ export default function PublicPetCodeLookup({
         </div>
       ) : lookupMutation.isSuccess ? (
         <div className="rounded-2xl border border-po-border bg-po-surface-muted px-4 py-3 text-sm text-po-text-muted">
-          Không tìm thấy thú cưng nào với mã này. Hãy xin HealthShareCode từ chủ nuôi hoặc tiếp tục tiếp nhận khách.
+          Không tìm thấy thú cưng nào với mã này. Hãy kiểm tra lại PetOmi ID trên hộ chiếu hoặc tiếp tục tiếp nhận khách.
         </div>
       ) : null}
     </section>

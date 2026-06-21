@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'main.dart';
 import 'models/owner_models.dart';
@@ -551,6 +554,7 @@ class _PetDetailPageState extends State<PetDetailPage> {
       case _PetTab.sharing:
         return _SharingTab(
           access: _access ?? const [],
+          pet: pet,
           petName: pet.name,
           onManage: () =>
               openOwnerSharingPage(context, initialPetId: widget.petId),
@@ -1513,12 +1517,14 @@ class _PhotosTab extends StatelessWidget {
 class _SharingTab extends StatelessWidget {
   const _SharingTab({
     required this.access,
+    required this.pet,
     required this.petName,
     required this.onManage,
     required this.onRevoke,
   });
 
   final List<PetUserAccess> access;
+  final OwnerPet pet;
   final String petName;
   final VoidCallback onManage;
   final ValueChanged<PetUserAccess> onRevoke;
@@ -1526,6 +1532,7 @@ class _SharingTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeCount = access.where((a) => !a.isExpired).length;
+    final publicPetCode = pet.publicPetCode?.trim();
     return Column(
       children: [
         Row(
@@ -1543,6 +1550,56 @@ class _SharingTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
+        if (publicPetCode != null && publicPetCode.isNotEmpty) ...[
+          SectionCard(
+            title: 'Hộ chiếu thú cưng',
+            subtitle:
+                'QR định danh dùng khi tái khám để phòng khám tra cứu nhanh hồ sơ đã biết.',
+            action: IconButton(
+              tooltip: 'Mở hộ chiếu',
+              onPressed: () => _openPassport(context, publicPetCode),
+              icon: const Icon(Icons.qr_code_2_rounded),
+            ),
+            child: Row(
+              children: [
+                const IconBubble(icon: Icons.badge_rounded),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SelectableText(
+                        publicPetCode,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${pet.speciesLabel} • ${pet.breedLabel} • ${pet.ageLabel}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primarySoft,
+                    foregroundColor: AppColors.primaryHover,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                  onPressed: () => _openPassport(context, publicPetCode),
+                  icon: const Icon(Icons.visibility_rounded, size: 18),
+                  label: const Text('QR'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
         SectionCard(
           title: 'Quản lý chia sẻ $petName',
           subtitle: 'Người dùng đang có quyền truy cập hồ sơ.',
@@ -1634,10 +1691,183 @@ class _SharingTab extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: SoftButton(
-            label: 'Mời người dùng hoặc tạo mã sức khỏe',
+            label: 'Quản lý quyền và cấp quyền sức khỏe',
             icon: Icons.share_rounded,
             onTap: onManage,
           ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openPassport(BuildContext context, String publicPetCode) {
+    return showOwnerActionSheet<void>(
+      context: context,
+      child: _PetPassportSheet(pet: pet, publicPetCode: publicPetCode),
+    );
+  }
+}
+
+class _PetPassportSheet extends StatelessWidget {
+  const _PetPassportSheet({required this.pet, required this.publicPetCode});
+
+  final OwnerPet pet;
+  final String publicPetCode;
+
+  Future<void> _copy(
+    BuildContext context, {
+    required String value,
+    required String message,
+  }) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _openLink(BuildContext context, String link) async {
+    final uri = Uri.parse(link);
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!ok && context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Không mở được link hộ chiếu.')),
+        );
+      }
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final link = buildPetPassportLink(publicPetCode);
+    return OwnerSheetFrame(
+      title: 'Hộ chiếu thú cưng',
+      subtitle: 'QR định danh dùng để phòng khám tra cứu nhanh khi tái khám.',
+      icon: Icons.badge_rounded,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              PetOmiAvatar(
+                label: pet.initials,
+                icon: Icons.pets_rounded,
+                size: 58,
+                imageUrl: pet.avatarUrl,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pet.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${pet.speciesLabel} • ${pet.genderLabel} • ${pet.ageLabel}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    StatusChip(
+                      label: publicPetCode,
+                      color: AppColors.primaryHover,
+                      background: AppColors.primarySoft,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Center(
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: QrImageView(
+              data: link,
+              version: QrVersions.auto,
+              size: 220,
+              backgroundColor: Colors.white,
+              eyeStyle: const QrEyeStyle(
+                eyeShape: QrEyeShape.square,
+                color: AppColors.text,
+              ),
+              dataModuleStyle: const QrDataModuleStyle(
+                dataModuleShape: QrDataModuleShape.square,
+                color: AppColors.text,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        SelectableText(
+          link,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.primarySoft,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: const Text(
+            'QR này chỉ định danh thú cưng. Dữ liệu sức khỏe riêng tư vẫn cần HealthShareCode hoặc quan hệ hợp lệ với phòng khám.',
+          ),
+        ),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            PrimaryButton(
+              label: 'Copy link',
+              icon: Icons.link_rounded,
+              onTap: () => _copy(
+                context,
+                value: link,
+                message: 'Đã sao chép link hộ chiếu.',
+              ),
+            ),
+            SoftButton(
+              label: 'Copy mã',
+              icon: Icons.copy_rounded,
+              onTap: () => _copy(
+                context,
+                value: publicPetCode,
+                message: 'Đã sao chép mã hộ chiếu.',
+              ),
+            ),
+            SoftButton(
+              label: 'Mở link',
+              icon: Icons.open_in_new_rounded,
+              onTap: () => _openLink(context, link),
+            ),
+          ],
         ),
       ],
     );

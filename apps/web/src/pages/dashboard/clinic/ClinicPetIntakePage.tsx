@@ -15,7 +15,7 @@ import type { PetHealthOverviewResponse } from "@/types"
 type IntakeTab = "code" | "petomi-id" | "known-pets" | "guest"
 
 const tabs: { value: IntakeTab; label: string }[] = [
-  { value: "code", label: "Nhập mã" },
+  { value: "code", label: "Quét QR" },
   { value: "petomi-id", label: "PetOmi ID" },
   { value: "known-pets", label: "Thú cưng đã biết" },
   { value: "guest", label: "Tiếp nhận khách" },
@@ -25,8 +25,12 @@ export default function ClinicPetIntakePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const shareCode = searchParams.get("shareCode") ?? ""
+  const petCode = searchParams.get("petCode") ?? ""
   const [activeShareCode, setActiveShareCode] = useState(shareCode)
-  const [activeTab, setActiveTab] = useState<IntakeTab>(shareCode ? "code" : "known-pets")
+  const [activePetCode, setActivePetCode] = useState(petCode)
+  const [activeTab, setActiveTab] = useState<IntakeTab>(
+    shareCode ? "code" : petCode ? "petomi-id" : "known-pets",
+  )
   const [overview, setOverview] = useState<PetHealthOverviewResponse | null>(null)
   const { data: clinic, isLoading: isClinicLoading } = useMyClinic()
   const clinicId = clinic?.clinicId ?? ""
@@ -74,7 +78,7 @@ export default function ClinicPetIntakePage() {
               Pet health access
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-po-text-muted">
-              Bắt đầu bằng HealthShareCode khi chủ nuôi cung cấp. PetOmi ID và tìm thú cưng đã biết là phương án dự phòng và không bỏ qua quy tắc phân quyền của hệ thống.
+              Quét QR hộ chiếu thú cưng hoặc nhập PetOmi ID để nhận diện nhanh. HealthShareCode chỉ dùng như lớp cấp quyền sức khỏe tạm thời khi hồ sơ riêng tư chưa mở cho phòng khám.
             </p>
           </div>
           <Link
@@ -97,8 +101,14 @@ export default function ClinicPetIntakePage() {
       {activeTab === "code" ? (
         <div className="grid gap-4">
           <PetHealthQrScanner
-            onCodeScanned={(code) => {
-              setActiveShareCode(code)
+            onCodeScanned={(payload) => {
+              if (payload.type === "pet-code") {
+                setActivePetCode(payload.code)
+                setActiveTab("petomi-id")
+                return
+              }
+
+              setActiveShareCode(payload.code)
               setActiveTab("code")
             }}
           />
@@ -113,6 +123,7 @@ export default function ClinicPetIntakePage() {
       {activeTab === "petomi-id" ? (
         <PublicPetCodeLookup
           clinicId={clinicId}
+          initialCode={activePetCode}
           onOverviewLoaded={handleOverviewLoaded}
         />
       ) : null}
@@ -137,7 +148,7 @@ export default function ClinicPetIntakePage() {
             No health overview loaded
           </h3>
           <p className="mx-auto mt-1 max-w-xl text-sm text-po-text-muted">
-            Xác thực mã chia sẻ sức khỏe hoặc mở thú cưng có quan hệ hợp lệ với phòng khám để xem phần tổng quan được phép.
+            Quét hộ chiếu thú cưng, nhập PetOmi ID hoặc dùng HealthShareCode được chủ nuôi cấp để xem phần tổng quan được phép.
           </p>
         </section>
       )}
@@ -155,7 +166,7 @@ function GuestIntakeFallback() {
         <div>
           <h2 className="text-lg font-extrabold text-po-text">Tiếp nhận khách dự phòng</h2>
           <p className="mt-1 max-w-2xl text-sm text-po-text-muted">
-            Dùng màn hình lịch hẹn để tiếp nhận walk-in hoặc cấp cứu khi chủ nuôi chưa có tài khoản, PetOmi ID hoặc HealthShareCode.
+            Dùng màn hình lịch hẹn để tiếp nhận walk-in hoặc cấp cứu khi chủ nuôi chưa có tài khoản, QR hộ chiếu, PetOmi ID hoặc HealthShareCode.
           </p>
         </div>
       </div>

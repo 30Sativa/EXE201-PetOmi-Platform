@@ -142,6 +142,7 @@ export interface ClinicDoctorListItemResponse {
 export interface ClinicPetSearchItemResponse {
   petId: string
   ownerUserId: string
+  publicPetCode: string | null
   petName: string
   species: string
   breed: string | null

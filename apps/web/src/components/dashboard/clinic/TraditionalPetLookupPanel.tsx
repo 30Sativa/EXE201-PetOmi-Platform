@@ -89,7 +89,7 @@ export default function TraditionalPetLookupPanel({
         <EmptyState
           icon={UsersRound}
           title="Không tìm thấy thú cưng đã biết"
-          description="Dùng mã chia sẻ sức khỏe hoặc tiếp tục tiếp nhận khách nếu đây là bệnh nhân mới."
+          description="Quét QR hộ chiếu, nhập PetOmi ID hoặc tiếp tục tiếp nhận khách nếu đây là bệnh nhân mới."
         />
       ) : (
         <div className="grid gap-3">

@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetOmiPlatform.API.Common;
+using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.ClinicReview.Command;
 using PetOmiPlatform.Application.Features.ClinicReview.DTOs.Request;
 using PetOmiPlatform.Application.Features.ClinicReview.DTOs.Response;

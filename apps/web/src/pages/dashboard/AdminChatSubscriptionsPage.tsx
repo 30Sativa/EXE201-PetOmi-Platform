@@ -40,6 +40,17 @@ const statusVariant = (status: string) => {
   }
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  active: "Đang hoạt động",
+  paid: "Đã thanh toán",
+  pending: "Chờ xử lý",
+  expired: "Hết hạn",
+  cancelled: "Đã hủy",
+}
+
+const statusLabel = (status: string) =>
+  STATUS_LABELS[status.toLowerCase()] ?? status
+
 export default function AdminChatSubscriptionsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["admin", "chat-subscriptions"],
@@ -61,21 +72,22 @@ export default function AdminChatSubscriptionsPage() {
               <span className="grid size-7 place-items-center rounded-xl bg-po-primary-soft ring-1 ring-po-border/80">
                 <Crown className="size-3.5" />
               </span>
-              AI subscriptions
+              Gói chat AI
             </div>
             <h2 className="mt-5 text-3xl font-extrabold leading-tight text-po-text md:text-5xl">
-              Quan ly goi chat AI
+              Quản lý gói chat AI
             </h2>
             <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-po-text-muted">
-              Theo doi goi Free/Premium, subscription gan theo tung pet va cac giao dich SePay gan day.
+              Theo dõi gói Miễn phí / Premium, gói đăng ký gắn theo từng thú cưng và các giao dịch
+              thanh toán gần đây.
             </p>
           </div>
           {premiumPlan ? (
             <div className="rounded-[24px] bg-po-primary-soft p-4 text-po-primary ring-1 ring-po-border/80">
-              <p className="text-xs font-extrabold uppercase tracking-[0.12em]">Premium price</p>
+              <p className="text-xs font-extrabold uppercase tracking-[0.12em]">Giá Premium</p>
               <p className="mt-2 text-3xl font-extrabold">{formatCurrency(premiumPlan.priceMonthly)}</p>
               <p className="mt-1 text-xs font-bold">
-                {premiumPlan.monthlyMessageQuota} messages / {premiumPlan.billingCycleDays} ngay / pet
+                {premiumPlan.monthlyMessageQuota} tin nhắn / {premiumPlan.billingCycleDays} ngày / thú cưng
               </p>
             </div>
           ) : null}
@@ -89,17 +101,17 @@ export default function AdminChatSubscriptionsPage() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <MetricCard icon={PawPrint} label="Active subscriptions" value={activeSubscriptions.length} />
-            <MetricCard icon={CreditCard} label="Pending payments" value={pendingPayments.length} />
-            <MetricCard icon={ReceiptText} label="Paid payments" value={paidPayments.length} />
+            <MetricCard icon={PawPrint} label="Gói đang hoạt động" value={activeSubscriptions.length} />
+            <MetricCard icon={CreditCard} label="Chờ thanh toán" value={pendingPayments.length} />
+            <MetricCard icon={ReceiptText} label="Đã thanh toán" value={paidPayments.length} />
           </div>
 
           <section className="rounded-[30px] bg-white/92 p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <h3 className="text-xl font-extrabold text-po-text">Plans</h3>
+                <h3 className="text-xl font-extrabold text-po-text">Các gói dịch vụ</h3>
                 <p className="mt-1 text-sm font-medium text-po-text-muted">
-                  Seed mac dinh cho owner chat. Clinic scope se dung tiep model nay sau.
+                  Gói mặc định dành cho chủ thú cưng chat với AI.
                 </p>
               </div>
             </div>
@@ -112,7 +124,7 @@ export default function AdminChatSubscriptionsPage() {
                       <p className="mt-1 text-sm font-semibold text-po-text-muted">{plan.code}</p>
                     </div>
                     <StatusBadge
-                      label={plan.isActive ? "Active" : "Inactive"}
+                      label={plan.isActive ? "Đang bật" : "Đã tắt"}
                       variant={plan.isActive ? "success" : "default"}
                     />
                   </div>
@@ -121,16 +133,16 @@ export default function AdminChatSubscriptionsPage() {
                   </p>
                   <div className="mt-4 grid gap-2 text-sm font-semibold text-po-text-muted">
                     <div className="flex justify-between gap-3">
-                      <span>Messages</span>
-                      <span>{plan.monthlyMessageQuota}/thang</span>
+                      <span>Số tin nhắn</span>
+                      <span>{plan.monthlyMessageQuota}/tháng</span>
                     </div>
                     <div className="flex justify-between gap-3">
-                      <span>Deep RAG</span>
-                      <span>{plan.deepRagEnabled ? "Yes" : "No"}</span>
+                      <span>Tư vấn chuyên sâu</span>
+                      <span>{plan.deepRagEnabled ? "Có" : "Không"}</span>
                     </div>
                     <div className="flex justify-between gap-3">
-                      <span>Image uploads</span>
-                      <span>{plan.maxImageUploadsPerMonth}/thang</span>
+                      <span>Gửi ảnh</span>
+                      <span>{plan.maxImageUploadsPerMonth}/tháng</span>
                     </div>
                   </div>
                 </article>
@@ -139,16 +151,16 @@ export default function AdminChatSubscriptionsPage() {
           </section>
 
           <section className="rounded-[30px] bg-white/92 p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80">
-            <h3 className="text-xl font-extrabold text-po-text">Subscriptions gan day</h3>
+            <h3 className="text-xl font-extrabold text-po-text">Gói đăng ký gần đây</h3>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-[0.1em] text-po-text-subtle">
                   <tr>
-                    <th className="px-3 py-2">Owner</th>
-                    <th className="px-3 py-2">Pet</th>
-                    <th className="px-3 py-2">Plan</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Expires</th>
+                    <th className="px-3 py-2">Chủ thú cưng</th>
+                    <th className="px-3 py-2">Thú cưng</th>
+                    <th className="px-3 py-2">Gói</th>
+                    <th className="px-3 py-2">Trạng thái</th>
+                    <th className="px-3 py-2">Hết hạn</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -158,7 +170,7 @@ export default function AdminChatSubscriptionsPage() {
                       <td className="px-3 py-3 text-po-text-muted">{item.petName ?? item.clinicName ?? "--"}</td>
                       <td className="px-3 py-3 text-po-text-muted">{item.planName}</td>
                       <td className="px-3 py-3">
-                        <StatusBadge label={item.status} variant={statusVariant(item.status)} />
+                        <StatusBadge label={statusLabel(item.status)} variant={statusVariant(item.status)} />
                       </td>
                       <td className="px-3 py-3 text-po-text-muted">{formatDate(item.expiresAt)}</td>
                     </tr>
@@ -169,17 +181,17 @@ export default function AdminChatSubscriptionsPage() {
           </section>
 
           <section className="rounded-[30px] bg-white/92 p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80">
-            <h3 className="text-xl font-extrabold text-po-text">Payments gan day</h3>
+            <h3 className="text-xl font-extrabold text-po-text">Giao dịch gần đây</h3>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
                 <thead className="text-xs uppercase tracking-[0.1em] text-po-text-subtle">
                   <tr>
-                    <th className="px-3 py-2">Reference</th>
-                    <th className="px-3 py-2">Owner</th>
-                    <th className="px-3 py-2">Pet</th>
-                    <th className="px-3 py-2">Amount</th>
-                    <th className="px-3 py-2">Status</th>
-                    <th className="px-3 py-2">Created</th>
+                    <th className="px-3 py-2">Mã giao dịch</th>
+                    <th className="px-3 py-2">Chủ thú cưng</th>
+                    <th className="px-3 py-2">Thú cưng</th>
+                    <th className="px-3 py-2">Số tiền</th>
+                    <th className="px-3 py-2">Trạng thái</th>
+                    <th className="px-3 py-2">Ngày tạo</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -190,7 +202,7 @@ export default function AdminChatSubscriptionsPage() {
                       <td className="px-3 py-3 text-po-text-muted">{item.petName}</td>
                       <td className="px-3 py-3 font-semibold text-po-text">{formatCurrency(item.amount)}</td>
                       <td className="px-3 py-3">
-                        <StatusBadge label={item.status} variant={statusVariant(item.status)} />
+                        <StatusBadge label={statusLabel(item.status)} variant={statusVariant(item.status)} />
                       </td>
                       <td className="px-3 py-3 text-po-text-muted">{formatDate(item.createdAt)}</td>
                     </tr>

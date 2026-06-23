@@ -68,16 +68,16 @@ export default function AdminAiPage() {
             <span className="grid size-7 place-items-center rounded-xl bg-po-primary-soft ring-1 ring-po-border/80">
               <Bot className="size-3.5" />
             </span>
-            AI operations
+            Vận hành AI
           </div>
           <h2 className="mt-6 max-w-2xl text-3xl font-extrabold leading-[1.08] text-po-text md:text-5xl">
-            Theo dõi <span className="text-po-primary">chatbot, RAG</span>
+            Theo dõi <span className="text-po-primary">trợ lý AI</span>
             <br />
-            và chất lượng phản hồi.
+            và chất lượng trả lời.
           </h2>
           <p className="mt-6 max-w-xl text-sm font-medium leading-7 text-po-text-muted md:text-base md:leading-8">
-            Trang này gom các chỉ số AI từ dashboard backend để admin biết mức sử dụng, tỷ lệ có
-            trích dẫn nguồn và các intent đang phát sinh nhiều nhất.
+            Trang này tổng hợp các chỉ số của trợ lý AI để bạn nắm được mức sử dụng, tỷ lệ câu trả lời
+            có dẫn nguồn tài liệu và những chủ đề người dùng hỏi nhiều nhất.
           </p>
         </div>
       </section>
@@ -90,28 +90,28 @@ export default function AdminAiPage() {
         <>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <AiMetricCard
-              label="AI responses 7 ngày"
+              label="Câu trả lời AI (7 ngày)"
               value={formatNumber(aiStats?.aiResponsesLast7Days)}
               icon={MessageCircle}
-              hint={`${formatNumber(aiStats?.totalAiResponses)} phản hồi tổng`}
+              hint={`${formatNumber(aiStats?.totalAiResponses)} câu trả lời từ trước đến nay`}
             />
             <AiMetricCard
-              label="Tỷ lệ dùng RAG"
+              label="Tỷ lệ trả lời có dẫn nguồn"
               value={formatPercent(aiStats?.ragUsageRate)}
               icon={Database}
-              hint={`${formatNumber(aiStats?.ragResponsesLast7Days)} phản hồi RAG / 7 ngày`}
+              hint={`${formatNumber(aiStats?.ragResponsesLast7Days)} câu / 7 ngày`}
             />
             <AiMetricCard
-              label="Nguồn trích dẫn"
+              label="Câu trả lời có tài liệu"
               value={formatNumber(aiStats?.sourceBackedResponsesLast7Days)}
               icon={FileText}
-              hint={`${formatNumber(aiStats?.averageChunksUsedLast7Days)} chunks trung bình`}
+              hint={`Trung bình ${formatNumber(aiStats?.averageChunksUsedLast7Days)} đoạn tài liệu / câu`}
             />
             <AiMetricCard
-              label="AI lỗi 7 ngày"
+              label="Câu trả lời lỗi (7 ngày)"
               value={formatNumber(aiStats?.failedResponsesLast7Days)}
               icon={AlertCircle}
-              hint={`${formatNumber(aiStats?.totalTokensLast7Days)} tokens đã dùng`}
+              hint={`${formatNumber(aiStats?.totalTokensLast7Days)} lượt xử lý đã dùng`}
               tone="warning"
             />
           </div>
@@ -120,15 +120,15 @@ export default function AdminAiPage() {
             <section className="rounded-[30px] bg-white/92 p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80 md:p-6">
               <SectionHeading
                 icon={TrendingUp}
-                title="Intent nổi bật"
-                subtitle="Các nhóm câu hỏi chatbot nhận nhiều nhất trong hệ thống AI hiện tại."
+                title="Chủ đề được hỏi nhiều"
+                subtitle="Những nhóm câu hỏi mà người dùng gửi cho trợ lý AI nhiều nhất."
               />
 
               {intentStats.length === 0 ? (
                 <EmptyState
                   icon={Bot}
-                  title="Chưa có dữ liệu intent"
-                  description="Khi AI xử lý hội thoại, intent và số lần dùng RAG sẽ hiển thị ở đây."
+                  title="Chưa có dữ liệu"
+                  description="Khi người dùng bắt đầu trò chuyện, các chủ đề được hỏi sẽ hiển thị ở đây."
                   className="rounded-[24px] bg-po-surface-muted/60"
                 />
               ) : (
@@ -147,11 +147,11 @@ export default function AdminAiPage() {
                               {item.intent}
                             </h3>
                             <p className="mt-2 text-sm font-medium text-po-text-muted">
-                              {formatNumber(item.ragCount)} lượt có RAG
+                              {formatNumber(item.ragCount)} lần có dẫn nguồn tài liệu
                             </p>
                           </div>
                           <span className="text-sm font-extrabold text-po-primary">
-                            {formatNumber(item.count)} lượt
+                            {formatNumber(item.count)} lượt hỏi
                           </span>
                         </div>
                         <div className="mt-5 h-2.5 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-po-border/50">
@@ -168,29 +168,29 @@ export default function AdminAiPage() {
               <section className="rounded-[30px] bg-white/92 p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80 md:p-6">
                 <SectionHeading
                   icon={ShieldCheck}
-                  title="Chất lượng phản hồi"
-                  subtitle="Các chỉ số lưu nhanh để phát hiện AI đang thiếu dữ liệu hoặc trả lời kém."
+                  title="Chất lượng trả lời"
+                  subtitle="Các chỉ số giúp phát hiện sớm khi AI thiếu dữ liệu hoặc trả lời chưa tốt."
                 />
 
                 <div className="mt-6 grid gap-3">
                   {[
                     {
-                      label: "Hội thoại có AI",
+                      label: "Cuộc trò chuyện có AI",
                       value: formatNumber(aiStats?.activeConversationsLast7Days),
                       icon: MessageCircle,
-                      detail: "Conversations có phát sinh message trong 7 ngày.",
+                      detail: "Số cuộc trò chuyện có tin nhắn trong 7 ngày qua.",
                     },
                     {
-                      label: "RAG responses tổng",
+                      label: "Câu trả lời có dẫn nguồn",
                       value: formatNumber(aiStats?.ragResponses),
                       icon: Database,
-                      detail: "Tổng phản hồi đã đánh dấu flag/used.",
+                      detail: "Tổng số câu trả lời dựa trên tài liệu tham khảo.",
                     },
                     {
-                      label: "Tokens 7 ngày",
+                      label: "Lượt xử lý (7 ngày)",
                       value: formatNumber(aiStats?.totalTokensLast7Days),
                       icon: Gauge,
-                      detail: "Tổng input + output tokens backend lưu lại.",
+                      detail: "Tổng khối lượng AI đã xử lý để tạo câu trả lời.",
                     },
                   ].map((item) => (
                     <article
@@ -216,7 +216,7 @@ export default function AdminAiPage() {
                 <SectionHeading
                   icon={Bell}
                   title="Cảnh báo hệ thống"
-                  subtitle="Các alert liên quan trực tiếp đến vận hành AI hoặc nền tảng."
+                  subtitle="Các cảnh báo liên quan trực tiếp đến hoạt động của AI hoặc hệ thống."
                 />
 
                 {alertsLoading ? (
@@ -252,7 +252,13 @@ export default function AdminAiPage() {
                                   ? "warning"
                                   : "default"
                             }
-                            label={alert.severity}
+                            label={
+                              alert.severity === "high"
+                                ? "Nghiêm trọng"
+                                : alert.severity === "medium"
+                                  ? "Trung bình"
+                                  : "Nhẹ"
+                            }
                           />
                         </div>
                       </article>

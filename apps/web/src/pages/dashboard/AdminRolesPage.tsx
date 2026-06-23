@@ -2,6 +2,7 @@
 import {
   ArrowLeftRight,
   CalendarDays,
+  Check,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -28,7 +29,12 @@ import {
   assignAdminRoleApi,
   revokeAdminRoleApi,
 } from "@/services/admin.service"
-import type { AdminRoleItemResponse, AdminUserListResponse, PagedData } from "@/types"
+import type {
+  AdminPermissionItemResponse,
+  AdminRoleItemResponse,
+  AdminUserListResponse,
+  PagedData,
+} from "@/types"
 
 function getPagedItems<T>(paged?: PagedData<T>) {
   return paged?.items ?? paged?.Items ?? []
@@ -157,9 +163,17 @@ export default function AdminRolesPage() {
             className="rounded-[24px] bg-po-surface-muted/60"
           />
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <RoleCatalogColumn title="Global roles" roles={roleCatalog.globalRoles} />
-            <RoleCatalogColumn title="Clinic roles" roles={roleCatalog.clinicRoles} />
+          <div className="grid gap-6">
+            <RoleMatrix
+              title="Global roles"
+              scope="global"
+              roles={roleCatalog.globalRoles}
+            />
+            <RoleMatrix
+              title="Clinic roles"
+              scope="clinic"
+              roles={roleCatalog.clinicRoles}
+            />
           </div>
         )}
       </DashboardSection>
@@ -470,19 +484,48 @@ export default function AdminRolesPage() {
   )
 }
 
-function RoleCatalogColumn({
+function RoleMatrix({
   title,
+  scope,
   roles,
 }: {
   title: string
+  scope: "global" | "clinic"
   roles: AdminRoleItemResponse[]
 }) {
+  // Gom tất cả permission xuất hiện trong nhóm role này thành danh sách hàng (sorted, unique)
+  const permissionRows = (() => {
+    const map = new Map<string, AdminPermissionItemResponse>()
+    roles.forEach((role) =>
+      role.permissions.forEach((p) => {
+        if (!map.has(p.permissionName)) map.set(p.permissionName, p)
+      }),
+    )
+    return Array.from(map.values()).sort((a, b) =>
+      a.permissionName.localeCompare(b.permissionName),
+    )
+  })()
+
+  // Tra cứu nhanh: role nào có permission nào
+  const roleHasPermission = (role: AdminRoleItemResponse, permissionName: string) =>
+    role.permissions.some((p) => p.permissionName === permissionName)
+
+  const scopeTone = scope === "global" ? "info" : "warning"
+  const scopeLabel = scope === "global" ? "Global" : "Clinic"
+
   return (
-    <div className="grid content-start gap-3 rounded-[24px] bg-po-surface-muted/60 p-3 ring-1 ring-po-border/70">
-      <div className="flex items-center justify-between gap-3 px-1">
-        <h3 className="text-sm font-extrabold text-po-text">{title}</h3>
-        <StatusBadge variant="info" label={`${roles.length} roles`} />
+    <div className="grid content-start gap-3 rounded-[24px] bg-po-surface-muted/60 p-3 ring-1 ring-po-border/70 sm:p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
+        <div className="flex items-center gap-2.5">
+          <h3 className="text-sm font-extrabold text-po-text">{title}</h3>
+          <StatusBadge variant={scopeTone} label={scopeLabel} />
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusBadge variant="info" label={`${roles.length} roles`} />
+          <StatusBadge variant="success" label={`${permissionRows.length} quyền`} />
+        </div>
       </div>
+
       {roles.length === 0 ? (
         <EmptyState
           icon={ShieldCheck}
@@ -491,48 +534,71 @@ function RoleCatalogColumn({
           className="rounded-[20px] bg-white/70 py-8"
         />
       ) : (
-        roles.map((role) => <RoleDefinitionCard key={role.roleId} role={role} />)
+        <div className="overflow-x-auto rounded-[20px] bg-white ring-1 ring-po-border/70">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-po-border/70 bg-gradient-to-b from-[#FFFCF8] to-[#FFF9F2]">
+                <th className="sticky left-0 z-10 min-w-[200px] border-r border-po-border/60 bg-[#FFFCF8] px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-po-text-subtle">
+                  Permission
+                </th>
+                {roles.map((role) => (
+                  <th
+                    key={role.roleId}
+                    className="min-w-[120px] border-r border-po-border/40 px-3 py-3 text-center align-bottom last:border-r-0"
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-extrabold text-po-text">
+                        {role.roleName}
+                      </span>
+                      <span className="text-[10px] font-medium text-po-text-muted">
+                        {role.assignedCount} người
+                      </span>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {permissionRows.map((permission, idx) => (
+                <tr
+                  key={permission.permissionId}
+                  className={`border-b border-po-border/40 last:border-b-0 ${
+                    idx % 2 === 1 ? "bg-po-surface-muted/30" : "bg-white"
+                  }`}
+                >
+                  <th
+                    scope="row"
+                    className={`sticky left-0 z-10 border-r border-po-border/60 px-4 py-2.5 text-left text-xs font-semibold text-po-text ${
+                      idx % 2 === 1 ? "bg-[#FBF6EF]" : "bg-white"
+                    }`}
+                    title={permission.description ?? permission.permissionName}
+                  >
+                    {permission.permissionName}
+                  </th>
+                  {roles.map((role) => {
+                    const granted = roleHasPermission(role, permission.permissionName)
+                    return (
+                      <td
+                        key={role.roleId}
+                        className="border-r border-po-border/30 px-3 py-2.5 text-center last:border-r-0"
+                      >
+                        {granted ? (
+                          <span className="inline-grid size-6 place-items-center rounded-full bg-po-success-soft text-po-success">
+                            <Check className="size-3.5" strokeWidth={3} />
+                          </span>
+                        ) : (
+                          <span className="inline-block size-1.5 rounded-full bg-po-border" />
+                        )}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
-  )
-}
-
-function RoleDefinitionCard({ role }: { role: AdminRoleItemResponse }) {
-  const visiblePermissions = role.permissions.slice(0, 4)
-  const hiddenCount = Math.max(0, role.permissions.length - visiblePermissions.length)
-
-  return (
-    <article className="rounded-[22px] bg-white/82 p-4 ring-1 ring-po-border/70">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h4 className="truncate text-sm font-extrabold text-po-text">{role.roleName}</h4>
-          <p className="mt-1 text-xs text-po-text-muted">
-            {role.assignedCount} người đang dùng role này
-          </p>
-        </div>
-        <StatusBadge
-          variant={role.scope === "global" ? "info" : "warning"}
-          label={role.scope === "global" ? "Global" : "Clinic"}
-        />
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {visiblePermissions.map((permission) => (
-          <span
-            key={permission.permissionId}
-            className="inline-flex max-w-full items-center rounded-2xl bg-po-surface-muted px-2.5 py-1 text-[10px] font-semibold text-po-text-muted"
-            title={permission.description ?? permission.permissionName}
-          >
-            <span className="truncate">{permission.permissionName}</span>
-          </span>
-        ))}
-        {hiddenCount > 0 ? (
-          <span className="inline-flex rounded-2xl bg-po-primary-soft px-2.5 py-1 text-[10px] font-semibold text-po-primary">
-            +{hiddenCount} quyền
-          </span>
-        ) : null}
-      </div>
-    </article>
   )
 }
 

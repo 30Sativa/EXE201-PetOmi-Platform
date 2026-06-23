@@ -1,0 +1,17 @@
+# ===== TEMPLATE - COPY FILE NAY THANH "key.properties" ROI DIEN THONG TIN THAT =====
+# QUAN TRONG: file key.properties THAT da bi .gitignore -> KHONG bao gio commit len git.
+# Cung KHONG duoc lam mat file keystore (.jks). Mat keystore = mat quyen update app tren Play Store.
+
+# Password cua keystore (nhap khi tao bang keytool)
+storePassword=YOUR_STORE_PASSWORD
+
+# Password cua key alias
+keyPassword=YOUR_KEY_PASSWORD
+
+# Ten alias (vi du: petomi)
+keyAlias=petomi
+
+# Duong dan toi file keystore.
+# - Neu de file .jks trong thu muc android/app thi ghi: app/petomi-release.jks
+# - Hoac de duong dan tuyet doi: C:/Users/thitr/keys/petomi-release.jks
+storeFile=app/petomi-release.jks

@@ -36,7 +36,7 @@ export default function Navbar({ links = defaultLinks }: NavbarProps) {
 
         <div className="flex items-center gap-2">
           <Link
-            to="/login"
+            to="/for-clinics"
             className="hidden items-center gap-1.5 rounded-full border border-po-border px-3 py-2 text-sm font-semibold text-po-text-muted transition hover:border-po-primary hover:text-po-text lg:inline-flex"
           >
             <Stethoscope className="size-4" />

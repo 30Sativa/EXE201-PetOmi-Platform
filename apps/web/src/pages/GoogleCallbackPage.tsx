@@ -35,7 +35,19 @@ export default function GoogleCallbackPage() {
         }
 
         if (window.opener && !window.opener.closed) {
-          window.opener.postMessage(payload, window.location.origin)
+          // Gửi về đúng origin của cửa sổ cha. Dùng "*" làm fallback khi
+          // không đọc được origin của opener do lệch host (apex vs www),
+          // payload chỉ là token cho chính app nên an toàn.
+          let targetOrigin = window.location.origin
+          try {
+            if (window.opener.location?.origin) {
+              targetOrigin = window.opener.location.origin
+            }
+          } catch {
+            targetOrigin = "*"
+          }
+
+          window.opener.postMessage(payload, targetOrigin)
           window.close()
           return
         }

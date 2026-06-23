@@ -13,6 +13,7 @@ import OwnerDashboardLayout from "@/components/dashboard/OwnerDashboardLayout"
 import AuthPage from "@/pages/AuthPage"
 import CompleteProfilePage from "@/pages/CompleteProfilePage"
 import ErrorPage from "@/pages/ErrorPage"
+import ForClinicsPage from "@/pages/ForClinicsPage"
 import ForgotPasswordPage from "@/pages/ForgotPasswordPage"
 import GoogleCallbackPage from "@/pages/GoogleCallbackPage"
 import LandingPage from "@/pages/LandingPage"
@@ -83,6 +84,11 @@ const router = createBrowserRouter([
       {
         path: "register",
         element: <AuthPage initialMode="register" />,
+      },
+
+      {
+        path: "for-clinics",
+        element: <ForClinicsPage />,
       },
 
       {

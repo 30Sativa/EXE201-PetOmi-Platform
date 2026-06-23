@@ -10,8 +10,12 @@ export function useGoogleLogin() {
   const popupRef = useRef<Window | null>(null)
 
   useEffect(() => {
+    // Bỏ tiền tố "www." để apex (petomi.cloud) và www (www.petomi.cloud)
+    // được coi là cùng origin — tránh popup Google bị drop message khi lệch host.
+    const normalizeOrigin = (origin: string) => origin.replace("://www.", "://")
+
     const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return
+      if (normalizeOrigin(event.origin) !== normalizeOrigin(window.location.origin)) return
       if (event.data?.type !== "GOOGLE_AUTH_SUCCESS") return
 
       const {

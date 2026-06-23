@@ -8,3 +8,5 @@ export { useDeleteSession, useDeleteAllSessions, useResendVerification } from ".
 export { useGoogleLogin } from "./useGoogleLogin"
 export { useInView } from "./useInView"
 export { useMounted } from "./useMounted"
+export { useCountUp } from "./useCountUp"
+export { useSmoothScroll } from "./useSmoothScroll"

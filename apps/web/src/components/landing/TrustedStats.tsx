@@ -1,6 +1,7 @@
 import { AlertTriangle, Layers, ShieldCheck, Users } from "lucide-react"
 
 import { useInView } from "@/hooks"
+import AnimatedStat from "./AnimatedStat"
 
 interface StatItemFull {
   label: string
@@ -33,11 +34,15 @@ export default function TrustedStats() {
             return (
               <div
                 key={stat.label}
-                className="border-l border-po-border pl-4 transition-all duration-500"
+                className={`border-l border-po-border pl-4 transition-all duration-500 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
                 style={{ transitionDelay: `${i * 80}ms` }}
               >
                 <Icon className="size-5 text-po-primary" />
-                <p className="mt-3 text-3xl font-extrabold leading-none text-po-text">{stat.value}</p>
+                <AnimatedStat
+                  value={stat.value}
+                  start={inView}
+                  className="mt-3 block text-3xl font-extrabold leading-none text-po-text"
+                />
                 <p className="mt-2 text-sm leading-5 text-po-text-muted">{stat.label}</p>
               </div>
             )

@@ -1,4 +1,6 @@
+import { useRef } from "react"
 import { CalendarDays, Clock, MapPin, ShieldCheck } from "lucide-react"
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
 
 import { Button } from "@/components/ui/button"
 import { useInView } from "@/hooks"
@@ -12,6 +14,14 @@ const slots: Slot[] = [
 
 export default function BookingPreview() {
   const { ref, inView } = useInView({ threshold: 0.1 })
+  const reduce = useReducedMotion()
+  const showcaseRef = useRef<HTMLDivElement>(null)
+
+  const { scrollYProgress } = useScroll({
+    target: showcaseRef,
+    offset: ["start end", "end start"],
+  })
+  const imgY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-7%", "7%"])
 
   return (
     <section ref={ref as React.RefObject<HTMLElement>} id="booking" className="bg-white/65 py-20 md:py-24">
@@ -48,11 +58,15 @@ export default function BookingPreview() {
           </div>
         </div>
 
-        <div className={`relative min-h-[560px] overflow-hidden rounded-[30px] bg-po-text shadow-xl shadow-orange-200/30 transition-all duration-500 delay-150 ${inView ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-6 scale-95"}`}>
-          <img
+        <div
+          ref={showcaseRef}
+          className={`relative min-h-[560px] overflow-hidden rounded-[30px] bg-po-text shadow-xl shadow-orange-200/30 transition-all duration-500 delay-150 ${inView ? "opacity-100 translate-x-0 scale-100" : "opacity-0 translate-x-6 scale-95"}`}
+        >
+          <motion.img
             src="/clinic-showcase.png"
             alt="Mặt tiền và phòng khám thú y có bác sĩ đang tiếp nhận thú cưng"
-            className="absolute inset-0 h-full w-full object-cover"
+            style={{ y: imgY }}
+            className="absolute inset-x-0 -top-[8%] h-[116%] w-full object-cover"
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,_rgba(74,47,33,0.18),_rgba(74,47,33,0.68))]" />
           <div className="absolute bottom-5 left-5 right-5 rounded-[24px] border border-white/70 bg-white/[0.9] p-5 shadow-2xl backdrop-blur md:left-auto md:w-[360px]">

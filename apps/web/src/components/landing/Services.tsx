@@ -2,6 +2,7 @@ import { HeartPulse, PawPrint, ShieldPlus, Sparkles } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { useInView } from "@/hooks"
+import { TiltCard } from "./motion-primitives"
 
 interface ServiceItem {
   title: string
@@ -104,15 +105,15 @@ export default function Services() {
               {services.slice(2).map((service, i) => {
                 const Icon = service.icon
                 return (
-                  <article
+                  <TiltCard
                     key={service.title}
-                    className={`rounded-[24px] border border-po-border bg-po-surface-muted/70 p-5 transition-all duration-500 hover:-translate-y-1 hover:bg-white hover:shadow-md ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+                    className={`h-full rounded-[24px] border border-po-border bg-po-surface-muted/70 p-5 transition-[opacity,colors,box-shadow] duration-500 hover:bg-white hover:shadow-md ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
                     style={{ transitionDelay: `${160 + i * 80}ms` }}
                   >
                     <Icon className="size-5 text-po-primary" />
                     <h3 className="mt-4 text-base font-semibold leading-snug text-po-text">{service.title}</h3>
                     <p className="mt-2 text-sm leading-6 text-po-text-muted">{service.description}</p>
-                  </article>
+                  </TiltCard>
                 )
               })}
             </div>

@@ -1,4 +1,6 @@
+import { useRef } from "react"
 import { CheckCircle2, Headset, Stethoscope } from "lucide-react"
+import { motion, useReducedMotion, useScroll, useTransform } from "motion/react"
 
 import { useInView } from "@/hooks"
 
@@ -10,16 +12,27 @@ const benefits = [
 
 export default function VetConsultation() {
   const { ref, inView } = useInView({ threshold: 0.1 })
+  const reduce = useReducedMotion()
+  const imgWrapRef = useRef<HTMLDivElement>(null)
+
+  const { scrollYProgress } = useScroll({
+    target: imgWrapRef,
+    offset: ["start end", "end start"],
+  })
+  const imgY = useTransform(scrollYProgress, [0, 1], reduce ? ["0%", "0%"] : ["-6%", "6%"])
 
   return (
     <section ref={ref as React.RefObject<HTMLElement>} id="veterinary" className="py-20 md:py-28">
       <div className="mx-auto grid w-[calc(100%_-_24px)] max-w-[1200px] gap-10 md:grid-cols-[1.05fr_0.95fr] md:items-center">
         <div className={`relative transition-all duration-500 ${inView ? "opacity-100 translate-x-0 scale-100" : "opacity-0 -translate-x-6 scale-95"}`}>
-          <img
-            src="/vet-clinic.png"
-            alt="Bác sĩ thú y đang kiểm tra một chú chó trong phòng khám"
-            className="aspect-[4/3] w-full rounded-[30px] object-cover shadow-xl shadow-orange-200/25"
-          />
+          <div ref={imgWrapRef} className="aspect-[4/3] w-full overflow-hidden rounded-[30px] shadow-xl shadow-orange-200/25">
+            <motion.img
+              src="/vet-clinic.png"
+              alt="Bác sĩ thú y đang kiểm tra một chú chó trong phòng khám"
+              style={{ y: imgY }}
+              className="h-[112%] w-full object-cover"
+            />
+          </div>
           <div className="absolute -bottom-6 left-5 right-5 grid gap-3 rounded-[24px] border border-white/70 bg-white/[0.9] p-4 shadow-xl backdrop-blur sm:left-auto sm:w-[330px]">
             <div className="flex items-center gap-3">
               <Headset className="size-5 text-po-primary" />

@@ -27,6 +27,7 @@ import AdminAlertsPage from "@/pages/dashboard/AdminAlertsPage"
 import AdminAuditLogsPage from "@/pages/dashboard/AdminAuditLogsPage"
 import AdminChatSubscriptionsPage from "@/pages/dashboard/AdminChatSubscriptionsPage"
 import AdminClinicsPage from "@/pages/dashboard/AdminClinicsPage"
+import AdminCtaReportPage from "@/pages/dashboard/AdminCtaReportPage"
 import AdminProfilePage from "@/pages/dashboard/AdminProfilePage"
 import AdminRolesPage from "@/pages/dashboard/AdminRolesPage"
 import AdminSettingsPage from "@/pages/dashboard/AdminSettingsPage"
@@ -311,6 +312,10 @@ const router = createBrowserRouter([
           {
             path: "chat-subscriptions",
             element: <AdminChatSubscriptionsPage />,
+          },
+          {
+            path: "cta-report",
+            element: <AdminCtaReportPage />,
           },
           {
             path: "clinics",

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
@@ -68,7 +68,7 @@ export default function OwnerAiPlanPage() {
   const [paymentRequest, setPaymentRequest] =
     useState<ChatSubscriptionPaymentResponse | null>(null)
 
-  const { data: pets = [], isLoading: isLoadingPets } = useQuery({
+  const { data: pets = [] } = useQuery({
     queryKey: ["owner-pets"],
     queryFn: getPetsApi,
   })
@@ -78,17 +78,13 @@ export default function OwnerAiPlanPage() {
     setSelectedPetId(pets[0].petId)
   }, [pets, selectedPetId])
 
-  const selectedPet = useMemo(
-    () => pets.find((pet) => pet.petId === selectedPetId),
-    [pets, selectedPetId],
-  )
-
+  // Gói gộp chung theo tài khoản: trạng thái/usage không phụ thuộc pet nào.
   const {
     data: subscriptionStatus,
     isLoading: isLoadingSubscription,
   } = useQuery({
-    queryKey: ["owner-chat-subscription", selectedPetId || null],
-    queryFn: () => getChatSubscriptionStatusApi(selectedPetId || null),
+    queryKey: ["owner-chat-subscription", "account"],
+    queryFn: () => getChatSubscriptionStatusApi(null),
     staleTime: 30 * 1000,
   })
 
@@ -133,7 +129,7 @@ export default function OwnerAiPlanPage() {
         latestPayment.status.toLowerCase() === "paid" &&
         prev?.status.toLowerCase() !== "paid"
       if (justPaid) {
-        toast.success(`Đã kích hoạt Premium cho ${latestPayment.petName}! 🎉`)
+        toast.success("Đã bật Premium cho tất cả thú cưng của bạn! 🎉")
         void queryClient.invalidateQueries({
           queryKey: ["owner-chat-subscription"],
         })
@@ -141,13 +137,6 @@ export default function OwnerAiPlanPage() {
       return latestPayment
     })
   }, [paymentStatusQuery.data, queryClient])
-
-  useEffect(() => {
-    if (!paymentRequest || !selectedPetId) return
-    if (paymentRequest.petId !== selectedPetId) {
-      setPaymentRequest(null)
-    }
-  }, [paymentRequest, selectedPetId])
 
   const quotaPercent = subscriptionStatus
     ? Math.min(
@@ -159,19 +148,18 @@ export default function OwnerAiPlanPage() {
         ),
       )
     : 0
-  const activePremiumPets =
-    subscriptionStatus?.ownerPetSubscriptions?.filter((item) => item.isUsable) ??
-    []
 
   const handleUpgradePremium = () => {
-    if (!selectedPetId) {
-      toast.error("Hãy chọn một bé trước khi nâng cấp Premium.")
+    // Gói dùng chung cho cả tài khoản, chỉ cần gắn một bé bất kỳ để tạo thanh toán.
+    const petIdForPayment = selectedPetId || pets[0]?.petId
+    if (!petIdForPayment) {
+      toast.error("Bạn cần thêm ít nhất một thú cưng trước khi nâng cấp.")
       return
     }
 
     createPaymentMutation.mutate({
       planCode: "premium",
-      petId: selectedPetId,
+      petId: petIdForPayment,
     })
   }
 
@@ -190,8 +178,8 @@ export default function OwnerAiPlanPage() {
             Gói AI cho thú cưng
           </h1>
           <p className="mt-1 max-w-xl text-sm leading-6 text-po-text-muted">
-            Mỗi bé có gói riêng. Nâng cấp Premium để có thêm lượt nhắn và tính
-            năng tư vấn nâng cao.
+            Một gói dùng chung cho tất cả thú cưng của bạn. Nâng cấp Premium để
+            có thêm lượt nhắn và tính năng tư vấn nâng cao cho mọi bé.
           </p>
         </div>
 
@@ -213,32 +201,20 @@ export default function OwnerAiPlanPage() {
             </span>
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-po-text-subtle">
-                Đang xem gói của
+                Gói của bạn
               </p>
               <p className="text-base font-bold text-po-text">
-                {selectedPet?.name ?? "Chưa chọn thú cưng"}
+                Dùng chung cho tất cả thú cưng
               </p>
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm">
-            <span className="font-semibold text-po-text-muted">Chọn bé</span>
-            <select
-              value={selectedPetId}
-              onChange={(event) => {
-                setSelectedPetId(event.target.value)
-              }}
-              disabled={isLoadingPets || pets.length === 0}
-              className="h-10 min-w-[200px] rounded-xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary focus:ring-[var(--po-focus-ring)] disabled:cursor-not-allowed disabled:bg-po-surface-muted"
-            >
-              <option value="">Chưa chọn thú cưng</option>
-              {pets.map((pet) => (
-                <option key={pet.petId} value={pet.petId}>
-                  {pet.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {pets.length > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-po-primary-soft px-3 py-1.5 text-xs font-semibold text-po-primary">
+              <PawPrint className="size-3.5" />
+              {pets.length} bé đang dùng được
+            </span>
+          ) : null}
         </div>
 
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -304,12 +280,12 @@ export default function OwnerAiPlanPage() {
           <div className="rounded-2xl bg-po-surface-muted/60 p-4 ring-1 ring-po-border/60">
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-po-text-subtle">
               <Sparkles className="size-3.5 text-po-primary" />
-              Bé đang được hỗ trợ
+              Gói của bạn có gì
             </p>
             <div className="mt-3 grid gap-2">
               <CapabilityRow
                 icon={Database}
-                label="Tư vấn sâu theo hồ sơ bé"
+                label="Tư vấn sâu theo hồ sơ từng bé"
                 value={subscriptionStatus?.capabilities.deepRagEnabled ? "Có" : "Chưa"}
                 active={subscriptionStatus?.capabilities.deepRagEnabled}
               />
@@ -341,7 +317,7 @@ export default function OwnerAiPlanPage() {
       {/* Plan picker */}
       <DashboardSection
         title="Chọn gói AI"
-        subtitle="Free dùng được chat cơ bản. Premium cho nhiều lượt nhắn hơn và tính năng tư vấn nâng cao cho từng bé."
+        subtitle="Gói Free để chat cơ bản. Lên Premium thì có nhiều lượt nhắn hơn và tư vấn kỹ hơn cho tất cả các bé."
       >
         <div className="grid gap-4 md:grid-cols-2">
           {(subscriptionStatus?.plans ?? []).map((plan) => (
@@ -350,7 +326,7 @@ export default function OwnerAiPlanPage() {
               plan={plan}
               subscriptionStatus={subscriptionStatus}
               isUpgrading={createPaymentMutation.isPending}
-              canUpgrade={Boolean(selectedPetId)}
+              canUpgrade={pets.length > 0}
               onUpgrade={handleUpgradePremium}
             />
           ))}
@@ -362,31 +338,39 @@ export default function OwnerAiPlanPage() {
         </div>
       </DashboardSection>
 
-      {/* Active premium pets */}
+      {/* Các bé dùng chung gói */}
       <DashboardSection
-        title="Thú cưng đang dùng Premium"
-        subtitle="Danh sách các bé còn hiệu lực Premium."
+        title="Những bé đang dùng gói này"
+        subtitle={
+          subscriptionStatus?.isPremium
+            ? "Tất cả thú cưng của bạn đều được dùng Premium."
+            : "Tất cả thú cưng của bạn đang dùng gói Free."
+        }
       >
-        {activePremiumPets.length ? (
+        {pets.length ? (
           <div className="grid gap-2 sm:grid-cols-2">
-            {activePremiumPets.map((item) => (
+            {pets.map((pet) => (
               <div
-                key={item.subscriptionId}
+                key={pet.petId}
                 className="flex items-center justify-between gap-3 rounded-2xl bg-po-surface-muted px-4 py-3"
               >
                 <span className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-po-text">
-                  <Crown className="size-4 shrink-0 text-po-primary" />
-                  <span className="truncate">{item.petName}</span>
+                  {subscriptionStatus?.isPremium ? (
+                    <Crown className="size-4 shrink-0 text-po-primary" />
+                  ) : (
+                    <PawPrint className="size-4 shrink-0 text-po-text-muted" />
+                  )}
+                  <span className="truncate">{pet.name}</span>
                 </span>
                 <span className="shrink-0 text-xs font-bold text-po-text-muted">
-                  đến {formatDate(item.expiresAt)}
+                  {subscriptionStatus?.isPremium ? "Premium" : "Free"}
                 </span>
               </div>
             ))}
           </div>
         ) : (
           <p className="rounded-2xl bg-po-surface-muted px-4 py-5 text-center text-sm font-semibold text-po-text-muted">
-            Chưa có bé nào đang dùng Premium.
+            Bạn chưa thêm thú cưng nào.
           </p>
         )}
       </DashboardSection>
@@ -592,7 +576,7 @@ function PlanCard({
             {alreadyPremium
               ? "Premium đang hoạt động"
               : !canUpgrade
-                ? "Chọn bé để nâng cấp"
+                ? "Thêm thú cưng để nâng cấp"
                 : "Nâng cấp Premium"}
           </button>
         ) : (
@@ -652,7 +636,9 @@ function PaymentModal({
             <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-po-primary">
               Thanh toán Premium · SePay
             </p>
-            <h3 className="mt-1 text-lg font-bold text-po-text">{payment.petName}</h3>
+            <h3 className="mt-1 text-lg font-bold text-po-text">
+              Premium cho cả tài khoản
+            </h3>
           </div>
           <button
             type="button"
@@ -672,7 +658,7 @@ function PaymentModal({
               </span>
               <p className="text-base font-bold text-po-text">Thanh toán thành công</p>
               <p className="text-sm text-po-text-muted">
-                Premium cho {payment.petName} đã được kích hoạt.
+                Tất cả thú cưng của bạn đã được dùng Premium.
               </p>
               <button
                 type="button"

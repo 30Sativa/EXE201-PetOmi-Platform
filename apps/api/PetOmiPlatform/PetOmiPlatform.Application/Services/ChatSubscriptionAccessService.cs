@@ -22,47 +22,44 @@ public class ChatSubscriptionAccessService : IChatSubscriptionAccessService
     {
         var now = DateTime.UtcNow;
 
-        if (petId.HasValue)
+        // Gop chung theo user: chi can 1 subscription Premium dang active la dung cho TAT CA pet.
+        // PetId con duoc giu trong tham so de tuong thich, nhung khong con anh huong toi quota/usage.
+        var subscription = await _subscriptionRepository.GetActiveOwnerSubscriptionAsync(ownerUserId, now);
+
+        if (subscription != null)
         {
-            var subscription = await _subscriptionRepository.GetActiveOwnerPetSubscriptionAsync(
+            var premiumPlan = await _subscriptionRepository.GetPlanByIdAsync(subscription.PlanId)
+                ?? throw new ConflictException("Goi chat cua subscription khong con ton tai.");
+
+            var (cycleStart, resetAt) = ResolveRollingCycle(
+                subscription.StartsAt,
+                premiumPlan.BillingCycleDays,
+                now,
+                subscription.ExpiresAt);
+
+            // Usage tinh chung tren toan user (khong loc theo pet).
+            var premiumUsage = await _subscriptionRepository.GetUserMessageUsageAsync(
                 ownerUserId,
-                petId.Value,
-                now);
+                petId: null,
+                cycleStart,
+                resetAt);
 
-            if (subscription != null)
-            {
-                var premiumPlan = await _subscriptionRepository.GetPlanByIdAsync(subscription.PlanId)
-                    ?? throw new ConflictException("Goi chat cua subscription khong con ton tai.");
-
-                var (cycleStart, resetAt) = ResolveRollingCycle(
-                    subscription.StartsAt,
-                    premiumPlan.BillingCycleDays,
-                    now,
-                    subscription.ExpiresAt);
-
-                var premiumUsage = await _subscriptionRepository.GetUserMessageUsageAsync(
-                    ownerUserId,
-                    petId.Value,
-                    cycleStart,
-                    resetAt);
-
-                return BuildResult(
-                    planId: premiumPlan.Id,
-                    planCode: premiumPlan.Code,
-                    planName: premiumPlan.Name,
-                    isPremium: premiumPlan.IsPremium,
-                    monthlyMessageQuota: premiumPlan.MonthlyMessageQuota,
-                    monthlyTokenQuota: premiumPlan.MonthlyTokenQuota,
-                    usedMessages: premiumUsage.UserMessages,
-                    usedTokens: premiumUsage.TotalTokens,
-                    resetAt: resetAt,
-                    subscriptionId: subscription.Id,
-                    subscriptionExpiresAt: subscription.ExpiresAt,
-                    priorityLevel: premiumPlan.PriorityLevel,
-                    deepRagEnabled: premiumPlan.DeepRagEnabled,
-                    imageUploadEnabled: premiumPlan.ImageUploadEnabled,
-                    maxImageUploadsPerMonth: premiumPlan.MaxImageUploadsPerMonth);
-            }
+            return BuildResult(
+                planId: premiumPlan.Id,
+                planCode: premiumPlan.Code,
+                planName: premiumPlan.Name,
+                isPremium: premiumPlan.IsPremium,
+                monthlyMessageQuota: premiumPlan.MonthlyMessageQuota,
+                monthlyTokenQuota: premiumPlan.MonthlyTokenQuota,
+                usedMessages: premiumUsage.UserMessages,
+                usedTokens: premiumUsage.TotalTokens,
+                resetAt: resetAt,
+                subscriptionId: subscription.Id,
+                subscriptionExpiresAt: subscription.ExpiresAt,
+                priorityLevel: premiumPlan.PriorityLevel,
+                deepRagEnabled: premiumPlan.DeepRagEnabled,
+                imageUploadEnabled: premiumPlan.ImageUploadEnabled,
+                maxImageUploadsPerMonth: premiumPlan.MaxImageUploadsPerMonth);
         }
 
         var freePlan = await _subscriptionRepository.GetPlanByCodeAsync(FreePlanCode)
@@ -134,8 +131,8 @@ public class ChatSubscriptionAccessService : IChatSubscriptionAccessService
             BlockReason = remaining > 0
                 ? null
                 : isPremium
-                    ? "Pet nay da dung het quota Premium trong chu ky hien tai."
-                    : "Ban da dung het quota Free thang nay. Hay nang cap Premium cho pet de tiep tuc dung PetOmi AI."
+                    ? "Ban da dung het quota Premium trong chu ky hien tai."
+                    : "Ban da dung het quota Free thang nay. Hay nang cap Premium de tiep tuc dung PetOmi AI."
         };
     }
 

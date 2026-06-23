@@ -10,6 +10,10 @@ public interface IChatSubscriptionRepository
     Task<ChatSubscriptionPlanDomain?> GetPlanByIdAsync(Guid planId);
     Task<ChatSubscriptionDomain?> GetActiveOwnerPetSubscriptionAsync(Guid ownerUserId, Guid petId, DateTime utcNow);
     Task<ChatSubscriptionDomain?> GetLatestOwnerPetSubscriptionAsync(Guid ownerUserId, Guid petId);
+    // Gop chung theo user: lay subscription dang active cua user (bat ky pet nao).
+    Task<ChatSubscriptionDomain?> GetActiveOwnerSubscriptionAsync(Guid ownerUserId, DateTime utcNow);
+    // Gop chung theo user: lay subscription moi nhat cua user (de renew).
+    Task<ChatSubscriptionDomain?> GetLatestOwnerSubscriptionAsync(Guid ownerUserId);
     Task<List<OwnerChatSubscriptionItem>> GetOwnerPetSubscriptionsAsync(Guid ownerUserId, DateTime utcNow);
     Task<ChatSubscriptionPaymentDomain?> GetPaymentByIdAsync(Guid paymentId);
     Task<ChatSubscriptionPaymentDomain?> GetPaymentByReferenceAsync(string paymentReference);

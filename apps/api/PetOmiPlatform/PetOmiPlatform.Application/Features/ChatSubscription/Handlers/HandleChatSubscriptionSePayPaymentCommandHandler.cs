@@ -77,11 +77,12 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
             return true;
         }
 
-        var subscription = await _subscriptionRepository.GetLatestOwnerPetSubscriptionAsync(
-            payment.OwnerUserId,
-            payment.PetId);
+        // Gop chung theo user: 1 user chi co 1 subscription dung cho moi pet.
+        // Neu da co subscription (bat ky pet nao) thi renew/cong don, neu chua co thi tao moi.
+        var subscription = await _subscriptionRepository.GetLatestOwnerSubscriptionAsync(
+            payment.OwnerUserId);
 
-        if (subscription != null && subscription.IsUsableAt(now))
+        if (subscription != null)
         {
             subscription.Renew(plan.Id, now, plan.BillingCycleDays);
             await _subscriptionRepository.UpdateSubscriptionAsync(subscription);

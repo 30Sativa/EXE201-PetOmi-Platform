@@ -82,6 +82,35 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
         return entity?.ToDomain();
     }
 
+    public async Task<ChatSubscriptionDomain?> GetActiveOwnerSubscriptionAsync(Guid ownerUserId, DateTime utcNow)
+    {
+        // Gop chung theo user: chi can co 1 subscription Premium dang active la dung cho moi pet.
+        var entity = await _context.ChatSubscriptions
+            .Where(s =>
+                s.ScopeType == ChatSubscriptionScopeType.OwnerPet.ToString() &&
+                s.OwnerUserId == ownerUserId &&
+                s.Status == ChatSubscriptionStatus.Active.ToString() &&
+                s.IsActive &&
+                s.ExpiresAt > utcNow)
+            .OrderByDescending(s => s.ExpiresAt)
+            .FirstOrDefaultAsync();
+
+        return entity?.ToDomain();
+    }
+
+    public async Task<ChatSubscriptionDomain?> GetLatestOwnerSubscriptionAsync(Guid ownerUserId)
+    {
+        // Gop chung theo user: lay subscription moi nhat (bat ky pet nao) de renew.
+        var entity = await _context.ChatSubscriptions
+            .Where(s =>
+                s.ScopeType == ChatSubscriptionScopeType.OwnerPet.ToString() &&
+                s.OwnerUserId == ownerUserId)
+            .OrderByDescending(s => s.ExpiresAt)
+            .FirstOrDefaultAsync();
+
+        return entity?.ToDomain();
+    }
+
     public async Task<List<OwnerChatSubscriptionItem>> GetOwnerPetSubscriptionsAsync(Guid ownerUserId, DateTime utcNow)
     {
         return await _context.ChatSubscriptions

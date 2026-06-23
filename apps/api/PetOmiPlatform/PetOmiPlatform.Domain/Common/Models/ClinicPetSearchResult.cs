@@ -4,6 +4,7 @@ public class ClinicPetSearchResult
 {
     public Guid PetId { get; set; }
     public Guid OwnerUserId { get; set; }
+    public string? PublicPetCode { get; set; }
     public string PetName { get; set; } = string.Empty;
     public string Species { get; set; } = string.Empty;
     public string? Breed { get; set; }

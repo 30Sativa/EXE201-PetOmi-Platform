@@ -174,10 +174,10 @@ export default function OwnerAiPlanPage() {
             <Sparkles className="size-3" />
             PetOmi AI
           </span>
-          <h1 className="mt-2 text-2xl font-bold leading-tight text-po-text">
+          <h1 className="mt-3 text-3xl font-extrabold leading-tight text-po-text md:text-4xl">
             Gói AI cho thú cưng
           </h1>
-          <p className="mt-1 max-w-xl text-sm leading-6 text-po-text-muted">
+          <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted md:text-base">
             Một gói dùng chung cho tất cả thú cưng của bạn. Nâng cấp Premium để
             có thêm lượt nhắn và tính năng tư vấn nâng cao cho mọi bé.
           </p>

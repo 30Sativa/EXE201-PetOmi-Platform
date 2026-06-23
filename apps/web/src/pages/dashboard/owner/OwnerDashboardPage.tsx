@@ -101,72 +101,48 @@ export default function OwnerDashboardPage() {
 
   return (
     <div className="grid gap-5 md:gap-6">
-      <section className="overflow-hidden rounded-[34px] bg-white/90 text-po-text shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-        <div className="grid min-w-0 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="p-6 md:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-po-text-subtle">
-              Tổng quan hôm nay
-            </p>
-            <h2 className="mt-4 max-w-2xl text-3xl font-extrabold leading-[1.08] md:text-5xl">
-              Chăm sóc thú cưng bắt đầu từ những việc nhỏ.
-            </h2>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-po-text-muted md:text-base md:leading-8">
-              Xem nhanh hồ sơ, lịch khám và nhắc nhở đang cần chú ý để không bỏ sót các mốc chăm sóc quan trọng.
-            </p>
+      <section className="relative overflow-hidden rounded-[34px] text-po-text shadow-sm shadow-orange-200/25 ring-1 ring-po-border/70">
+        <img
+          src="/hero-pets-new.png"
+          alt="Bác sĩ thú y đang kiểm tra sức khỏe cho chó trong phòng khám"
+          className="absolute inset-0 h-full w-full object-cover object-right"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(100deg,_rgba(255,250,243,0.97)_0%,_rgba(255,248,239,0.92)_44%,_rgba(255,247,237,0.5)_70%,_rgba(255,247,237,0.05)_100%)]" />
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={() => navigate("/dashboard/owner/pets")}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-950/20 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
-              >
-                <Plus className="size-4" />
-                Thêm thú cưng
-              </button>
-              <button
-                onClick={() => navigate("/dashboard/owner/appointments")}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
-              >
-                Xem lịch hẹn
-                <ArrowRight className="size-4" />
-              </button>
-              <button
-                onClick={() => navigate("/dashboard/owner/register-clinic")}
-                className="inline-flex h-11 items-center gap-2 rounded-full bg-po-surface-muted px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
-              >
-                Đăng ký phòng khám
-                <Building2 className="size-4" />
-              </button>
-            </div>
+        <div className="relative max-w-2xl p-6 md:p-10">
+          <p className="inline-flex items-center gap-2 rounded-full bg-po-primary-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-po-primary ring-1 ring-po-border/60">
+            <PawPrint className="size-3.5" />
+            Tổng quan hôm nay
+          </p>
+          <h2 className="mt-5 text-3xl font-extrabold leading-[1.05] md:text-[3.25rem]">
+            Chăm sóc thú cưng bắt đầu từ những việc nhỏ.
+          </h2>
+          <p className="mt-5 max-w-lg text-sm leading-7 text-po-text-muted md:text-base md:leading-8">
+            Xem nhanh hồ sơ, lịch khám và nhắc nhở đang cần chú ý để không bỏ sót các mốc chăm sóc quan trọng.
+          </p>
 
-            <div className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-po-surface-muted/75 p-4 ring-1 ring-po-border/70">
-                <p className="text-2xl font-extrabold tabular-nums">{totalPets}</p>
-                <p className="mt-1 text-xs leading-5 text-po-text-muted">Hồ sơ thú cưng</p>
-              </div>
-              <div className="rounded-2xl bg-po-surface-muted/75 p-4 ring-1 ring-po-border/70">
-                <p className="text-2xl font-extrabold tabular-nums">{upcomingCount}</p>
-                <p className="mt-1 text-xs leading-5 text-po-text-muted">Lịch hẹn sắp tới</p>
-              </div>
-              <div className="rounded-2xl bg-po-surface-muted/75 p-4 ring-1 ring-po-border/70">
-                <p className="text-2xl font-extrabold tabular-nums">{activeReminders}</p>
-                <p className="mt-1 text-xs leading-5 text-po-text-muted">Nhắc nhở đang bật</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative min-h-[240px] overflow-hidden lg:min-h-full">
-            <img
-              src="/hero-pets-new.png"
-              alt="Bác sĩ thú y đang kiểm tra sức khỏe cho chó trong phòng khám"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,_rgba(255,247,237,0.72),_rgba(255,247,237,0.04))] lg:bg-[linear-gradient(90deg,_rgba(255,247,237,0.44),_rgba(255,247,237,0.02))]" />
-            <div className="absolute bottom-5 left-5 right-5 rounded-[24px] bg-white/[0.9] p-4 text-po-text shadow-xl backdrop-blur">
-              <p className="text-sm font-semibold">Chuẩn bị thông tin rõ hơn trước mỗi lần khám.</p>
-              <p className="mt-1 text-xs leading-5 text-po-text-muted">
-                Hồ sơ và lịch sử chăm sóc luôn nằm đúng chỗ.
-              </p>
-            </div>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate("/dashboard/owner/pets?add=1")}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-bold text-white shadow-lg shadow-orange-950/25 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0"
+            >
+              <Plus className="size-4" />
+              Thêm thú cưng
+            </button>
+            <button
+              onClick={() => navigate("/dashboard/owner/appointments")}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-white/85 px-6 text-sm font-semibold text-po-text ring-1 ring-po-border/80 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
+            >
+              Xem lịch hẹn
+              <ArrowRight className="size-4" />
+            </button>
+            <button
+              onClick={() => navigate("/dashboard/owner/register-clinic")}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-white/85 px-6 text-sm font-semibold text-po-text ring-1 ring-po-border/80 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
+            >
+              Đăng ký phòng khám
+              <Building2 className="size-4" />
+            </button>
           </div>
         </div>
       </section>
@@ -254,7 +230,7 @@ export default function OwnerDashboardPage() {
             description="Thêm thú cưng đầu tiên để bắt đầu."
             action={
               <button
-                onClick={() => navigate("/dashboard/owner/pets")}
+                onClick={() => navigate("/dashboard/owner/pets?add=1")}
                 className="inline-flex h-10 items-center rounded-full bg-po-primary px-5 text-sm font-semibold text-white shadow-lg shadow-orange-200/40 transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
               >
                 Thêm thú cưng

@@ -12,6 +12,8 @@ import {
   Plus,
   Scale,
   Share2,
+  ShieldCheck,
+  Syringe,
   Trash2,
   Weight,
   X,
@@ -129,7 +131,7 @@ const MEDICAL_RECORD_TYPE_LABELS: Record<string, string> = {
   Illness: "Bệnh lý",
 }
 
-type TabValue = "overview" | "health" | "weight" | "medical" | "photos" | "sharing" | "reminders"
+type TabValue = "overview" | "health" | "weight" | "vaccine" | "medical" | "photos" | "sharing" | "reminders"
 
 // ==================== PAGE ====================
 
@@ -174,7 +176,7 @@ export default function OwnerPetDetailPage() {
   const { data: medicalRecords, isLoading: loadingMedical } = useQuery({
     queryKey: ["pet-medical", petId],
     queryFn: () => getPetMedicalRecordsApi(petId!),
-    enabled: Boolean(petId) && activeTab === "medical",
+    enabled: Boolean(petId) && (activeTab === "medical" || activeTab === "vaccine"),
   })
 
   const { data: photos, isLoading: loadingPhotos } = useQuery({
@@ -259,6 +261,7 @@ export default function OwnerPetDetailPage() {
     { value: "overview" as const, label: "Tổng quan" },
     { value: "health" as const, label: "Sức khỏe" },
     { value: "weight" as const, label: "Cân nặng" },
+    { value: "vaccine" as const, label: "Tiêm phòng" },
     { value: "medical" as const, label: "Hồ sơ y tế" },
     { value: "photos" as const, label: "Ảnh" },
     { value: "sharing" as const, label: "Chia sẻ" },
@@ -395,6 +398,20 @@ export default function OwnerPetDetailPage() {
             <WeightTab
               logs={weightLogs}
               onAdd={() => setIsWeightModalOpen(true)}
+            />
+          )}
+          {activeTab === "vaccine" && (
+            <VaccineTab
+              records={medicalRecords}
+              loading={loadingMedical}
+              onAdd={() => {
+                setEditingMedicalRecord(null)
+                setIsMedicalModalOpen(true)
+              }}
+              onEdit={(record) => {
+                setEditingMedicalRecord(record)
+                setIsMedicalModalOpen(true)
+              }}
             />
           )}
           {activeTab === "medical" && (
@@ -850,6 +867,127 @@ function WeightTab({
 }
 
 // ==================== MEDICAL RECORDS TAB ====================
+
+// ==================== VACCINE TAB ====================
+
+function VaccineTab({
+  records,
+  loading,
+  onAdd,
+  onEdit,
+}: {
+  records?: PetMedicalRecordResponse[] | null
+  loading: boolean
+  onAdd: () => void
+  onEdit: (record: PetMedicalRecordResponse) => void
+}) {
+  // Chỉ lấy các mũi tiêm phòng, sắp xếp mới nhất lên đầu
+  const vaccines = (records ?? [])
+    .filter((r) => r.recordType === "Vaccine")
+    .sort(
+      (a, b) =>
+        new Date(b.recordDate).getTime() - new Date(a.recordDate).getTime(),
+    )
+
+  const lastVaccineDate = vaccines[0]?.recordDate
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-po-primary-soft/60 px-4 py-3 ring-1 ring-po-border/60">
+        <div className="flex items-center gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white text-po-primary ring-1 ring-po-border/70">
+            <ShieldCheck className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-po-text">
+              {vaccines.length > 0
+                ? `Đã tiêm ${vaccines.length} mũi`
+                : "Chưa có mũi tiêm nào"}
+            </p>
+            <p className="text-xs text-po-text-muted">
+              {lastVaccineDate
+                ? `Mũi gần nhất: ${formatDate(lastVaccineDate)}`
+                : "Ghi lại các mũi tiêm để theo dõi lịch tiêm phòng."}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onAdd}
+          className="inline-flex h-9 items-center gap-1.5 rounded-full bg-po-primary px-4 text-xs font-semibold text-white transition hover:-translate-y-0.5 hover:bg-po-primary-hover active:translate-y-0"
+        >
+          <Plus className="size-3.5" />
+          Thêm mũi tiêm
+        </button>
+      </div>
+
+      <DashboardSection title="Lịch sử tiêm phòng">
+        {loading ? (
+          <div className="flex justify-center py-10">
+            <LoadingSpinner />
+          </div>
+        ) : vaccines.length === 0 ? (
+          <EmptyState
+            icon={Syringe}
+            title="Chưa có lịch sử tiêm phòng"
+            description="Thêm mũi tiêm đầu tiên để theo dõi lịch tiêm phòng cho bé."
+          />
+        ) : (
+          <div className="relative grid gap-0 pl-2">
+            {vaccines.map((record, idx) => (
+              <div key={record.medicalRecordId} className="relative flex gap-4 pb-5 last:pb-0">
+                {/* Đường nối timeline */}
+                {idx < vaccines.length - 1 && (
+                  <span className="absolute left-[15px] top-9 h-[calc(100%-1.5rem)] w-px bg-po-border" />
+                )}
+                <span className="relative z-10 grid size-8 shrink-0 place-items-center rounded-full bg-po-primary-soft text-po-primary ring-4 ring-white">
+                  <Syringe className="size-4" />
+                </span>
+
+                <div className="min-w-0 flex-1 rounded-2xl border border-po-border bg-white px-4 py-3.5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-bold text-po-text">{record.title}</p>
+                        {idx === 0 && (
+                          <span className="rounded-full bg-po-success-soft px-2 py-0.5 text-[11px] font-semibold text-po-success">
+                            Mới nhất
+                          </span>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs font-semibold text-po-primary">
+                        {formatDate(record.recordDate)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => onEdit(record)}
+                      className="grid size-8 shrink-0 place-items-center rounded-full border border-po-border text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-primary"
+                      aria-label="Sửa mũi tiêm"
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                  </div>
+
+                  {record.description && (
+                    <p className="mt-2 text-sm text-po-text-muted">{record.description}</p>
+                  )}
+
+                  {(record.clinicName || record.vetName) && (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs text-po-text-muted">
+                      {record.clinicName && <span>{record.clinicName}</span>}
+                      {record.vetName && <span>BS. {record.vetName}</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </DashboardSection>
+    </div>
+  )
+}
+
+// ==================== MEDICAL TAB ====================
 
 function MedicalTab({
   records,

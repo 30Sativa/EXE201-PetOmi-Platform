@@ -1,7 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { PencilLine, Plus, PawPrint, Search, Trash2 } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "sonner"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
@@ -44,6 +44,7 @@ const formatSpecies = (species: string) => speciesLabels[species] ?? species
 
 export default function OwnerPetsPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [search, setSearch] = useState("")
   const [selectedSpecies, setSelectedSpecies] = useState<string>("all")
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -51,6 +52,17 @@ export default function OwnerPetsPage() {
   const [deletingPet, setDeletingPet] = useState<PetResponse | null>(null)
 
   const queryClient = useQueryClient()
+
+  // Mở thẳng form thêm thú cưng khi vào với ?add=1 (vd: từ nút trên Tổng quan)
+  useEffect(() => {
+    if (searchParams.get("add") === "1") {
+      setEditingPet(null)
+      setIsModalOpen(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete("add")
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const { data: pets, isLoading, error } = useQuery({
     queryKey: ["owner-pets"],

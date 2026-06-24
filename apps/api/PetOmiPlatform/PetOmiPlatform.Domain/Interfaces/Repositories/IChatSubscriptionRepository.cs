@@ -20,6 +20,8 @@ public interface IChatSubscriptionRepository
     Task<bool> AnyPaymentReferenceAsync(string paymentReference);
     Task<bool> AnyProviderTransactionAsync(PaymentProvider provider, string providerTransactionId);
     Task<ChatUsageStats> GetUserMessageUsageAsync(Guid ownerUserId, Guid? petId, DateTime fromUtc, DateTime toUtc);
+    // Lay danh sach UserID da chat trong khoang thoi gian (ung vien xet "bo do nang cap").
+    Task<List<Guid>> GetUserIdsWithMessagesInRangeAsync(DateTime fromUtc, DateTime toUtc);
     Task<List<AdminChatSubscriptionItem>> GetAdminSubscriptionsAsync(int take);
     Task<List<AdminChatSubscriptionPaymentItem>> GetAdminPaymentsAsync(int take);
     Task AddSubscriptionAsync(ChatSubscriptionDomain subscription);

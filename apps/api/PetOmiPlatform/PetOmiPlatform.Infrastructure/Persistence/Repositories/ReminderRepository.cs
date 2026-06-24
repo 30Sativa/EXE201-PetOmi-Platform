@@ -66,6 +66,16 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entities.Select(e => e.ToDomain()).ToList();
         }
 
+        public async Task<bool> ExistsByUserAndTypeSinceAsync(Guid userId, ReminderType reminderType, DateTime sinceUtc)
+        {
+            var typeStr = reminderType.ToString();
+            return await _context.Reminders
+                .AsNoTracking()
+                .AnyAsync(r => r.UserId == userId
+                    && r.ReminderType == typeStr
+                    && r.CreatedAt >= sinceUtc);
+        }
+
         public async Task AddAsync(ReminderDomain reminder)
         {
             await _context.Reminders.AddAsync(reminder.ToEntity());

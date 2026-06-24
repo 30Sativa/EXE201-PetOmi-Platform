@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
+import AbandonedUpgradeBanner from "@/components/dashboard/owner/AbandonedUpgradeBanner"
 import Avatar from "@/components/ui/Avatar"
 import { useAuth } from "@/contexts/AuthContext"
 import { useProfile } from "@/hooks/useAuthQueries"
@@ -152,6 +153,8 @@ export default function OwnerDashboardLayout() {
               ))}
             </nav>
           </div>
+
+          <AbandonedUpgradeBanner />
 
           <div className="min-w-0">
             <Outlet />

@@ -213,6 +213,21 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
         };
     }
 
+    public async Task<List<Guid>> GetUserIdsWithMessagesInRangeAsync(DateTime fromUtc, DateTime toUtc)
+    {
+        return await _context.ChatMessages
+            .AsNoTracking()
+            .Where(m =>
+                m.IsActive &&
+                m.CreatedAt >= fromUtc &&
+                m.CreatedAt < toUtc &&
+                m.Conversation != null &&
+                (m.SenderRole == "user" || m.SenderRole == "User"))
+            .Select(m => m.Conversation!.UserId)
+            .Distinct()
+            .ToListAsync();
+    }
+
     public async Task<List<AdminChatSubscriptionItem>> GetAdminSubscriptionsAsync(int take)
     {
         take = Math.Clamp(take, 1, 200);

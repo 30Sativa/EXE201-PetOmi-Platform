@@ -48,6 +48,12 @@ const REMINDER_TYPE_DEFS = [
     label: "Tùy chỉnh",
     description: "Các nhắc nhở do bạn tự tạo.",
   },
+  {
+    type: "AbandonedUpgrade",
+    label: "Nhắc nâng cấp Premium",
+    description:
+      "Nhắc khi bạn dùng hết lượt AI miễn phí mà chưa nâng cấp. Lưu ý: dù tắt, banner vẫn hiện 1 lần mỗi khi bạn đăng nhập.",
+  },
 ]
 
 const REMIND_BEFORE_OPTIONS = [

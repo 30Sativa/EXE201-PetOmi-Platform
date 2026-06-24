@@ -8,6 +8,7 @@ namespace PetOmiPlatform.Domain.Common.Enums
         Deworming,
         Grooming,
         WeightTracking,
-        Custom
+        Custom,
+        AbandonedUpgrade
     }
 }

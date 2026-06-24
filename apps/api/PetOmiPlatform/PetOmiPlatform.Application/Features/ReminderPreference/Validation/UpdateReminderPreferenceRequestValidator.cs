@@ -8,7 +8,8 @@ namespace PetOmiPlatform.Application.Features.ReminderPreference.Validation
         private static readonly string[] ValidReminderTypes =
         {
             "Vaccine", "Medication", "FollowUp",
-            "Deworming", "Grooming", "WeightTracking", "Custom"
+            "Deworming", "Grooming", "WeightTracking", "Custom",
+            "AbandonedUpgrade"
         };
 
         private static readonly string[] ValidChannels =
@@ -21,7 +22,7 @@ namespace PetOmiPlatform.Application.Features.ReminderPreference.Validation
             RuleFor(x => x.ReminderType)
                 .NotEmpty().WithMessage("Loại reminder không được để trống.")
                 .Must(x => ValidReminderTypes.Contains(x, StringComparer.OrdinalIgnoreCase))
-                .WithMessage("ReminderType chỉ chấp nhận: Vaccine, Medication, FollowUp, Deworming, Grooming, WeightTracking, Custom.");
+                .WithMessage("ReminderType chỉ chấp nhận: Vaccine, Medication, FollowUp, Deworming, Grooming, WeightTracking, Custom, AbandonedUpgrade.");
 
             RuleFor(x => x.RemindBeforeMinutes)
                 .GreaterThan(0).WithMessage("Số phút nhắc trước phải lớn hơn 0.")

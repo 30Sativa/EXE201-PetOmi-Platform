@@ -204,6 +204,13 @@ namespace PetOmiPlatform.Infrastructure
                 services.AddHostedService<BackgroundServices.ReminderProcessorService>();
             }
 
+            // Abandoned-upgrade nudge: nhac user Free het quota chua nang cap Premium.
+            // Dung chung cong tac bat/tat voi ReminderProcessor (mac dinh bat).
+            if (enableReminderProcessor)
+            {
+                services.AddHostedService<BackgroundServices.AbandonedUpgradeReminderService>();
+            }
+
             // AI background worker
             services.AddSingleton<IAiTaskQueue, BackgroundServices.AiTaskQueue>();
             services.AddHostedService<BackgroundServices.AiBackgroundService>();

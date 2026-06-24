@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 
 import DashboardSection from "@/components/dashboard/DashboardSection"
+import PromotionOffers from "@/components/dashboard/owner/PromotionOffers"
 import { cn } from "@/lib/utils"
 import { formatCurrency, formatDate } from "@/lib/format"
 import { getPetsApi } from "@/services/pets.service"
@@ -191,6 +192,9 @@ export default function OwnerAiPlanPage() {
           Quay lại Chat
         </Link>
       </div>
+
+      {/* Ưu đãi: free trial, early-bird, referral */}
+      <PromotionOffers />
 
       {/* Hero: pet selector + current status */}
       <section className="overflow-hidden rounded-3xl bg-white ring-1 ring-po-border/80">

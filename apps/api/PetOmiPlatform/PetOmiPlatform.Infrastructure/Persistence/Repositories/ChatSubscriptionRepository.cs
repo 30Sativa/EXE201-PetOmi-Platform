@@ -228,6 +228,20 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             .ToListAsync();
     }
 
+    public async Task<bool> HasAnyTrialAsync(Guid ownerUserId)
+    {
+        return await _context.ChatSubscriptions
+            .AsNoTracking()
+            .AnyAsync(s => s.OwnerUserId == ownerUserId && s.IsTrial);
+    }
+
+    public async Task<int> CountPaidPaymentsAsync(Guid ownerUserId)
+    {
+        return await _context.ChatSubscriptionPayments
+            .AsNoTracking()
+            .CountAsync(p => p.OwnerUserId == ownerUserId && p.Status == "Paid");
+    }
+
     public async Task<List<AdminChatSubscriptionItem>> GetAdminSubscriptionsAsync(int take)
     {
         take = Math.Clamp(take, 1, 200);
@@ -286,7 +300,6 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             })
             .ToListAsync();
     }
-
     public async Task AddSubscriptionAsync(ChatSubscriptionDomain subscription)
     {
         await _context.ChatSubscriptions.AddAsync(subscription.ToEntity());

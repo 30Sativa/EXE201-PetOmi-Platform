@@ -22,6 +22,10 @@ public interface IChatSubscriptionRepository
     Task<ChatUsageStats> GetUserMessageUsageAsync(Guid ownerUserId, Guid? petId, DateTime fromUtc, DateTime toUtc);
     // Lay danh sach UserID da chat trong khoang thoi gian (ung vien xet "bo do nang cap").
     Task<List<Guid>> GetUserIdsWithMessagesInRangeAsync(DateTime fromUtc, DateTime toUtc);
+    // User da tung dung free trial chua (moi user chi duoc 1 lan).
+    Task<bool> HasAnyTrialAsync(Guid ownerUserId);
+    // So lan thanh toan thanh cong (Paid) cua user - dung de xet dieu kien Early-bird.
+    Task<int> CountPaidPaymentsAsync(Guid ownerUserId);
     Task<List<AdminChatSubscriptionItem>> GetAdminSubscriptionsAsync(int take);
     Task<List<AdminChatSubscriptionPaymentItem>> GetAdminPaymentsAsync(int take);
     Task AddSubscriptionAsync(ChatSubscriptionDomain subscription);

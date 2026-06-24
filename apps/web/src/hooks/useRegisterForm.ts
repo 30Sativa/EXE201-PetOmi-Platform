@@ -39,6 +39,7 @@ export function useRegisterForm(): UseRegisterFormReturn {
       email: "",
       password: "",
       confirmPassword: "",
+      referralCode: "",
     },
   })
 
@@ -49,6 +50,7 @@ export function useRegisterForm(): UseRegisterFormReturn {
         email: data.email,
         password: data.password,
         confirmPassword: data.confirmPassword,
+        referralCode: data.referralCode?.trim() || undefined,
       })
 
       setStatus("success")

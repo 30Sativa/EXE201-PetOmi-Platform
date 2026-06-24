@@ -28,6 +28,8 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
 
+    public virtual DbSet<ReferralRedemption> ReferralRedemptions { get; set; }
+
     public virtual DbSet<ClinicService> ClinicServices { get; set; }
 
     public virtual DbSet<DoctorSchedule> DoctorSchedules { get; set; }
@@ -1195,6 +1197,27 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.NormalizedEmail).HasMaxLength(255);
             entity.Property(e => e.PasswordHash).HasMaxLength(255);
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.ReferralCode).HasMaxLength(20);
+            entity.HasIndex(e => e.ReferralCode, "UX_Users_ReferralCode")
+                .IsUnique()
+                .HasFilter("[ReferralCode] IS NOT NULL");
+        });
+
+        modelBuilder.Entity<ReferralRedemption>(entity =>
+        {
+            entity.HasKey(e => e.RedemptionId).HasName("PK_ReferralRedemptions");
+            entity.ToTable("ReferralRedemptions");
+            entity.Property(e => e.RedemptionId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("RedemptionID");
+            entity.Property(e => e.ReferrerUserId).HasColumnName("ReferrerUserID");
+            entity.Property(e => e.NewUserId).HasColumnName("NewUserID");
+            entity.Property(e => e.ReferralCode).HasMaxLength(20);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.HasIndex(e => e.NewUserId, "UQ_ReferralRedemptions_NewUser").IsUnique();
+            entity.HasIndex(e => e.ReferrerUserId, "IX_ReferralRedemptions_Referrer");
         });
 
         modelBuilder.Entity<UserDevice>(entity =>
@@ -1485,6 +1508,7 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
             entity.Property(e => e.CancelledAt).HasColumnType("datetime");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.IsTrial).HasDefaultValue(false);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
                 .HasColumnType("datetime");

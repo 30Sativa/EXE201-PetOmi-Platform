@@ -31,6 +31,8 @@ public partial class User
 
     public bool IsProfileCompleted { get; set; }
 
+    public string? ReferralCode { get; set; }
+
     public virtual ICollection<Appointment> AppointmentBookedByUsers { get; set; } = new List<Appointment>();
 
     public virtual ICollection<Appointment> AppointmentCancelledByUsers { get; set; } = new List<Appointment>();

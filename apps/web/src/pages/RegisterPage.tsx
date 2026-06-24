@@ -89,6 +89,22 @@ export default function RegisterPage({ onSwitchToLogin }: { onSwitchToLogin?: ()
         {errors.confirmPassword?.message ? <p className="text-sm font-semibold text-po-danger">{errors.confirmPassword.message}</p> : null}
       </div>
 
+      <div className="grid gap-2">
+        <label htmlFor="register-referral" className="text-sm font-semibold text-po-text">
+          Mã giới thiệu <span className="font-normal text-po-text-subtle">(tùy chọn)</span>
+        </label>
+        <input
+          id="register-referral"
+          type="text"
+          autoComplete="off"
+          placeholder="Nhập mã nếu được bạn bè giới thiệu"
+          className={fieldClass}
+          {...register("referralCode")}
+        />
+        <p className="text-sm leading-6 text-po-text-subtle">Người giới thiệu bạn sẽ được cộng thêm lượt trò chuyện AI.</p>
+        {errors.referralCode?.message ? <p className="text-sm font-semibold text-po-danger">{errors.referralCode.message}</p> : null}
+      </div>
+
       {message ? (
         <FormStatusMessage
           status={status === "success" ? "success" : "error"}

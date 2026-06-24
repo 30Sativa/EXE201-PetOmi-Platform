@@ -16,6 +16,7 @@ public class ChatSubscriptionDomain : BaseEntity
     public DateTime ExpiresAt { get; private set; }
     public DateTime? CancelledAt { get; private set; }
     public bool IsActive { get; private set; }
+    public bool IsTrial { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -67,7 +68,8 @@ public class ChatSubscriptionDomain : BaseEntity
         DateTime? cancelledAt,
         bool isActive,
         DateTime createdAt,
-        DateTime? updatedAt)
+        DateTime? updatedAt,
+        bool isTrial = false)
     {
         return new ChatSubscriptionDomain
         {
@@ -82,8 +84,44 @@ public class ChatSubscriptionDomain : BaseEntity
             ExpiresAt = expiresAt,
             CancelledAt = cancelledAt,
             IsActive = isActive,
+            IsTrial = isTrial,
             CreatedAt = createdAt,
             UpdatedAt = updatedAt
+        };
+    }
+
+    /// <summary>
+    /// Tao subscription Premium dang DUNG THU (free trial) cho user, het han sau trialDays.
+    /// Khong gan PetId vi quota tinh theo user.
+    /// </summary>
+    public static ChatSubscriptionDomain CreateTrial(
+        Guid ownerUserId,
+        Guid planId,
+        DateTime startsAtUtc,
+        int trialDays)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new DomainException("Owner khong hop le.");
+        if (planId == Guid.Empty)
+            throw new DomainException("Goi chat khong hop le.");
+        if (trialDays <= 0)
+            throw new DomainException("So ngay dung thu khong hop le.");
+
+        return new ChatSubscriptionDomain
+        {
+            Id = Guid.NewGuid(),
+            ScopeType = ChatSubscriptionScopeType.OwnerPet,
+            OwnerUserId = ownerUserId,
+            PetId = null,
+            ClinicId = null,
+            PlanId = planId,
+            Status = ChatSubscriptionStatus.Active,
+            StartsAt = startsAtUtc,
+            ExpiresAt = startsAtUtc.AddDays(trialDays),
+            CancelledAt = null,
+            IsActive = true,
+            IsTrial = true,
+            CreatedAt = DateTime.UtcNow
         };
     }
 

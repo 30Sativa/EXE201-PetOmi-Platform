@@ -8,6 +8,7 @@ import {
   Search,
   Settings,
   Shield,
+  Sparkles,
   X,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -37,6 +38,7 @@ const CATEGORY_META: Record<string, { label: string; icon: React.ElementType; co
   Security: { label: "Bảo mật", icon: Shield, color: "text-po-danger" },
   Email: { label: "Email", icon: Mail, color: "text-po-success" },
   Api: { label: "API", icon: KeyRound, color: "text-po-text-muted" },
+  Promotion: { label: "Ưu đãi Premium", icon: Sparkles, color: "text-po-warning" },
 }
 
 const SETTING_DEFINITIONS: Record<
@@ -103,9 +105,44 @@ const SETTING_DEFINITIONS: Record<
     description: "Refresh token hết hạn sau bao lâu",
     type: "number",
   },
+  "Promotion:Trial:Enabled": {
+    label: "Bật dùng thử miễn phí",
+    description: "Cho phép user kích hoạt dùng thử Premium",
+    type: "boolean",
+  },
+  "Promotion:Trial:Days": {
+    label: "Số ngày dùng thử",
+    description: "Số ngày dùng thử Premium miễn phí",
+    type: "number",
+  },
+  "Promotion:EarlyBird:Enabled": {
+    label: "Bật giảm giá Early Users",
+    description: "Bật/tắt ưu đãi giảm giá cho người dùng sớm",
+    type: "boolean",
+  },
+  "Promotion:EarlyBird:DiscountPercent": {
+    label: "Phần trăm giảm giá (%)",
+    description: "Mức giảm giá cho Early Users",
+    type: "number",
+  },
+  "Promotion:EarlyBird:Cycles": {
+    label: "Số kỳ được giảm giá",
+    description: "Số kỳ thanh toán đầu được áp dụng giảm giá",
+    type: "number",
+  },
+  "Promotion:Referral:Enabled": {
+    label: "Bật giới thiệu bạn bè",
+    description: "Bật/tắt ưu đãi giới thiệu bạn bè",
+    type: "boolean",
+  },
+  "Promotion:Referral:BonusMessages": {
+    label: "Lượt AI thưởng mỗi giới thiệu",
+    description: "Số lượt nhắn AI cộng thêm cho mỗi giới thiệu thành công",
+    type: "number",
+  },
 }
 
-type CategoryFilter = "all" | "General" | "Notification" | "Security" | "Email" | "Api"
+type CategoryFilter = "all" | "General" | "Notification" | "Security" | "Email" | "Api" | "Promotion"
 
 export default function AdminSettingsPage() {
   const queryClient = useQueryClient()
@@ -181,6 +218,7 @@ export default function AdminSettingsPage() {
     { value: "Notification", label: "Thông báo", icon: Bell },
     { value: "Email", label: "Email", icon: Mail },
     { value: "Api", label: "API", icon: KeyRound },
+    { value: "Promotion", label: "Ưu đãi Premium", icon: Sparkles },
   ]
 
   return (

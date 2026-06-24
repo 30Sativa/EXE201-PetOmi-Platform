@@ -80,6 +80,10 @@ public class ChatSubscriptionPaymentResponse
     public string PlanName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    // Gia goc truoc khi giam (de FE hien gia gach ngang). = Amount neu khong giam.
+    public decimal OriginalAmount { get; set; }
+    // Phan tram giam da ap dung (0 neu khong co uu dai).
+    public int DiscountPercent { get; set; }
     public string Currency { get; set; } = "VND";
     public string Provider { get; set; } = string.Empty;
     public string PaymentReference { get; set; } = string.Empty;

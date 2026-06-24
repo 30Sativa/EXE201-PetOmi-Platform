@@ -12,6 +12,7 @@ export const RegisterRequestSchema = z.object({
   email: z.email("Email không hợp lệ"),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
   confirmPassword: z.string().min(6, "Xác nhận mật khẩu phải có ít nhất 6 ký tự"),
+  referralCode: z.string().trim().max(20, "Mã giới thiệu tối đa 20 ký tự").optional().or(z.literal("")),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Mật khẩu xác nhận không khớp",
   path: ["confirmPassword"],

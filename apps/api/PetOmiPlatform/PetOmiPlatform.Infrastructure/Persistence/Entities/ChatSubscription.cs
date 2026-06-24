@@ -16,6 +16,7 @@ public class ChatSubscription
     public DateTime ExpiresAt { get; set; }
     public DateTime? CancelledAt { get; set; }
     public bool IsActive { get; set; }
+    public bool IsTrial { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 

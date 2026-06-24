@@ -9,10 +9,14 @@ public class ChatSubscriptionAccessService : IChatSubscriptionAccessService
     private const string FreePlanCode = "free";
 
     private readonly IChatSubscriptionRepository _subscriptionRepository;
+    private readonly IReferralRepository _referralRepository;
 
-    public ChatSubscriptionAccessService(IChatSubscriptionRepository subscriptionRepository)
+    public ChatSubscriptionAccessService(
+        IChatSubscriptionRepository subscriptionRepository,
+        IReferralRepository referralRepository)
     {
         _subscriptionRepository = subscriptionRepository;
+        _referralRepository = referralRepository;
     }
 
     public async Task<ChatSubscriptionAccessResult> GetAccessAsync(
@@ -21,6 +25,9 @@ public class ChatSubscriptionAccessService : IChatSubscriptionAccessService
         CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
+
+        // Quota thuong tu referral (cong them vao han muc thang). Khong tran.
+        var referralBonus = await _referralRepository.GetTotalBonusMessagesAsync(ownerUserId);
 
         // Gop chung theo user: chi can 1 subscription Premium dang active la dung cho TAT CA pet.
         // PetId con duoc giu trong tham so de tuong thich, nhung khong con anh huong toi quota/usage.
@@ -49,7 +56,7 @@ public class ChatSubscriptionAccessService : IChatSubscriptionAccessService
                 planCode: premiumPlan.Code,
                 planName: premiumPlan.Name,
                 isPremium: premiumPlan.IsPremium,
-                monthlyMessageQuota: premiumPlan.MonthlyMessageQuota,
+                monthlyMessageQuota: premiumPlan.MonthlyMessageQuota + referralBonus,
                 monthlyTokenQuota: premiumPlan.MonthlyTokenQuota,
                 usedMessages: premiumUsage.UserMessages,
                 usedTokens: premiumUsage.TotalTokens,
@@ -78,7 +85,7 @@ public class ChatSubscriptionAccessService : IChatSubscriptionAccessService
             planCode: freePlan.Code,
             planName: freePlan.Name,
             isPremium: false,
-            monthlyMessageQuota: freePlan.MonthlyMessageQuota,
+            monthlyMessageQuota: freePlan.MonthlyMessageQuota + referralBonus,
             monthlyTokenQuota: freePlan.MonthlyTokenQuota,
             usedMessages: freeUsage.UserMessages,
             usedTokens: freeUsage.TotalTokens,

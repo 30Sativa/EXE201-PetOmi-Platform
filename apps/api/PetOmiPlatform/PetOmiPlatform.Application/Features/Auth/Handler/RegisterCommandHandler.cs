@@ -26,15 +26,19 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         private readonly IConfiguration _configuration;
         private readonly ITokenGenerator _tokenGenerator;
         private readonly IUserRoleRepository _userRoleRepository;
+        private readonly IReferralRepository _referralRepository;
+        private readonly IPromotionSettingsService _promotionSettings;
         public RegisterCommandHandler(
             IUserRepository userRepository,
             IPasswordHasher passwordHasher,
             IUnitOfWork unitOfWork,
             IEmailVerificationTokenRepository emailVerificationRepository,
             IEmailService emailService,
-            IConfiguration configuration, 
+            IConfiguration configuration,
             ITokenGenerator tokenGenerator,
-            IUserRoleRepository userRoleRepository)
+            IUserRoleRepository userRoleRepository,
+            IReferralRepository referralRepository,
+            IPromotionSettingsService promotionSettings)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
@@ -44,6 +48,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             _configuration = configuration;
             _tokenGenerator = tokenGenerator;
             _userRoleRepository = userRoleRepository;
+            _referralRepository = referralRepository;
+            _promotionSettings = promotionSettings;
         }
 
         public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -66,6 +72,8 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             await _userRoleRepository.AddAsync(user.Id, RoleConstants.OwnerId);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+            // 4b. Xử lý mã giới thiệu (tùy chọn). Lỗi ở đây KHÔNG làm hỏng việc đăng ký.
+            await TryApplyReferralAsync(request.Request.ReferralCode, user.Id, cancellationToken);
 
             var rawToken = _tokenGenerator.GenerateRefreshToken();
 
@@ -92,6 +100,39 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 UserId = user.Id,
                 Email = user.Email.Value
             };
+        }
+
+        /// <summary>
+        /// Nếu người mới nhập mã giới thiệu hợp lệ: cộng quota (BonusMessages) cho người giới thiệu.
+        /// Ràng buộc: tính năng đang bật, mã tồn tại, không tự giới thiệu, người mới chưa từng được tính.
+        /// </summary>
+        private async Task TryApplyReferralAsync(string? referralCode, Guid newUserId, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(referralCode))
+                return;
+
+            try
+            {
+                var promo = await _promotionSettings.GetAsync(ct);
+                if (!promo.ReferralEnabled || promo.ReferralBonusMessages <= 0)
+                    return;
+
+                var referrerUserId = await _referralRepository.GetUserIdByReferralCodeAsync(referralCode);
+                if (referrerUserId == null || referrerUserId.Value == newUserId)
+                    return;
+
+                // Chống trùng: 1 người mới chỉ được tính 1 lần.
+                if (await _referralRepository.HasRedemptionForNewUserAsync(newUserId))
+                    return;
+
+                await _referralRepository.AddRedemptionAsync(
+                    referrerUserId.Value, newUserId, referralCode, promo.ReferralBonusMessages);
+                await _unitOfWork.SaveChangesAsync(ct);
+            }
+            catch
+            {
+                // Không chặn đăng ký nếu xử lý referral lỗi.
+            }
         }
     }
 

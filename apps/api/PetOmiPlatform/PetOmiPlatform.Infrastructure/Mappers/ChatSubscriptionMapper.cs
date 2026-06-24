@@ -73,7 +73,8 @@ public static class ChatSubscriptionMapper
             cancelledAt: entity.CancelledAt,
             isActive: entity.IsActive,
             createdAt: entity.CreatedAt,
-            updatedAt: entity.UpdatedAt);
+            updatedAt: entity.UpdatedAt,
+            isTrial: entity.IsTrial);
     }
 
     public static ChatSubscription ToEntity(this ChatSubscriptionDomain domain)
@@ -91,6 +92,7 @@ public static class ChatSubscriptionMapper
             ExpiresAt = domain.ExpiresAt,
             CancelledAt = domain.CancelledAt,
             IsActive = domain.IsActive,
+            IsTrial = domain.IsTrial,
             CreatedAt = domain.CreatedAt,
             UpdatedAt = domain.UpdatedAt
         };

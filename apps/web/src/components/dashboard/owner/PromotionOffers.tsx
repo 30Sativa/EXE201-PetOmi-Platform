@@ -7,6 +7,7 @@ import {
   getPromotionOffersApi,
   getReferralInfoApi,
 } from "@/services/promotion.service"
+import { getApiErrorMessage } from "@/services/api-response"
 
 export default function PromotionOffers() {
   const queryClient = useQueryClient()
@@ -30,8 +31,13 @@ export default function PromotionOffers() {
       queryClient.invalidateQueries({ queryKey: ["promotion-offers"] })
       queryClient.invalidateQueries({ queryKey: ["owner-chat-subscription"] })
     },
-    onError: () => {
-      toast.error("Không thể kích hoạt dùng thử. Có thể bạn đã dùng trước đó.")
+    onError: (error) => {
+      toast.error(
+        getApiErrorMessage(
+          error,
+          "Không thể kích hoạt dùng thử, vui lòng thử lại sau.",
+        ),
+      )
     },
   })
 

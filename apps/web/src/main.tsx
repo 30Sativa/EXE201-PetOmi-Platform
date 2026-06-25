@@ -28,10 +28,11 @@ createRoot(document.getElementById("root")!).render(
         <NotificationProvider>
           <SignalRConnector />
           <Toaster
-            position="top-center"
-            offset={20}
+            position="top-right"
+            offset={88}
             mobileOffset={12}
             visibleToasts={3}
+            closeButton
             toastOptions={{
               duration: 4200,
               classNames: {

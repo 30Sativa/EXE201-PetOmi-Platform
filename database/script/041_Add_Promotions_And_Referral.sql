@@ -108,9 +108,36 @@ WHEN NOT MATCHED BY TARGET THEN
 GO
 
 -- ---------------------------------------------
--- 5) Sinh ReferralCode cho cac user hien huu chua co (8 ky tu HEX viet hoa tu UserID).
+-- 5) Sinh ReferralCode DUY NHAT cho cac user hien huu chua co.
+--    LUU Y: KHONG dung 8 ky tu dau cua UserID. Voi NEWSEQUENTIALID(),
+--    cac GUID co chung phan dau rat dai -> 8 ky tu dau gan nhu giong nhau
+--    -> sinh trung ReferralCode -> vi pham UX_Users_ReferralCode -> loi.
+--    Thay vao do dung NEWID() ngau nhien + vong lap khu trung de bao dam duy nhat.
 -- ---------------------------------------------
-UPDATE dbo.Users
-SET ReferralCode = UPPER(LEFT(REPLACE(CONVERT(NVARCHAR(36), UserID), '-', ''), 8))
-WHERE ReferralCode IS NULL;
+DECLARE @safety INT = 0;
+
+WHILE EXISTS (SELECT 1 FROM dbo.Users WHERE ReferralCode IS NULL) AND @safety < 50
+BEGIN
+    -- 5.1) Gan ma ngau nhien (8 ky tu HEX viet hoa tu NEWID) cho cac dong con NULL.
+    UPDATE dbo.Users
+    SET ReferralCode = UPPER(LEFT(REPLACE(CONVERT(NVARCHAR(36), NEWID()), '-', ''), 8))
+    WHERE ReferralCode IS NULL;
+
+    -- 5.2) Khu trung: neu co ma bi trung nhau (hoac trung ma da ton tai tu truoc),
+    --      giu lai 1 dong, set phan con lai ve NULL de vong lap sau sinh lai.
+    ;WITH Ranked AS (
+        SELECT
+            UserID,
+            ROW_NUMBER() OVER (PARTITION BY ReferralCode ORDER BY UserID) AS rn
+        FROM dbo.Users
+        WHERE ReferralCode IS NOT NULL
+    )
+    UPDATE u
+    SET u.ReferralCode = NULL
+    FROM dbo.Users u
+    JOIN Ranked r ON r.UserID = u.UserID
+    WHERE r.rn > 1;
+
+    SET @safety += 1;
+END
 GO

@@ -1,3 +1,23 @@
+/**
+ * Lay thong bao loi that tu response cua axios.
+ * Backend tra ve { message?, errors?: string[] } (camelCase).
+ * Tra ve fallback neu khong doc duoc message nao co y nghia.
+ */
+export const getApiErrorMessage = (error: unknown, fallback: string): string => {
+  const data = (
+    error as {
+      response?: { data?: { message?: string; errors?: string[] } }
+    }
+  )?.response?.data
+
+  const fromErrors = data?.errors?.find((e) => typeof e === "string" && e.trim())
+  const message = data?.message?.trim() || fromErrors?.trim()
+
+  return message && message.toLowerCase() !== "an unexpected error occurred"
+    ? message
+    : fallback
+}
+
 export const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
   const data = response.data as T | { data: T }
 

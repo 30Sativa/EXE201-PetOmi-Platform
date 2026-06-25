@@ -1,10 +1,13 @@
 import {
   ArrowRight,
+  Bell,
   Building2,
   CalendarCheck,
   ClipboardList,
+  Lightbulb,
   PawPrint,
   Plus,
+  Sparkles,
   TrendingUp,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -21,7 +24,18 @@ import { useQuery } from "@tanstack/react-query"
 import { getPetsApi } from "@/services/pets.service"
 import { getOwnerAppointmentsApi } from "@/services/appointments.service"
 import { getRemindersApi } from "@/services/reminders.service"
+import { getPromotionOffersApi } from "@/services/promotion.service"
+import { useProfile } from "@/hooks/useAuthQueries"
 import type { AppointmentListItemResponse } from "@/types"
+
+// Tip cham soc thu cung xoay vong theo ngay (tang engagement).
+const CARE_TIPS = [
+  "Cân thú cưng mỗi tháng giúp phát hiện sớm vấn đề sức khỏe.",
+  "Đặt lịch tẩy giun và tiêm phòng định kỳ để bé luôn khỏe mạnh.",
+  "Ghi lại lịch sử khám để bác sĩ nắm rõ tình trạng của bé.",
+  "Khám sức khỏe tổng quát 6 tháng/lần là thói quen tốt cho thú cưng.",
+  "Cập nhật cân nặng đều đặn để theo dõi chế độ ăn phù hợp.",
+] as const
 
 const formatDate = (dateStr: string) => {
   try {
@@ -53,9 +67,17 @@ const getStatusLabel = (status: string) => {
 export default function OwnerDashboardPage() {
   const navigate = useNavigate()
 
+  const { data: profile } = useProfile()
+
   const { data: pets, isLoading: loadingPets } = useQuery({
     queryKey: ["owner-pets"],
     queryFn: getPetsApi,
+  })
+
+  const { data: offers } = useQuery({
+    queryKey: ["promotion-offers"],
+    queryFn: getPromotionOffersApi,
+    staleTime: 60_000,
   })
 
   const { data: appointments, isLoading: loadingAppts } = useQuery({
@@ -99,6 +121,33 @@ export default function OwnerDashboardPage() {
     return pet?.name ?? "Không rõ"
   }
 
+  // --- Banner ca nhan hoa ---
+  const hour = now.getHours()
+  const greeting =
+    hour < 11 ? "Chào buổi sáng" : hour < 18 ? "Chào buổi chiều" : "Chào buổi tối"
+  const firstName =
+    profile?.fullName?.trim().split(/\s+/).slice(-1)[0] || "bạn"
+
+  // Dong trang thai dong: uu tien viec can chu y.
+  const statusLine =
+    activeReminders > 0
+      ? `Bạn có ${activeReminders} nhắc nhở đang cần chú ý.`
+      : upcomingCount > 0
+        ? `Bạn có ${upcomingCount} lịch hẹn sắp tới.`
+        : totalPets === 0
+          ? "Thêm thú cưng đầu tiên để bắt đầu hành trình chăm sóc."
+          : "Mọi thứ đang ổn — không có việc nào cần gấp hôm nay."
+
+  // Tip xoay vong theo ngay trong nam (on dinh trong ngay).
+  const dayOfYear = Math.floor(
+    (now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86_400_000,
+  )
+  const careTip = CARE_TIPS[dayOfYear % CARE_TIPS.length]
+
+  // CTA Premium AI: chi hien khi co uu dai dung thu chua dung.
+  const showTrialCta =
+    offers?.trialEnabled === true && offers?.trialAlreadyUsed === false
+
   return (
     <div className="grid gap-5 md:gap-6">
       <section className="relative overflow-hidden rounded-[34px] text-po-text shadow-sm shadow-orange-200/25 ring-1 ring-po-border/70">
@@ -112,13 +161,15 @@ export default function OwnerDashboardPage() {
         <div className="relative max-w-2xl p-6 md:p-10">
           <p className="inline-flex items-center gap-2 rounded-full bg-po-primary-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-po-primary ring-1 ring-po-border/60">
             <PawPrint className="size-3.5" />
-            Tổng quan hôm nay
+            {greeting}, {firstName}
           </p>
           <h2 className="mt-5 text-3xl font-extrabold leading-[1.05] md:text-[3.25rem]">
             Chăm sóc thú cưng bắt đầu từ những việc nhỏ.
           </h2>
-          <p className="mt-5 max-w-lg text-sm leading-7 text-po-text-muted md:text-base md:leading-8">
-            Xem nhanh hồ sơ, lịch khám và nhắc nhở đang cần chú ý để không bỏ sót các mốc chăm sóc quan trọng.
+
+          <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-po-text md:text-base">
+            <Bell className="size-4 shrink-0 text-po-primary" />
+            {statusLine}
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
@@ -144,6 +195,36 @@ export default function OwnerDashboardPage() {
               <Building2 className="size-4" />
             </button>
           </div>
+
+          {/* CTA Premium AI: chi hien khi con uu dai dung thu */}
+          {showTrialCta ? (
+            <button
+              onClick={() => navigate("/dashboard/owner/ai-plan")}
+              className="group mt-5 flex w-full max-w-md items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-left text-white shadow-lg shadow-orange-950/25 transition hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/20">
+                <Sparkles className="size-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-extrabold">
+                  Trợ lý AI cho thú cưng — dùng thử {offers?.trialDays ?? 7} ngày miễn phí
+                </span>
+                <span className="block text-xs text-white/85">
+                  Tư vấn sâu, gửi ảnh cho AI xem, phản hồi nhanh hơn.
+                </span>
+              </span>
+              <ArrowRight className="size-5 shrink-0 transition group-hover:translate-x-0.5" />
+            </button>
+          ) : null}
+
+          {/* Tip cham soc xoay vong */}
+          <p className="mt-5 inline-flex items-start gap-2 rounded-2xl bg-white/70 px-4 py-2.5 text-xs font-medium text-po-text-muted ring-1 ring-po-border/60 backdrop-blur md:text-sm">
+            <Lightbulb className="mt-0.5 size-4 shrink-0 text-amber-500" />
+            <span>
+              <span className="font-bold text-po-text">Mẹo hôm nay: </span>
+              {careTip}
+            </span>
+          </p>
         </div>
       </section>
 

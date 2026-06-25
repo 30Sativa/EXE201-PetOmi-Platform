@@ -686,6 +686,53 @@ dialog.fixed.inset-0.z-50.flex.items-center.justify-center {
   max-height: none;
 }
 
+/* ==================== HERO BANNER ANIMATION ==================== */
+
+/* Container nhe nhang scale + fade khi vao trang */
+.po-hero-in {
+  animation: po-hero-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Cac dong noi dung truot len + fade lan luot (stagger) */
+.po-hero-item {
+  animation: po-hero-item 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.po-hero-item:nth-child(1) { animation-delay: 0.05s; }
+.po-hero-item:nth-child(2) { animation-delay: 0.12s; }
+.po-hero-item:nth-child(3) { animation-delay: 0.19s; }
+.po-hero-item:nth-child(4) { animation-delay: 0.26s; }
+.po-hero-item:nth-child(5) { animation-delay: 0.33s; }
+
+/* Icon sparkle nhap nhay nhe trong CTA Premium */
+.po-sparkle {
+  animation: po-sparkle 2.4s ease-in-out infinite;
+}
+
+@keyframes po-hero-in {
+  from { opacity: 0; transform: scale(0.985); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes po-hero-item {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes po-sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(1.18) rotate(12deg); opacity: 0.85; }
+}
+
+/* Ton trong nguoi dung tat hieu ung chuyen dong */
+@media (prefers-reduced-motion: reduce) {
+  .po-hero-in,
+  .po-hero-item,
+  .po-sparkle {
+    animation: none !important;
+  }
+}
+
 /* ==================== TOASTS ==================== */
 
 .po-toast {

@@ -1,12 +1,10 @@
 import {
   ArrowRight,
   Bell,
-  Building2,
   CalendarCheck,
   ClipboardList,
   Lightbulb,
   PawPrint,
-  Plus,
   Sparkles,
   TrendingUp,
 } from "lucide-react"
@@ -150,7 +148,7 @@ export default function OwnerDashboardPage() {
 
   return (
     <div className="grid gap-5 md:gap-6">
-      <section className="relative overflow-hidden rounded-[34px] text-po-text shadow-sm shadow-orange-200/25 ring-1 ring-po-border/70">
+      <section className="po-hero-in relative overflow-hidden rounded-[28px] text-po-text shadow-sm shadow-orange-200/25 ring-1 ring-po-border/70">
         <img
           src="/hero-pets-new.png"
           alt="Bác sĩ thú y đang kiểm tra sức khỏe cho chó trong phòng khám"
@@ -158,52 +156,28 @@ export default function OwnerDashboardPage() {
         />
         <div className="absolute inset-0 bg-[linear-gradient(100deg,_rgba(255,250,243,0.97)_0%,_rgba(255,248,239,0.92)_44%,_rgba(255,247,237,0.5)_70%,_rgba(255,247,237,0.05)_100%)]" />
 
-        <div className="relative max-w-2xl p-6 md:p-10">
-          <p className="inline-flex items-center gap-2 rounded-full bg-po-primary-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-po-primary ring-1 ring-po-border/60">
+        <div className="relative max-w-xl p-6 md:p-8">
+          <p className="po-hero-item inline-flex items-center gap-2 rounded-full bg-po-primary-soft px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.16em] text-po-primary ring-1 ring-po-border/60">
             <PawPrint className="size-3.5" />
             {greeting}, {firstName}
           </p>
-          <h2 className="mt-5 text-3xl font-extrabold leading-[1.05] md:text-[3.25rem]">
+          <h2 className="po-hero-item mt-4 text-2xl font-extrabold leading-[1.1] md:text-4xl">
             Chăm sóc thú cưng bắt đầu từ những việc nhỏ.
           </h2>
 
-          <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-po-text md:text-base">
+          <p className="po-hero-item mt-3 inline-flex items-center gap-2 text-sm font-semibold text-po-text md:text-[15px]">
             <Bell className="size-4 shrink-0 text-po-primary" />
             {statusLine}
           </p>
-
-          <div className="mt-7 flex flex-wrap gap-3">
-            <button
-              onClick={() => navigate("/dashboard/owner/pets?add=1")}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-bold text-white shadow-lg shadow-orange-950/25 transition hover:-translate-y-0.5 hover:bg-po-primary-hover hover:shadow-xl active:translate-y-0"
-            >
-              <Plus className="size-4" />
-              Thêm thú cưng
-            </button>
-            <button
-              onClick={() => navigate("/dashboard/owner/appointments")}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-white/85 px-6 text-sm font-semibold text-po-text ring-1 ring-po-border/80 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
-            >
-              Xem lịch hẹn
-              <ArrowRight className="size-4" />
-            </button>
-            <button
-              onClick={() => navigate("/dashboard/owner/register-clinic")}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-white/85 px-6 text-sm font-semibold text-po-text ring-1 ring-po-border/80 backdrop-blur transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md active:translate-y-0"
-            >
-              Đăng ký phòng khám
-              <Building2 className="size-4" />
-            </button>
-          </div>
 
           {/* CTA Premium AI: chi hien khi con uu dai dung thu */}
           {showTrialCta ? (
             <button
               onClick={() => navigate("/dashboard/owner/ai-plan")}
-              className="group mt-5 flex w-full max-w-md items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-left text-white shadow-lg shadow-orange-950/25 transition hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0"
+              className="po-hero-item group mt-5 flex w-full max-w-md items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-left text-white shadow-lg shadow-orange-950/25 transition hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0"
             >
               <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/20">
-                <Sparkles className="size-5" />
+                <Sparkles className="size-5 po-sparkle" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-extrabold">
@@ -213,12 +187,12 @@ export default function OwnerDashboardPage() {
                   Tư vấn sâu, gửi ảnh cho AI xem, phản hồi nhanh hơn.
                 </span>
               </span>
-              <ArrowRight className="size-5 shrink-0 transition group-hover:translate-x-0.5" />
+              <ArrowRight className="size-5 shrink-0 transition group-hover:translate-x-1" />
             </button>
           ) : null}
 
           {/* Tip cham soc xoay vong */}
-          <p className="mt-5 inline-flex items-start gap-2 rounded-2xl bg-white/70 px-4 py-2.5 text-xs font-medium text-po-text-muted ring-1 ring-po-border/60 backdrop-blur md:text-sm">
+          <p className="po-hero-item mt-4 inline-flex items-start gap-2 rounded-xl bg-white/70 px-3.5 py-2 text-xs font-medium text-po-text-muted ring-1 ring-po-border/60 backdrop-blur md:text-[13px]">
             <Lightbulb className="mt-0.5 size-4 shrink-0 text-amber-500" />
             <span>
               <span className="font-bold text-po-text">Mẹo hôm nay: </span>

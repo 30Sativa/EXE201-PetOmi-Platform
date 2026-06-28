@@ -19,7 +19,14 @@ const DIST = path.resolve(__dirname, "../dist")
 const PORT = 4188
 
 // Danh sách route cần prerender (chỉ các trang public, KHÔNG prerender dashboard).
-const ROUTES = ["/", "/for-clinics", "/login", "/register"]
+// `expectTitle`: title kỳ vọng sau khi React cập nhật <title>. Prerender sẽ đợi
+// document.title khớp giá trị này rồi mới chụp HTML, để mỗi trang có đúng title riêng.
+const ROUTES = [
+  { path: "/", expectTitle: "PetOmi — Trợ lý AI chăm sóc sức khỏe thú cưng" },
+  { path: "/for-clinics", expectTitle: "Dành cho phòng khám thú y | PetOmi" },
+  { path: "/login", expectTitle: "Đăng nhập | PetOmi" },
+  { path: "/register", expectTitle: "Đăng ký tài khoản | PetOmi" },
+]
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -117,7 +124,7 @@ async function main() {
   try {
     for (const route of ROUTES) {
       const page = await browser.newPage()
-      const url = `http://localhost:${PORT}${route}`
+      const url = `http://localhost:${PORT}${route.path}`
       await page.goto(url, { waitUntil: "networkidle0", timeout: 30000 })
 
       // Đợi React render xong nội dung vào #root.
@@ -128,13 +135,27 @@ async function main() {
         }, { timeout: 15000 })
         .catch(() => {})
 
+      // Đợi React cập nhật <title> sang đúng title của trang trước khi chụp,
+      // để mỗi trang có title riêng (không bị giữ title mặc định từ index.html).
+      await page
+        .waitForFunction(
+          (expected) => document.title === expected,
+          { timeout: 8000 },
+          route.expectTitle,
+        )
+        .catch(() => {
+          console.warn(
+            `[prerender] ⚠ ${route.path}: <title> chưa khớp "${route.expectTitle}" (đang là "?"), vẫn chụp.`,
+          )
+        })
+
       const html = await page.content()
 
       const outDir =
-        route === "/" ? DIST : path.join(DIST, route.replace(/^\//, ""))
+        route.path === "/" ? DIST : path.join(DIST, route.path.replace(/^\//, ""))
       await mkdir(outDir, { recursive: true })
       await writeFile(path.join(outDir, "index.html"), html, "utf8")
-      console.log(`[prerender] ✓ ${route} -> ${path.relative(DIST, path.join(outDir, "index.html"))}`)
+      console.log(`[prerender] ✓ ${route.path} -> ${path.relative(DIST, path.join(outDir, "index.html"))}`)
       await page.close()
     }
   } finally {

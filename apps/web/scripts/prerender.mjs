@@ -74,13 +74,38 @@ async function main() {
     process.exit(1)
   }
 
-  // import động để không bắt buộc puppeteer khi chỉ build SPA thường.
-  let puppeteer
+  // Khởi tạo trình duyệt theo môi trường:
+  // - Trên Vercel (serverless): dùng puppeteer-core + @sparticuz/chromium
+  //   (Chromium nén sẵn, đã gói đủ thư viện hệ thống cho môi trường Vercel).
+  // - Ở local: dùng puppeteer thường (tự tải Chromium đầy đủ).
+  // Nếu không có gói nào, bỏ qua prerender mà không làm hỏng build.
+  const isServerless = Boolean(process.env.VERCEL) || Boolean(process.env.AWS_REGION)
+
+  let browser
   try {
-    puppeteer = (await import("puppeteer")).default
-  } catch {
+    if (isServerless) {
+      const chromium = (await import("@sparticuz/chromium")).default
+      const puppeteer = (await import("puppeteer-core")).default
+      // Tắt graphics mode để nhẹ và tránh lỗi GL trong môi trường build.
+      chromium.setGraphicsMode = false
+      browser = await puppeteer.launch({
+        args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+        executablePath: await chromium.executablePath(),
+        headless: true,
+      })
+    } else {
+      const puppeteer = (await import("puppeteer")).default
+      browser = await puppeteer.launch({
+        headless: "new",
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      })
+    }
+  } catch (err) {
     console.warn(
-      "[prerender] Bỏ qua prerender: chưa cài 'puppeteer'. Cài bằng `npm i -D puppeteer` để bật.",
+      "[prerender] Bỏ qua prerender: chưa cài đủ trình duyệt headless.\n" +
+        "  - Vercel/serverless: cần 'puppeteer-core' + '@sparticuz/chromium'.\n" +
+        "  - Local: cần 'puppeteer'.\n" +
+        `  Chi tiết: ${err instanceof Error ? err.message : String(err)}`,
     )
     process.exit(0)
   }
@@ -88,11 +113,6 @@ async function main() {
   const server = createServer()
   await new Promise((resolve) => server.listen(PORT, resolve))
   console.log(`[prerender] Server tĩnh chạy tại http://localhost:${PORT}`)
-
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  })
 
   try {
     for (const route of ROUTES) {

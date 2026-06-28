@@ -37,7 +37,10 @@ PetOmi là một **SPA (Vite + React 19)** deploy trên Vercel. SPA render bằn
 
 ### Prerender cho bot
 
-- `scripts/prerender.mjs` — sau khi `vite build`, script dùng headless Chrome (puppeteer) render trước các trang public và ghi HTML tĩnh đầy đủ vào `dist/`. Bot đọc được nội dung ngay; người dùng vẫn nhận SPA bình thường.
+- `scripts/prerender.mjs` — sau khi `vite build`, script dùng headless Chrome render trước các trang public và ghi HTML tĩnh đầy đủ vào `dist/`. Bot đọc được nội dung ngay; người dùng vẫn nhận SPA bình thường.
+  - **Trên Vercel** (serverless): tự dùng `puppeteer-core` + `@sparticuz/chromium` (Chromium nén sẵn, đã gói đủ thư viện hệ thống — tránh lỗi `libnspr4.so` khi dùng puppeteer thường).
+  - **Ở local**: dùng `puppeteer` thường (tự tải Chromium đầy đủ).
+  - Script tự phát hiện môi trường qua biến `VERCEL`/`AWS_REGION`.
 - Script trong `package.json`:
   - `npm run build` — build SPA như cũ (không đổi).
   - `npm run build:prerender` — build rồi prerender (cần `puppeteer`).

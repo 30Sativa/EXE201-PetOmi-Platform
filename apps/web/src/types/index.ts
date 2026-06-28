@@ -20,3 +20,5 @@ export * from "./chat.types"
 export * from "./chat-subscription.types"
 
 export * from "./promotion.types"
+
+export * from "./blog.types"

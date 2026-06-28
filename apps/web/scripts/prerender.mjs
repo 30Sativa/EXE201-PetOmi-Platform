@@ -26,6 +26,20 @@ const ROUTES = [
   { path: "/for-clinics", expectTitle: "Dành cho phòng khám thú y | PetOmi" },
   { path: "/login", expectTitle: "Đăng nhập | PetOmi" },
   { path: "/register", expectTitle: "Đăng ký tài khoản | PetOmi" },
+  // Blog (cẩm nang). Khi THÊM BÀI MỚI, thêm route tương ứng vào đây để được prerender.
+  { path: "/blog", expectTitle: "Cẩm nang chăm sóc thú cưng | PetOmi" },
+  {
+    path: "/blog/cho-bo-an-khi-nao-can-di-kham",
+    expectTitle: "Chó bỏ ăn 1–2 ngày: khi nào đáng lo, khi nào cần đưa đi khám? | PetOmi",
+  },
+  {
+    path: "/blog/lich-tiem-phong-cho-cho-con",
+    expectTitle: "Lịch tiêm phòng cho chó con: hướng dẫn đầy đủ cho người mới nuôi | PetOmi",
+  },
+  {
+    path: "/blog/meo-non-co-sao-khong",
+    expectTitle: "Mèo nôn: khi nào là bình thường, khi nào là dấu hiệu cần lo lắng? | PetOmi",
+  },
 ]
 
 const MIME = {

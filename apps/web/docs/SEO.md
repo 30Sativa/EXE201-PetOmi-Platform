@@ -83,6 +83,26 @@ PetOmi là một **SPA (Vite + React 19)** deploy trên Vercel. SPA render bằn
 
 ---
 
+## 2b. Blog / Cẩm nang (đã thêm)
+
+Đã dựng sẵn khu blog để tăng từ khóa và SEO dài hạn:
+
+- `src/types/blog.types.ts` — kiểu dữ liệu bài viết.
+- `src/config/blogPosts.ts` — **nội dung các bài** (hiện có 3 bài mẫu). Đây là nơi thêm/sửa bài.
+- `src/pages/BlogListPage.tsx` — trang danh sách `/blog`.
+- `src/pages/BlogPostPage.tsx` — trang chi tiết `/blog/:slug`, có JSON-LD `Article`, CTA về đăng ký, khuyến cáo y tế, bài liên quan.
+- Link "Cẩm nang" đã thêm vào Navbar (cả mobile) và Footer.
+
+### Cách thêm một bài blog mới
+
+1. Mở `src/config/blogPosts.ts`, copy một object trong mảng `blogPosts` và sửa: `slug` (duy nhất, không dấu, nối bằng `-`), `title`, `description`, `date`, `tags`, `cover`, và `content`.
+2. `content` là mảng block: `heading`, `paragraph`, `list` (mảng `items`), `callout`.
+3. Thêm URL bài vào `public/sitemap.xml`.
+4. Thêm route bài vào `scripts/prerender.mjs` (mảng `ROUTES`) với `expectTitle` = `"<title bài> | PetOmi"` để bài được prerender cho bot.
+5. Build + deploy. Sau đó vào Search Console → URL Inspection → Request Indexing cho URL bài mới.
+
+> Lưu ý: nội dung y tế thú cưng nên được người có chuyên môn review trước khi xuất bản rộng rãi.
+
 ## 3. Cách dùng component Seo cho trang mới
 
 ```tsx

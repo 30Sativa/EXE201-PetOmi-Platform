@@ -11,6 +11,8 @@ import ClinicDashboardLayout from "@/components/dashboard/ClinicDashboardLayout"
 import OwnerDashboardLayout from "@/components/dashboard/OwnerDashboardLayout"
 
 import AuthPage from "@/pages/AuthPage"
+import BlogListPage from "@/pages/BlogListPage"
+import BlogPostPage from "@/pages/BlogPostPage"
 import CompleteProfilePage from "@/pages/CompleteProfilePage"
 import ErrorPage from "@/pages/ErrorPage"
 import ForClinicsPage from "@/pages/ForClinicsPage"
@@ -89,6 +91,16 @@ const router = createBrowserRouter([
       {
         path: "for-clinics",
         element: <ForClinicsPage />,
+      },
+
+      {
+        path: "blog",
+        element: <BlogListPage />,
+      },
+
+      {
+        path: "blog/:slug",
+        element: <BlogPostPage />,
       },
 
       {

@@ -11,6 +11,26 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.petomi.cloud/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.petomi.cloud/blog/cho-bo-an-khi-nao-can-di-kham</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.petomi.cloud/blog/lich-tiem-phong-cho-cho-con</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.petomi.cloud/blog/meo-non-co-sao-khong</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.petomi.cloud/register</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

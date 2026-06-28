@@ -10,7 +10,7 @@ const footerLinks = [
       { label: "Tư vấn AI", href: "#services" },
       { label: "Hồ sơ thú cưng", href: "#services" },
       { label: "Đặt lịch khám", href: "#booking" },
-      { label: "Chia sẻ dữ liệu", href: "#services" },
+      { label: "Cẩm nang chăm sóc", href: "/blog" },
     ],
   },
   {
@@ -80,11 +80,17 @@ export default function Footer() {
             {footerLinks.map((column) => (
               <div key={column.title} className="grid gap-2 text-sm">
                 <p className="font-semibold text-po-text">{column.title}</p>
-                {column.links.map((link) => (
-                  <a key={link.label} href={link.href} className="text-po-text-muted transition hover:text-po-text">
-                    {link.label}
-                  </a>
-                ))}
+                {column.links.map((link) =>
+                  link.href.startsWith("/") ? (
+                    <Link key={link.label} to={link.href} className="text-po-text-muted transition hover:text-po-text">
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a key={link.label} href={link.href} className="text-po-text-muted transition hover:text-po-text">
+                      {link.label}
+                    </a>
+                  ),
+                )}
               </div>
             ))}
           </div>

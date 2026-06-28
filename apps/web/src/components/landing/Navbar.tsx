@@ -62,6 +62,12 @@ export default function Navbar({ links = defaultLinks }: NavbarProps) {
               {link.label}
             </a>
           ))}
+          <Link
+            to="/blog"
+            className="relative rounded-full px-3 py-2 transition-colors after:absolute after:bottom-1 after:left-3 after:right-3 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-po-primary after:transition-transform after:duration-300 hover:bg-white hover:text-po-text hover:after:scale-x-100"
+          >
+            Cẩm nang
+          </Link>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -118,6 +124,13 @@ export default function Navbar({ links = defaultLinks }: NavbarProps) {
               {link.label}
             </a>
           ))}
+          <Link
+            to="/blog"
+            onClick={() => setOpen(false)}
+            className="rounded-2xl px-4 py-3 text-sm font-semibold text-po-text-muted transition hover:bg-white hover:text-po-text"
+          >
+            Cẩm nang
+          </Link>
           <div className="mt-2 grid gap-2 border-t border-po-border pt-3">
             <Link
               to="/for-clinics"

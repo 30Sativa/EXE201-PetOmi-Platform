@@ -31,6 +31,31 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.petomi.cloud/blog/cho-bi-tieu-chay-cho-an-gi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.petomi.cloud/blog/lich-tiem-phong-cho-meo-con</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.petomi.cloud/blog/cho-khong-nen-an-gi</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.petomi.cloud/blog/tay-giun-cho-cho-bao-lau-mot-lan</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.petomi.cloud/blog/cham-soc-cho-con-moi-ve-nha</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.petomi.cloud/register</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

@@ -40,6 +40,26 @@ const ROUTES = [
     path: "/blog/meo-non-co-sao-khong",
     expectTitle: "Mèo nôn: khi nào là bình thường, khi nào là dấu hiệu cần lo lắng? | PetOmi",
   },
+  {
+    path: "/blog/cho-bi-tieu-chay-cho-an-gi",
+    expectTitle: "Chó bị tiêu chảy nên cho ăn gì và khi nào cần đi khám? | PetOmi",
+  },
+  {
+    path: "/blog/lich-tiem-phong-cho-meo-con",
+    expectTitle: "Lịch tiêm phòng cho mèo con: những mũi quan trọng cần nhớ | PetOmi",
+  },
+  {
+    path: "/blog/cho-khong-nen-an-gi",
+    expectTitle: "Những thực phẩm chó tuyệt đối không nên ăn | PetOmi",
+  },
+  {
+    path: "/blog/tay-giun-cho-cho-bao-lau-mot-lan",
+    expectTitle: "Tẩy giun cho chó bao lâu một lần là đúng? | PetOmi",
+  },
+  {
+    path: "/blog/cham-soc-cho-con-moi-ve-nha",
+    expectTitle: "Chăm sóc chó con mới về nhà: cẩm nang cho người mới nuôi | PetOmi",
+  },
 ]
 
 const MIME = {

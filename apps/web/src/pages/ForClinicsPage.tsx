@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react"
 
+import Seo from "@/components/common/Seo"
 import Footer from "@/components/landing/Footer"
 import Navbar from "@/components/landing/Navbar"
 import { useAuth } from "@/contexts/AuthContext"
@@ -77,6 +78,11 @@ export default function ForClinicsPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden text-po-text">
+      <Seo
+        title="Dành cho phòng khám thú y"
+        description="Đưa phòng khám thú y của bạn lên PetOmi: nhận lịch hẹn online, bệnh nhân tới đã có hồ sơ, dấu xác thực tạo niềm tin, quản lý bác sĩ, hóa đơn và kho thuốc trong một nơi."
+        path="/for-clinics"
+      />
       <Navbar />
 
       {/* Hero */}

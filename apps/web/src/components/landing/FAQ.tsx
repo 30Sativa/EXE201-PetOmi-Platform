@@ -3,7 +3,7 @@ import { Accordion, AccordionContent, AccordionHeader, AccordionItem, AccordionT
 import { useInView } from "@/hooks"
 import type { FaqItem } from "@/types"
 
-const faqItems: FaqItem[] = [
+export const faqItems: FaqItem[] = [
   {
     question: "PetOmi miễn phí hay có thu phí?",
     answer: "PetOmi hiện miễn phí cho chủ nuôi với tư vấn AI, hồ sơ thú cưng và các nhắc lịch cơ bản. Nếu có gói nâng cao cho phòng khám, chi phí sẽ được thông báo rõ trước khi áp dụng.",

@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Không cho lập chỉ mục các khu vực cần đăng nhập / luồng xác thực
+Disallow: /dashboard
+Disallow: /auth/callback
+Disallow: /reset-password
+Disallow: /set-password
+Disallow: /forgot-password
+Disallow: /verify-email
+Disallow: /complete-profile
+
+Sitemap: https://www.petomi.cloud/sitemap.xml

@@ -7,6 +7,7 @@ import {
 } from "lucide-react"
 import { Link } from "react-router-dom"
 
+import Seo from "@/components/common/Seo"
 import FormStatusMessage from "@/components/ui/FormStatusMessage"
 import { useForgotPasswordForm } from "@/hooks"
 
@@ -44,6 +45,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-po-bg text-po-text">
+      <Seo title="Quên mật khẩu" path="/forgot-password" noindex />
       <header className="mx-auto flex min-h-20 w-full max-w-[1200px] items-center justify-between gap-4 px-3 sm:px-6">
         <Link
           to="/"

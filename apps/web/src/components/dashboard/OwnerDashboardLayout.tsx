@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom"
 
+import Seo from "@/components/common/Seo"
 import AbandonedUpgradeBanner from "@/components/dashboard/owner/AbandonedUpgradeBanner"
 import Avatar from "@/components/ui/Avatar"
 import { useAuth } from "@/contexts/AuthContext"
@@ -48,6 +49,7 @@ export default function OwnerDashboardLayout() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-po-bg text-po-text">
+      <Seo title="Khu quản lý" noindex />
       <div className="mx-auto grid w-full max-w-[1360px] min-w-0 gap-5 px-3 py-4 sm:px-5 lg:grid-cols-[248px_minmax(0,1fr)] lg:py-6">
         <aside className="sticky top-6 hidden h-fit flex-col gap-4 rounded-[30px] bg-white/88 p-4 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80 backdrop-blur lg:flex">
           <Link

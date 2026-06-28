@@ -3,6 +3,7 @@ import { ArrowLeft, Bell, CalendarCheck, PawPrint, ShieldCheck, UserPlus } from 
 import { Link, useNavigate } from "react-router-dom"
 
 import { useMounted } from "@/hooks"
+import Seo from "@/components/common/Seo"
 import LoginPage from "./LoginPage"
 import RegisterPage from "./RegisterPage"
 import type { AuthMode } from "@/types"
@@ -85,6 +86,19 @@ export default function AuthPage({ initialMode = "login" }: AuthPageProps) {
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-po-bg text-po-text">
+      {mode === "login" ? (
+        <Seo
+          title="Đăng nhập"
+          description="Đăng nhập PetOmi để quản lý hồ sơ thú cưng, xem lịch hẹn và nhắc nhở chăm sóc."
+          path="/login"
+        />
+      ) : (
+        <Seo
+          title="Đăng ký tài khoản"
+          description="Tạo tài khoản PetOmi miễn phí bằng email hoặc Google để bắt đầu chăm sóc thú cưng có hệ thống: hồ sơ sức khỏe, đặt lịch khám và tư vấn AI."
+          path="/register"
+        />
+      )}
       <header className="mx-auto flex min-h-20 w-full max-w-[1200px] items-center justify-between gap-4 px-3 sm:px-6">
         <Link to="/" aria-label="Trang chủ PetOmi" className="flex items-center gap-2 font-extrabold text-po-text no-underline">
           <span className="grid size-10 place-items-center rounded-2xl bg-po-primary text-sm text-white shadow-lg shadow-orange-200/40">

@@ -1,9 +1,12 @@
 import { ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
 
+import Seo from "@/components/common/Seo"
+
 export default function NotFoundPage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(255,247,237,0.96),rgba(255,255,255,0.9),rgba(236,253,245,0.85))] text-po-text">
+      <Seo title="Không tìm thấy trang" noindex />
       <div className="mx-auto grid min-h-screen w-[min(100%-24px,1000px)] place-items-center py-16">
         <section className="w-full max-w-2xl rounded-[32px] border border-po-border bg-white/90 p-8 text-center shadow-xl">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-po-text-subtle">404</p>

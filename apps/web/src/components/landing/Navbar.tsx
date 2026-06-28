@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Heart, Menu, PawPrint, Stethoscope, X } from "lucide-react"
+import { Heart, Menu, Stethoscope, X } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import type { NavLink } from "@/types"
@@ -46,9 +46,13 @@ export default function Navbar({ links = defaultLinks }: NavbarProps) {
     >
       <div className="mx-auto flex w-[calc(100%_-_24px)] max-w-[1200px] items-center justify-between gap-3 py-3">
         <Link to="/" className="flex min-w-0 items-center gap-2 text-sm font-extrabold text-po-text no-underline">
-          <span className="grid size-10 place-items-center rounded-2xl bg-po-primary text-white shadow-lg shadow-orange-200/40 transition-transform duration-300 hover:scale-105 hover:rotate-6">
-            <PawPrint className="size-5" aria-hidden="true" />
-          </span>
+          <img
+            src="/logo.jpg"
+            alt="Logo PetOmi"
+            width={40}
+            height={40}
+            className="size-10 rounded-2xl bg-white object-cover transition-transform duration-300 hover:scale-105"
+          />
           <span className="text-base">PetOmi</span>
         </Link>
 

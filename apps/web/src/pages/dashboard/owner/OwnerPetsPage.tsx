@@ -83,7 +83,7 @@ export default function OwnerPetsPage() {
       ...new Set((pets ?? []).map((p) => p.species)),
     ].map((s) => ({
       value: s,
-      label: s === "Dog" ? "🐶 Chó" : s === "Cat" ? "🐱 Mèo" : s,
+      label: s === "Dog" ? "Chó" : s === "Cat" ? "Mèo" : s,
     })),
   ]
 

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Link2, Plus, Trash2, UserPlus, X } from "lucide-react"
+import { Cat, Dog, Link2, PawPrint, Plus, Trash2, UserPlus, X, type LucideIcon } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import Avatar from "@/components/ui/Avatar"
@@ -19,14 +19,14 @@ import type {
 } from "@/types"
 import { cn } from "@/lib/utils"
 
-const speciesEmoji: Record<string, string> = {
-  Dog: "🐶",
-  Cat: "🐱",
-  default: "🐾",
+const speciesIcon: Record<string, LucideIcon> = {
+  Dog,
+  Cat,
+  default: PawPrint,
 }
 
-const getSpeciesEmoji = (species: string) =>
-  speciesEmoji[species] ?? speciesEmoji.default
+const getSpeciesIcon = (species: string): LucideIcon =>
+  speciesIcon[species] ?? speciesIcon.default
 
 export default function OwnerPetSharingPage() {
   const queryClient = useQueryClient()
@@ -211,7 +211,14 @@ function PetAccessCard({
         className="flex cursor-pointer items-center justify-between gap-3 px-4 py-4 transition hover:bg-po-surface-muted"
       >
         <div className="flex items-center gap-3">
-          <span className="text-2xl">{getSpeciesEmoji(pet.species)}</span>
+          {(() => {
+            const SpeciesIcon = getSpeciesIcon(pet.species)
+            return (
+              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-po-primary-soft text-po-primary">
+                <SpeciesIcon className="size-5" aria-hidden="true" />
+              </span>
+            )
+          })()}
           <div>
             <p className="font-bold text-po-text">{pet.name}</p>
             <p className="text-xs text-po-text-muted">

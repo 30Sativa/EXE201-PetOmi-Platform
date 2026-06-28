@@ -6,8 +6,11 @@ import {
   ArrowLeft,
   Bell,
   Camera,
+  Cat,
+  Dog,
   Heart,
   Link2,
+  PawPrint,
   Pencil,
   Plus,
   Scale,
@@ -17,6 +20,7 @@ import {
   Trash2,
   Weight,
   X,
+  type LucideIcon,
 } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
@@ -63,14 +67,14 @@ import { cn } from "@/lib/utils"
 
 // ==================== HELPERS ====================
 
-const speciesEmoji: Record<string, string> = {
-  Dog: "🐶",
-  Cat: "🐱",
-  default: "🐾",
+const speciesIcon: Record<string, LucideIcon> = {
+  Dog,
+  Cat,
+  default: PawPrint,
 }
 
-const getSpeciesEmoji = (species: string) =>
-  speciesEmoji[species] ?? speciesEmoji.default
+const getSpeciesIcon = (species: string): LucideIcon =>
+  speciesIcon[species] ?? speciesIcon.default
 
 const formatAge = (dob: string | null) => {
   if (!dob) return null
@@ -333,7 +337,10 @@ export default function OwnerPetDetailPage() {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-extrabold text-po-text">{pet.name}</h2>
-            <span className="text-2xl">{getSpeciesEmoji(pet.species)}</span>
+            {(() => {
+              const SpeciesIcon = getSpeciesIcon(pet.species)
+              return <SpeciesIcon className="size-6 text-po-primary" aria-hidden="true" />
+            })()}
           </div>
           <p className="mt-0.5 text-sm text-po-text-muted">
             {pet.species}

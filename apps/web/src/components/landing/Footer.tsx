@@ -1,4 +1,4 @@
-import { ArrowUpRight, PawPrint } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import { useInView } from "@/hooks"
@@ -67,9 +67,13 @@ export default function Footer() {
         <div className={`mt-12 grid gap-10 transition-all duration-500 delay-150 md:grid-cols-[1.1fr_1.9fr] ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
           <div>
             <Link to="/" className="flex items-center gap-2 text-sm font-extrabold text-po-text no-underline">
-              <span className="grid size-10 place-items-center rounded-2xl bg-po-primary text-white">
-                <PawPrint className="size-5" />
-              </span>
+              <img
+                src="/logo.jpg"
+                alt="Logo PetOmi"
+                width={40}
+                height={40}
+                className="size-10 rounded-2xl bg-white object-cover"
+              />
               <span className="text-base">PetOmi</span>
             </Link>
             <p className="mt-4 text-sm leading-6 text-po-text-muted">

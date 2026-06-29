@@ -10,13 +10,21 @@ import type { WebsiteFeedbackCategory } from "@/types"
 import { cn } from "@/lib/utils"
 
 const categories: Array<{ label: string; value: "all" | WebsiteFeedbackCategory }> = [
-  { label: "Tat ca", value: "all" },
-  { label: "Gop y chung", value: "General" },
-  { label: "Bao loi", value: "Bug" },
-  { label: "Tinh nang", value: "Feature" },
+  { label: "Tất cả", value: "all" },
+  { label: "Góp ý chung", value: "General" },
+  { label: "Báo lỗi", value: "Bug" },
+  { label: "Tính năng", value: "Feature" },
   { label: "UX", value: "UX" },
-  { label: "Hieu nang", value: "Performance" },
+  { label: "Hiệu năng", value: "Performance" },
 ]
+
+const categoryLabels: Record<string, string> = {
+  General: "Góp ý chung",
+  Bug: "Báo lỗi",
+  Feature: "Tính năng",
+  UX: "Trải nghiệm sử dụng",
+  Performance: "Hiệu năng",
+}
 
 const formatDate = (date: string) =>
   new Date(date).toLocaleString("vi-VN", {
@@ -64,14 +72,14 @@ export default function AdminWebsiteFeedbackPage() {
   return (
     <div className="grid gap-5 md:gap-6">
       <AdminPageHeader
-        kicker="Product feedback"
-        title="Feedback website"
-        description="Theo doi gop y cua user ve loi, trai nghiem va tinh nang can cai thien tren PetOmi."
+        kicker="Góp ý sản phẩm"
+        title="Góp ý website"
+        description="Theo dõi góp ý của user về lỗi, trải nghiệm và tính năng cần cải thiện trên PetOmi."
         icon={MessageSquareText}
         metrics={[
-          { label: "Tong feedback", value: stats.totalRecords.toString(), icon: MessageSquareText },
-          { label: "Dang hien thi", value: stats.totalShown.toString(), icon: Filter },
-          { label: "Diem TB", value: stats.average?.toString() ?? "-", icon: Star },
+          { label: "Tổng feedback", value: stats.totalRecords.toString(), icon: MessageSquareText },
+          { label: "Đang hiển thị", value: stats.totalShown.toString(), icon: Filter },
+          { label: "Điểm TB", value: stats.average?.toString() ?? "-", icon: Star },
         ]}
       />
 
@@ -85,7 +93,7 @@ export default function AdminWebsiteFeedbackPage() {
                 setSearch(event.target.value)
                 setPage(1)
               }}
-              placeholder="Tim theo tieu de hoac noi dung..."
+              placeholder="Tìm theo tiêu đề hoặc nội dung..."
               className="h-11 w-full rounded-full border border-po-border bg-white px-4 pl-10 text-sm outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary-soft"
             />
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-po-text-subtle" />
@@ -123,8 +131,8 @@ export default function AdminWebsiteFeedbackPage() {
           <div className="p-6">
             <EmptyState
               icon={MessageSquareText}
-              title="Chua co feedback"
-              description="Khi user gui feedback website, danh sach se hien thi tai day."
+              title="Chưa có feedback"
+              description="Khi user gửi feedback website, danh sách sẽ hiển thị tại đây."
             />
           </div>
         ) : (
@@ -133,10 +141,10 @@ export default function AdminWebsiteFeedbackPage() {
               <thead>
                 <tr className="border-b border-po-border/70 bg-po-surface-muted/50 text-[11px] uppercase tracking-[0.04em] text-po-text-subtle">
                   <th className="px-5 py-3 text-left font-semibold">User</th>
-                  <th className="px-3 py-3 text-left font-semibold">Loai</th>
-                  <th className="px-3 py-3 text-left font-semibold">Noi dung</th>
+                  <th className="px-3 py-3 text-left font-semibold">Loại</th>
+                  <th className="px-3 py-3 text-left font-semibold">Nội dung</th>
                   <th className="px-3 py-3 text-left font-semibold">Trang</th>
-                  <th className="px-5 py-3 text-right font-semibold">Ngay gui</th>
+                  <th className="px-5 py-3 text-right font-semibold">Ngày gửi</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,7 +160,7 @@ export default function AdminWebsiteFeedbackPage() {
                     </td>
                     <td className="px-3 py-4 align-top">
                       <span className="inline-flex rounded-full bg-po-primary-soft px-2.5 py-1 text-xs font-bold text-po-primary">
-                        {feedback.category}
+                        {categoryLabels[feedback.category] ?? feedback.category}
                       </span>
                       {feedback.rating ? (
                         <span className="mt-2 flex items-center gap-1 text-xs font-bold text-po-warning">
@@ -201,7 +209,7 @@ export default function AdminWebsiteFeedbackPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-semibold text-po-text-muted">
             Trang {meta.pageNumber} / {Math.max(meta.totalPages, 1)}
-            {isFetching ? " - dang tai..." : ""}
+            {isFetching ? " - đang tải..." : ""}
           </p>
           <div className="flex gap-2">
             <button
@@ -210,7 +218,7 @@ export default function AdminWebsiteFeedbackPage() {
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               className="h-10 rounded-full bg-white px-4 text-sm font-bold text-po-text ring-1 ring-po-border transition hover:bg-po-surface-muted disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Truoc
+              Trước
             </button>
             <button
               type="button"

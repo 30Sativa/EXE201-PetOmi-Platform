@@ -13,11 +13,11 @@ const categoryOptions: Array<{
   label: string
   icon: typeof MessageSquareText
 }> = [
-  { value: "General", label: "Gop y chung", icon: MessageSquareText },
-  { value: "Bug", label: "Bao loi", icon: Bug },
-  { value: "Feature", label: "De xuat tinh nang", icon: Lightbulb },
-  { value: "UX", label: "Trai nghiem su dung", icon: Sparkles },
-  { value: "Performance", label: "Toc do/hieu nang", icon: MonitorCog },
+  { value: "General", label: "Góp ý chung", icon: MessageSquareText },
+  { value: "Bug", label: "Báo lỗi", icon: Bug },
+  { value: "Feature", label: "Đề xuất tính năng", icon: Lightbulb },
+  { value: "UX", label: "Trải nghiệm sử dụng", icon: Sparkles },
+  { value: "Performance", label: "Tốc độ/hiệu năng", icon: MonitorCog },
 ]
 
 export default function WebsiteFeedbackPage() {
@@ -35,7 +35,7 @@ export default function WebsiteFeedbackPage() {
   const mutation = useMutation({
     mutationFn: createWebsiteFeedbackApi,
     onSuccess: () => {
-      setSuccessMessage("Cam on ban nhieu nha, feedback da toi PetOmi roi. Team se doc that ky va cham chut web tot hon.")
+      setSuccessMessage("Cảm ơn bạn nhiều nha, feedback đã tới PetOmi rồi. Team sẽ đọc thật kỹ và chăm chút web tốt hơn.")
       setCategory("General")
       setRating(5)
       setSubject("")
@@ -59,13 +59,13 @@ export default function WebsiteFeedbackPage() {
   return (
     <div className="grid gap-6">
       <div>
-        <h2 className="text-xl font-bold text-po-text">Gop y ve website</h2>
+        <h2 className="text-xl font-bold text-po-text">Góp ý về website</h2>
         <p className="mt-1 max-w-2xl text-sm leading-6 text-po-text-muted">
-          Gui feedback ve loi, trai nghiem su dung, hoac tinh nang ban muon PetOmi cai thien.
+          Gửi góp ý về lỗi, trải nghiệm sử dụng, hoặc tính năng bạn muốn PetOmi cải thiện.
         </p>
       </div>
 
-      <DashboardSection title="Noi dung feedback">
+      <DashboardSection title="Nội dung góp ý">
         <form onSubmit={handleSubmit} className="grid gap-5">
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             {categoryOptions.map((option) => {
@@ -91,7 +91,7 @@ export default function WebsiteFeedbackPage() {
           </div>
 
           <div>
-            <label className="text-sm font-semibold text-po-text">Muc do hai long</label>
+            <label className="text-sm font-semibold text-po-text">Mức độ hài lòng</label>
             <div className="mt-2 flex flex-wrap gap-2">
               {[1, 2, 3, 4, 5].map((value) => (
                 <button
@@ -114,19 +114,19 @@ export default function WebsiteFeedbackPage() {
 
           <div className="grid gap-4">
             <label className="grid gap-2">
-              <span className="text-sm font-semibold text-po-text">Tieu de</span>
+              <span className="text-sm font-semibold text-po-text">Tiêu đề</span>
               <input
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
                 maxLength={150}
                 required
                 className="h-11 rounded-2xl border border-po-border bg-white px-4 text-sm outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary-soft"
-                placeholder="Vi du: Nut dat lich hoi kho tim"
+                placeholder="Ví dụ: Nút đặt lịch hơi khó tìm"
               />
             </label>
 
             <label className="grid gap-2">
-              <span className="text-sm font-semibold text-po-text">Noi dung</span>
+              <span className="text-sm font-semibold text-po-text">Nội dung</span>
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
@@ -134,14 +134,14 @@ export default function WebsiteFeedbackPage() {
                 required
                 rows={8}
                 className="resize-none rounded-2xl border border-po-border bg-white px-4 py-3 text-sm leading-6 outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary-soft"
-                placeholder="Mo ta ngan gon dieu ban gap phai hoac mong muon cai thien..."
+                placeholder="Mô tả ngắn gọn điều bạn gặp phải hoặc mong muốn cải thiện..."
               />
             </label>
           </div>
 
           {mutation.isError ? (
             <p className="rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger">
-              Khong gui duoc feedback. Neu ban dang la Admin thi he thong khong cho phep gui feedback website.
+              Không gửi được góp ý. Nếu bạn đang là Admin thì hệ thống không cho phép gửi góp ý website.
             </p>
           ) : null}
 
@@ -158,7 +158,7 @@ export default function WebsiteFeedbackPage() {
               className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-5 text-sm font-bold text-white shadow-lg shadow-orange-200/40 transition hover:bg-po-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Send className="size-4" />
-              {mutation.isPending ? "Dang gui..." : "Gui feedback"}
+              {mutation.isPending ? "Đang gửi..." : "Gửi góp ý"}
             </button>
           </div>
         </form>

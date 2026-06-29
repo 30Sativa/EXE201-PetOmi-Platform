@@ -26,7 +26,7 @@ const navItems = [
   { label: "Tổng quan", to: "/dashboard/admin", icon: LayoutDashboard, exact: true },
   { label: "AI monitor", to: "/dashboard/admin/ai", icon: Bot },
   { label: "AI Subscriptions", to: "/dashboard/admin/chat-subscriptions", icon: CreditCard },
-  { label: "Feedback", to: "/dashboard/admin/feedback", icon: MessageSquareText },
+  { label: "Góp ý web", to: "/dashboard/admin/feedback", icon: MessageSquareText },
   { label: "Báo cáo CTA", to: "/dashboard/admin/cta-report", icon: ChartNoAxesCombined },
   { label: "Duyệt phòng khám", to: "/dashboard/admin/clinics", icon: BadgeCheck },
   { label: "Người dùng", to: "/dashboard/admin/users", icon: UsersRound },

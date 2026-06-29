@@ -24,6 +24,8 @@ public partial class PetOmniDbContext : DbContext
 
     public virtual DbSet<ClinicReview> ClinicReviews { get; set; }
 
+    public virtual DbSet<WebsiteFeedback> WebsiteFeedbacks { get; set; }
+
     public virtual DbSet<ClinicPaymentAccount> ClinicPaymentAccounts { get; set; }
 
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
@@ -1672,6 +1674,43 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
             entity.Property(e => e.DeletedAt).HasColumnType("datetime");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<WebsiteFeedback>(entity =>
+        {
+            entity.HasKey(e => e.WebsiteFeedbackId).HasName("PK_WebsiteFeedbacks");
+
+            entity.ToTable("WebsiteFeedbacks");
+
+            entity.HasIndex(e => new { e.CreatedAt, e.IsActive }, "IX_WebsiteFeedbacks_Created_Active");
+            entity.HasIndex(e => new { e.UserId, e.CreatedAt }, "IX_WebsiteFeedbacks_User_Created");
+            entity.HasIndex(e => new { e.Category, e.Status }, "IX_WebsiteFeedbacks_Category_Status");
+
+            entity.Property(e => e.WebsiteFeedbackId)
+                .HasColumnName("WebsiteFeedbackID")
+                .ValueGeneratedNever();
+            entity.Property(e => e.UserId).HasColumnName("UserID");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+            entity.Property(e => e.Subject).HasMaxLength(150);
+            entity.Property(e => e.Message).HasMaxLength(2000);
+            entity.Property(e => e.PageUrl).HasMaxLength(500);
+            entity.Property(e => e.BrowserInfo).HasMaxLength(300);
+            entity.Property(e => e.Status)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasDefaultValue("New");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_WebsiteFeedbacks_Users");
         });
 
         OnModelCreatingPartial(modelBuilder);

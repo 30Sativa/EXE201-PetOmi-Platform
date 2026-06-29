@@ -18,6 +18,7 @@ export * from "./notification.types"
 export * from "./admin.types"
 export * from "./chat.types"
 export * from "./chat-subscription.types"
+export * from "./website-feedback.types"
 
 export * from "./promotion.types"
 

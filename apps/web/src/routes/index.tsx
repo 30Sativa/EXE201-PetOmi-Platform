@@ -31,10 +31,12 @@ import AdminAuditLogsPage from "@/pages/dashboard/AdminAuditLogsPage"
 import AdminChatSubscriptionsPage from "@/pages/dashboard/AdminChatSubscriptionsPage"
 import AdminClinicsPage from "@/pages/dashboard/AdminClinicsPage"
 import AdminCtaReportPage from "@/pages/dashboard/AdminCtaReportPage"
+import AdminWebsiteFeedbackPage from "@/pages/dashboard/AdminWebsiteFeedbackPage"
 import AdminProfilePage from "@/pages/dashboard/AdminProfilePage"
 import AdminRolesPage from "@/pages/dashboard/AdminRolesPage"
 import AdminSettingsPage from "@/pages/dashboard/AdminSettingsPage"
 import AdminUsersPage from "@/pages/dashboard/AdminUsersPage"
+import WebsiteFeedbackPage from "@/pages/dashboard/WebsiteFeedbackPage"
 import ClinicDashboardPage from "@/pages/dashboard/ClinicDashboardPage"
 import ClinicAppointmentsPage from "@/pages/dashboard/clinic/ClinicAppointmentsPage"
 import ClinicBillingPage from "@/pages/dashboard/clinic/ClinicBillingPage"
@@ -196,6 +198,10 @@ const router = createBrowserRouter([
             element: <OwnerReviewsPage />,
           },
           {
+            path: "feedback",
+            element: <WebsiteFeedbackPage />,
+          },
+          {
             path: "reminders",
             element: <OwnerRemindersPage />,
           },
@@ -307,6 +313,10 @@ const router = createBrowserRouter([
               </RequireClinicPermission>
             ),
           },
+          {
+            path: "feedback",
+            element: <WebsiteFeedbackPage />,
+          },
         ],
       },
 
@@ -334,6 +344,10 @@ const router = createBrowserRouter([
           {
             path: "cta-report",
             element: <AdminCtaReportPage />,
+          },
+          {
+            path: "feedback",
+            element: <AdminWebsiteFeedbackPage />,
           },
           {
             path: "clinics",

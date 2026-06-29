@@ -7,6 +7,7 @@ import {
   CreditCard,
   LayoutDashboard,
   LogOut,
+  MessageSquareText,
   PackageSearch,
   Search,
   Settings,
@@ -158,6 +159,13 @@ export default function ClinicDashboardLayout() {
           </div>
         </div>
       </div>
+      <NavLink
+        to="/dashboard/clinic/feedback"
+        className="fixed bottom-5 right-5 z-40 inline-flex h-12 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-extrabold text-white shadow-xl shadow-orange-200/50 transition hover:-translate-y-0.5 hover:bg-po-primary-hover"
+      >
+        <MessageSquareText className="size-4" />
+        Gop y web
+      </NavLink>
     </div>
   )
 }

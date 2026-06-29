@@ -164,7 +164,7 @@ export default function ClinicDashboardLayout() {
         className="fixed bottom-5 right-5 z-40 inline-flex h-12 items-center gap-2 rounded-full bg-po-primary px-4 text-sm font-extrabold text-white shadow-xl shadow-orange-200/50 transition hover:-translate-y-0.5 hover:bg-po-primary-hover"
       >
         <MessageSquareText className="size-4" />
-        Góp ý web
+        Gửi góp ý
       </NavLink>
     </div>
   )

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Infrastructure.Mappers;
@@ -30,14 +30,22 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entities.Select(e => e.ToDomain()).ToList();
         }
 
-        public async Task<decimal> GetAverageSessionDurationMinutesAsync(DateTime nowUtc)
+        public async Task<decimal> GetAverageSessionDurationMinutesAsync(
+            DateTime nowUtc,
+            int windowDays = 30,
+            int maxSessionMinutes = 480,
+            string activeRole = "Owner")
         {
+            var windowStart = nowUtc.AddDays(-windowDays);
+            var maxSessionSeconds = maxSessionMinutes * 60;
+
             var averageSeconds = await _dbContext.UserSessions
                 .AsNoTracking()
+                .Where(s => s.CreatedAt >= windowStart && s.ActiveRole == activeRole)
                 .Select(s => EF.Functions.DateDiffSecond(
                     s.CreatedAt,
                     s.LogoutAt ?? (s.IsActive ? nowUtc : s.LastActivityAt)))
-                .Where(seconds => seconds >= 0)
+                .Where(seconds => seconds >= 0 && seconds <= maxSessionSeconds)
                 .AverageAsync(seconds => (double?)seconds);
 
             if (!averageSeconds.HasValue)

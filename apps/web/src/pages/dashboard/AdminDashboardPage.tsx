@@ -96,9 +96,16 @@ function formatPercent(value?: number) {
 }
 
 function formatMinutes(value?: number) {
+  const v = value ?? 0
+  if (v >= 60) {
+    const h = Math.floor(v / 60)
+    const m = Math.round(v % 60)
+    return m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`
+  }
   return `${new Intl.NumberFormat("vi-VN", {
+    minimumFractionDigits: 1,
     maximumFractionDigits: 1,
-  }).format(value ?? 0)} phút`
+  }).format(v)} phút`
 }
 
 function statusVariant(status: string) {
@@ -292,7 +299,7 @@ export default function AdminDashboardPage() {
               label="Average Time on Web"
               value={formatMinutes(summary?.averageTimeOnWebMinutes)}
               icon={Clock}
-              hint="Tính từ phiên đăng nhập user"
+              hint="PetOwner · 30 ngày gần nhất · tối đa 8h/phiên"
             />
             <DashboardMetricCard
               label="Tổng người dùng"

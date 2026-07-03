@@ -9,26 +9,31 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
 {
     private readonly IClinicRepository _clinicRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IUserSessionRepository _userSessionRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IChatMessageRepository _chatMessageRepository;
 
     public GetAdminDashboardQueryHandler(
         IClinicRepository clinicRepository,
         IUserRepository userRepository,
+        IUserSessionRepository userSessionRepository,
         IAppointmentRepository appointmentRepository,
         IChatMessageRepository chatMessageRepository)
     {
         _clinicRepository = clinicRepository;
         _userRepository = userRepository;
+        _userSessionRepository = userSessionRepository;
         _appointmentRepository = appointmentRepository;
         _chatMessageRepository = chatMessageRepository;
     }
 
     public async Task<AdminDashboardResponse> Handle(GetAdminDashboardQuery request, CancellationToken cancellationToken)
     {
+        var nowUtc = DateTime.UtcNow;
         var totalUsers = await _userRepository.CountAllAsync();
         var activeUsers = await _userRepository.CountByIsActiveAsync(true);
         var inactiveUsers = await _userRepository.CountByIsActiveAsync(false);
+        var averageTimeOnWebMinutes = await _userSessionRepository.GetAverageSessionDurationMinutesAsync(nowUtc);
 
         var clinicByStatus = await _clinicRepository.GetClinicCountByStatusAsync();
         clinicByStatus.TryGetValue("Pending", out var pending);
@@ -45,8 +50,8 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
         userCountByRole.TryGetValue("Admin", out var admins);
 
         var totalAppointments = await _appointmentRepository.CountAllAsync();
-        var aiStatsWindowStartUtc = DateTime.UtcNow.AddDays(-7);
-        var aiIntentWindowStartUtc = DateTime.UtcNow.AddDays(-30);
+        var aiStatsWindowStartUtc = nowUtc.AddDays(-7);
+        var aiIntentWindowStartUtc = nowUtc.AddDays(-30);
         var aiDashboardStats = await _chatMessageRepository.GetAiDashboardStatsAsync(aiStatsWindowStartUtc);
         var aiIntentStats = await _chatMessageRepository.GetIntentDashboardStatsAsync(aiIntentWindowStartUtc);
         var ragUsageRate = aiDashboardStats.AiResponsesSince == 0
@@ -61,7 +66,8 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
                 TotalClinics = totalClinics,
                 TotalAppointments = totalAppointments,
                 ActiveUsers = activeUsers,
-                InactiveUsers = inactiveUsers
+                InactiveUsers = inactiveUsers,
+                AverageTimeOnWebMinutes = averageTimeOnWebMinutes
             },
             ClinicStats = new AdminClinicStats
             {

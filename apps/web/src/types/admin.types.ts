@@ -21,6 +21,7 @@ export interface AdminStatsSummary {
   totalAppointments: number
   activeUsers: number
   inactiveUsers: number
+  averageTimeOnWebMinutes: number
 }
 
 export interface AdminClinicStats {

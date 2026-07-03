@@ -30,6 +30,24 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             return entities.Select(e => e.ToDomain()).ToList();
         }
 
+        public async Task<decimal> GetAverageSessionDurationMinutesAsync(DateTime nowUtc)
+        {
+            var averageSeconds = await _dbContext.UserSessions
+                .AsNoTracking()
+                .Select(s => EF.Functions.DateDiffSecond(
+                    s.CreatedAt,
+                    s.LogoutAt ?? (s.IsActive ? nowUtc : s.LastActivityAt)))
+                .Where(seconds => seconds >= 0)
+                .AverageAsync(seconds => (double?)seconds);
+
+            if (!averageSeconds.HasValue)
+            {
+                return 0;
+            }
+
+            return Math.Round((decimal)(averageSeconds.Value / 60), 1);
+        }
+
         public async Task<UserSessionDomain?> GetByIdAsync(Guid sessionId)
         {
             var entity = await _dbContext.UserSessions.FindAsync(sessionId);

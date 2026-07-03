@@ -3,6 +3,7 @@ import {
   Bot,
   Building2,
   ChartNoAxesCombined,
+  Clock,
   Database,
   FileText,
   MessageCircle,
@@ -92,6 +93,12 @@ function formatPercent(value?: number) {
   return `${new Intl.NumberFormat("vi-VN", {
     maximumFractionDigits: 1,
   }).format(value ?? 0)}%`
+}
+
+function formatMinutes(value?: number) {
+  return `${new Intl.NumberFormat("vi-VN", {
+    maximumFractionDigits: 1,
+  }).format(value ?? 0)} phút`
 }
 
 function statusVariant(status: string) {
@@ -258,9 +265,10 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {dashLoading ? (
           <>
+            <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -279,6 +287,12 @@ export default function AdminDashboardPage() {
               value={String(summary?.activeUsers ?? 0)}
               icon={UsersRound}
               hint="Owner + Vet + Admin"
+            />
+            <DashboardMetricCard
+              label="Average Time on Web"
+              value={formatMinutes(summary?.averageTimeOnWebMinutes)}
+              icon={Clock}
+              hint="Tính từ phiên đăng nhập user"
             />
             <DashboardMetricCard
               label="Tổng người dùng"

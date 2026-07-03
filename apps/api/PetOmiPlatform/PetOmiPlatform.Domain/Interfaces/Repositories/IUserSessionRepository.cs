@@ -13,5 +13,6 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task UpdateAsync(UserSessionDomain session);
         Task<List<UserSessionDomain>> GetByRefreshTokenIdAsync(Guid refreshTokenId);
         Task<List<UserSessionDomain>> GetActiveSessionsByUserIdAsync(Guid userId);
+        Task<decimal> GetAverageSessionDurationMinutesAsync(DateTime nowUtc);
     }
 }

@@ -299,7 +299,7 @@ export default function AdminDashboardPage() {
               label="Average Time on Web"
               value={formatMinutes(summary?.averageTimeOnWebMinutes)}
               icon={Clock}
-              hint="PetOwner · 30 ngày gần nhất · tối đa 8h/phiên"
+              hint="Role Owner (chủ nuôi) · 30 ngày gần nhất · tối đa 8h/phiên"
             />
             <DashboardMetricCard
               label="Tổng người dùng"
@@ -531,7 +531,7 @@ export default function AdminDashboardPage() {
           ) : (
             <div className="grid gap-3">
               {[
-                { name: "Owner", permissions: "Toàn quyền, cấu hình, nhân sự", users: userStats?.owners ?? 0 },
+                { name: "Owner", permissions: "Chủ nuôi thú cưng · đặt lịch, hồ sơ thú, AI chat", users: userStats?.owners ?? 0 },
                 { name: "Vet", permissions: "Phòng khám, hồ sơ y tế", users: userStats?.vets ?? 0 },
                 { name: "Admin", permissions: "Duyệt phòng khám, system, audit", users: userStats?.admins ?? 0 },
               ].map((role) => (

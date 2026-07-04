@@ -1,4 +1,4 @@
-﻿using PetOmiPlatform.Domain.Entities;
+using PetOmiPlatform.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -13,5 +13,6 @@ namespace PetOmiPlatform.Domain.Interfaces.Repositories
         Task UpdateAsync(UserSessionDomain session);
         Task<List<UserSessionDomain>> GetByRefreshTokenIdAsync(Guid refreshTokenId);
         Task<List<UserSessionDomain>> GetActiveSessionsByUserIdAsync(Guid userId);
+        Task<decimal> GetAverageSessionDurationMinutesAsync(DateTime nowUtc, int windowDays = 30, int maxSessionMinutes = 480, string activeRole = "Owner");
     }
 }

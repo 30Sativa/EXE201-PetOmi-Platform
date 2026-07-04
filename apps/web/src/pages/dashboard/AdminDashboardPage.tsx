@@ -3,6 +3,7 @@ import {
   Bot,
   Building2,
   ChartNoAxesCombined,
+  Clock,
   Database,
   FileText,
   MessageCircle,
@@ -92,6 +93,19 @@ function formatPercent(value?: number) {
   return `${new Intl.NumberFormat("vi-VN", {
     maximumFractionDigits: 1,
   }).format(value ?? 0)}%`
+}
+
+function formatMinutes(value?: number) {
+  const v = value ?? 0
+  if (v >= 60) {
+    const h = Math.floor(v / 60)
+    const m = Math.round(v % 60)
+    return m > 0 ? `${h} giờ ${m} phút` : `${h} giờ`
+  }
+  return `${new Intl.NumberFormat("vi-VN", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(v)} phút`
 }
 
 function statusVariant(status: string) {
@@ -258,9 +272,10 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {dashLoading ? (
           <>
+            <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
             <StatCardSkeleton />
@@ -279,6 +294,12 @@ export default function AdminDashboardPage() {
               value={String(summary?.activeUsers ?? 0)}
               icon={UsersRound}
               hint="Owner + Vet + Admin"
+            />
+            <DashboardMetricCard
+              label="Average Time on Web"
+              value={formatMinutes(summary?.averageTimeOnWebMinutes)}
+              icon={Clock}
+              hint="Role Owner (chủ nuôi) · 30 ngày gần nhất · tối đa 8h/phiên"
             />
             <DashboardMetricCard
               label="Tổng người dùng"
@@ -510,7 +531,7 @@ export default function AdminDashboardPage() {
           ) : (
             <div className="grid gap-3">
               {[
-                { name: "Owner", permissions: "Toàn quyền, cấu hình, nhân sự", users: userStats?.owners ?? 0 },
+                { name: "Owner", permissions: "Chủ nuôi thú cưng · đặt lịch, hồ sơ thú, AI chat", users: userStats?.owners ?? 0 },
                 { name: "Vet", permissions: "Phòng khám, hồ sơ y tế", users: userStats?.vets ?? 0 },
                 { name: "Admin", permissions: "Duyệt phòng khám, system, audit", users: userStats?.admins ?? 0 },
               ].map((role) => (

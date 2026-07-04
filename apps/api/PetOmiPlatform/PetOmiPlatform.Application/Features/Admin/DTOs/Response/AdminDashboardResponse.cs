@@ -18,6 +18,7 @@ public class AdminStatsSummary
     public int TotalAppointments { get; set; }
     public int ActiveUsers { get; set; }
     public int InactiveUsers { get; set; }
+    public decimal AverageTimeOnWebMinutes { get; set; }
 }
 
 public class AdminClinicStats

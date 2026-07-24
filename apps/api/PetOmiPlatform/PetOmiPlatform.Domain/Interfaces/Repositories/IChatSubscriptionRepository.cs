@@ -32,12 +32,14 @@ public interface IChatSubscriptionRepository
     Task<ChatSubscriptionVoucherDomain?> GetVoucherByIdAsync(Guid voucherId);
     Task<ChatSubscriptionVoucherDomain?> GetVoucherByCodeAsync(string code);
     Task<bool> AnyVoucherCodeAsync(string code, Guid? exceptVoucherId = null);
+    Task<bool> HasPaymentsForVoucherAsync(Guid voucherId);
     Task AddSubscriptionAsync(ChatSubscriptionDomain subscription);
     Task UpdateSubscriptionAsync(ChatSubscriptionDomain subscription);
     Task AddPaymentAsync(ChatSubscriptionPaymentDomain payment);
     Task UpdatePaymentAsync(ChatSubscriptionPaymentDomain payment);
     Task AddVoucherAsync(ChatSubscriptionVoucherDomain voucher);
     Task UpdateVoucherAsync(ChatSubscriptionVoucherDomain voucher);
+    Task DeleteVoucherAsync(Guid voucherId);
 }
 
 public class ChatUsageStats

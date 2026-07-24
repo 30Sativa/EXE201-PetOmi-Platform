@@ -1,4 +1,4 @@
-import { BadgePercent, CreditCard, Crown, Edit3, Loader2, PawPrint, Plus, ReceiptText } from "lucide-react"
+import { BadgePercent, CreditCard, Crown, Edit3, Loader2, PawPrint, Plus, ReceiptText, Trash2 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import StatusBadge from "@/components/ui/StatusBadge"
 import {
   createAdminChatSubscriptionVoucherApi,
+  deleteAdminChatSubscriptionVoucherApi,
   getAdminChatSubscriptionsApi,
   toggleAdminChatSubscriptionVoucherApi,
   updateAdminChatSubscriptionVoucherApi,
@@ -71,6 +72,7 @@ type VoucherFormState = {
   usageLimit: string
   startsAt: string
   expiresAt: string
+  neverExpires: boolean
   isActive: boolean
 }
 
@@ -85,6 +87,7 @@ const emptyVoucherForm: VoucherFormState = {
   usageLimit: "",
   startsAt: "",
   expiresAt: "",
+  neverExpires: false,
   isActive: true,
 }
 
@@ -96,6 +99,8 @@ const toDatetimeInput = (value?: string | null) => {
 }
 
 const toApiDate = (value: string) => (value ? new Date(value).toISOString() : null)
+
+const localDatetimeNow = () => toDatetimeInput(new Date().toISOString())
 
 const voucherInputClass =
   "h-10 w-full rounded-xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/15"
@@ -110,7 +115,7 @@ const buildVoucherRequest = (form: VoucherFormState): ChatSubscriptionVoucherReq
   minOrderAmount: Number(form.minOrderAmount || 0),
   usageLimit: form.usageLimit ? Number(form.usageLimit) : null,
   startsAt: toApiDate(form.startsAt),
-  expiresAt: toApiDate(form.expiresAt),
+  expiresAt: form.neverExpires ? null : toApiDate(form.expiresAt),
   isActive: form.isActive,
 })
 
@@ -125,6 +130,7 @@ const voucherToForm = (voucher: ChatSubscriptionVoucherResponse): VoucherFormSta
   usageLimit: voucher.usageLimit ? String(voucher.usageLimit) : "",
   startsAt: toDatetimeInput(voucher.startsAt),
   expiresAt: toDatetimeInput(voucher.expiresAt),
+  neverExpires: !voucher.expiresAt,
   isActive: voucher.isActive,
 })
 
@@ -167,6 +173,18 @@ export default function AdminChatSubscriptionsPage() {
     },
   })
 
+  const deleteVoucherMutation = useMutation({
+    mutationFn: deleteAdminChatSubscriptionVoucherApi,
+    onSuccess: async (_, voucherId) => {
+      await queryClient.invalidateQueries({ queryKey: ["admin", "chat-subscriptions"] })
+      if (editingVoucherId === voucherId) resetVoucherForm()
+      toast.success("Đã xóa voucher.")
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Không xóa được voucher.")
+    },
+  })
+
   const premiumPlan = data?.plans.find((plan) => plan.code === "premium")
   const activeSubscriptions = data?.subscriptions.filter((item) => item.isActive) ?? []
   const pendingPayments = data?.payments.filter((item) => item.status.toLowerCase() === "pending") ?? []
@@ -187,6 +205,21 @@ export default function AdminChatSubscriptionsPage() {
     setEditingVoucherId(voucher.voucherId)
     setVoucherForm(voucherToForm(voucher))
   }
+
+  const handleDeleteVoucher = (voucher: ChatSubscriptionVoucherResponse) => {
+    const confirmed = window.confirm(
+      `Xóa voucher ${voucher.code}? Voucher đã có giao dịch không thể xóa, chỉ có thể tắt.`,
+    )
+    if (confirmed) deleteVoucherMutation.mutate(voucher.voucherId)
+  }
+
+  const datetimeMin = localDatetimeNow()
+  const startsAtMin = voucherForm.startsAt && voucherForm.startsAt < datetimeMin
+    ? voucherForm.startsAt
+    : datetimeMin
+  const expiresAtMin = voucherForm.expiresAt && voucherForm.expiresAt < datetimeMin
+    ? voucherForm.expiresAt
+    : voucherForm.startsAt || datetimeMin
 
   return (
     <div className="grid gap-5">
@@ -344,12 +377,13 @@ export default function AdminChatSubscriptionsPage() {
                   </Field>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3">
                   <Field label="Bắt đầu">
                     <input
                       type="datetime-local"
                       value={voucherForm.startsAt}
                       onChange={(event) => setVoucherForm((prev) => ({ ...prev, startsAt: event.target.value }))}
+                      min={startsAtMin}
                       className={voucherInputClass}
                     />
                   </Field>
@@ -358,10 +392,26 @@ export default function AdminChatSubscriptionsPage() {
                       type="datetime-local"
                       value={voucherForm.expiresAt}
                       onChange={(event) => setVoucherForm((prev) => ({ ...prev, expiresAt: event.target.value }))}
+                      min={expiresAtMin}
+                      disabled={voucherForm.neverExpires}
                       className={voucherInputClass}
                     />
                   </Field>
                 </div>
+
+                <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-po-text ring-1 ring-po-border/70">
+                  <input
+                    type="checkbox"
+                    checked={voucherForm.neverExpires}
+                    onChange={(event) => setVoucherForm((prev) => ({
+                      ...prev,
+                      neverExpires: event.target.checked,
+                      expiresAt: event.target.checked ? "" : prev.expiresAt,
+                    }))}
+                    className="size-4 accent-po-primary"
+                  />
+                  Không bao giờ hết hạn
+                </label>
 
                 <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-po-text ring-1 ring-po-border/70">
                   <input
@@ -433,6 +483,15 @@ export default function AdminChatSubscriptionsPage() {
                               className="inline-flex h-9 items-center rounded-full bg-po-surface-muted px-3 text-xs font-bold text-po-text-muted transition hover:bg-po-primary-soft hover:text-po-primary disabled:opacity-60"
                             >
                               {voucher.isActive ? "Tắt" : "Bật"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteVoucher(voucher)}
+                              disabled={deleteVoucherMutation.isPending}
+                              className="inline-flex size-9 items-center justify-center rounded-full border border-po-border bg-white text-po-text-muted transition hover:border-po-danger/40 hover:text-po-danger disabled:opacity-60"
+                              title="Xóa voucher chưa có giao dịch"
+                            >
+                              <Trash2 className="size-4" />
                             </button>
                           </div>
                         </td>

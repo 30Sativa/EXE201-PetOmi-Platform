@@ -81,10 +81,10 @@ public class CreateChatSubscriptionPaymentCommandHandler
             voucher = await _subscriptionRepository.GetVoucherByCodeAsync(command.Request.VoucherCode)
                 ?? throw new NotFoundException("Khong tim thay voucher.");
 
-            if (!voucher.CanApply(originalAmount, DateTime.UtcNow))
+            var amountAfterEarlyBird = originalAmount - discountAmount;
+            if (!voucher.CanApply(amountAfterEarlyBird, DateTime.UtcNow))
                 throw new ConflictException("Voucher khong kha dung hoac da het han.");
 
-            var amountAfterEarlyBird = originalAmount - discountAmount;
             var voucherDiscount = voucher.CalculateDiscount(amountAfterEarlyBird);
             if (voucherDiscount <= 0)
                 throw new ConflictException("Voucher khong the ap dung cho goi nay.");

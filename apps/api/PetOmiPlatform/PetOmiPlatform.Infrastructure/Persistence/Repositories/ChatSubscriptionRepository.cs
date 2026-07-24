@@ -348,6 +348,13 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             .AnyAsync(v => v.Code == normalized && (!exceptVoucherId.HasValue || v.VoucherId != exceptVoucherId.Value));
     }
 
+    public async Task<bool> HasPaymentsForVoucherAsync(Guid voucherId)
+    {
+        return await _context.ChatSubscriptionPayments
+            .AsNoTracking()
+            .AnyAsync(payment => payment.VoucherId == voucherId);
+    }
+
     public async Task AddSubscriptionAsync(ChatSubscriptionDomain subscription)
     {
         await _context.ChatSubscriptions.AddAsync(subscription.ToEntity());
@@ -391,5 +398,12 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
 
         var updated = voucher.ToEntity();
         _context.Entry(entity).CurrentValues.SetValues(updated);
+    }
+
+    public async Task DeleteVoucherAsync(Guid voucherId)
+    {
+        var entity = await _context.ChatSubscriptionVouchers.FindAsync(voucherId);
+        if (entity != null)
+            _context.ChatSubscriptionVouchers.Remove(entity);
     }
 }

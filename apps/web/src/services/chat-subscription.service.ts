@@ -74,3 +74,9 @@ export const toggleAdminChatSubscriptionVoucherApi = async (
   })
   return unwrapResponse<ChatSubscriptionVoucherResponse>(response)
 }
+
+export const deleteAdminChatSubscriptionVoucherApi = async (
+  voucherId: string,
+): Promise<void> => {
+  await api.delete(`/admin/chat-subscriptions/vouchers/${voucherId}`)
+}

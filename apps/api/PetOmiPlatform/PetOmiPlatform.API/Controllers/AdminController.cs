@@ -100,6 +100,16 @@ public class AdminController : BaseController
     }
 
     /// <summary>
+    /// Xoa voucher chua tung gan voi giao dich thanh toan.
+    /// </summary>
+    [HttpDelete("chat-subscriptions/vouchers/{voucherId:guid}")]
+    public async Task<IActionResult> DeleteChatSubscriptionVoucher(Guid voucherId)
+    {
+        await Mediator.Send(new DeleteChatSubscriptionVoucherCommand(voucherId));
+        return Ok(BaseResponse<object>.Ok(null, "Da xoa voucher chat AI."));
+    }
+
+    /// <summary>
     /// Danh sách role global, role phòng khám và ma trận quyền hiện tại.
     /// </summary>
     [HttpGet("roles")]

@@ -177,6 +177,14 @@ export default function OwnerAiPlanPage() {
     })
   }
 
+  const handleRegeneratePayment = (payment: ChatSubscriptionPaymentResponse) => {
+    createPaymentMutation.mutate({
+      planCode: payment.planCode,
+      petId: payment.petId,
+      voucherCode: payment.voucherCode ?? undefined,
+    })
+  }
+
   const quotaIsBlocked = Boolean(subscriptionStatus && !subscriptionStatus.canSend)
 
   return (
@@ -415,7 +423,9 @@ export default function OwnerAiPlanPage() {
         <PaymentModal
           payment={paymentRequest}
           isChecking={paymentStatusQuery.isFetching}
+          isRegenerating={createPaymentMutation.isPending}
           onCheck={() => paymentStatusQuery.refetch()}
+          onRegenerate={() => handleRegeneratePayment(paymentRequest)}
           onClose={() => setPaymentRequest(null)}
         />
       ) : null}
@@ -646,12 +656,16 @@ function PlanFeature({ label, included }: { label: string; included?: boolean })
 function PaymentModal({
   payment,
   isChecking,
+  isRegenerating,
   onCheck,
+  onRegenerate,
   onClose,
 }: {
   payment: ChatSubscriptionPaymentResponse
   isChecking: boolean
+  isRegenerating: boolean
   onCheck: () => void
+  onRegenerate: () => void
   onClose: () => void
 }) {
   const isPaid = payment.status.toLowerCase() === "paid"
@@ -659,7 +673,7 @@ function PaymentModal({
   const [now, setNow] = useState(() => Date.now())
   const expiresAtTime = getExpiryTime(payment.expiresAt)
   const remainingMs = expiresAtTime ? expiresAtTime - now : 0
-  const isExpired = remainingMs <= 0
+  const isExpired = payment.status.toLowerCase() === "expired" || remainingMs <= 0
 
   useEffect(() => {
     if (isPaid) return undefined
@@ -719,65 +733,76 @@ function PaymentModal({
             </div>
           ) : (
             <div className="grid gap-4">
-              <p className="text-center text-sm text-po-text-muted">
-                Quét mã QR bằng app ngân hàng để thanh toán. Trạng thái sẽ tự cập
-                nhật sau vài giây.
-              </p>
-              <img
-                src={payment.qrCodeUrl}
-                alt="Mã QR thanh toán SePay"
-                className="mx-auto aspect-square w-56 rounded-2xl bg-white object-contain p-2 ring-1 ring-po-border"
-              />
-              <div className="grid gap-2 rounded-2xl bg-po-surface-muted/70 p-3 text-sm">
-                {hasDiscount ? (
-                  <>
-                    <DetailRow label="Giá gốc" value={formatCurrency(payment.originalAmount ?? payment.amount)} />
-                    <DetailRow
-                      label={payment.discountLabel ?? (payment.voucherCode ? `Voucher ${payment.voucherCode}` : "Ưu đãi")}
-                      value={`-${formatCurrency(payment.discountAmount ?? 0)}`}
-                      strong
-                    />
-                  </>
-                ) : null}
-                <DetailRow label="Số tiền" value={formatCurrency(payment.amount)} strong />
-                <DetailRow label="Nội dung CK" value={payment.paymentReference} mono />
-              </div>
-              <div
-                className={cn(
-                  "flex items-center gap-3 rounded-2xl border px-4 py-3",
-                  isExpired
-                    ? "border-po-danger/25 bg-po-danger-soft text-po-danger"
-                    : "border-po-warning/30 bg-po-warning-soft text-po-warning",
-                )}
-              >
-                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/75">
-                  {isExpired ? <AlertTriangle className="size-5" /> : <Clock className="size-5" />}
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em]">
-                    {isExpired ? "QR đã hết hạn" : "QR còn hiệu lực"}
+              {isExpired ? (
+                <>
+                  <div className="flex items-center gap-3 rounded-2xl border border-po-danger/25 bg-po-danger-soft px-4 py-4 text-po-danger">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/75">
+                      <AlertTriangle className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em]">QR đã hết hạn</p>
+                      <p className="mt-1 text-sm text-po-text-muted">
+                        Mã chuyển khoản cũ không còn sử dụng được. Hãy tạo mã QR mới để tiếp tục thanh toán.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onRegenerate}
+                    disabled={isRegenerating}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-po-primary px-4 text-sm font-bold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
+                  >
+                    {isRegenerating ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                    {isRegenerating ? "Đang tạo mã QR mới" : "Tạo mã QR mới"}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-center text-sm text-po-text-muted">
+                    Quét mã QR bằng app ngân hàng để thanh toán. Trạng thái sẽ tự cập nhật sau vài giây.
                   </p>
-                  <p className="text-xl font-extrabold leading-tight">
-                    {formatExpiryCountdown(remainingMs)}
-                  </p>
-                  <p className="mt-0.5 truncate text-xs text-po-text-muted">
-                    Mốc hết hạn: {formatDateTime(payment.expiresAt)}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={onCheck}
-                disabled={isChecking}
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-bold text-po-text transition hover:bg-po-surface-muted disabled:opacity-60"
-              >
-                {isChecking ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="size-4" />
-                )}
-                Kiểm tra thanh toán
-              </button>
+                  <img
+                    src={payment.qrCodeUrl}
+                    alt="Mã QR thanh toán SePay"
+                    className="mx-auto aspect-square w-56 rounded-2xl bg-white object-contain p-2 ring-1 ring-po-border"
+                  />
+                  <div className="grid gap-2 rounded-2xl bg-po-surface-muted/70 p-3 text-sm">
+                    {hasDiscount ? (
+                      <>
+                        <DetailRow label="Giá gốc" value={formatCurrency(payment.originalAmount ?? payment.amount)} />
+                        <DetailRow
+                          label={payment.discountLabel ?? (payment.voucherCode ? `Voucher ${payment.voucherCode}` : "Ưu đãi")}
+                          value={`-${formatCurrency(payment.discountAmount ?? 0)}`}
+                          strong
+                        />
+                      </>
+                    ) : null}
+                    <DetailRow label="Số tiền" value={formatCurrency(payment.amount)} strong />
+                    <DetailRow label="Nội dung CK" value={payment.paymentReference} mono />
+                  </div>
+                  <div className="flex items-center gap-3 rounded-2xl border border-po-warning/30 bg-po-warning-soft px-4 py-3 text-po-warning">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/75">
+                      <Clock className="size-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em]">QR còn hiệu lực</p>
+                      <p className="text-xl font-extrabold leading-tight">{formatExpiryCountdown(remainingMs)}</p>
+                      <p className="mt-0.5 truncate text-xs text-po-text-muted">
+                        Mốc hết hạn: {formatDateTime(payment.expiresAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onCheck}
+                    disabled={isChecking}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-bold text-po-text transition hover:bg-po-surface-muted disabled:opacity-60"
+                  >
+                    {isChecking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
+                    Kiểm tra thanh toán
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

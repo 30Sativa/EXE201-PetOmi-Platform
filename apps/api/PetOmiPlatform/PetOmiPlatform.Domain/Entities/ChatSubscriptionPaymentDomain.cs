@@ -9,7 +9,7 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
     public Guid? SubscriptionId { get; private set; }
     public Guid PlanId { get; private set; }
     public Guid OwnerUserId { get; private set; }
-    public Guid PetId { get; private set; }
+    public Guid? PetId { get; private set; }
     public ChatSubscriptionPaymentStatus Status { get; private set; }
     public decimal Amount { get; private set; }
     public string Currency { get; private set; } = "VND";
@@ -30,7 +30,7 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
     public static ChatSubscriptionPaymentDomain CreatePending(
         Guid planId,
         Guid ownerUserId,
-        Guid petId,
+        Guid? petId,
         decimal amount,
         string paymentReference,
         string qrCodeUrl,
@@ -42,7 +42,7 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
             throw new DomainException("Goi chat khong hop le.");
         if (ownerUserId == Guid.Empty)
             throw new DomainException("Owner khong hop le.");
-        if (petId == Guid.Empty)
+        if (petId.HasValue && petId.Value == Guid.Empty)
             throw new DomainException("Thu cung khong hop le.");
         if (amount <= 0)
             throw new DomainException("So tien thanh toan phai lon hon 0.");
@@ -78,7 +78,7 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
         Guid? subscriptionId,
         Guid planId,
         Guid ownerUserId,
-        Guid petId,
+        Guid? petId,
         ChatSubscriptionPaymentStatus status,
         decimal amount,
         string currency,

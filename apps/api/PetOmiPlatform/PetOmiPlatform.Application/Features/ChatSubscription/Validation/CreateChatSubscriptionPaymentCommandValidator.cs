@@ -8,7 +8,6 @@ public class CreateChatSubscriptionPaymentCommandValidator : AbstractValidator<C
     public CreateChatSubscriptionPaymentCommandValidator()
     {
         RuleFor(x => x.OwnerUserId).NotEmpty();
-        RuleFor(x => x.Request.PetId).NotEmpty();
         RuleFor(x => x.Request.PlanCode)
             .NotEmpty()
             .MaximumLength(40);

@@ -89,9 +89,8 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
         }
         else
         {
-            subscription = ChatSubscriptionDomain.CreateOwnerPet(
+            subscription = ChatSubscriptionDomain.CreateOwnerAccount(
                 ownerUserId: payment.OwnerUserId,
-                petId: payment.PetId,
                 planId: plan.Id,
                 startsAtUtc: now,
                 billingCycleDays: plan.BillingCycleDays);

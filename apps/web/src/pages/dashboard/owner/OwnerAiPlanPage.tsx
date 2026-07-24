@@ -65,7 +65,6 @@ const formatDateTime = (value?: string | null) => {
 
 export default function OwnerAiPlanPage() {
   const queryClient = useQueryClient()
-  const [selectedPetId, setSelectedPetId] = useState("")
   const [paymentRequest, setPaymentRequest] =
     useState<ChatSubscriptionPaymentResponse | null>(null)
 
@@ -73,11 +72,6 @@ export default function OwnerAiPlanPage() {
     queryKey: ["owner-pets"],
     queryFn: getPetsApi,
   })
-
-  useEffect(() => {
-    if (selectedPetId || pets.length === 0) return
-    setSelectedPetId(pets[0].petId)
-  }, [pets, selectedPetId])
 
   // Gói gộp chung theo tài khoản: trạng thái/usage không phụ thuộc pet nào.
   const {
@@ -151,16 +145,8 @@ export default function OwnerAiPlanPage() {
     : 0
 
   const handleUpgradePremium = () => {
-    // Gói dùng chung cho cả tài khoản, chỉ cần gắn một bé bất kỳ để tạo thanh toán.
-    const petIdForPayment = selectedPetId || pets[0]?.petId
-    if (!petIdForPayment) {
-      toast.error("Bạn cần thêm ít nhất một thú cưng trước khi nâng cấp.")
-      return
-    }
-
     createPaymentMutation.mutate({
       planCode: "premium",
-      petId: petIdForPayment,
     })
   }
 
@@ -330,7 +316,7 @@ export default function OwnerAiPlanPage() {
               plan={plan}
               subscriptionStatus={subscriptionStatus}
               isUpgrading={createPaymentMutation.isPending}
-              canUpgrade={pets.length > 0}
+              canUpgrade
               onUpgrade={handleUpgradePremium}
             />
           ))}

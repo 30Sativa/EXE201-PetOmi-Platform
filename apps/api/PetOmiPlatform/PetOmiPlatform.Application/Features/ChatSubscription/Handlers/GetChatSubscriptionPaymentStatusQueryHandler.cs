@@ -41,14 +41,18 @@ public class GetChatSubscriptionPaymentStatusQueryHandler
 
         var plan = await _subscriptionRepository.GetPlanByIdAsync(payment.PlanId)
             ?? throw new NotFoundException("Khong tim thay goi chat AI.");
-        var pet = await _petRepository.GetByIdAsync(payment.PetId)
-            ?? throw new NotFoundException("Pet", payment.PetId);
+        PetOmiPlatform.Domain.Entities.PetDomain? pet = null;
+        if (payment.PetId.HasValue)
+        {
+            pet = await _petRepository.GetByIdAsync(payment.PetId.Value)
+                ?? throw new NotFoundException("Pet", payment.PetId.Value);
+        }
 
         return new ChatSubscriptionPaymentResponse
         {
             PaymentId = payment.Id,
             PetId = payment.PetId,
-            PetName = pet.Name,
+            PetName = pet?.Name,
             PlanCode = plan.Code,
             PlanName = plan.Name,
             Status = payment.Status.ToString(),

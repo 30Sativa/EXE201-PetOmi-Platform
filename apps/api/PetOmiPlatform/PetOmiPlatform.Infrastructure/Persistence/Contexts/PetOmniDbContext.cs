@@ -1493,9 +1493,9 @@ public partial class PetOmniDbContext : DbContext
 
             entity.HasIndex(e => new { e.OwnerUserId, e.PetId, e.ExpiresAt }, "IX_ChatSubscriptions_OwnerPet_ExpiresAt")
                 .IsDescending(false, false, true);
-            entity.HasIndex(e => new { e.ScopeType, e.OwnerUserId, e.PetId, e.IsActive }, "UX_ChatSubscriptions_ActiveOwnerPet")
+            entity.HasIndex(e => new { e.ScopeType, e.OwnerUserId, e.IsActive }, "UX_ChatSubscriptions_ActiveOwnerUser")
                 .IsUnique()
-                .HasFilter("([ScopeType]='OwnerPet' AND [OwnerUserID] IS NOT NULL AND [PetID] IS NOT NULL AND [IsActive]=(1))");
+                .HasFilter("([ScopeType]='OwnerPet' AND [OwnerUserID] IS NOT NULL AND [IsActive]=(1))");
 
             entity.Property(e => e.SubscriptionId)
                 .HasDefaultValueSql("(newsequentialid())")

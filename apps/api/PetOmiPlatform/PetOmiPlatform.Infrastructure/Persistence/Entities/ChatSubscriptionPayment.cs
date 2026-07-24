@@ -8,7 +8,7 @@ public class ChatSubscriptionPayment
     public Guid? SubscriptionId { get; set; }
     public Guid PlanId { get; set; }
     public Guid OwnerUserId { get; set; }
-    public Guid PetId { get; set; }
+    public Guid? PetId { get; set; }
     public string Status { get; set; } = null!;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = null!;

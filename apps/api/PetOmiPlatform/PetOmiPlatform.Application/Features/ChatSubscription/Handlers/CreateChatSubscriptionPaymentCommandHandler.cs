@@ -44,10 +44,14 @@ public class CreateChatSubscriptionPaymentCommandHandler
         if (plan.IsFree || plan.PriceMonthly <= 0)
             throw new ConflictException("Goi Free khong can tao thanh toan.");
 
-        var pet = await _petRepository.GetByIdAsync(command.Request.PetId)
-            ?? throw new NotFoundException("Pet", command.Request.PetId);
-        pet.EnsureActive();
-        pet.EnsureOwner(command.OwnerUserId);
+        PetOmiPlatform.Domain.Entities.PetDomain? pet = null;
+        if (command.Request.PetId.HasValue)
+        {
+            pet = await _petRepository.GetByIdAsync(command.Request.PetId.Value)
+                ?? throw new NotFoundException("Pet", command.Request.PetId.Value);
+            pet.EnsureActive();
+            pet.EnsureOwner(command.OwnerUserId);
+        }
 
         var platformAccount = _sePayService.GetPlatformPaymentAccount();
         if (platformAccount == null)
@@ -83,7 +87,7 @@ public class CreateChatSubscriptionPaymentCommandHandler
         var payment = ChatSubscriptionPaymentDomain.CreatePending(
             planId: plan.Id,
             ownerUserId: command.OwnerUserId,
-            petId: pet.Id,
+            petId: pet?.Id,
             amount: finalAmount,
             paymentReference: paymentReference,
             qrCodeUrl: qrCodeUrl,
@@ -97,8 +101,8 @@ public class CreateChatSubscriptionPaymentCommandHandler
         return new ChatSubscriptionPaymentResponse
         {
             PaymentId = payment.Id,
-            PetId = pet.Id,
-            PetName = pet.Name,
+            PetId = pet?.Id,
+            PetName = pet?.Name,
             PlanCode = plan.Code,
             PlanName = plan.Name,
             Status = payment.Status.ToString(),

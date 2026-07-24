@@ -29,7 +29,7 @@ public class ChatSubscriptionController : BaseController
         return Ok(BaseResponse<ChatSubscriptionStatusResponse>.Ok(result));
     }
 
-    /// <summary>Tao QR SePay de mua/renew Premium cho mot pet.</summary>
+    /// <summary>Tao QR SePay de mua/renew Premium cho owner.</summary>
     [HttpPost("payments")]
     public async Task<IActionResult> CreatePayment([FromBody] CreateChatSubscriptionPaymentRequest request)
     {

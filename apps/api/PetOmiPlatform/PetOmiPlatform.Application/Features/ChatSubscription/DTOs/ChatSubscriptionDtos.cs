@@ -39,8 +39,8 @@ public class ChatSubscriptionCapabilitiesResponse
 public class OwnerPetChatSubscriptionResponse
 {
     public Guid SubscriptionId { get; set; }
-    public Guid PetId { get; set; }
-    public string PetName { get; set; } = string.Empty;
+    public Guid? PetId { get; set; }
+    public string? PetName { get; set; }
     public string PlanCode { get; set; } = string.Empty;
     public string PlanName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
@@ -68,14 +68,14 @@ public class ChatSubscriptionStatusResponse
 public class CreateChatSubscriptionPaymentRequest
 {
     public string PlanCode { get; set; } = "premium";
-    public Guid PetId { get; set; }
+    public Guid? PetId { get; set; }
 }
 
 public class ChatSubscriptionPaymentResponse
 {
     public Guid PaymentId { get; set; }
-    public Guid PetId { get; set; }
-    public string PetName { get; set; } = string.Empty;
+    public Guid? PetId { get; set; }
+    public string? PetName { get; set; }
     public string PlanCode { get; set; } = string.Empty;
     public string PlanName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
@@ -119,8 +119,8 @@ public class AdminChatSubscriptionPaymentItemResponse
     public Guid PaymentId { get; set; }
     public Guid OwnerUserId { get; set; }
     public string OwnerEmail { get; set; } = string.Empty;
-    public Guid PetId { get; set; }
-    public string PetName { get; set; } = string.Empty;
+    public Guid? PetId { get; set; }
+    public string? PetName { get; set; }
     public string PlanCode { get; set; } = string.Empty;
     public string PlanName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;

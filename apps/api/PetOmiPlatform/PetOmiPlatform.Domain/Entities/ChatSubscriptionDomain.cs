@@ -55,6 +55,36 @@ public class ChatSubscriptionDomain : BaseEntity
         };
     }
 
+    public static ChatSubscriptionDomain CreateOwnerAccount(
+        Guid ownerUserId,
+        Guid planId,
+        DateTime startsAtUtc,
+        int billingCycleDays)
+    {
+        if (ownerUserId == Guid.Empty)
+            throw new DomainException("Owner khong hop le.");
+        if (planId == Guid.Empty)
+            throw new DomainException("Goi chat khong hop le.");
+        if (billingCycleDays <= 0)
+            throw new DomainException("Chu ky goi chat khong hop le.");
+
+        return new ChatSubscriptionDomain
+        {
+            Id = Guid.NewGuid(),
+            ScopeType = ChatSubscriptionScopeType.OwnerPet,
+            OwnerUserId = ownerUserId,
+            PetId = null,
+            ClinicId = null,
+            PlanId = planId,
+            Status = ChatSubscriptionStatus.Active,
+            StartsAt = startsAtUtc,
+            ExpiresAt = startsAtUtc.AddDays(billingCycleDays),
+            CancelledAt = null,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+    }
+
     public static ChatSubscriptionDomain Reconstitute(
         Guid id,
         ChatSubscriptionScopeType scopeType,

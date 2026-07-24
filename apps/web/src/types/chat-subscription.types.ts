@@ -60,17 +60,19 @@ export type ChatSubscriptionStatusResponse = {
 
 export type CreateChatSubscriptionPaymentRequest = {
   planCode: string
-  petId: string
+  petId?: string | null
 }
 
 export type ChatSubscriptionPaymentResponse = {
   paymentId: string
-  petId: string
-  petName: string
+  petId?: string | null
+  petName?: string | null
   planCode: string
   planName: string
   status: string
   amount: number
+  originalAmount?: number
+  discountPercent?: number
   currency: string
   provider: string
   paymentReference: string
@@ -104,8 +106,8 @@ export type AdminChatSubscriptionPaymentItemResponse = {
   paymentId: string
   ownerUserId: string
   ownerEmail: string
-  petId: string
-  petName: string
+  petId?: string | null
+  petName?: string | null
   planCode: string
   planName: string
   status: string

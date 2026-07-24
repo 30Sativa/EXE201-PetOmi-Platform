@@ -31,6 +31,9 @@ public class GetPromotionOffersQueryHandler
 
         var trialUsed = await _subscriptionRepository.HasAnyTrialAsync(request.UserId);
         var paidCount = await _subscriptionRepository.CountPaidPaymentsAsync(request.UserId);
+        var now = DateTime.UtcNow;
+        var activeSubscription = await _subscriptionRepository.GetActiveOwnerSubscriptionAsync(request.UserId, now);
+        var latestSubscription = await _subscriptionRepository.GetLatestOwnerSubscriptionAsync(request.UserId);
         var referralCode = await _referralRepository.GetOrCreateReferralCodeAsync(request.UserId);
 
         return new PromotionOffersResponse
@@ -38,6 +41,11 @@ public class GetPromotionOffersQueryHandler
             TrialEnabled = promo.TrialEnabled,
             TrialDays = promo.TrialDays,
             TrialAlreadyUsed = trialUsed,
+            TrialEligible = promo.TrialEnabled &&
+                !trialUsed &&
+                paidCount == 0 &&
+                activeSubscription == null &&
+                (latestSubscription == null || latestSubscription.IsTrial),
 
             EarlyBirdEnabled = promo.EarlyBirdEnabled,
             EarlyBirdDiscountPercent = promo.EarlyBirdDiscountPercent,

@@ -144,7 +144,7 @@ export default function OwnerDashboardPage() {
 
   // CTA Premium AI: chi hien khi co uu dai dung thu chua dung.
   const showTrialCta =
-    offers?.trialEnabled === true && offers?.trialAlreadyUsed === false
+    offers?.trialEligible === true
 
   return (
     <div className="grid gap-5 md:gap-6">

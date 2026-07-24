@@ -44,7 +44,7 @@ export default function PromotionOffers() {
   if (!offers) return null
 
   const anyOffer =
-    (offers.trialEnabled && !offers.trialAlreadyUsed) ||
+    offers.trialEligible ||
     (offers.earlyBirdEnabled && offers.earlyBirdEligible) ||
     offers.referralEnabled
   if (!anyOffer) return null
@@ -69,7 +69,7 @@ export default function PromotionOffers() {
 
       <div className="grid gap-4 md:grid-cols-3">
         {/* Free trial */}
-        {offers.trialEnabled ? (
+        {offers.trialEligible ? (
           <div className="flex flex-col rounded-2xl bg-white/80 p-4 ring-1 ring-amber-100">
             <span className="inline-flex size-9 items-center justify-center rounded-full bg-amber-100 text-amber-600">
               <Gift className="size-4" />
@@ -82,12 +82,12 @@ export default function PromotionOffers() {
             </p>
             <button
               type="button"
-              disabled={offers.trialAlreadyUsed || trialMutation.isPending}
+              disabled={trialMutation.isPending}
               onClick={() => trialMutation.mutate()}
               className="mt-3 inline-flex h-9 items-center justify-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-50"
             >
               {trialMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
-              {offers.trialAlreadyUsed ? "Đã sử dụng" : "Dùng thử ngay"}
+              Dùng thử ngay
             </button>
           </div>
         ) : null}

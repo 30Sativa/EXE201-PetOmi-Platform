@@ -2,6 +2,7 @@ export type PromotionOffersResponse = {
   trialEnabled: boolean
   trialDays: number
   trialAlreadyUsed: boolean
+  trialEligible: boolean
 
   earlyBirdEnabled: boolean
   earlyBirdDiscountPercent: number

@@ -39,10 +39,19 @@ public class ActivateTrialCommandHandler
         if (await _subscriptionRepository.HasAnyTrialAsync(request.UserId))
             throw new ConflictException("Ban da su dung uu dai dung thu truoc do.");
 
-        // Dang co Premium active thi khong can trial.
-        var active = await _subscriptionRepository.GetActiveOwnerSubscriptionAsync(request.UserId, DateTime.UtcNow);
+        var now = DateTime.UtcNow;
+        // Dang co Premium active thi khong the nhan them trial de cong don ngay mien phi.
+        var active = await _subscriptionRepository.GetActiveOwnerSubscriptionAsync(request.UserId, now);
         if (active != null)
             throw new ConflictException("Ban dang co goi Premium dang hoat dong.");
+
+        // Trial chi danh cho tai khoan chua tung mua/nhan Premium tra phi.
+        if (await _subscriptionRepository.CountPaidPaymentsAsync(request.UserId) > 0)
+            throw new ConflictException("Uu dai dung thu chi ap dung truoc lan thanh toan Premium dau tien.");
+
+        var latestSubscription = await _subscriptionRepository.GetLatestOwnerSubscriptionAsync(request.UserId);
+        if (latestSubscription != null && !latestSubscription.IsTrial)
+            throw new ConflictException("Uu dai dung thu chi ap dung truoc khi ban tung dung Premium tra phi.");
 
         var premiumPlan = await _subscriptionRepository.GetPlanByCodeAsync(PremiumPlanCode)
             ?? throw new NotFoundException("Khong tim thay goi Premium.");
@@ -50,7 +59,7 @@ public class ActivateTrialCommandHandler
         var trial = ChatSubscriptionDomain.CreateTrial(
             ownerUserId: request.UserId,
             planId: premiumPlan.Id,
-            startsAtUtc: DateTime.UtcNow,
+            startsAtUtc: now,
             trialDays: promo.TrialDays);
 
         await _subscriptionRepository.AddSubscriptionAsync(trial);

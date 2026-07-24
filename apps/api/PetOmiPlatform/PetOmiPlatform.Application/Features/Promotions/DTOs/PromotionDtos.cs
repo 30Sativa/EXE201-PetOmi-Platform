@@ -14,6 +14,7 @@ public class PromotionOffersResponse
     public bool TrialEnabled { get; set; }
     public int TrialDays { get; set; }
     public bool TrialAlreadyUsed { get; set; }
+    public bool TrialEligible { get; set; }
 
     public bool EarlyBirdEnabled { get; set; }
     public int EarlyBirdDiscountPercent { get; set; }

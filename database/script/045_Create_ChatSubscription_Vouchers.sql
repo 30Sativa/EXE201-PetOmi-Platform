@@ -88,9 +88,15 @@ BEGIN
         ADD VoucherCode NVARCHAR(40) NULL;
 END;
 
-UPDATE dbo.ChatSubscriptionPayments
-SET OriginalAmount = Amount + DiscountAmount
-WHERE OriginalAmount = 0;
+IF COL_LENGTH('dbo.ChatSubscriptionPayments', 'OriginalAmount') IS NOT NULL
+   AND COL_LENGTH('dbo.ChatSubscriptionPayments', 'DiscountAmount') IS NOT NULL
+BEGIN
+    EXEC sp_executesql N'
+        UPDATE dbo.ChatSubscriptionPayments
+        SET OriginalAmount = Amount + DiscountAmount
+        WHERE OriginalAmount = 0;
+    ';
+END;
 
 IF NOT EXISTS (
     SELECT 1 FROM sys.foreign_keys
@@ -98,7 +104,9 @@ IF NOT EXISTS (
       AND parent_object_id = OBJECT_ID('dbo.ChatSubscriptionPayments')
 )
 BEGIN
-    ALTER TABLE dbo.ChatSubscriptionPayments
-        ADD CONSTRAINT FK_ChatSubscriptionPayments_Voucher
-            FOREIGN KEY (VoucherID) REFERENCES dbo.ChatSubscriptionVouchers(VoucherID);
+    EXEC sp_executesql N'
+        ALTER TABLE dbo.ChatSubscriptionPayments
+            ADD CONSTRAINT FK_ChatSubscriptionPayments_Voucher
+                FOREIGN KEY (VoucherID) REFERENCES dbo.ChatSubscriptionVouchers(VoucherID);
+    ';
 END;

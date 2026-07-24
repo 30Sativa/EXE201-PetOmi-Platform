@@ -15,7 +15,6 @@ public class CreateChatSubscriptionPaymentCommandHandler
     private readonly IInvoiceRepository _invoiceRepository;
     private readonly IPetRepository _petRepository;
     private readonly ISePayService _sePayService;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IPromotionSettingsService _promotionSettings;
 
     public CreateChatSubscriptionPaymentCommandHandler(
@@ -23,14 +22,12 @@ public class CreateChatSubscriptionPaymentCommandHandler
         IInvoiceRepository invoiceRepository,
         IPetRepository petRepository,
         ISePayService sePayService,
-        IUnitOfWork unitOfWork,
         IPromotionSettingsService promotionSettings)
     {
         _subscriptionRepository = subscriptionRepository;
         _invoiceRepository = invoiceRepository;
         _petRepository = petRepository;
         _sePayService = sePayService;
-        _unitOfWork = unitOfWork;
         _promotionSettings = promotionSettings;
     }
 
@@ -59,6 +56,15 @@ public class CreateChatSubscriptionPaymentCommandHandler
             throw new ConflictException("Chua cau hinh tai khoan SePay platform cho subscription chat.");
         }
 
+        var now = DateTime.UtcNow;
+        await _subscriptionRepository.ExpirePendingPaymentsForOwnerAsync(command.OwnerUserId, now);
+
+        var openPayment = await _subscriptionRepository.GetOpenPaymentByOwnerAsync(command.OwnerUserId, now);
+        if (openPayment != null)
+        {
+            return await BuildResponseAsync(openPayment, plan, pet, 0);
+        }
+
         // Early-bird: giam % cho user trong nhung chu ky thanh toan dau (neu setting bat).
         var promo = await _promotionSettings.GetAsync(cancellationToken);
         var originalAmount = plan.PriceMonthly;
@@ -82,7 +88,7 @@ public class CreateChatSubscriptionPaymentCommandHandler
                 ?? throw new NotFoundException("Khong tim thay voucher.");
 
             var amountAfterEarlyBird = originalAmount - discountAmount;
-            if (!voucher.CanApply(amountAfterEarlyBird, DateTime.UtcNow))
+            if (!voucher.CanApply(amountAfterEarlyBird, now))
                 throw new ConflictException("Voucher khong kha dung hoac da het han.");
 
             var voucherDiscount = voucher.CalculateDiscount(amountAfterEarlyBird);
@@ -90,6 +96,11 @@ public class CreateChatSubscriptionPaymentCommandHandler
                 throw new ConflictException("Voucher khong the ap dung cho goi nay.");
 
             discountAmount += voucherDiscount;
+
+            if (!await _subscriptionRepository.TryReserveVoucherAsync(voucher.Id, now))
+            {
+                throw new ConflictException("Voucher da het luot dung hoac khong con kha dung.");
+            }
         }
 
         var finalAmount = originalAmount - discountAmount;
@@ -116,10 +127,44 @@ public class CreateChatSubscriptionPaymentCommandHandler
             qrCodeUrl: qrCodeUrl,
             bankAccountNo: platformAccount.BankAccountNo,
             bankCode: platformAccount.BankCode,
-            expiresAtUtc: DateTime.UtcNow.AddMinutes(30));
+            expiresAtUtc: now.AddMinutes(30),
+            hasVoucherReservation: voucher != null);
 
-        await _subscriptionRepository.AddPaymentAsync(payment);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (!await _subscriptionRepository.TryAddOpenPaymentAsync(payment, cancellationToken))
+        {
+            if (payment.VoucherId.HasValue && payment.ReleaseVoucherReservation(now))
+            {
+                await _subscriptionRepository.ReleaseVoucherReservationAsync(payment.VoucherId.Value, now);
+            }
+
+            var concurrentOpenPayment = await _subscriptionRepository.GetOpenPaymentByOwnerAsync(command.OwnerUserId, now);
+            if (concurrentOpenPayment != null)
+            {
+                return await BuildResponseAsync(concurrentOpenPayment, plan, pet, 0);
+            }
+
+            throw new ConflictException("Khong the tao QR thanh toan. Vui long thu lai.");
+        }
+
+        return await BuildResponseAsync(payment, plan, pet, discountPercent);
+    }
+
+    private async Task<ChatSubscriptionPaymentResponse> BuildResponseAsync(
+        ChatSubscriptionPaymentDomain payment,
+        ChatSubscriptionPlanDomain requestedPlan,
+        PetOmiPlatform.Domain.Entities.PetDomain? requestedPet,
+        int discountPercent)
+    {
+        var plan = payment.PlanId == requestedPlan.Id
+            ? requestedPlan
+            : await _subscriptionRepository.GetPlanByIdAsync(payment.PlanId)
+                ?? throw new NotFoundException("Khong tim thay goi chat AI.");
+
+        var pet = payment.PetId == requestedPet?.Id
+            ? requestedPet
+            : payment.PetId.HasValue
+                ? await _petRepository.GetByIdAsync(payment.PetId.Value)
+                : null;
 
         return new ChatSubscriptionPaymentResponse
         {
@@ -130,7 +175,7 @@ public class CreateChatSubscriptionPaymentCommandHandler
             PlanName = plan.Name,
             Status = payment.Status.ToString(),
             Amount = payment.Amount,
-            OriginalAmount = originalAmount,
+            OriginalAmount = payment.OriginalAmount,
             DiscountPercent = discountPercent,
             DiscountAmount = payment.DiscountAmount,
             VoucherCode = payment.VoucherCode,

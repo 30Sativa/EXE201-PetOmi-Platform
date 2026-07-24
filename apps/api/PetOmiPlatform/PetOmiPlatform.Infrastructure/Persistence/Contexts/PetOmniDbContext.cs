@@ -1545,6 +1545,10 @@ public partial class PetOmniDbContext : DbContext
                 .HasFilter("([ProviderTransactionID] IS NOT NULL)");
             entity.HasIndex(e => new { e.OwnerUserId, e.CreatedAt }, "IX_ChatSubscriptionPayments_Owner_CreatedAt")
                 .IsDescending(false, true);
+            entity.HasIndex(e => e.OwnerUserId, "UX_ChatSubscriptionPayments_OpenOwner")
+                .IsUnique()
+                .HasFilter("([IsOpen]=(1))");
+            entity.HasIndex(e => new { e.IsOpen, e.ExpiresAt }, "IX_ChatSubscriptionPayments_Open_ExpiresAt");
 
             entity.Property(e => e.PaymentId)
                 .HasDefaultValueSql("(newsequentialid())")
@@ -1570,6 +1574,8 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.BankCode).HasMaxLength(30);
             entity.Property(e => e.PaidAt).HasColumnType("datetime");
             entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.IsOpen).HasDefaultValue(false);
+            entity.Property(e => e.HasVoucherReservation).HasDefaultValue(false);
             entity.Property(e => e.RawPayload).HasColumnType("nvarchar(max)");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getutcdate())")
@@ -1618,6 +1624,7 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.MaxDiscountAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.UsedCount).HasDefaultValue(0);
+            entity.Property(e => e.ReservedCount).HasDefaultValue(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.StartsAt).HasColumnType("datetime");
             entity.Property(e => e.ExpiresAt).HasColumnType("datetime");

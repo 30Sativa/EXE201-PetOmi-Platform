@@ -89,7 +89,7 @@ namespace PetOmiPlatform.API.Controllers
             var configuredApiKey = _sePaySettings.WebhookApiKey;
             if (string.IsNullOrWhiteSpace(configuredApiKey))
             {
-                return false;
+                return true;
             }
 
             return !string.Equals(configuredApiKey, receivedApiKey, StringComparison.Ordinal);

@@ -25,6 +25,8 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
     public string BankCode { get; private set; } = string.Empty;
     public DateTime? PaidAt { get; private set; }
     public DateTime ExpiresAt { get; private set; }
+    public bool IsOpen { get; private set; }
+    public bool HasVoucherReservation { get; private set; }
     public string? RawPayload { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
@@ -44,7 +46,8 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
         string qrCodeUrl,
         string bankAccountNo,
         string bankCode,
-        DateTime expiresAtUtc)
+        DateTime expiresAtUtc,
+        bool hasVoucherReservation)
     {
         if (planId == Guid.Empty)
             throw new DomainException("Goi chat khong hop le.");
@@ -85,6 +88,8 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
             BankAccountNo = bankAccountNo.Trim(),
             BankCode = bankCode.Trim().ToUpperInvariant(),
             ExpiresAt = expiresAtUtc,
+            IsOpen = true,
+            HasVoucherReservation = hasVoucherReservation,
             CreatedAt = DateTime.UtcNow
         };
     }
@@ -110,6 +115,8 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
         string bankCode,
         DateTime? paidAt,
         DateTime expiresAt,
+        bool isOpen,
+        bool hasVoucherReservation,
         string? rawPayload,
         DateTime createdAt,
         DateTime? updatedAt)
@@ -136,6 +143,8 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
             BankCode = bankCode,
             PaidAt = paidAt,
             ExpiresAt = expiresAt,
+            IsOpen = isOpen,
+            HasVoucherReservation = hasVoucherReservation,
             RawPayload = rawPayload,
             CreatedAt = createdAt,
             UpdatedAt = updatedAt
@@ -159,18 +168,21 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
         SubscriptionId = subscriptionId;
         ProviderTransactionId = providerTransactionId.Trim();
         Status = ChatSubscriptionPaymentStatus.Paid;
+        IsOpen = false;
         PaidAt = paidAtUtc;
         RawPayload = rawPayload;
         UpdatedAt = paidAtUtc;
     }
 
-    public void MarkExpired(DateTime utcNow)
+    public bool MarkExpired(DateTime utcNow)
     {
         if (Status != ChatSubscriptionPaymentStatus.Pending || ExpiresAt > utcNow)
-            return;
+            return false;
 
         Status = ChatSubscriptionPaymentStatus.Expired;
+        IsOpen = false;
         UpdatedAt = utcNow;
+        return true;
     }
 
     public void Cancel(DateTime utcNow)
@@ -179,6 +191,17 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
             return;
 
         Status = ChatSubscriptionPaymentStatus.Cancelled;
+        IsOpen = false;
         UpdatedAt = utcNow;
+    }
+
+    public bool ReleaseVoucherReservation(DateTime utcNow)
+    {
+        if (!HasVoucherReservation)
+            return false;
+
+        HasVoucherReservation = false;
+        UpdatedAt = utcNow;
+        return true;
     }
 }

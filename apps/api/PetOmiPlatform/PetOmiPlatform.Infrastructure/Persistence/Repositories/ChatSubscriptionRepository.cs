@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
 using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Entities;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 using PetOmiPlatform.Infrastructure.Mappers;
 using PetOmiPlatform.Infrastructure.Persistence.Contexts;
+using PetOmiPlatform.Infrastructure.Persistence.Entities;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Repositories;
 
@@ -158,6 +160,23 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
         return entity?.ToDomain();
     }
 
+    public async Task<ChatSubscriptionPaymentDomain?> GetOpenPaymentByOwnerAsync(
+        Guid ownerUserId,
+        DateTime utcNow)
+    {
+        var entity = await _context.ChatSubscriptionPayments
+            .AsNoTracking()
+            .Where(p =>
+                p.OwnerUserId == ownerUserId &&
+                p.Status == ChatSubscriptionPaymentStatus.Pending.ToString() &&
+                p.IsOpen &&
+                p.ExpiresAt > utcNow)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        return entity?.ToDomain();
+    }
+
     public async Task<bool> AnyPaymentReferenceAsync(string paymentReference)
     {
         if (string.IsNullOrWhiteSpace(paymentReference))
@@ -179,6 +198,33 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
         return await _context.ChatSubscriptionPayments
             .AsNoTracking()
             .AnyAsync(p => p.Provider == providerText && p.ProviderTransactionId == normalized);
+    }
+
+    public async Task<bool> TryClaimPaymentAsync(Guid paymentId, DateTime utcNow)
+    {
+        var affectedRows = await _context.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE dbo.ChatSubscriptionPayments
+            SET IsOpen = 0,
+                UpdatedAt = {utcNow}
+            WHERE PaymentID = {paymentId}
+              AND Status = {ChatSubscriptionPaymentStatus.Pending.ToString()}
+              AND IsOpen = 1
+              AND ExpiresAt > {utcNow};
+            """);
+
+        return affectedRows == 1;
+    }
+
+    public Task<int> ExpirePendingPaymentsForOwnerAsync(Guid ownerUserId, DateTime utcNow)
+    {
+        return ExpirePendingPaymentsAsync(
+            _context.ChatSubscriptionPayments.Where(p => p.OwnerUserId == ownerUserId),
+            utcNow);
+    }
+
+    public Task<int> ExpirePendingPaymentsAsync(DateTime utcNow)
+    {
+        return ExpirePendingPaymentsAsync(_context.ChatSubscriptionPayments, utcNow);
     }
 
     public async Task<ChatUsageStats> GetUserMessageUsageAsync(
@@ -355,9 +401,71 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             .AnyAsync(payment => payment.VoucherId == voucherId);
     }
 
+    public async Task<bool> TryReserveVoucherAsync(Guid voucherId, DateTime utcNow)
+    {
+        var affectedRows = await _context.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE dbo.ChatSubscriptionVouchers
+            SET ReservedCount = ReservedCount + 1,
+                UpdatedAt = {utcNow}
+            WHERE VoucherID = {voucherId}
+              AND IsActive = 1
+              AND (StartsAt IS NULL OR StartsAt <= {utcNow})
+              AND (ExpiresAt IS NULL OR ExpiresAt > {utcNow})
+              AND (UsageLimit IS NULL OR UsedCount + ReservedCount < UsageLimit);
+            """);
+
+        return affectedRows == 1;
+    }
+
+    public async Task CompleteVoucherReservationAsync(
+        Guid voucherId,
+        bool hadReservation,
+        DateTime utcNow)
+    {
+        await _context.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE dbo.ChatSubscriptionVouchers
+            SET UsedCount = UsedCount + 1,
+                ReservedCount = CASE
+                    WHEN {hadReservation} = CAST(1 AS bit) AND ReservedCount > 0 THEN ReservedCount - 1
+                    ELSE ReservedCount
+                END,
+                UpdatedAt = {utcNow}
+            WHERE VoucherID = {voucherId};
+            """);
+    }
+
+    public async Task ReleaseVoucherReservationAsync(Guid voucherId, DateTime utcNow)
+    {
+        await _context.Database.ExecuteSqlInterpolatedAsync($"""
+            UPDATE dbo.ChatSubscriptionVouchers
+            SET ReservedCount = CASE WHEN ReservedCount > 0 THEN ReservedCount - 1 ELSE 0 END,
+                UpdatedAt = {utcNow}
+            WHERE VoucherID = {voucherId};
+            """);
+    }
+
     public async Task AddSubscriptionAsync(ChatSubscriptionDomain subscription)
     {
         await _context.ChatSubscriptions.AddAsync(subscription.ToEntity());
+    }
+
+    public async Task<bool> TryAddTrialAsync(
+        ChatSubscriptionDomain subscription,
+        CancellationToken cancellationToken)
+    {
+        var entity = subscription.ToEntity();
+        await _context.ChatSubscriptions.AddAsync(entity, cancellationToken);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException exception) when (IsUniqueConstraintViolation(exception))
+        {
+            _context.Entry(entity).State = EntityState.Detached;
+            return false;
+        }
     }
 
     public async Task UpdateSubscriptionAsync(ChatSubscriptionDomain subscription)
@@ -373,6 +481,25 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
     public async Task AddPaymentAsync(ChatSubscriptionPaymentDomain payment)
     {
         await _context.ChatSubscriptionPayments.AddAsync(payment.ToEntity());
+    }
+
+    public async Task<bool> TryAddOpenPaymentAsync(
+        ChatSubscriptionPaymentDomain payment,
+        CancellationToken cancellationToken)
+    {
+        var entity = payment.ToEntity();
+        await _context.ChatSubscriptionPayments.AddAsync(entity, cancellationToken);
+
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+        catch (DbUpdateException exception) when (IsUniqueConstraintViolation(exception))
+        {
+            _context.Entry(entity).State = EntityState.Detached;
+            return false;
+        }
     }
 
     public async Task UpdatePaymentAsync(ChatSubscriptionPaymentDomain payment)
@@ -405,5 +532,51 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
         var entity = await _context.ChatSubscriptionVouchers.FindAsync(voucherId);
         if (entity != null)
             _context.ChatSubscriptionVouchers.Remove(entity);
+    }
+
+    private async Task<int> ExpirePendingPaymentsAsync(
+        IQueryable<ChatSubscriptionPayment> query,
+        DateTime utcNow)
+    {
+        var payments = await query
+            .Where(p =>
+                p.Status == ChatSubscriptionPaymentStatus.Pending.ToString() &&
+                p.IsOpen &&
+                p.ExpiresAt <= utcNow)
+            .ToListAsync();
+
+        if (payments.Count == 0)
+            return 0;
+
+        var reservationsByVoucher = payments
+            .Where(p => p.HasVoucherReservation && p.VoucherId.HasValue)
+            .GroupBy(p => p.VoucherId!.Value)
+            .ToDictionary(group => group.Key, group => group.Count());
+
+        foreach (var payment in payments)
+        {
+            payment.Status = ChatSubscriptionPaymentStatus.Expired.ToString();
+            payment.IsOpen = false;
+            payment.HasVoucherReservation = false;
+            payment.UpdatedAt = utcNow;
+        }
+
+        foreach (var (voucherId, releaseCount) in reservationsByVoucher)
+        {
+            var voucher = await _context.ChatSubscriptionVouchers
+                .FirstOrDefaultAsync(v => v.VoucherId == voucherId);
+            if (voucher == null)
+                continue;
+
+            voucher.ReservedCount = Math.Max(0, voucher.ReservedCount - releaseCount);
+            voucher.UpdatedAt = utcNow;
+        }
+
+        return payments.Count;
+    }
+
+    private static bool IsUniqueConstraintViolation(DbUpdateException exception)
+    {
+        return exception.InnerException is SqlException { Number: 2601 or 2627 };
     }
 }

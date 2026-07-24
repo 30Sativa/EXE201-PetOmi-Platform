@@ -129,6 +129,8 @@ public static class ChatSubscriptionMapper
             bankCode: entity.BankCode,
             paidAt: entity.PaidAt,
             expiresAt: entity.ExpiresAt,
+            isOpen: entity.IsOpen,
+            hasVoucherReservation: entity.HasVoucherReservation,
             rawPayload: entity.RawPayload,
             createdAt: entity.CreatedAt,
             updatedAt: entity.UpdatedAt);
@@ -158,6 +160,8 @@ public static class ChatSubscriptionMapper
             BankCode = domain.BankCode,
             PaidAt = domain.PaidAt,
             ExpiresAt = domain.ExpiresAt,
+            IsOpen = domain.IsOpen,
+            HasVoucherReservation = domain.HasVoucherReservation,
             RawPayload = domain.RawPayload,
             CreatedAt = domain.CreatedAt,
             UpdatedAt = domain.UpdatedAt

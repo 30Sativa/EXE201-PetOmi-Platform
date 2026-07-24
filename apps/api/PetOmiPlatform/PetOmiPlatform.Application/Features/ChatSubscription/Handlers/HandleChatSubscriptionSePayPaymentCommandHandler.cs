@@ -60,9 +60,16 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
 
         if (!payment.CanBePaid(now))
         {
-            payment.MarkExpired(now);
-            await _subscriptionRepository.UpdatePaymentAsync(payment);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            if (payment.MarkExpired(now))
+            {
+                if (payment.VoucherId.HasValue && payment.ReleaseVoucherReservation(now))
+                {
+                    await _subscriptionRepository.ReleaseVoucherReservationAsync(payment.VoucherId.Value, now);
+                }
+
+                await _subscriptionRepository.UpdatePaymentAsync(payment);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
+            }
             return true;
         }
 
@@ -73,6 +80,11 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
 
         var plan = await _subscriptionRepository.GetPlanByIdAsync(payment.PlanId);
         if (plan == null || plan.IsFree)
+        {
+            return true;
+        }
+
+        if (!await _subscriptionRepository.TryClaimPaymentAsync(payment.Id, now))
         {
             return true;
         }
@@ -102,12 +114,11 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
 
         if (payment.VoucherId.HasValue)
         {
-            var voucher = await _subscriptionRepository.GetVoucherByIdAsync(payment.VoucherId.Value);
-            if (voucher != null)
-            {
-                voucher.MarkUsed(now);
-                await _subscriptionRepository.UpdateVoucherAsync(voucher);
-            }
+            var hadReservation = payment.ReleaseVoucherReservation(now);
+            await _subscriptionRepository.CompleteVoucherReservationAsync(
+                payment.VoucherId.Value,
+                hadReservation,
+                now);
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);

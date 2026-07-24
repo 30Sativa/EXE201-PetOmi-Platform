@@ -15,16 +15,13 @@ public class ActivateTrialCommandHandler
 
     private readonly IPromotionSettingsService _promotionSettings;
     private readonly IChatSubscriptionRepository _subscriptionRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public ActivateTrialCommandHandler(
         IPromotionSettingsService promotionSettings,
-        IChatSubscriptionRepository subscriptionRepository,
-        IUnitOfWork unitOfWork)
+        IChatSubscriptionRepository subscriptionRepository)
     {
         _promotionSettings = promotionSettings;
         _subscriptionRepository = subscriptionRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<ActivateTrialResponse> Handle(
@@ -62,8 +59,10 @@ public class ActivateTrialCommandHandler
             startsAtUtc: now,
             trialDays: promo.TrialDays);
 
-        await _subscriptionRepository.AddSubscriptionAsync(trial);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (!await _subscriptionRepository.TryAddTrialAsync(trial, cancellationToken))
+        {
+            throw new ConflictException("Ban dang co mot yeu cau Premium dang duoc xu ly. Vui long tai lai trang.");
+        }
 
         return new ActivateTrialResponse
         {
@@ -72,4 +71,5 @@ public class ActivateTrialCommandHandler
             TrialDays = promo.TrialDays,
         };
     }
+
 }

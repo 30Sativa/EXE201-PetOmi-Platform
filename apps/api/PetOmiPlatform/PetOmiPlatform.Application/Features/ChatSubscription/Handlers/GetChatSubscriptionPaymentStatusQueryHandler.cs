@@ -35,9 +35,16 @@ public class GetChatSubscriptionPaymentStatusQueryHandler
             throw new ForbiddenException("Khong co quyen xem thanh toan subscription nay.");
 
         var now = DateTime.UtcNow;
-        payment.MarkExpired(now);
-        await _subscriptionRepository.UpdatePaymentAsync(payment);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (payment.MarkExpired(now))
+        {
+            if (payment.VoucherId.HasValue && payment.ReleaseVoucherReservation(now))
+            {
+                await _subscriptionRepository.ReleaseVoucherReservationAsync(payment.VoucherId.Value, now);
+            }
+
+            await _subscriptionRepository.UpdatePaymentAsync(payment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         var plan = await _subscriptionRepository.GetPlanByIdAsync(payment.PlanId)
             ?? throw new NotFoundException("Khong tim thay goi chat AI.");

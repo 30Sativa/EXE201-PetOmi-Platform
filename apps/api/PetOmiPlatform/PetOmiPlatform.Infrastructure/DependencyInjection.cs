@@ -226,6 +226,7 @@ namespace PetOmiPlatform.Infrastructure
             services.AddScoped<IConversationRepository, ConversationRepository>();
             services.AddScoped<IChatMessageRepository, ChatMessageRepository>();
             services.AddScoped<IChatSubscriptionRepository, ChatSubscriptionRepository>();
+            services.AddHostedService<BackgroundServices.ChatSubscriptionPaymentExpiryService>();
 
             // Pet AI internal endpoints (for Python AI Service)
             services.AddScoped<IPetAiRepository, PetAiRepository>();

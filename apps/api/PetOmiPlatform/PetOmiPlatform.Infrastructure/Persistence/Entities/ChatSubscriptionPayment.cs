@@ -24,6 +24,8 @@ public class ChatSubscriptionPayment
     public string BankCode { get; set; } = null!;
     public DateTime? PaidAt { get; set; }
     public DateTime ExpiresAt { get; set; }
+    public bool IsOpen { get; set; }
+    public bool HasVoucherReservation { get; set; }
     public string? RawPayload { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

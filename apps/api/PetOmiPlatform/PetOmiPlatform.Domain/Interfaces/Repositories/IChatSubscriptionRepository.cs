@@ -17,8 +17,12 @@ public interface IChatSubscriptionRepository
     Task<List<OwnerChatSubscriptionItem>> GetOwnerPetSubscriptionsAsync(Guid ownerUserId, DateTime utcNow);
     Task<ChatSubscriptionPaymentDomain?> GetPaymentByIdAsync(Guid paymentId);
     Task<ChatSubscriptionPaymentDomain?> GetPaymentByReferenceAsync(string paymentReference);
+    Task<ChatSubscriptionPaymentDomain?> GetOpenPaymentByOwnerAsync(Guid ownerUserId, DateTime utcNow);
     Task<bool> AnyPaymentReferenceAsync(string paymentReference);
     Task<bool> AnyProviderTransactionAsync(PaymentProvider provider, string providerTransactionId);
+    Task<bool> TryClaimPaymentAsync(Guid paymentId, DateTime utcNow);
+    Task<int> ExpirePendingPaymentsForOwnerAsync(Guid ownerUserId, DateTime utcNow);
+    Task<int> ExpirePendingPaymentsAsync(DateTime utcNow);
     Task<ChatUsageStats> GetUserMessageUsageAsync(Guid ownerUserId, Guid? petId, DateTime fromUtc, DateTime toUtc);
     // Lay danh sach UserID da chat trong khoang thoi gian (ung vien xet "bo do nang cap").
     Task<List<Guid>> GetUserIdsWithMessagesInRangeAsync(DateTime fromUtc, DateTime toUtc);
@@ -33,9 +37,14 @@ public interface IChatSubscriptionRepository
     Task<ChatSubscriptionVoucherDomain?> GetVoucherByCodeAsync(string code);
     Task<bool> AnyVoucherCodeAsync(string code, Guid? exceptVoucherId = null);
     Task<bool> HasPaymentsForVoucherAsync(Guid voucherId);
+    Task<bool> TryReserveVoucherAsync(Guid voucherId, DateTime utcNow);
+    Task CompleteVoucherReservationAsync(Guid voucherId, bool hadReservation, DateTime utcNow);
+    Task ReleaseVoucherReservationAsync(Guid voucherId, DateTime utcNow);
     Task AddSubscriptionAsync(ChatSubscriptionDomain subscription);
+    Task<bool> TryAddTrialAsync(ChatSubscriptionDomain subscription, CancellationToken cancellationToken);
     Task UpdateSubscriptionAsync(ChatSubscriptionDomain subscription);
     Task AddPaymentAsync(ChatSubscriptionPaymentDomain payment);
+    Task<bool> TryAddOpenPaymentAsync(ChatSubscriptionPaymentDomain payment, CancellationToken cancellationToken);
     Task UpdatePaymentAsync(ChatSubscriptionPaymentDomain payment);
     Task AddVoucherAsync(ChatSubscriptionVoucherDomain voucher);
     Task UpdateVoucherAsync(ChatSubscriptionVoucherDomain voucher);

@@ -197,8 +197,14 @@ public class ChatSubscriptionVoucherDomain : BaseEntity
             throw new DomainException("Gia tri don toi thieu khong duoc am.");
         if (usageLimit.HasValue && usageLimit.Value <= 0)
             throw new DomainException("Gioi han luot dung phai lon hon 0.");
+        if (usageLimit.HasValue && usageLimit.Value < UsedCount)
+            throw new DomainException("Gioi han luot dung khong the thap hon luot da dung.");
         if (startsAt.HasValue && expiresAt.HasValue && expiresAt.Value <= startsAt.Value)
             throw new DomainException("Ngay het han voucher phai sau ngay bat dau.");
+        if (startsAt.HasValue && startsAt.Value < utcNow && !HasSameInstant(StartsAt, startsAt))
+            throw new DomainException("Ngay bat dau voucher khong duoc nam trong qua khu.");
+        if (expiresAt.HasValue && expiresAt.Value < utcNow && !HasSameInstant(ExpiresAt, expiresAt))
+            throw new DomainException("Ngay het han voucher khong duoc nam trong qua khu.");
 
         Code = normalizedCode;
         Name = name.Trim();
@@ -217,5 +223,11 @@ public class ChatSubscriptionVoucherDomain : BaseEntity
     private static string NormalizeCode(string code)
     {
         return (code ?? string.Empty).Trim().Replace(" ", string.Empty).ToUpperInvariant();
+    }
+
+    private static bool HasSameInstant(DateTime? existingValue, DateTime? submittedValue)
+    {
+        return existingValue.HasValue && submittedValue.HasValue &&
+            existingValue.Value.ToUniversalTime() == submittedValue.Value.ToUniversalTime();
     }
 }

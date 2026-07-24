@@ -4,9 +4,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
 import {
+  AlertTriangle,
   Bot,
   Check,
   CheckCircle2,
+  Clock,
   CreditCard,
   Crown,
   Database,
@@ -61,6 +63,28 @@ const formatDateTime = (value?: string | null) => {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date)
+}
+
+const getExpiryTime = (value?: string | null) => {
+  if (!value) return null
+
+  const time = new Date(value).getTime()
+  return Number.isNaN(time) ? null : time
+}
+
+const formatExpiryCountdown = (milliseconds: number) => {
+  if (milliseconds <= 0) return "Đã hết hạn"
+
+  const totalSeconds = Math.ceil(milliseconds / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours > 0) {
+    return `${hours} giờ ${minutes.toString().padStart(2, "0")} phút`
+  }
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
 }
 
 export default function OwnerAiPlanPage() {
@@ -610,6 +634,19 @@ function PaymentModal({
   onClose: () => void
 }) {
   const isPaid = payment.status.toLowerCase() === "paid"
+  const [now, setNow] = useState(() => Date.now())
+  const expiresAtTime = getExpiryTime(payment.expiresAt)
+  const remainingMs = expiresAtTime ? expiresAtTime - now : 0
+  const isExpired = remainingMs <= 0
+
+  useEffect(() => {
+    if (isPaid) return undefined
+
+    setNow(Date.now())
+    const timerId = window.setInterval(() => setNow(Date.now()), 1000)
+
+    return () => window.clearInterval(timerId)
+  }, [isPaid, payment.paymentId])
 
   const handleBackdrop = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) onClose()
@@ -672,7 +709,29 @@ function PaymentModal({
               <div className="grid gap-2 rounded-2xl bg-po-surface-muted/70 p-3 text-sm">
                 <DetailRow label="Số tiền" value={formatCurrency(payment.amount)} strong />
                 <DetailRow label="Nội dung CK" value={payment.paymentReference} mono />
-                <DetailRow label="Hết hạn QR" value={formatDateTime(payment.expiresAt)} />
+              </div>
+              <div
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border px-4 py-3",
+                  isExpired
+                    ? "border-po-danger/25 bg-po-danger-soft text-po-danger"
+                    : "border-po-warning/30 bg-po-warning-soft text-po-warning",
+                )}
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/75">
+                  {isExpired ? <AlertTriangle className="size-5" /> : <Clock className="size-5" />}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em]">
+                    {isExpired ? "QR đã hết hạn" : "QR còn hiệu lực"}
+                  </p>
+                  <p className="text-xl font-extrabold leading-tight">
+                    {formatExpiryCountdown(remainingMs)}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-po-text-muted">
+                    Mốc hết hạn: {formatDateTime(payment.expiresAt)}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"

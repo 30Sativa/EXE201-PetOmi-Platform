@@ -12,16 +12,13 @@ public class GetChatSubscriptionPaymentStatusQueryHandler
 {
     private readonly IChatSubscriptionRepository _subscriptionRepository;
     private readonly IPetRepository _petRepository;
-    private readonly IUnitOfWork _unitOfWork;
 
     public GetChatSubscriptionPaymentStatusQueryHandler(
         IChatSubscriptionRepository subscriptionRepository,
-        IPetRepository petRepository,
-        IUnitOfWork unitOfWork)
+        IPetRepository petRepository)
     {
         _subscriptionRepository = subscriptionRepository;
         _petRepository = petRepository;
-        _unitOfWork = unitOfWork;
     }
 
     public async Task<ChatSubscriptionPaymentResponse> Handle(
@@ -35,15 +32,10 @@ public class GetChatSubscriptionPaymentStatusQueryHandler
             throw new ForbiddenException("Khong co quyen xem thanh toan subscription nay.");
 
         var now = DateTime.UtcNow;
-        if (payment.MarkExpired(now))
+        if (await _subscriptionRepository.TryExpirePaymentAsync(payment.Id, now))
         {
-            if (payment.VoucherId.HasValue && payment.ReleaseVoucherReservation(now))
-            {
-                await _subscriptionRepository.ReleaseVoucherReservationAsync(payment.VoucherId.Value, now);
-            }
-
-            await _subscriptionRepository.UpdatePaymentAsync(payment);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            payment.MarkExpired(now);
+            payment.ReleaseVoucherReservation(now);
         }
 
         var plan = await _subscriptionRepository.GetPlanByIdAsync(payment.PlanId)

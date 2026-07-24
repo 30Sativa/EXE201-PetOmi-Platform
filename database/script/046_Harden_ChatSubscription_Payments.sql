@@ -1,12 +1,13 @@
 -- Migration 046: Protect AI Premium QR payments and voucher capacity.
+DECLARE @ShouldBackfillOpenPayments BIT = 0;
 
 IF COL_LENGTH('dbo.ChatSubscriptionPayments', 'IsOpen') IS NULL
 BEGIN
     ALTER TABLE dbo.ChatSubscriptionPayments
         ADD IsOpen BIT NOT NULL
             CONSTRAINT DF_ChatSubscriptionPayments_IsOpen DEFAULT 0;
+    SET @ShouldBackfillOpenPayments = 1;
 END;
-GO
 
 IF COL_LENGTH('dbo.ChatSubscriptionPayments', 'HasVoucherReservation') IS NULL
 BEGIN
@@ -14,7 +15,6 @@ BEGIN
         ADD HasVoucherReservation BIT NOT NULL
             CONSTRAINT DF_ChatSubscriptionPayments_HasVoucherReservation DEFAULT 0;
 END;
-GO
 
 IF COL_LENGTH('dbo.ChatSubscriptionVouchers', 'ReservedCount') IS NULL
 BEGIN
@@ -22,38 +22,38 @@ BEGIN
         ADD ReservedCount INT NOT NULL
             CONSTRAINT DF_ChatSubscriptionVouchers_ReservedCount DEFAULT 0;
 END;
-GO
 
--- Existing rows were created before voucher reservation existed. Keep historical
--- payments unchanged and make only the newest still-valid pending QR usable.
-UPDATE dbo.ChatSubscriptionPayments
-SET IsOpen = CASE
-        WHEN Status = 'Pending' AND ExpiresAt > GETUTCDATE() THEN 1
-        ELSE 0
-    END,
-    HasVoucherReservation = 0
-WHERE IsOpen = 0 OR HasVoucherReservation = 1;
-GO
+IF @ShouldBackfillOpenPayments = 1
+BEGIN
+    -- Existing rows were created before voucher reservation existed. Keep historical
+    -- payments unchanged and make only the newest still-valid pending QR usable.
+    UPDATE dbo.ChatSubscriptionPayments
+    SET IsOpen = CASE
+            WHEN Status = 'Pending' AND ExpiresAt > GETUTCDATE() THEN 1
+            ELSE 0
+        END,
+        HasVoucherReservation = 0;
 
-;WITH RankedOpenPayments AS
-(
-    SELECT PaymentID,
-           ROW_NUMBER() OVER
-           (
-               PARTITION BY OwnerUserID
-               ORDER BY CreatedAt DESC, PaymentID DESC
-           ) AS RowNumber
-    FROM dbo.ChatSubscriptionPayments
-    WHERE IsOpen = 1
-)
-UPDATE payment
-SET Status = 'Cancelled',
-    IsOpen = 0,
-    HasVoucherReservation = 0,
-    UpdatedAt = GETUTCDATE()
-FROM dbo.ChatSubscriptionPayments payment
-INNER JOIN RankedOpenPayments ranked ON ranked.PaymentID = payment.PaymentID
-WHERE ranked.RowNumber > 1;
+    ;WITH RankedOpenPayments AS
+    (
+        SELECT PaymentID,
+               ROW_NUMBER() OVER
+               (
+                   PARTITION BY OwnerUserID
+                   ORDER BY CreatedAt DESC, PaymentID DESC
+               ) AS RowNumber
+        FROM dbo.ChatSubscriptionPayments
+        WHERE IsOpen = 1
+    )
+    UPDATE payment
+    SET Status = 'Cancelled',
+        IsOpen = 0,
+        HasVoucherReservation = 0,
+        UpdatedAt = GETUTCDATE()
+    FROM dbo.ChatSubscriptionPayments payment
+    INNER JOIN RankedOpenPayments ranked ON ranked.PaymentID = payment.PaymentID
+    WHERE ranked.RowNumber > 1;
+END;
 GO
 
 IF NOT EXISTS

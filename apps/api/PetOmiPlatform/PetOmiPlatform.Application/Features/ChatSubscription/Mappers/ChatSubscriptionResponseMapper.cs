@@ -130,6 +130,7 @@ public static class ChatSubscriptionResponseMapper
             MinOrderAmount = voucher.MinOrderAmount,
             UsageLimit = voucher.UsageLimit,
             UsedCount = voucher.UsedCount,
+            ReservedCount = voucher.ReservedCount,
             StartsAt = voucher.StartsAt,
             ExpiresAt = voucher.ExpiresAt,
             IsActive = voucher.IsActive,

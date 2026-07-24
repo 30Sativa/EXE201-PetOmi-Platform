@@ -60,15 +60,10 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
 
         if (!payment.CanBePaid(now))
         {
-            if (payment.MarkExpired(now))
+            if (await _subscriptionRepository.TryExpirePaymentAsync(payment.Id, now))
             {
-                if (payment.VoucherId.HasValue && payment.ReleaseVoucherReservation(now))
-                {
-                    await _subscriptionRepository.ReleaseVoucherReservationAsync(payment.VoucherId.Value, now);
-                }
-
-                await _subscriptionRepository.UpdatePaymentAsync(payment);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
+                payment.MarkExpired(now);
+                payment.ReleaseVoucherReservation(now);
             }
             return true;
         }

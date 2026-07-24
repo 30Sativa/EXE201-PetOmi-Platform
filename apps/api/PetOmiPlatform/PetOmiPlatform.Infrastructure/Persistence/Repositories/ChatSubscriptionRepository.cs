@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Data.SqlClient;
 using PetOmiPlatform.Domain.Common.Enums;
 using PetOmiPlatform.Domain.Entities;
@@ -213,6 +214,64 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             """);
 
         return affectedRows == 1;
+    }
+
+    public async Task<bool> TryExpirePaymentAsync(Guid paymentId, DateTime utcNow)
+    {
+        var connection = _context.Database.GetDbConnection();
+        var shouldCloseConnection = connection.State == System.Data.ConnectionState.Closed;
+
+        if (shouldCloseConnection)
+            await _context.Database.OpenConnectionAsync();
+
+        try
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = _context.Database.CurrentTransaction?.GetDbTransaction();
+            command.CommandText = """
+                DECLARE @ExpiredPayment TABLE
+                (
+                    PaymentID UNIQUEIDENTIFIER NOT NULL,
+                    VoucherID UNIQUEIDENTIFIER NULL
+                );
+
+                UPDATE dbo.ChatSubscriptionPayments
+                SET Status = @expiredStatus,
+                    IsOpen = 0,
+                    HasVoucherReservation = 0,
+                    UpdatedAt = @utcNow
+                OUTPUT INSERTED.PaymentID,
+                    CASE
+                        WHEN DELETED.HasVoucherReservation = CAST(1 AS bit) THEN DELETED.VoucherID
+                        ELSE NULL
+                    END
+                INTO @ExpiredPayment (PaymentID, VoucherID)
+                WHERE PaymentID = @paymentId
+                  AND Status = @pendingStatus
+                  AND IsOpen = 1
+                  AND ExpiresAt <= @utcNow;
+
+                UPDATE voucher
+                SET ReservedCount = CASE WHEN voucher.ReservedCount > 0 THEN voucher.ReservedCount - 1 ELSE 0 END,
+                    UpdatedAt = @utcNow
+                FROM dbo.ChatSubscriptionVouchers voucher
+                INNER JOIN @ExpiredPayment expiredPayment ON expiredPayment.VoucherID = voucher.VoucherID;
+
+                SELECT COUNT_BIG(1) FROM @ExpiredPayment;
+                """;
+            command.Parameters.Add(new SqlParameter("@paymentId", paymentId));
+            command.Parameters.Add(new SqlParameter("@utcNow", utcNow));
+            command.Parameters.Add(new SqlParameter("@expiredStatus", ChatSubscriptionPaymentStatus.Expired.ToString()));
+            command.Parameters.Add(new SqlParameter("@pendingStatus", ChatSubscriptionPaymentStatus.Pending.ToString()));
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt64(result) > 0;
+        }
+        finally
+        {
+            if (shouldCloseConnection)
+                await _context.Database.CloseConnectionAsync();
+        }
     }
 
     public Task<int> ExpirePendingPaymentsForOwnerAsync(Guid ownerUserId, DateTime utcNow)
@@ -538,41 +597,26 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
         IQueryable<ChatSubscriptionPayment> query,
         DateTime utcNow)
     {
-        var payments = await query
+        var paymentIds = await query
+            .AsNoTracking()
             .Where(p =>
                 p.Status == ChatSubscriptionPaymentStatus.Pending.ToString() &&
                 p.IsOpen &&
                 p.ExpiresAt <= utcNow)
+            .Select(p => p.PaymentId)
             .ToListAsync();
 
-        if (payments.Count == 0)
+        if (paymentIds.Count == 0)
             return 0;
 
-        var reservationsByVoucher = payments
-            .Where(p => p.HasVoucherReservation && p.VoucherId.HasValue)
-            .GroupBy(p => p.VoucherId!.Value)
-            .ToDictionary(group => group.Key, group => group.Count());
-
-        foreach (var payment in payments)
+        var expiredCount = 0;
+        foreach (var paymentId in paymentIds)
         {
-            payment.Status = ChatSubscriptionPaymentStatus.Expired.ToString();
-            payment.IsOpen = false;
-            payment.HasVoucherReservation = false;
-            payment.UpdatedAt = utcNow;
+            if (await TryExpirePaymentAsync(paymentId, utcNow))
+                expiredCount++;
         }
 
-        foreach (var (voucherId, releaseCount) in reservationsByVoucher)
-        {
-            var voucher = await _context.ChatSubscriptionVouchers
-                .FirstOrDefaultAsync(v => v.VoucherId == voucherId);
-            if (voucher == null)
-                continue;
-
-            voucher.ReservedCount = Math.Max(0, voucher.ReservedCount - releaseCount);
-            voucher.UpdatedAt = utcNow;
-        }
-
-        return payments.Count;
+        return expiredCount;
     }
 
     private static bool IsUniqueConstraintViolation(DbUpdateException exception)

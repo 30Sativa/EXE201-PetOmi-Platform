@@ -15,6 +15,7 @@ public class ChatSubscriptionVoucherDomain : BaseEntity
     public decimal MinOrderAmount { get; private set; }
     public int? UsageLimit { get; private set; }
     public int UsedCount { get; private set; }
+    public int ReservedCount { get; private set; }
     public DateTime? StartsAt { get; private set; }
     public DateTime? ExpiresAt { get; private set; }
     public bool IsActive { get; private set; }
@@ -76,6 +77,7 @@ public class ChatSubscriptionVoucherDomain : BaseEntity
         decimal minOrderAmount,
         int? usageLimit,
         int usedCount,
+        int reservedCount,
         DateTime? startsAt,
         DateTime? expiresAt,
         bool isActive,
@@ -95,6 +97,7 @@ public class ChatSubscriptionVoucherDomain : BaseEntity
             MinOrderAmount = minOrderAmount,
             UsageLimit = usageLimit,
             UsedCount = usedCount,
+            ReservedCount = reservedCount,
             StartsAt = startsAt,
             ExpiresAt = expiresAt,
             IsActive = isActive,
@@ -197,8 +200,8 @@ public class ChatSubscriptionVoucherDomain : BaseEntity
             throw new DomainException("Gia tri don toi thieu khong duoc am.");
         if (usageLimit.HasValue && usageLimit.Value <= 0)
             throw new DomainException("Gioi han luot dung phai lon hon 0.");
-        if (usageLimit.HasValue && usageLimit.Value < UsedCount)
-            throw new DomainException("Gioi han luot dung khong the thap hon luot da dung.");
+        if (usageLimit.HasValue && usageLimit.Value < UsedCount + ReservedCount)
+            throw new DomainException("Gioi han luot dung khong the thap hon luot da dung va dang giu cho.");
         if (startsAt.HasValue && expiresAt.HasValue && expiresAt.Value <= startsAt.Value)
             throw new DomainException("Ngay het han voucher phai sau ngay bat dau.");
         if (startsAt.HasValue && startsAt.Value < utcNow && !HasSameInstant(StartsAt, startsAt))

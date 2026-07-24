@@ -61,6 +61,7 @@ export type ChatSubscriptionStatusResponse = {
 export type CreateChatSubscriptionPaymentRequest = {
   planCode: string
   petId?: string | null
+  voucherCode?: string | null
 }
 
 export type ChatSubscriptionPaymentResponse = {
@@ -73,6 +74,9 @@ export type ChatSubscriptionPaymentResponse = {
   amount: number
   originalAmount?: number
   discountPercent?: number
+  discountAmount?: number
+  voucherCode?: string | null
+  discountLabel?: string | null
   currency: string
   provider: string
   paymentReference: string
@@ -112,6 +116,9 @@ export type AdminChatSubscriptionPaymentItemResponse = {
   planName: string
   status: string
   amount: number
+  originalAmount?: number
+  discountAmount?: number
+  voucherCode?: string | null
   currency: string
   provider: string
   paymentReference: string
@@ -125,4 +132,27 @@ export type AdminChatSubscriptionsResponse = {
   plans: ChatSubscriptionPlanResponse[]
   subscriptions: AdminChatSubscriptionItemResponse[]
   payments: AdminChatSubscriptionPaymentItemResponse[]
+  vouchers: ChatSubscriptionVoucherResponse[]
+}
+
+export type ChatSubscriptionVoucherRequest = {
+  code: string
+  name: string
+  description?: string | null
+  discountType: "Percent" | "FixedAmount"
+  discountValue: number
+  maxDiscountAmount?: number | null
+  minOrderAmount: number
+  usageLimit?: number | null
+  startsAt?: string | null
+  expiresAt?: string | null
+  isActive: boolean
+}
+
+export type ChatSubscriptionVoucherResponse = ChatSubscriptionVoucherRequest & {
+  voucherId: string
+  usedCount: number
+  createdByAdminId?: string | null
+  createdAt: string
+  updatedAt?: string | null
 }

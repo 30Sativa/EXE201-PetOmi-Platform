@@ -115,6 +115,10 @@ public static class ChatSubscriptionMapper
             ownerUserId: entity.OwnerUserId,
             petId: entity.PetId,
             status: status,
+            originalAmount: entity.OriginalAmount > 0 ? entity.OriginalAmount : entity.Amount + entity.DiscountAmount,
+            discountAmount: entity.DiscountAmount,
+            voucherId: entity.VoucherId,
+            voucherCode: entity.VoucherCode,
             amount: entity.Amount,
             currency: entity.Currency,
             provider: provider,
@@ -140,6 +144,10 @@ public static class ChatSubscriptionMapper
             OwnerUserId = domain.OwnerUserId,
             PetId = domain.PetId,
             Status = domain.Status.ToString(),
+            OriginalAmount = domain.OriginalAmount,
+            DiscountAmount = domain.DiscountAmount,
+            VoucherId = domain.VoucherId,
+            VoucherCode = domain.VoucherCode,
             Amount = domain.Amount,
             Currency = domain.Currency,
             Provider = domain.Provider.ToString(),
@@ -151,6 +159,54 @@ public static class ChatSubscriptionMapper
             PaidAt = domain.PaidAt,
             ExpiresAt = domain.ExpiresAt,
             RawPayload = domain.RawPayload,
+            CreatedAt = domain.CreatedAt,
+            UpdatedAt = domain.UpdatedAt
+        };
+    }
+
+    public static ChatSubscriptionVoucherDomain ToDomain(this ChatSubscriptionVoucher entity)
+    {
+        var discountType = Enum.TryParse<ChatSubscriptionVoucherDiscountType>(entity.DiscountType, true, out var parsedType)
+            ? parsedType
+            : ChatSubscriptionVoucherDiscountType.Percent;
+
+        return ChatSubscriptionVoucherDomain.Reconstitute(
+            id: entity.VoucherId,
+            code: entity.Code,
+            name: entity.Name,
+            description: entity.Description,
+            discountType: discountType,
+            discountValue: entity.DiscountValue,
+            maxDiscountAmount: entity.MaxDiscountAmount,
+            minOrderAmount: entity.MinOrderAmount,
+            usageLimit: entity.UsageLimit,
+            usedCount: entity.UsedCount,
+            startsAt: entity.StartsAt,
+            expiresAt: entity.ExpiresAt,
+            isActive: entity.IsActive,
+            createdByAdminId: entity.CreatedByAdminId,
+            createdAt: entity.CreatedAt,
+            updatedAt: entity.UpdatedAt);
+    }
+
+    public static ChatSubscriptionVoucher ToEntity(this ChatSubscriptionVoucherDomain domain)
+    {
+        return new ChatSubscriptionVoucher
+        {
+            VoucherId = domain.Id,
+            Code = domain.Code,
+            Name = domain.Name,
+            Description = domain.Description,
+            DiscountType = domain.DiscountType.ToString(),
+            DiscountValue = domain.DiscountValue,
+            MaxDiscountAmount = domain.MaxDiscountAmount,
+            MinOrderAmount = domain.MinOrderAmount,
+            UsageLimit = domain.UsageLimit,
+            UsedCount = domain.UsedCount,
+            StartsAt = domain.StartsAt,
+            ExpiresAt = domain.ExpiresAt,
+            IsActive = domain.IsActive,
+            CreatedByAdminId = domain.CreatedByAdminId,
             CreatedAt = domain.CreatedAt,
             UpdatedAt = domain.UpdatedAt
         };

@@ -8,6 +8,7 @@ using PetOmiPlatform.Application.Features.Admin.Commands;
 using PetOmiPlatform.Application.Features.Admin.DTOs.Request;
 using PetOmiPlatform.Application.Features.Admin.DTOs.Response;
 using PetOmiPlatform.Application.Features.Admin.Queries;
+using PetOmiPlatform.Application.Features.ChatSubscription.Commands;
 using PetOmiPlatform.Application.Features.ChatSubscription.DTOs;
 using PetOmiPlatform.Application.Features.ChatSubscription.Queries;
 using System.Security.Claims;
@@ -52,6 +53,50 @@ public class AdminController : BaseController
     {
         var result = await Mediator.Send(new GetAdminChatSubscriptionsQuery(take));
         return Ok(BaseResponse<AdminChatSubscriptionsResponse>.Ok(result));
+    }
+
+    /// <summary>
+    /// Danh sach voucher giam gia cho goi chat AI Premium.
+    /// </summary>
+    [HttpGet("chat-subscriptions/vouchers")]
+    public async Task<IActionResult> GetChatSubscriptionVouchers([FromQuery] int take = 100)
+    {
+        var result = await Mediator.Send(new GetChatSubscriptionVouchersQuery(take));
+        return Ok(BaseResponse<List<ChatSubscriptionVoucherResponse>>.Ok(result));
+    }
+
+    /// <summary>
+    /// Tao voucher giam gia cho goi chat AI Premium.
+    /// </summary>
+    [HttpPost("chat-subscriptions/vouchers")]
+    public async Task<IActionResult> CreateChatSubscriptionVoucher([FromBody] ChatSubscriptionVoucherRequest request)
+    {
+        var result = await Mediator.Send(new CreateChatSubscriptionVoucherCommand(CurrentUserId, request));
+        return Ok(BaseResponse<ChatSubscriptionVoucherResponse>.Ok(result, "Da tao voucher chat AI."));
+    }
+
+    /// <summary>
+    /// Cap nhat voucher giam gia cho goi chat AI Premium.
+    /// </summary>
+    [HttpPut("chat-subscriptions/vouchers/{voucherId:guid}")]
+    public async Task<IActionResult> UpdateChatSubscriptionVoucher(
+        Guid voucherId,
+        [FromBody] ChatSubscriptionVoucherRequest request)
+    {
+        var result = await Mediator.Send(new UpdateChatSubscriptionVoucherCommand(voucherId, request));
+        return Ok(BaseResponse<ChatSubscriptionVoucherResponse>.Ok(result, "Da cap nhat voucher chat AI."));
+    }
+
+    /// <summary>
+    /// Bat/tat voucher giam gia cho goi chat AI Premium.
+    /// </summary>
+    [HttpPost("chat-subscriptions/vouchers/{voucherId:guid}/toggle")]
+    public async Task<IActionResult> ToggleChatSubscriptionVoucher(
+        Guid voucherId,
+        [FromBody] ToggleChatSubscriptionVoucherRequest request)
+    {
+        var result = await Mediator.Send(new ToggleChatSubscriptionVoucherCommand(voucherId, request.IsActive));
+        return Ok(BaseResponse<ChatSubscriptionVoucherResponse>.Ok(result, request.IsActive ? "Da bat voucher." : "Da tat voucher."));
     }
 
     /// <summary>

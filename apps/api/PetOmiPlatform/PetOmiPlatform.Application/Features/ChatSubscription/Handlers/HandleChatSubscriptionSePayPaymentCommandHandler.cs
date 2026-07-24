@@ -99,6 +99,17 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
 
         payment.MarkPaid(subscription.Id, providerTransactionId, now, request.RawPayload);
         await _subscriptionRepository.UpdatePaymentAsync(payment);
+
+        if (payment.VoucherId.HasValue)
+        {
+            var voucher = await _subscriptionRepository.GetVoucherByIdAsync(payment.VoucherId.Value);
+            if (voucher != null)
+            {
+                voucher.MarkUsed(now);
+                await _subscriptionRepository.UpdateVoucherAsync(voucher);
+            }
+        }
+
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return true;

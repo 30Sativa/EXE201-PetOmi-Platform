@@ -290,6 +290,9 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
                 PlanName = p.Plan.Name,
                 Status = p.Status,
                 Amount = p.Amount,
+                OriginalAmount = p.OriginalAmount > 0 ? p.OriginalAmount : p.Amount + p.DiscountAmount,
+                DiscountAmount = p.DiscountAmount,
+                VoucherCode = p.VoucherCode,
                 Currency = p.Currency,
                 Provider = p.Provider,
                 PaymentReference = p.PaymentReference,
@@ -300,6 +303,51 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             })
             .ToListAsync();
     }
+
+    public async Task<List<ChatSubscriptionVoucherDomain>> GetAdminVouchersAsync(int take)
+    {
+        take = Math.Clamp(take, 1, 200);
+
+        var entities = await _context.ChatSubscriptionVouchers
+            .AsNoTracking()
+            .OrderByDescending(v => v.CreatedAt)
+            .Take(take)
+            .ToListAsync();
+
+        return entities.Select(v => v.ToDomain()).ToList();
+    }
+
+    public async Task<ChatSubscriptionVoucherDomain?> GetVoucherByIdAsync(Guid voucherId)
+    {
+        var entity = await _context.ChatSubscriptionVouchers
+            .FirstOrDefaultAsync(v => v.VoucherId == voucherId);
+
+        return entity?.ToDomain();
+    }
+
+    public async Task<ChatSubscriptionVoucherDomain?> GetVoucherByCodeAsync(string code)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return null;
+
+        var normalized = code.Trim().Replace(" ", string.Empty).ToUpperInvariant();
+        var entity = await _context.ChatSubscriptionVouchers
+            .FirstOrDefaultAsync(v => v.Code == normalized);
+
+        return entity?.ToDomain();
+    }
+
+    public async Task<bool> AnyVoucherCodeAsync(string code, Guid? exceptVoucherId = null)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+            return false;
+
+        var normalized = code.Trim().Replace(" ", string.Empty).ToUpperInvariant();
+        return await _context.ChatSubscriptionVouchers
+            .AsNoTracking()
+            .AnyAsync(v => v.Code == normalized && (!exceptVoucherId.HasValue || v.VoucherId != exceptVoucherId.Value));
+    }
+
     public async Task AddSubscriptionAsync(ChatSubscriptionDomain subscription)
     {
         await _context.ChatSubscriptions.AddAsync(subscription.ToEntity());
@@ -327,6 +375,21 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             return;
 
         var updated = payment.ToEntity();
+        _context.Entry(entity).CurrentValues.SetValues(updated);
+    }
+
+    public async Task AddVoucherAsync(ChatSubscriptionVoucherDomain voucher)
+    {
+        await _context.ChatSubscriptionVouchers.AddAsync(voucher.ToEntity());
+    }
+
+    public async Task UpdateVoucherAsync(ChatSubscriptionVoucherDomain voucher)
+    {
+        var entity = await _context.ChatSubscriptionVouchers.FindAsync(voucher.Id);
+        if (entity == null)
+            return;
+
+        var updated = voucher.ToEntity();
         _context.Entry(entity).CurrentValues.SetValues(updated);
     }
 }

@@ -20,3 +20,9 @@ public enum ChatSubscriptionPaymentStatus
     Expired,
     Cancelled
 }
+
+public enum ChatSubscriptionVoucherDiscountType
+{
+    Percent,
+    FixedAmount
+}

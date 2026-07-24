@@ -24,12 +24,14 @@ public class GetAdminChatSubscriptionsQueryHandler
         var plans = await _subscriptionRepository.GetActivePlansAsync();
         var subscriptions = await _subscriptionRepository.GetAdminSubscriptionsAsync(take);
         var payments = await _subscriptionRepository.GetAdminPaymentsAsync(take);
+        var vouchers = await _subscriptionRepository.GetAdminVouchersAsync(take);
 
         return new AdminChatSubscriptionsResponse
         {
             Plans = plans.Select(p => p.ToResponse()).ToList(),
             Subscriptions = subscriptions.Select(s => s.ToResponse()).ToList(),
-            Payments = payments.Select(p => p.ToResponse()).ToList()
+            Payments = payments.Select(p => p.ToResponse()).ToList(),
+            Vouchers = vouchers.Select(v => v.ToResponse()).ToList()
         };
     }
 }

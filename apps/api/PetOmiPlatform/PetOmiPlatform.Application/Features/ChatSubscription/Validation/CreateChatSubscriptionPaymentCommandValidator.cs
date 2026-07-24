@@ -11,5 +11,8 @@ public class CreateChatSubscriptionPaymentCommandValidator : AbstractValidator<C
         RuleFor(x => x.Request.PlanCode)
             .NotEmpty()
             .MaximumLength(40);
+        RuleFor(x => x.Request.VoucherCode)
+            .MaximumLength(40)
+            .When(x => !string.IsNullOrWhiteSpace(x.Request.VoucherCode));
     }
 }

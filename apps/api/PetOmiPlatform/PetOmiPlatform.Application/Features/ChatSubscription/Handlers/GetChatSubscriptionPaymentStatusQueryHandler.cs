@@ -57,6 +57,10 @@ public class GetChatSubscriptionPaymentStatusQueryHandler
             PlanName = plan.Name,
             Status = payment.Status.ToString(),
             Amount = payment.Amount,
+            OriginalAmount = payment.OriginalAmount,
+            DiscountAmount = payment.DiscountAmount,
+            VoucherCode = payment.VoucherCode,
+            DiscountLabel = BuildDiscountLabel(payment),
             Currency = payment.Currency,
             Provider = payment.Provider.ToString(),
             PaymentReference = payment.PaymentReference,
@@ -67,5 +71,15 @@ public class GetChatSubscriptionPaymentStatusQueryHandler
             PaidAt = payment.PaidAt,
             SubscriptionId = payment.SubscriptionId
         };
+    }
+
+    private static string? BuildDiscountLabel(PetOmiPlatform.Domain.Entities.ChatSubscriptionPaymentDomain payment)
+    {
+        if (payment.DiscountAmount <= 0)
+            return null;
+
+        return string.IsNullOrWhiteSpace(payment.VoucherCode)
+            ? "Ưu đãi"
+            : $"Voucher {payment.VoucherCode}";
     }
 }

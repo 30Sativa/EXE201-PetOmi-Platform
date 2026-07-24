@@ -69,6 +69,7 @@ public class CreateChatSubscriptionPaymentRequest
 {
     public string PlanCode { get; set; } = "premium";
     public Guid? PetId { get; set; }
+    public string? VoucherCode { get; set; }
 }
 
 public class ChatSubscriptionPaymentResponse
@@ -84,6 +85,9 @@ public class ChatSubscriptionPaymentResponse
     public decimal OriginalAmount { get; set; }
     // Phan tram giam da ap dung (0 neu khong co uu dai).
     public int DiscountPercent { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public string? VoucherCode { get; set; }
+    public string? DiscountLabel { get; set; }
     public string Currency { get; set; } = "VND";
     public string Provider { get; set; } = string.Empty;
     public string PaymentReference { get; set; } = string.Empty;
@@ -125,6 +129,9 @@ public class AdminChatSubscriptionPaymentItemResponse
     public string PlanName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public decimal OriginalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public string? VoucherCode { get; set; }
     public string Currency { get; set; } = string.Empty;
     public string Provider { get; set; } = string.Empty;
     public string PaymentReference { get; set; } = string.Empty;
@@ -139,4 +146,45 @@ public class AdminChatSubscriptionsResponse
     public List<ChatSubscriptionPlanResponse> Plans { get; set; } = new();
     public List<AdminChatSubscriptionItemResponse> Subscriptions { get; set; } = new();
     public List<AdminChatSubscriptionPaymentItemResponse> Payments { get; set; } = new();
+    public List<ChatSubscriptionVoucherResponse> Vouchers { get; set; } = new();
+}
+
+public class ChatSubscriptionVoucherRequest
+{
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string DiscountType { get; set; } = "Percent";
+    public decimal DiscountValue { get; set; }
+    public decimal? MaxDiscountAmount { get; set; }
+    public decimal MinOrderAmount { get; set; }
+    public int? UsageLimit { get; set; }
+    public DateTime? StartsAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public bool IsActive { get; set; } = true;
+}
+
+public class ToggleChatSubscriptionVoucherRequest
+{
+    public bool IsActive { get; set; }
+}
+
+public class ChatSubscriptionVoucherResponse
+{
+    public Guid VoucherId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public string DiscountType { get; set; } = string.Empty;
+    public decimal DiscountValue { get; set; }
+    public decimal? MaxDiscountAmount { get; set; }
+    public decimal MinOrderAmount { get; set; }
+    public int? UsageLimit { get; set; }
+    public int UsedCount { get; set; }
+    public DateTime? StartsAt { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public bool IsActive { get; set; }
+    public Guid? CreatedByAdminId { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

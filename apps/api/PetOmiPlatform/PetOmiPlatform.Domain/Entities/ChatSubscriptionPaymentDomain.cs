@@ -11,6 +11,10 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
     public Guid OwnerUserId { get; private set; }
     public Guid? PetId { get; private set; }
     public ChatSubscriptionPaymentStatus Status { get; private set; }
+    public decimal OriginalAmount { get; private set; }
+    public decimal DiscountAmount { get; private set; }
+    public Guid? VoucherId { get; private set; }
+    public string? VoucherCode { get; private set; }
     public decimal Amount { get; private set; }
     public string Currency { get; private set; } = "VND";
     public PaymentProvider Provider { get; private set; }
@@ -31,6 +35,10 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
         Guid planId,
         Guid ownerUserId,
         Guid? petId,
+        decimal originalAmount,
+        decimal discountAmount,
+        Guid? voucherId,
+        string? voucherCode,
         decimal amount,
         string paymentReference,
         string qrCodeUrl,
@@ -44,6 +52,10 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
             throw new DomainException("Owner khong hop le.");
         if (petId.HasValue && petId.Value == Guid.Empty)
             throw new DomainException("Thu cung khong hop le.");
+        if (originalAmount <= 0)
+            throw new DomainException("Gia goc thanh toan phai lon hon 0.");
+        if (discountAmount < 0 || discountAmount >= originalAmount)
+            throw new DomainException("So tien giam gia khong hop le.");
         if (amount <= 0)
             throw new DomainException("So tien thanh toan phai lon hon 0.");
         if (string.IsNullOrWhiteSpace(paymentReference))
@@ -61,6 +73,10 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
             OwnerUserId = ownerUserId,
             PetId = petId,
             Status = ChatSubscriptionPaymentStatus.Pending,
+            OriginalAmount = originalAmount,
+            DiscountAmount = discountAmount,
+            VoucherId = voucherId,
+            VoucherCode = string.IsNullOrWhiteSpace(voucherCode) ? null : voucherCode.Trim().ToUpperInvariant(),
             Amount = amount,
             Currency = "VND",
             Provider = PaymentProvider.SePay,
@@ -80,6 +96,10 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
         Guid ownerUserId,
         Guid? petId,
         ChatSubscriptionPaymentStatus status,
+        decimal originalAmount,
+        decimal discountAmount,
+        Guid? voucherId,
+        string? voucherCode,
         decimal amount,
         string currency,
         PaymentProvider provider,
@@ -102,6 +122,10 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
             OwnerUserId = ownerUserId,
             PetId = petId,
             Status = status,
+            OriginalAmount = originalAmount,
+            DiscountAmount = discountAmount,
+            VoucherId = voucherId,
+            VoucherCode = voucherCode,
             Amount = amount,
             Currency = currency,
             Provider = provider,

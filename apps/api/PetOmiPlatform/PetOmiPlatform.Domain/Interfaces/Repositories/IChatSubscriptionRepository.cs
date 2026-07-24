@@ -28,10 +28,16 @@ public interface IChatSubscriptionRepository
     Task<int> CountPaidPaymentsAsync(Guid ownerUserId);
     Task<List<AdminChatSubscriptionItem>> GetAdminSubscriptionsAsync(int take);
     Task<List<AdminChatSubscriptionPaymentItem>> GetAdminPaymentsAsync(int take);
+    Task<List<ChatSubscriptionVoucherDomain>> GetAdminVouchersAsync(int take);
+    Task<ChatSubscriptionVoucherDomain?> GetVoucherByIdAsync(Guid voucherId);
+    Task<ChatSubscriptionVoucherDomain?> GetVoucherByCodeAsync(string code);
+    Task<bool> AnyVoucherCodeAsync(string code, Guid? exceptVoucherId = null);
     Task AddSubscriptionAsync(ChatSubscriptionDomain subscription);
     Task UpdateSubscriptionAsync(ChatSubscriptionDomain subscription);
     Task AddPaymentAsync(ChatSubscriptionPaymentDomain payment);
     Task UpdatePaymentAsync(ChatSubscriptionPaymentDomain payment);
+    Task AddVoucherAsync(ChatSubscriptionVoucherDomain voucher);
+    Task UpdateVoucherAsync(ChatSubscriptionVoucherDomain voucher);
 }
 
 public class ChatUsageStats
@@ -86,6 +92,9 @@ public class AdminChatSubscriptionPaymentItem
     public string PlanName { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public decimal OriginalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public string? VoucherCode { get; set; }
     public string Currency { get; set; } = string.Empty;
     public string Provider { get; set; } = string.Empty;
     public string PaymentReference { get; set; } = string.Empty;

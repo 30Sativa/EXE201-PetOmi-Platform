@@ -103,6 +103,9 @@ public static class ChatSubscriptionResponseMapper
             PlanName = item.PlanName,
             Status = item.Status,
             Amount = item.Amount,
+            OriginalAmount = item.OriginalAmount,
+            DiscountAmount = item.DiscountAmount,
+            VoucherCode = item.VoucherCode,
             Currency = item.Currency,
             Provider = item.Provider,
             PaymentReference = item.PaymentReference,
@@ -110,6 +113,29 @@ public static class ChatSubscriptionResponseMapper
             PaidAt = item.PaidAt,
             ExpiresAt = item.ExpiresAt,
             CreatedAt = item.CreatedAt
+        };
+    }
+
+    public static ChatSubscriptionVoucherResponse ToResponse(this ChatSubscriptionVoucherDomain voucher)
+    {
+        return new ChatSubscriptionVoucherResponse
+        {
+            VoucherId = voucher.Id,
+            Code = voucher.Code,
+            Name = voucher.Name,
+            Description = voucher.Description,
+            DiscountType = voucher.DiscountType.ToString(),
+            DiscountValue = voucher.DiscountValue,
+            MaxDiscountAmount = voucher.MaxDiscountAmount,
+            MinOrderAmount = voucher.MinOrderAmount,
+            UsageLimit = voucher.UsageLimit,
+            UsedCount = voucher.UsedCount,
+            StartsAt = voucher.StartsAt,
+            ExpiresAt = voucher.ExpiresAt,
+            IsActive = voucher.IsActive,
+            CreatedByAdminId = voucher.CreatedByAdminId,
+            CreatedAt = voucher.CreatedAt,
+            UpdatedAt = voucher.UpdatedAt
         };
     }
 }

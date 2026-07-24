@@ -63,19 +63,38 @@ public class CreateChatSubscriptionPaymentCommandHandler
         var promo = await _promotionSettings.GetAsync(cancellationToken);
         var originalAmount = plan.PriceMonthly;
         var discountPercent = 0;
+        var discountAmount = 0m;
+        ChatSubscriptionVoucherDomain? voucher = null;
 
         if (promo.EarlyBirdEnabled && promo.EarlyBirdDiscountPercent > 0)
         {
             var paidCount = await _subscriptionRepository.CountPaidPaymentsAsync(command.OwnerUserId);
             if (paidCount < promo.EarlyBirdCycles)
             {
-                discountPercent = Math.Min(promo.EarlyBirdDiscountPercent, 100);
+                discountPercent = Math.Min(promo.EarlyBirdDiscountPercent, 90);
+                discountAmount = Math.Round(originalAmount * discountPercent / 100m, 0);
             }
         }
 
-        var finalAmount = discountPercent > 0
-            ? Math.Round(originalAmount * (100 - discountPercent) / 100m, 0)
-            : originalAmount;
+        if (!string.IsNullOrWhiteSpace(command.Request.VoucherCode))
+        {
+            voucher = await _subscriptionRepository.GetVoucherByCodeAsync(command.Request.VoucherCode)
+                ?? throw new NotFoundException("Khong tim thay voucher.");
+
+            if (!voucher.CanApply(originalAmount, DateTime.UtcNow))
+                throw new ConflictException("Voucher khong kha dung hoac da het han.");
+
+            var amountAfterEarlyBird = originalAmount - discountAmount;
+            var voucherDiscount = voucher.CalculateDiscount(amountAfterEarlyBird);
+            if (voucherDiscount <= 0)
+                throw new ConflictException("Voucher khong the ap dung cho goi nay.");
+
+            discountAmount += voucherDiscount;
+        }
+
+        var finalAmount = originalAmount - discountAmount;
+        if (finalAmount <= 0)
+            throw new ConflictException("Voucher khong the giam het phi thanh toan SePay.");
 
         var paymentReference = await GenerateUniquePaymentReferenceAsync();
         var qrCodeUrl = _sePayService.BuildQrImageUrl(
@@ -88,6 +107,10 @@ public class CreateChatSubscriptionPaymentCommandHandler
             planId: plan.Id,
             ownerUserId: command.OwnerUserId,
             petId: pet?.Id,
+            originalAmount: originalAmount,
+            discountAmount: discountAmount,
+            voucherId: voucher?.Id,
+            voucherCode: voucher?.Code,
             amount: finalAmount,
             paymentReference: paymentReference,
             qrCodeUrl: qrCodeUrl,
@@ -109,6 +132,9 @@ public class CreateChatSubscriptionPaymentCommandHandler
             Amount = payment.Amount,
             OriginalAmount = originalAmount,
             DiscountPercent = discountPercent,
+            DiscountAmount = payment.DiscountAmount,
+            VoucherCode = payment.VoucherCode,
+            DiscountLabel = BuildDiscountLabel(discountPercent, payment.VoucherCode),
             Currency = payment.Currency,
             Provider = payment.Provider.ToString(),
             PaymentReference = payment.PaymentReference,
@@ -119,6 +145,17 @@ public class CreateChatSubscriptionPaymentCommandHandler
             PaidAt = payment.PaidAt,
             SubscriptionId = payment.SubscriptionId
         };
+    }
+
+    private static string? BuildDiscountLabel(int earlyBirdDiscountPercent, string? voucherCode)
+    {
+        var labels = new List<string>();
+        if (earlyBirdDiscountPercent > 0)
+            labels.Add($"Early-bird {earlyBirdDiscountPercent}%");
+        if (!string.IsNullOrWhiteSpace(voucherCode))
+            labels.Add($"Voucher {voucherCode}");
+
+        return labels.Count == 0 ? null : string.Join(" + ", labels);
     }
 
     private async Task<string> GenerateUniquePaymentReferenceAsync()

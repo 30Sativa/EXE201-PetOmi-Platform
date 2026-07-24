@@ -91,6 +91,7 @@ export default function OwnerAiPlanPage() {
   const queryClient = useQueryClient()
   const [paymentRequest, setPaymentRequest] =
     useState<ChatSubscriptionPaymentResponse | null>(null)
+  const [voucherCode, setVoucherCode] = useState("")
 
   const { data: pets = [] } = useQuery({
     queryKey: ["owner-pets"],
@@ -169,8 +170,10 @@ export default function OwnerAiPlanPage() {
     : 0
 
   const handleUpgradePremium = () => {
+    const normalizedVoucherCode = voucherCode.trim()
     createPaymentMutation.mutate({
       planCode: "premium",
+      voucherCode: normalizedVoucherCode || undefined,
     })
   }
 
@@ -333,6 +336,24 @@ export default function OwnerAiPlanPage() {
         title="Chọn gói AI"
         subtitle="Gói Free để chat cơ bản. Lên Premium thì có nhiều lượt nhắn hơn và tư vấn kỹ hơn cho tất cả các bé."
       >
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-po-border bg-po-surface-muted/55 p-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
+            <label htmlFor="ai-voucher-code" className="text-xs font-extrabold uppercase tracking-[0.1em] text-po-text-subtle">
+              Mã giảm giá
+            </label>
+            <input
+              id="ai-voucher-code"
+              value={voucherCode}
+              onChange={(event) => setVoucherCode(event.target.value.toUpperCase())}
+              maxLength={40}
+              placeholder="Nhập voucher nếu có"
+              className="mt-1 h-11 w-full rounded-xl border border-po-border bg-white px-3 text-sm font-bold uppercase text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/15"
+            />
+          </div>
+          <p className="text-xs font-semibold leading-5 text-po-text-muted sm:max-w-[260px]">
+            Mã sẽ được kiểm tra khi tạo QR. Nếu hợp lệ, số tiền chuyển khoản sẽ tự giảm.
+          </p>
+        </div>
         <div className="grid gap-4 md:grid-cols-2">
           {(subscriptionStatus?.plans ?? []).map((plan) => (
             <PlanCard
@@ -634,6 +655,7 @@ function PaymentModal({
   onClose: () => void
 }) {
   const isPaid = payment.status.toLowerCase() === "paid"
+  const hasDiscount = (payment.discountAmount ?? 0) > 0
   const [now, setNow] = useState(() => Date.now())
   const expiresAtTime = getExpiryTime(payment.expiresAt)
   const remainingMs = expiresAtTime ? expiresAtTime - now : 0
@@ -707,6 +729,16 @@ function PaymentModal({
                 className="mx-auto aspect-square w-56 rounded-2xl bg-white object-contain p-2 ring-1 ring-po-border"
               />
               <div className="grid gap-2 rounded-2xl bg-po-surface-muted/70 p-3 text-sm">
+                {hasDiscount ? (
+                  <>
+                    <DetailRow label="Giá gốc" value={formatCurrency(payment.originalAmount ?? payment.amount)} />
+                    <DetailRow
+                      label={payment.discountLabel ?? (payment.voucherCode ? `Voucher ${payment.voucherCode}` : "Ưu đãi")}
+                      value={`-${formatCurrency(payment.discountAmount ?? 0)}`}
+                      strong
+                    />
+                  </>
+                ) : null}
                 <DetailRow label="Số tiền" value={formatCurrency(payment.amount)} strong />
                 <DetailRow label="Nội dung CK" value={payment.paymentReference} mono />
               </div>

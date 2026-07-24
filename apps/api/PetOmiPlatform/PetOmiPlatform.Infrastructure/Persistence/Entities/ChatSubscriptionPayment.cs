@@ -10,6 +10,10 @@ public class ChatSubscriptionPayment
     public Guid OwnerUserId { get; set; }
     public Guid? PetId { get; set; }
     public string Status { get; set; } = null!;
+    public decimal OriginalAmount { get; set; }
+    public decimal DiscountAmount { get; set; }
+    public Guid? VoucherId { get; set; }
+    public string? VoucherCode { get; set; }
     public decimal Amount { get; set; }
     public string Currency { get; set; } = null!;
     public string Provider { get; set; } = null!;
@@ -27,5 +31,6 @@ public class ChatSubscriptionPayment
     public virtual ChatSubscription? Subscription { get; set; }
     public virtual ChatSubscriptionPlan Plan { get; set; } = null!;
     public virtual User OwnerUser { get; set; } = null!;
-    public virtual Pet Pet { get; set; } = null!;
+    public virtual Pet? Pet { get; set; }
+    public virtual ChatSubscriptionVoucher? Voucher { get; set; }
 }

@@ -111,6 +111,7 @@ public partial class PetOmniDbContext : DbContext
     public virtual DbSet<ChatSubscriptionPlan> ChatSubscriptionPlans { get; set; }
     public virtual DbSet<ChatSubscription> ChatSubscriptions { get; set; }
     public virtual DbSet<ChatSubscriptionPayment> ChatSubscriptionPayments { get; set; }
+    public virtual DbSet<ChatSubscriptionVoucher> ChatSubscriptionVouchers { get; set; }
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -1553,6 +1554,10 @@ public partial class PetOmniDbContext : DbContext
             entity.Property(e => e.OwnerUserId).HasColumnName("OwnerUserID");
             entity.Property(e => e.PetId).HasColumnName("PetID");
             entity.Property(e => e.Status).HasMaxLength(20);
+            entity.Property(e => e.OriginalAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.DiscountAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.VoucherId).HasColumnName("VoucherID");
+            entity.Property(e => e.VoucherCode).HasMaxLength(40);
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
             entity.Property(e => e.Currency).HasMaxLength(10).HasDefaultValue("VND");
             entity.Property(e => e.Provider).HasMaxLength(20);
@@ -1589,6 +1594,42 @@ public partial class PetOmniDbContext : DbContext
                 .HasForeignKey(d => d.PetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ChatSubscriptionPayments_Pet");
+
+            entity.HasOne(d => d.Voucher).WithMany(p => p.ChatSubscriptionPayments)
+                .HasForeignKey(d => d.VoucherId)
+                .HasConstraintName("FK_ChatSubscriptionPayments_Voucher");
+        });
+
+        modelBuilder.Entity<ChatSubscriptionVoucher>(entity =>
+        {
+            entity.HasKey(e => e.VoucherId).HasName("PK_ChatSubscriptionVouchers");
+
+            entity.HasIndex(e => e.Code, "UX_ChatSubscriptionVouchers_Code").IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.StartsAt, e.ExpiresAt }, "IX_ChatSubscriptionVouchers_Active_Window");
+
+            entity.Property(e => e.VoucherId)
+                .HasDefaultValueSql("(newsequentialid())")
+                .HasColumnName("VoucherID");
+            entity.Property(e => e.Code).HasMaxLength(40);
+            entity.Property(e => e.Name).HasMaxLength(120);
+            entity.Property(e => e.Description).HasMaxLength(300);
+            entity.Property(e => e.DiscountType).HasMaxLength(20);
+            entity.Property(e => e.DiscountValue).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.MaxDiscountAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.MinOrderAmount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.UsedCount).HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.StartsAt).HasColumnType("datetime");
+            entity.Property(e => e.ExpiresAt).HasColumnType("datetime");
+            entity.Property(e => e.CreatedByAdminId).HasColumnName("CreatedByAdminID");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.UpdatedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.CreatedByAdmin).WithMany()
+                .HasForeignKey(d => d.CreatedByAdminId)
+                .HasConstraintName("FK_ChatSubscriptionVouchers_CreatedByAdmin");
         });
 
         modelBuilder.Entity<Conversation>(entity =>

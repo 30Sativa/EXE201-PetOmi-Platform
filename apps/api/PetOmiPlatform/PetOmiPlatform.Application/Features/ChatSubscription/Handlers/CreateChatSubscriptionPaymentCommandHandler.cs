@@ -240,8 +240,10 @@ public class CreateChatSubscriptionPaymentCommandHandler
             QrCodeUrl = payment.QrCodeUrl,
             BankAccountNo = payment.BankAccountNo,
             BankCode = payment.BankCode,
-            ExpiresAt = payment.ExpiresAt,
-            PaidAt = payment.PaidAt,
+            // SQL Server datetime does not preserve DateTimeKind. Always expose
+            // payment timestamps as UTC so browser countdowns parse them correctly.
+            ExpiresAt = ChatSubscriptionUtcDateTime.Normalize(payment.ExpiresAt),
+            PaidAt = ChatSubscriptionUtcDateTime.Normalize(payment.PaidAt),
             SubscriptionId = payment.SubscriptionId
         };
     }

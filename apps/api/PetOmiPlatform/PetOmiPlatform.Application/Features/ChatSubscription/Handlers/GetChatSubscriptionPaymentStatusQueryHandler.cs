@@ -66,8 +66,10 @@ public class GetChatSubscriptionPaymentStatusQueryHandler
             QrCodeUrl = payment.QrCodeUrl,
             BankAccountNo = payment.BankAccountNo,
             BankCode = payment.BankCode,
-            ExpiresAt = payment.ExpiresAt,
-            PaidAt = payment.PaidAt,
+            // Database datetime values are stored in UTC but come back without a kind.
+            // Return an ISO UTC timestamp so clients do not treat it as local time.
+            ExpiresAt = ChatSubscriptionUtcDateTime.Normalize(payment.ExpiresAt),
+            PaidAt = ChatSubscriptionUtcDateTime.Normalize(payment.PaidAt),
             SubscriptionId = payment.SubscriptionId
         };
     }

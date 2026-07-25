@@ -27,32 +27,36 @@ IF @ShouldBackfillOpenPayments = 1
 BEGIN
     -- Existing rows were created before voucher reservation existed. Keep historical
     -- payments unchanged and make only the newest still-valid pending QR usable.
-    UPDATE dbo.ChatSubscriptionPayments
-    SET IsOpen = CASE
-            WHEN Status = 'Pending' AND ExpiresAt > GETUTCDATE() THEN 1
-            ELSE 0
-        END,
-        HasVoucherReservation = 0;
+    -- ALTER TABLE and queries that reference the new columns cannot share a
+    -- compiled batch on SQL Server. Dynamic SQL defers compilation until after
+    -- the columns exist while keeping the migration rerunnable.
+    EXEC sp_executesql N'
+        UPDATE dbo.ChatSubscriptionPayments
+        SET IsOpen = CASE
+                WHEN Status = ''Pending'' AND ExpiresAt > GETUTCDATE() THEN 1
+                ELSE 0
+            END,
+            HasVoucherReservation = 0;
 
-    ;WITH RankedOpenPayments AS
-    (
-        SELECT PaymentID,
-               ROW_NUMBER() OVER
-               (
-                   PARTITION BY OwnerUserID
-                   ORDER BY CreatedAt DESC, PaymentID DESC
-               ) AS RowNumber
-        FROM dbo.ChatSubscriptionPayments
-        WHERE IsOpen = 1
-    )
-    UPDATE payment
-    SET Status = 'Cancelled',
-        IsOpen = 0,
-        HasVoucherReservation = 0,
-        UpdatedAt = GETUTCDATE()
-    FROM dbo.ChatSubscriptionPayments payment
-    INNER JOIN RankedOpenPayments ranked ON ranked.PaymentID = payment.PaymentID
-    WHERE ranked.RowNumber > 1;
+        ;WITH RankedOpenPayments AS
+        (
+            SELECT PaymentID,
+                   ROW_NUMBER() OVER
+                   (
+                       PARTITION BY OwnerUserID
+                       ORDER BY CreatedAt DESC, PaymentID DESC
+                   ) AS RowNumber
+            FROM dbo.ChatSubscriptionPayments
+            WHERE IsOpen = 1
+        )
+        UPDATE payment
+        SET Status = ''Cancelled'',
+            IsOpen = 0,
+            HasVoucherReservation = 0,
+            UpdatedAt = GETUTCDATE()
+        FROM dbo.ChatSubscriptionPayments payment
+        INNER JOIN RankedOpenPayments ranked ON ranked.PaymentID = payment.PaymentID
+        WHERE ranked.RowNumber > 1;';
 END;
 GO
 

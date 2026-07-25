@@ -166,7 +166,7 @@ public class ChatSubscriptionVoucherDomain : BaseEntity
         if (MaxDiscountAmount.HasValue && MaxDiscountAmount.Value > 0)
             discount = Math.Min(discount, MaxDiscountAmount.Value);
 
-        return Math.Min(Math.Max(discount, 0), Math.Max(orderAmount - 1, 0));
+        return Math.Min(Math.Max(discount, 0), orderAmount);
     }
 
     private void ApplyInfo(

@@ -94,6 +94,52 @@ public class ChatSubscriptionPaymentDomain : BaseEntity
         };
     }
 
+    public static ChatSubscriptionPaymentDomain CreateComplimentaryPaid(
+        Guid subscriptionId,
+        Guid planId,
+        Guid ownerUserId,
+        Guid? petId,
+        decimal originalAmount,
+        decimal discountAmount,
+        Guid voucherId,
+        string voucherCode,
+        string paymentReference,
+        DateTime paidAtUtc)
+    {
+        if (subscriptionId == Guid.Empty || planId == Guid.Empty || ownerUserId == Guid.Empty || voucherId == Guid.Empty)
+            throw new DomainException("Thong tin uu dai mien phi khong hop le.");
+        if (originalAmount <= 0 || discountAmount != originalAmount)
+            throw new DomainException("Thanh toan mien phi phai giam dung toan bo gia goi.");
+        if (string.IsNullOrWhiteSpace(voucherCode) || string.IsNullOrWhiteSpace(paymentReference))
+            throw new DomainException("Thong tin voucher mien phi khong hop le.");
+
+        return new ChatSubscriptionPaymentDomain
+        {
+            Id = Guid.NewGuid(),
+            SubscriptionId = subscriptionId,
+            PlanId = planId,
+            OwnerUserId = ownerUserId,
+            PetId = petId,
+            Status = ChatSubscriptionPaymentStatus.Paid,
+            OriginalAmount = originalAmount,
+            DiscountAmount = discountAmount,
+            VoucherId = voucherId,
+            VoucherCode = voucherCode.Trim().ToUpperInvariant(),
+            Amount = 0,
+            Currency = "VND",
+            Provider = PaymentProvider.Manual,
+            PaymentReference = paymentReference.Trim().ToUpperInvariant(),
+            QrCodeUrl = string.Empty,
+            BankAccountNo = string.Empty,
+            BankCode = string.Empty,
+            PaidAt = paidAtUtc,
+            ExpiresAt = paidAtUtc,
+            IsOpen = false,
+            HasVoucherReservation = false,
+            CreatedAt = paidAtUtc
+        };
+    }
+
     public static ChatSubscriptionPaymentDomain Reconstitute(
         Guid id,
         Guid? subscriptionId,

@@ -112,6 +112,11 @@ export default function OwnerAiPlanPage() {
     mutationFn: createChatSubscriptionPaymentApi,
     onSuccess: (payment) => {
       setPaymentRequest(payment)
+      if (payment.status.toLowerCase() === "paid") {
+        toast.success("Da ap dung uu dai va bat Premium cho tat ca thu cung cua ban!")
+        void queryClient.invalidateQueries({ queryKey: ["owner-chat-subscription"] })
+        return
+      }
       toast.success("Đã tạo mã thanh toán. Quét QR để hoàn tất nâng cấp nhé!")
     },
     onError: (mutationError) => {

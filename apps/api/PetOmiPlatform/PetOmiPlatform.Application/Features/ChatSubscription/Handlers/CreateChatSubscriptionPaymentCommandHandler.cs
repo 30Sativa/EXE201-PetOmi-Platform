@@ -87,25 +87,35 @@ public class CreateChatSubscriptionPaymentCommandHandler
             voucher = await _subscriptionRepository.GetVoucherByCodeAsync(command.Request.VoucherCode)
                 ?? throw new NotFoundException("Khong tim thay voucher.");
 
-            var amountAfterEarlyBird = originalAmount - discountAmount;
-            if (!voucher.CanApply(amountAfterEarlyBird, now))
+            if (!voucher.CanApply(originalAmount, now))
                 throw new ConflictException("Voucher khong kha dung hoac da het han.");
 
-            var voucherDiscount = voucher.CalculateDiscount(amountAfterEarlyBird);
+            var voucherDiscount = voucher.CalculateDiscount(originalAmount);
             if (voucherDiscount <= 0)
                 throw new ConflictException("Voucher khong the ap dung cho goi nay.");
 
-            discountAmount += voucherDiscount;
-
-            if (!await _subscriptionRepository.TryReserveVoucherAsync(voucher.Id, now))
-            {
-                throw new ConflictException("Voucher da het luot dung hoac khong con kha dung.");
-            }
+            discountAmount = Math.Min(originalAmount, discountAmount + voucherDiscount);
         }
 
-        var finalAmount = originalAmount - discountAmount;
-        if (finalAmount <= 0)
-            throw new ConflictException("Voucher khong the giam het phi thanh toan SePay.");
+        var finalAmount = Math.Max(0m, originalAmount - discountAmount);
+
+        if (voucher != null && !await _subscriptionRepository.TryReserveVoucherAsync(voucher.Id, now))
+        {
+            throw new ConflictException("Voucher da het luot dung hoac khong con kha dung.");
+        }
+
+        if (finalAmount == 0)
+        {
+            return await CompleteComplimentaryPaymentAsync(
+                plan,
+                pet,
+                voucher!,
+                originalAmount,
+                discountAmount,
+                discountPercent,
+                command.OwnerUserId,
+                now);
+        }
 
         var paymentReference = await GenerateUniquePaymentReferenceAsync();
         var qrCodeUrl = _sePayService.BuildQrImageUrl(
@@ -145,6 +155,50 @@ public class CreateChatSubscriptionPaymentCommandHandler
 
             throw new ConflictException("Khong the tao QR thanh toan. Vui long thu lai.");
         }
+
+        return await BuildResponseAsync(payment, plan, pet, discountPercent);
+    }
+
+    private async Task<ChatSubscriptionPaymentResponse> CompleteComplimentaryPaymentAsync(
+        ChatSubscriptionPlanDomain plan,
+        PetOmiPlatform.Domain.Entities.PetDomain? pet,
+        ChatSubscriptionVoucherDomain voucher,
+        decimal originalAmount,
+        decimal discountAmount,
+        int discountPercent,
+        Guid ownerUserId,
+        DateTime now)
+    {
+        var subscription = await _subscriptionRepository.GetLatestOwnerSubscriptionAsync(ownerUserId);
+        if (subscription != null)
+        {
+            subscription.Renew(plan.Id, now, plan.BillingCycleDays);
+            await _subscriptionRepository.UpdateSubscriptionAsync(subscription);
+        }
+        else
+        {
+            subscription = ChatSubscriptionDomain.CreateOwnerAccount(
+                ownerUserId: ownerUserId,
+                planId: plan.Id,
+                startsAtUtc: now,
+                billingCycleDays: plan.BillingCycleDays);
+            await _subscriptionRepository.AddSubscriptionAsync(subscription);
+        }
+
+        var payment = ChatSubscriptionPaymentDomain.CreateComplimentaryPaid(
+            subscriptionId: subscription.Id,
+            planId: plan.Id,
+            ownerUserId: ownerUserId,
+            petId: pet?.Id,
+            originalAmount: originalAmount,
+            discountAmount: discountAmount,
+            voucherId: voucher.Id,
+            voucherCode: voucher.Code,
+            paymentReference: await GenerateUniquePaymentReferenceAsync(),
+            paidAtUtc: now);
+
+        await _subscriptionRepository.AddPaymentAsync(payment);
+        await _subscriptionRepository.CompleteVoucherReservationAsync(voucher.Id, hadReservation: true, now);
 
         return await BuildResponseAsync(payment, plan, pet, discountPercent);
     }

@@ -68,7 +68,9 @@ public class HandleChatSubscriptionSePayPaymentCommandHandler
             return true;
         }
 
-        if (request.Payload.TransferAmount < payment.Amount)
+        // Each QR reference represents one fixed subscription payment. Do not
+        // activate Premium from a partial or unrelated overpayment.
+        if (request.Payload.TransferAmount != payment.Amount)
         {
             return true;
         }

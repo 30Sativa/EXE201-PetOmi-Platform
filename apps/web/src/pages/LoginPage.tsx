@@ -2,7 +2,7 @@ import { Eye, EyeOff } from "lucide-react"
 import { Link } from "react-router-dom"
 
 import FormStatusMessage from "@/components/ui/FormStatusMessage"
-import { useLoginForm, useGoogleLogin } from "@/hooks"
+import { useLoginForm, useGoogleLogin, useResendVerification } from "@/hooks"
 
 const fieldClass =
   "h-12 w-full rounded-2xl border border-po-border bg-po-surface-muted/55 px-4 text-[15px] text-po-text transition placeholder:text-po-text-subtle focus:border-po-primary focus:bg-white focus:shadow-[var(--po-focus-ring)]"
@@ -15,12 +15,16 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
     isSubmitting,
     status,
     message,
+    email,
     showPassword,
     onTogglePassword,
     onSubmit,
   } = useLoginForm()
 
   const { login: googleLogin } = useGoogleLogin()
+  const resendVerification = useResendVerification()
+  const needsEmailVerification =
+    status === "error" && message.toLocaleLowerCase("vi-VN").includes("xác minh email")
 
   return (
     <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
@@ -75,6 +79,27 @@ export default function LoginPage({ onSwitchToRegister }: { onSwitchToRegister?:
           title={status === "success" ? "Đăng nhập thành công" : "Không thể đăng nhập"}
           message={message}
         />
+      ) : null}
+
+      {needsEmailVerification ? (
+        <div className="rounded-2xl border border-po-primary/25 bg-po-primary-soft/35 px-4 py-3 text-sm text-po-text-muted">
+          <p className="font-semibold text-po-text">Email xác thực đã hết hạn hoặc chưa được mở?</p>
+          <p className="mt-1 leading-5">Gửi lại một liên kết mới đến email vừa nhập.</p>
+          <button
+            type="button"
+            disabled={!email.trim() || resendVerification.isPending}
+            onClick={() => resendVerification.mutate(email)}
+            className="mt-3 font-semibold text-po-primary transition hover:text-po-primary-hover disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resendVerification.isPending ? "Đang gửi lại..." : "Gửi lại email xác thực"}
+          </button>
+          {resendVerification.isSuccess ? (
+            <p className="mt-2 text-sm font-semibold text-po-success">{resendVerification.data.message}</p>
+          ) : null}
+          {resendVerification.isError ? (
+            <p className="mt-2 text-sm font-semibold text-po-danger">Không thể gửi lại email. Vui lòng thử lại sau.</p>
+          ) : null}
+        </div>
       ) : null}
 
       <button

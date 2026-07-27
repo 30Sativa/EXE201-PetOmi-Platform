@@ -134,6 +134,17 @@ namespace PetOmiPlatform.API.Controllers
         }
 
         /// <summary>
+        /// Gửi lại liên kết xác minh cho tài khoản chưa xác thực. Phản hồi luôn giống nhau để không lộ email nào đã đăng ký.
+        /// </summary>
+        [HttpPost("resend-verification")]
+        [EnableRateLimiting("AuthPolicy")]
+        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationRequest request, [FromQuery] string? client)
+        {
+            await Mediator.Send(new ResendVerificationCommand(request, client));
+            return Ok(BaseResponse<object>.Ok(null, "Nếu email này chưa được xác thực, chúng tôi đã gửi một liên kết xác minh mới."));
+        }
+
+        /// <summary>
         /// Gửi email đặt lại mật khẩu nếu email tồn tại trong hệ thống.
         /// </summary>
         [HttpPost("forgot-password")]

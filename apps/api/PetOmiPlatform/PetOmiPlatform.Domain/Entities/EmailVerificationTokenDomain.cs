@@ -101,6 +101,14 @@ namespace PetOmiPlatform.Domain.Entities
             UsedAt = DateTime.UtcNow;
         }
 
+        public void Invalidate()
+        {
+            if (IsUsed) return;
+
+            IsUsed = true;
+            UsedAt = DateTime.UtcNow;
+        }
+
         public void EnsureValid()
         {
             if (IsUsed)

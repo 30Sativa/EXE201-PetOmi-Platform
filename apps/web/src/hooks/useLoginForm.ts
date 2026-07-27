@@ -20,6 +20,7 @@ export interface UseLoginFormReturn {
   isSubmitting: boolean
   status: FormStatus
   message: string
+  email: string
   showPassword: boolean
   onTogglePassword: () => void
   onSubmit: (data: LoginRequest) => Promise<void>
@@ -35,6 +36,7 @@ export function useLoginForm(): UseLoginFormReturn {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<LoginRequest>({
     resolver: zodResolver(LoginRequestSchema),
@@ -43,6 +45,7 @@ export function useLoginForm(): UseLoginFormReturn {
       password: "",
     },
   })
+  const email = watch("email")
 
   const onSubmit = async (data: LoginRequest) => {
     setStatus("idle")
@@ -97,6 +100,7 @@ export function useLoginForm(): UseLoginFormReturn {
     isSubmitting,
     status,
     message,
+    email,
     showPassword,
     onTogglePassword: () => setShowPassword((p) => !p),
     onSubmit,

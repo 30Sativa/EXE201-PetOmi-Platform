@@ -24,9 +24,9 @@ interface HistoryItem {
 }
 
 const statusFilters: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "completed", label: "Completed" },
-  { value: "cancelled", label: "Cancelled" },
+  { value: "all", label: "Tất cả" },
+  { value: "completed", label: "Đã hoàn thành" },
+  { value: "cancelled", label: "Đã hủy" },
 ]
 
 const formatDate = (dateStr: string) => {
@@ -84,7 +84,7 @@ export default function OwnerHistoryPage() {
   const isLoading = isAppointmentsLoading || isPetsLoading || isTimelineLoading
 
   const getPetName = (petId: string) =>
-    pets?.find((pet) => pet.petId === petId)?.name ?? "Unknown"
+    pets?.find((pet) => pet.petId === petId)?.name ?? "Không xác định"
 
   const getAppointmentById = (appointmentId: string | null) =>
     (appointments ?? []).find((appointment) => appointment.appointmentId === appointmentId)
@@ -104,8 +104,8 @@ export default function OwnerHistoryPage() {
         const clinicName =
           getMetadataString(metadata, "clinicName") ??
           (activity.activityType === "ClinicExamination" && appointment
-            ? "Clinic visit"
-            : "Unknown")
+            ? "Lượt khám tại phòng khám"
+            : "Không xác định")
         const diagnosis =
           getMetadataString(metadata, "diagnosis") ??
           activity.title
@@ -128,7 +128,7 @@ export default function OwnerHistoryPage() {
     .filter((appointment) => appointment.status.toLowerCase() === "cancelled")
     .map((appointment) => ({
       id: `appointment-${appointment.appointmentId}`,
-      clinicName: "Clinic",
+      clinicName: "Phòng khám",
       diagnosis: appointment.appointmentType,
       date: appointment.appointmentDate,
       petName: getPetName(appointment.petId),
@@ -143,9 +143,9 @@ export default function OwnerHistoryPage() {
   return (
     <div className="grid gap-6">
       <div>
-        <h2 className="text-xl font-extrabold text-po-text">Visit history</h2>
+        <h2 className="text-xl font-extrabold text-po-text">Lịch sử khám</h2>
         <p className="mt-1 text-sm text-po-text-muted">
-          Review completed owner records, completed clinic examinations, and cancelled appointments.
+          Xem lại hồ sơ đã hoàn tất, lượt khám tại phòng khám và lịch hẹn đã hủy.
         </p>
       </div>
 
@@ -155,7 +155,7 @@ export default function OwnerHistoryPage() {
         onChange={setStatusFilter}
       />
 
-      <DashboardSection title={`${allHistory.length} records`}>
+      <DashboardSection title={`${allHistory.length} bản ghi`}>
         {isLoading ? (
           <div className="flex justify-center py-12">
             <LoadingSpinner />
@@ -163,8 +163,8 @@ export default function OwnerHistoryPage() {
         ) : allHistory.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
-            title="No visit history yet"
-            description="Completed owner records and clinic examinations will appear here."
+            title="Chưa có lịch sử khám"
+            description="Hồ sơ đã hoàn tất và lượt khám tại phòng khám sẽ xuất hiện tại đây."
           />
         ) : (
           <div className="overflow-x-auto">
@@ -172,19 +172,19 @@ export default function OwnerHistoryPage() {
               <thead>
                 <tr className="border-b border-po-border text-left">
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Pet
+                    Thú cưng
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Source
+                    Nguồn
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Visit detail
+                    Chi tiết lượt khám
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Date
+                    Ngày
                   </th>
                   <th className="pb-3 text-xs font-semibold uppercase tracking-wide text-po-text-subtle">
-                    Status
+                    Trạng thái
                   </th>
                 </tr>
               </thead>
@@ -207,7 +207,7 @@ export default function OwnerHistoryPage() {
                     <td className="py-3">
                       <StatusBadge
                         variant={item.status === "completed" ? "success" : "danger"}
-                        label={item.status === "completed" ? "Completed" : "Cancelled"}
+                        label={item.status === "completed" ? "Đã hoàn thành" : "Đã hủy"}
                       />
                     </td>
                   </tr>

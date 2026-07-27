@@ -1,6 +1,6 @@
-import { useCompleteProfileForm } from "@/hooks"
-import ImageUploadField from "@/components/ui/ImageUploadField"
 import { useMemo, useState } from "react"
+import ImageUploadField from "@/components/ui/ImageUploadField"
+import { useCompleteProfileForm } from "@/hooks"
 import { getVietnamCity, VIETNAM_CITY_OPTIONS } from "@/lib/vietnamAddress"
 
 export default function CompleteProfilePage() {
@@ -148,7 +148,7 @@ export default function CompleteProfilePage() {
             <input
               id="address"
               type="text"
-              placeholder="123 Đường ABC, Quận 1, TP.HCM"
+              placeholder="123 Đường ABC, Phường Bến Nghé, TP. Hồ Chí Minh"
               className="h-12 w-full rounded-lg border border-po-border bg-white px-4 text-[15px] text-po-text transition focus:border-po-primary"
               {...register("address")}
             />
@@ -158,7 +158,7 @@ export default function CompleteProfilePage() {
           </div>
 
           <ImageUploadField
-            label="Avatar URL"
+            label="Ảnh đại diện"
             value={avatarUrl}
             onChange={setAvatarUrl}
             imageType="user_avatar"

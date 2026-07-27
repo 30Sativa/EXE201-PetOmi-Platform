@@ -18,6 +18,7 @@ import {
   PawPrint,
   RefreshCw,
   Sparkles,
+  Tag,
   X,
   Zap,
 } from "lucide-react"
@@ -114,6 +115,7 @@ export default function OwnerAiPlanPage() {
     mutationFn: createChatSubscriptionPaymentApi,
     onSuccess: (payment) => {
       setIsPremiumCheckoutOpen(false)
+      setVoucherCode("")
       setPaymentRequest(payment)
       if (payment.status.toLowerCase() === "paid") {
         toast.success("Da ap dung uu dai va bat Premium cho tat ca thu cung cua ban!")
@@ -179,6 +181,27 @@ export default function OwnerAiPlanPage() {
 
   const handleOpenPremiumCheckout = () => {
     createPaymentMutation.reset()
+    setPaymentRequest(null)
+    setVoucherCode("")
+    setIsPremiumCheckoutOpen(true)
+  }
+
+  const handleClosePremiumCheckout = () => {
+    createPaymentMutation.reset()
+    setVoucherCode("")
+    setIsPremiumCheckoutOpen(false)
+  }
+
+  const handleClosePayment = () => {
+    createPaymentMutation.reset()
+    setVoucherCode("")
+    setPaymentRequest(null)
+  }
+
+  const handleChangeVoucher = () => {
+    createPaymentMutation.reset()
+    setPaymentRequest(null)
+    setVoucherCode("")
     setIsPremiumCheckoutOpen(true)
   }
 
@@ -428,7 +451,7 @@ export default function OwnerAiPlanPage() {
           }
           onVoucherChange={(value) => setVoucherCode(value.toUpperCase())}
           onSubmit={handleCreatePremiumPayment}
-          onClose={() => setIsPremiumCheckoutOpen(false)}
+          onClose={handleClosePremiumCheckout}
         />
       ) : null}
       {paymentRequest ? (
@@ -438,7 +461,8 @@ export default function OwnerAiPlanPage() {
           isRegenerating={createPaymentMutation.isPending}
           onCheck={() => paymentStatusQuery.refetch()}
           onRegenerate={() => handleRegeneratePayment(paymentRequest)}
-          onClose={() => setPaymentRequest(null)}
+          onChangeVoucher={handleChangeVoucher}
+          onClose={handleClosePayment}
         />
       ) : null}
     </div>
@@ -671,6 +695,7 @@ function PaymentModal({
   isRegenerating,
   onCheck,
   onRegenerate,
+  onChangeVoucher,
   onClose,
 }: {
   payment: ChatSubscriptionPaymentResponse
@@ -678,6 +703,7 @@ function PaymentModal({
   isRegenerating: boolean
   onCheck: () => void
   onRegenerate: () => void
+  onChangeVoucher: () => void
   onClose: () => void
 }) {
   const isPaid = payment.status.toLowerCase() === "paid"
@@ -767,6 +793,15 @@ function PaymentModal({
                     {isRegenerating ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
                     {isRegenerating ? "Đang tạo mã QR mới" : "Tạo mã QR mới"}
                   </button>
+                  <button
+                    type="button"
+                    onClick={onChangeVoucher}
+                    disabled={isRegenerating}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-bold text-po-text transition hover:bg-po-surface-muted disabled:opacity-60"
+                  >
+                    <Tag className="size-4" />
+                    Dùng mã giảm giá khác
+                  </button>
                 </>
               ) : (
                 <>
@@ -812,6 +847,15 @@ function PaymentModal({
                   >
                     {isChecking ? <Loader2 className="size-4 animate-spin" /> : <RefreshCw className="size-4" />}
                     Kiểm tra thanh toán
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onChangeVoucher}
+                    disabled={isChecking}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-bold text-po-text transition hover:bg-po-surface-muted disabled:opacity-60"
+                  >
+                    <Tag className="size-4" />
+                    Đổi mã giảm giá
                   </button>
                 </>
               )}

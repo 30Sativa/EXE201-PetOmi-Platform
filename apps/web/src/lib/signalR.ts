@@ -4,7 +4,7 @@ import { tokenStorage } from "./tokenStorage"
 
 const HUB_URL =
   (import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5273/api")
-    .replace("/api", "")
+    .replace(/\/api\/?$/, "")
     .replace(/\/+$/, "") + "/hubs/notifications"
 
 let connection: signalR.HubConnection | null = null
@@ -17,6 +17,36 @@ export type NotificationPayload = {
   data?: Record<string, unknown>
   createdAt: string
   isRead: boolean
+}
+
+type ReminderNotificationPayload = {
+  reminderId?: string
+  title?: string
+  message?: string
+  reminderType?: string
+  entityType?: string
+  remindAt?: string
+}
+
+const toNotificationPayload = (
+  payload: ReminderNotificationPayload,
+): NotificationPayload => {
+  const createdAt = payload.remindAt ?? new Date().toISOString()
+  const fallbackId = `${payload.title ?? "reminder"}-${createdAt}-${payload.entityType ?? ""}`
+
+  return {
+    id: payload.reminderId ?? fallbackId,
+    type: "reminder",
+    title: payload.title ?? "Nhắc nhở",
+    message: payload.message ?? "",
+    data: {
+      reminderType: payload.reminderType,
+      entityType: payload.entityType,
+      remindAt: payload.remindAt,
+    },
+    createdAt,
+    isRead: false,
+  }
 }
 
 type SignalREventHandlers = {
@@ -46,8 +76,8 @@ export const startSignalRConnection = (userId: string) => {
     .configureLogging(signalR.LogLevel.Warning)
     .build()
 
-  connection.on("ReceiveReminder", (payload: NotificationPayload) => {
-    handlers.onReceiveReminder(payload)
+  connection.on("ReceiveReminder", (payload: ReminderNotificationPayload) => {
+    handlers.onReceiveReminder(toNotificationPayload(payload))
   })
 
   connection.onreconnecting(() => {

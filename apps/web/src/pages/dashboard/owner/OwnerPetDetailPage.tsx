@@ -135,7 +135,7 @@ const MEDICAL_RECORD_TYPE_LABELS: Record<string, string> = {
   Illness: "Bệnh lý",
 }
 
-type TabValue = "overview" | "health" | "weight" | "vaccine" | "medical" | "photos" | "sharing" | "reminders"
+type TabValue = "overview" | "health" | "weight" | "medical" | "photos" | "sharing" | "reminders"
 
 // ==================== PAGE ====================
 
@@ -180,7 +180,7 @@ export default function OwnerPetDetailPage() {
   const { data: medicalRecords, isLoading: loadingMedical } = useQuery({
     queryKey: ["pet-medical", petId],
     queryFn: () => getPetMedicalRecordsApi(petId!),
-    enabled: Boolean(petId) && (activeTab === "medical" || activeTab === "vaccine"),
+    enabled: Boolean(petId) && activeTab === "medical",
   })
 
   const { data: photos, isLoading: loadingPhotos } = useQuery({
@@ -265,7 +265,6 @@ export default function OwnerPetDetailPage() {
     { value: "overview" as const, label: "Tổng quan" },
     { value: "health" as const, label: "Sức khỏe" },
     { value: "weight" as const, label: "Cân nặng" },
-    { value: "vaccine" as const, label: "Tiêm phòng" },
     { value: "medical" as const, label: "Hồ sơ y tế" },
     { value: "photos" as const, label: "Ảnh" },
     { value: "sharing" as const, label: "Chia sẻ" },
@@ -312,7 +311,7 @@ export default function OwnerPetDetailPage() {
             className="inline-flex h-10 items-center gap-2 rounded-full border border-po-primary/30 bg-white px-4 text-sm font-semibold text-po-primary transition hover:bg-po-primary/10"
           >
             <Share2 className="size-4" />
-            Share health
+            Chia sẻ sức khỏe
           </button>
           <button
             onClick={() => setIsEditModalOpen(true)}
@@ -405,20 +404,6 @@ export default function OwnerPetDetailPage() {
             <WeightTab
               logs={weightLogs}
               onAdd={() => setIsWeightModalOpen(true)}
-            />
-          )}
-          {activeTab === "vaccine" && (
-            <VaccineTab
-              records={medicalRecords}
-              loading={loadingMedical}
-              onAdd={() => {
-                setEditingMedicalRecord(null)
-                setIsMedicalModalOpen(true)
-              }}
-              onEdit={(record) => {
-                setEditingMedicalRecord(record)
-                setIsMedicalModalOpen(true)
-              }}
             />
           )}
           {activeTab === "medical" && (
@@ -877,7 +862,7 @@ function WeightTab({
 
 // ==================== VACCINE TAB ====================
 
-function VaccineTab({
+export function VaccineTab({
   records,
   loading,
   onAdd,

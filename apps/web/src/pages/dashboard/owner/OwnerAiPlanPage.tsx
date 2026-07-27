@@ -478,20 +478,20 @@ function CapabilityRow({
   active?: boolean
 }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm ring-1 ring-po-border/60">
-      <span className="inline-flex min-w-0 items-center gap-2 font-medium text-po-text-muted">
+    <div className="flex items-start gap-2 rounded-xl bg-white px-3 py-2.5 text-sm ring-1 ring-po-border/60">
+      <span className="flex min-w-0 flex-1 items-start gap-2 font-medium leading-5 text-po-text-muted">
         <Icon
           className={cn(
             "size-4 shrink-0",
             active ? "text-po-primary" : "text-po-text-subtle",
           )}
         />
-        <span className="truncate">{label}</span>
+        <span>{label}</span>
       </span>
       <span
         className={cn(
-          "max-w-[42%] truncate text-right text-sm font-bold",
-          active ? "text-po-text" : "text-po-text-subtle",
+          "shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold leading-5",
+          active ? "bg-po-primary-soft/65 text-po-text" : "bg-po-surface-muted text-po-text-subtle",
         )}
       >
         {value}
@@ -518,6 +518,10 @@ function PlanCard({
   const isCurrent =
     normalizedCode === subscriptionStatus?.currentPlanCode?.toLowerCase()
   const alreadyPremium = Boolean(subscriptionStatus?.isPremium)
+  const description =
+    plan.description === "Mot goi dung cho tat ca thu cung cua ban: nhieu luot nhan hon, phan hoi nhanh hon, tu van sau theo ho so va gui duoc anh cho AI xem."
+      ? "Một gói dùng chung cho tất cả thú cưng của bạn: nhiều lượt nhắn hơn, phản hồi nhanh hơn, tư vấn sâu theo hồ sơ và gửi được ảnh cho AI xem."
+      : plan.description
 
   return (
     <article
@@ -568,8 +572,8 @@ function PlanCard({
         ) : null}
       </div>
 
-      {plan.description ? (
-        <p className="mt-2 text-sm leading-6 text-po-text-muted">{plan.description}</p>
+      {description ? (
+        <p className="mt-2 text-sm leading-6 text-po-text-muted">{description}</p>
       ) : null}
 
       <ul className="mt-4 grid gap-2.5 text-sm">

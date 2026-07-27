@@ -101,9 +101,13 @@ export default function AuthPage({ initialMode = "login" }: AuthPageProps) {
       )}
       <header className="mx-auto flex min-h-20 w-full max-w-[1200px] items-center justify-between gap-4 px-3 sm:px-6">
         <Link to="/" aria-label="Trang chủ PetOmi" className="flex items-center gap-2 font-extrabold text-po-text no-underline">
-          <span className="grid size-10 place-items-center rounded-2xl bg-po-primary text-sm text-white shadow-lg shadow-orange-200/40">
-            <PawPrint className="size-4" />
-          </span>
+          <img
+            src="/logo.jpg"
+            alt="Logo PetOmi"
+            width={40}
+            height={40}
+            className="size-10 rounded-2xl bg-white object-cover shadow-lg shadow-orange-200/40"
+          />
           <span>PetOmi</span>
         </Link>
 

@@ -131,7 +131,7 @@ function BreedCombobox({ id, value, options, disabled = false, onChange }: Breed
         >
           <div className="border-b border-po-border p-2">
             <label className="sr-only" htmlFor={`${id}-search`}>Tìm giống</label>
-            <div className="flex items-center gap-2 rounded-lg bg-po-surface-muted px-3">
+            <div className="flex items-center gap-2 rounded-lg border border-transparent bg-po-surface-muted px-3 transition focus-within:border-po-primary/50 focus-within:ring-2 focus-within:ring-po-primary/20">
               <Search className="size-4 shrink-0 text-po-text-muted" />
               <input
                 id={`${id}-search`}
@@ -140,7 +140,7 @@ function BreedCombobox({ id, value, options, disabled = false, onChange }: Breed
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Tìm giống..."
-                className="h-9 min-w-0 flex-1 bg-transparent text-sm text-po-text outline-none placeholder:text-po-text-subtle"
+                className="h-9 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-sm text-po-text shadow-none outline-none ring-0 focus:border-0 focus:outline-none focus:ring-0 placeholder:text-po-text-subtle [-webkit-appearance:none]"
               />
             </div>
           </div>

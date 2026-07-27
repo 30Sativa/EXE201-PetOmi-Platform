@@ -21,9 +21,9 @@ interface PetHealthShareListProps {
 }
 
 const scopeLabels: Record<string, string> = {
-  EmergencySummary: "Emergency summary",
-  ClinicVisit: "Clinic visit",
-  FullHealthProfile: "Full health profile",
+  EmergencySummary: "Tóm tắt khẩn cấp",
+  ClinicVisit: "Lần khám tại phòng khám",
+  FullHealthProfile: "Toàn bộ hồ sơ sức khỏe",
 }
 
 const formatDateTime = (value: string | null | undefined) => {
@@ -73,10 +73,10 @@ export default function PetHealthShareList({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pet-health-shares", petId] })
       setRevoking(null)
-      toast.success("Health share code revoked.")
+      toast.success("Đã thu hồi mã chia sẻ sức khỏe.")
     },
     onError: () => {
-      toast.error("Could not revoke health share code.")
+      toast.error("Không thể thu hồi mã chia sẻ sức khỏe.")
     },
   })
 
@@ -85,8 +85,8 @@ export default function PetHealthShareList({
   return (
     <>
       <DashboardSection
-        title={`Health shares for ${petName}`}
-        subtitle="Create short-lived codes for clinics to view this pet's health profile."
+        title={`Mã chia sẻ sức khỏe của ${petName}`}
+        subtitle="Tạo mã có thời hạn để phòng khám xem hồ sơ sức khỏe của bé."
         action={
           <button
             type="button"
@@ -94,7 +94,7 @@ export default function PetHealthShareList({
             className="inline-flex h-9 items-center gap-2 rounded-full bg-po-primary px-4 text-xs font-semibold text-white transition hover:bg-po-primary-hover"
           >
             <Plus className="size-3.5" />
-            Create code
+            Tạo mã
           </button>
         }
       >
@@ -105,16 +105,16 @@ export default function PetHealthShareList({
         ) : !shares || shares.length === 0 ? (
           <EmptyState
             icon={ShieldCheck}
-            title="No health share codes yet"
-            description="Create a time-limited code when a clinic needs access to this pet's medical summary."
+            title="Chưa có mã chia sẻ sức khỏe"
+            description="Tạo mã có thời hạn khi phòng khám cần xem thông tin y tế của bé."
           />
         ) : (
           <div className="grid gap-3">
             <div className="grid gap-3 sm:grid-cols-3">
-              <ShareMetric label="Active codes" value={String(activeShares.length)} />
-              <ShareMetric label="Total codes" value={String(shares.length)} />
+              <ShareMetric label="Mã đang hoạt động" value={String(activeShares.length)} />
+              <ShareMetric label="Tổng số mã" value={String(shares.length)} />
               <ShareMetric
-                label="Last used"
+                label="Lần dùng gần nhất"
                 value={formatDateTime(
                   shares.find((share) => share.lastUsedAt)?.lastUsedAt ?? null,
                 )}
@@ -148,32 +148,32 @@ export default function PetHealthShareList({
                               : "bg-po-danger-soft text-po-danger",
                           )}
                         >
-                          {active ? "Active" : "Inactive"}
+                          {active ? "Đang hoạt động" : "Không còn hiệu lực"}
                         </span>
                       </div>
                       <p className="mt-1 text-xs text-po-text-muted">
-                        {scopeLabels[share.scope] ?? share.scope} · {share.accessMode} · expires {formatDateTime(share.expiresAt)}
+                        {scopeLabels[share.scope] ?? share.scope} · {share.accessMode === "OneTime" ? "Dùng một lần" : "Có thời hạn"} · hết hạn {formatDateTime(share.expiresAt)}
                       </p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => copyText(share.displayCode, "Code copied.")}
+                        onClick={() => copyText(share.displayCode, "Đã sao chép mã.")}
                         className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border bg-white px-3 text-xs font-semibold text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text"
                       >
                         <Clipboard className="size-3.5" />
-                        Code
+                        Mã
                       </button>
                       <button
                         type="button"
                         onClick={() =>
-                          copyText(getShareLink(share.displayCode), "Share link copied.")
+                          copyText(getShareLink(share.displayCode), "Đã sao chép liên kết.")
                         }
                         className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-border bg-white px-3 text-xs font-semibold text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text"
                       >
                         <Link2 className="size-3.5" />
-                        Link
+                        Liên kết
                       </button>
                       {active ? (
                         <button
@@ -182,19 +182,19 @@ export default function PetHealthShareList({
                           className="inline-flex h-8 items-center gap-1.5 rounded-full border border-po-danger/30 bg-white px-3 text-xs font-semibold text-po-danger transition hover:bg-po-danger/10"
                         >
                           <Trash2 className="size-3.5" />
-                          Revoke
+                          Thu hồi
                         </button>
                       ) : null}
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-po-text-muted">
-                    <span>Used {share.usedCount}{share.maxUses ? `/${share.maxUses}` : ""}</span>
-                    <span>Created {formatDateTime(share.createdAt)}</span>
+                    <span>Đã dùng {share.usedCount}{share.maxUses ? `/${share.maxUses}` : ""}</span>
+                    <span>Tạo lúc {formatDateTime(share.createdAt)}</span>
                     {share.lastUsedAt ? (
-                      <span>Last used {formatDateTime(share.lastUsedAt)}</span>
+                      <span>Dùng gần nhất {formatDateTime(share.lastUsedAt)}</span>
                     ) : null}
-                    {share.note ? <span>Note: {share.note}</span> : null}
+                    {share.note ? <span>Ghi chú: {share.note}</span> : null}
                   </div>
                 </div>
               )
@@ -209,9 +209,9 @@ export default function PetHealthShareList({
         onConfirm={() => {
           if (revoking) revokeMutation.mutate(revoking.shareTokenId)
         }}
-        title="Revoke health share code?"
-        description="The clinic will no longer be able to use this code for private health access."
-        confirmLabel="Revoke"
+        title="Thu hồi mã chia sẻ sức khỏe?"
+        description="Phòng khám sẽ không thể dùng mã này để xem hồ sơ sức khỏe riêng tư nữa."
+        confirmLabel="Thu hồi"
         variant="danger"
         isLoading={revokeMutation.isPending}
       />

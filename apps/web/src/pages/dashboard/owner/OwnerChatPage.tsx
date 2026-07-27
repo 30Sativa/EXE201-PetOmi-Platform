@@ -298,8 +298,6 @@ export default function OwnerChatPage() {
     [conversations, conversationId],
   )
 
-  const subscriptionPetId = selectedConversation?.petId ?? (selectedPetId || null)
-
   const canChangePet = !conversationId || !selectedConversation?.petId
 
   const currentPetLabel = useMemo(() => {
@@ -319,8 +317,8 @@ export default function OwnerChatPage() {
   const {
     data: subscriptionStatus,
   } = useQuery({
-    queryKey: ["owner-chat-subscription", subscriptionPetId],
-    queryFn: () => getChatSubscriptionStatusApi(subscriptionPetId),
+    queryKey: ["owner-chat-subscription", "account"],
+    queryFn: getChatSubscriptionStatusApi,
     staleTime: 30 * 1000,
   })
 

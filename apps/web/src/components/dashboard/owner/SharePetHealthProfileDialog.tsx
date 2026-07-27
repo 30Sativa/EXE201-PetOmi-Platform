@@ -27,18 +27,18 @@ const scopeOptions: Array<{
 }> = [
   {
     value: "EmergencySummary",
-    title: "Emergency summary",
-    description: "Basic profile, allergies, chronic conditions, and alerts.",
+    title: "Tóm tắt khẩn cấp",
+    description: "Thông tin cơ bản, dị ứng, bệnh mạn tính và cảnh báo cần lưu ý.",
   },
   {
     value: "ClinicVisit",
-    title: "Clinic visit",
-    description: "Visit-ready medical summary with sensitive notes hidden.",
+    title: "Lần khám tại phòng khám",
+    description: "Tóm tắt y tế phục vụ buổi khám, ẩn các ghi chú nhạy cảm.",
   },
   {
     value: "FullHealthProfile",
-    title: "Full health profile",
-    description: "Fuller records, examinations, prescriptions, and owner contact.",
+    title: "Toàn bộ hồ sơ sức khỏe",
+    description: "Bao gồm hồ sơ, kết quả khám, đơn thuốc và thông tin liên hệ chủ nuôi.",
   },
 ]
 
@@ -115,10 +115,10 @@ export default function SharePetHealthProfileDialog({
     onSuccess: (share) => {
       setCreatedShare(share)
       queryClient.invalidateQueries({ queryKey: ["pet-health-shares", petId] })
-      toast.success("Health share code created.")
+      toast.success("Đã tạo mã chia sẻ sức khỏe.")
     },
     onError: () => {
-      toast.error("Could not create health share code. Please check the settings.")
+      toast.error("Không tạo được mã chia sẻ sức khỏe. Vui lòng kiểm tra lại thông tin.")
     },
   })
 
@@ -155,17 +155,17 @@ export default function SharePetHealthProfileDialog({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h3 className="text-lg font-extrabold text-po-text">
-              Share {petName}'s health profile
+              Chia sẻ hồ sơ sức khỏe của {petName}
             </h3>
             <p className="mt-1 text-sm text-po-text-muted">
-              Create a short code for clinic staff to view the right health details.
+              Tạo mã ngắn để nhân viên phòng khám xem đúng thông tin sức khỏe cần thiết.
             </p>
           </div>
           <button
             onClick={onClose}
             disabled={mutation.isPending}
             className="shrink-0 rounded-full p-1 text-po-text-muted transition hover:bg-po-surface-muted hover:text-po-text disabled:opacity-40"
-            aria-label="Close"
+            aria-label="Đóng"
           >
             <X className="size-5" />
           </button>
@@ -174,7 +174,7 @@ export default function SharePetHealthProfileDialog({
         <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_280px]">
           <form onSubmit={handleSubmit} className="grid gap-4">
             <div className="grid gap-2">
-              <span className="text-sm font-semibold text-po-text">Share scope</span>
+              <span className="text-sm font-semibold text-po-text">Phạm vi chia sẻ</span>
               <div className="grid gap-2">
                 {scopeOptions.map((option) => (
                   <button
@@ -213,13 +213,13 @@ export default function SharePetHealthProfileDialog({
             </div>
 
             <div className="grid gap-2">
-              <span className="text-sm font-semibold text-po-text">Expiry</span>
+              <span className="text-sm font-semibold text-po-text">Thời hạn</span>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
-                  ["one-time", "One-time"],
-                  ["24h", "24 hours"],
-                  ["7d", "7 days"],
-                  ["custom", "Custom"],
+                  ["one-time", "Dùng một lần"],
+                  ["24h", "24 giờ"],
+                  ["7d", "7 ngày"],
+                  ["custom", "Tùy chọn"],
                 ].map(([value, label]) => (
                   <button
                     key={value}
@@ -252,13 +252,13 @@ export default function SharePetHealthProfileDialog({
 
             <div className="grid gap-1.5">
               <label htmlFor="health-share-clinic" className="text-sm font-semibold text-po-text">
-                Clinic restriction
+                Giới hạn phòng khám
               </label>
               <input
                 id="health-share-clinic"
                 value={clinicId}
                 onChange={(event) => setClinicId(event.target.value)}
-                placeholder="Optional clinic ID"
+                placeholder="ID phòng khám (nếu có)"
                 disabled={mutation.isPending}
                 className="h-11 rounded-xl border border-po-border bg-white px-4 text-sm text-po-text placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
               />
@@ -266,7 +266,7 @@ export default function SharePetHealthProfileDialog({
 
             <div className="grid gap-1.5">
               <label htmlFor="health-share-note" className="text-sm font-semibold text-po-text">
-                Note
+                Ghi chú
               </label>
               <textarea
                 id="health-share-note"
@@ -274,7 +274,7 @@ export default function SharePetHealthProfileDialog({
                 onChange={(event) => setNote(event.target.value)}
                 rows={3}
                 maxLength={500}
-                placeholder="Optional context for this share"
+                placeholder="Thông tin thêm cho lần chia sẻ này (nếu có)"
                 disabled={mutation.isPending}
                 className="resize-none rounded-xl border border-po-border bg-white px-4 py-3 text-sm text-po-text placeholder:text-po-text-subtle focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
               />
@@ -287,7 +287,7 @@ export default function SharePetHealthProfileDialog({
                 disabled={mutation.isPending}
                 className="inline-flex h-11 items-center rounded-full border border-po-border bg-white px-6 text-sm font-semibold text-po-text-muted transition hover:bg-po-surface-muted disabled:opacity-60"
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
@@ -295,7 +295,7 @@ export default function SharePetHealthProfileDialog({
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-po-primary px-6 text-sm font-semibold text-white transition hover:bg-po-primary-hover disabled:opacity-60"
               >
                 <ShieldCheck className="size-4" />
-                {mutation.isPending ? "Creating..." : "Create code"}
+                {mutation.isPending ? "Đang tạo..." : "Tạo mã"}
               </button>
             </div>
           </form>
@@ -314,7 +314,7 @@ export default function SharePetHealthProfileDialog({
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase text-po-text-muted">
-                    Health share code
+                    Mã chia sẻ sức khỏe
                   </p>
                   <p className="mt-2 break-all rounded-xl border border-po-border bg-white px-4 py-3 text-center text-2xl font-extrabold tracking-wide text-po-text">
                     {createdShare.displayCode}
@@ -324,26 +324,26 @@ export default function SharePetHealthProfileDialog({
                   <button
                     type="button"
                     onClick={() =>
-                      copyText(createdShare.displayCode, "Code copied.")
+                      copyText(createdShare.displayCode, "Đã sao chép mã.")
                     }
                     className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-po-primary px-4 text-sm font-semibold text-white transition hover:bg-po-primary-hover"
                   >
                     <Clipboard className="size-4" />
-                    Copy code
+                    Sao chép mã
                   </button>
                   <button
                     type="button"
-                    onClick={() => copyText(shareLink, "Share link copied.")}
+                    onClick={() => copyText(shareLink, "Đã sao chép liên kết.")}
                     className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-po-border bg-white px-4 text-sm font-semibold text-po-text-muted transition hover:bg-white/80 hover:text-po-text"
                   >
                     <Link2 className="size-4" />
-                    Copy link
+                    Sao chép liên kết
                   </button>
                 </div>
                 <div className="grid gap-1 text-xs text-po-text-muted">
-                  <p>Scope: {createdShare.scope}</p>
-                  <p>Mode: {createdShare.accessMode}</p>
-                  <p>Expires: {formatDateTime(createdShare.expiresAt)}</p>
+                  <p>Phạm vi: {scopeOptions.find((option) => option.value === createdShare.scope)?.title ?? createdShare.scope}</p>
+                  <p>Loại mã: {createdShare.accessMode === "OneTime" ? "Dùng một lần" : "Có thời hạn"}</p>
+                  <p>Hết hạn: {formatDateTime(createdShare.expiresAt)}</p>
                 </div>
               </div>
             ) : (
@@ -353,10 +353,10 @@ export default function SharePetHealthProfileDialog({
                     <ShieldCheck className="size-6" />
                   </div>
                   <p className="mt-3 text-sm font-bold text-po-text">
-                    Your code appears here
+                    Mã của bạn sẽ hiển thị ở đây
                   </p>
                   <p className="mt-1 text-xs text-po-text-muted">
-                    Create a code, then show the QR or copy the link for the clinic.
+                    Tạo mã, sau đó đưa mã QR hoặc liên kết cho phòng khám.
                   </p>
                 </div>
               </div>

@@ -9,12 +9,8 @@ import type {
   CreateChatSubscriptionPaymentRequest,
 } from "@/types"
 
-export const getChatSubscriptionStatusApi = async (
-  petId?: string | null,
-): Promise<ChatSubscriptionStatusResponse> => {
-  const response = await api.get("/chat/subscription/status", {
-    params: petId ? { petId } : undefined,
-  })
+export const getChatSubscriptionStatusApi = async (): Promise<ChatSubscriptionStatusResponse> => {
+  const response = await api.get("/chat/subscription/status")
   return unwrapResponse<ChatSubscriptionStatusResponse>(response)
 }
 

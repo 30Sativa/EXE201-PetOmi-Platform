@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import { X } from "lucide-react"
+import { Check, ChevronDown, Search, X } from "lucide-react"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { createPetApi, updatePetApi } from "@/services/pets.service"
 import ImageUploadField from "@/components/ui/ImageUploadField"
@@ -64,6 +64,118 @@ const SPECIES_OPTIONS = [
   { value: "Dog", vi: "Chó" },
   { value: "Cat", vi: "Mèo" },
 ]
+
+interface BreedComboboxProps {
+  id: string
+  value: string
+  options: { vi: string; en?: string }[]
+  disabled?: boolean
+  onChange: (value: string) => void
+}
+
+function BreedCombobox({ id, value, options, disabled = false, onChange }: BreedComboboxProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const selectedBreed = options.find((option) => option.vi === value)
+  const normalizedSearch = search.trim().toLocaleLowerCase("vi-VN")
+  const filteredOptions = normalizedSearch
+    ? options.filter((option) => `${option.vi} ${option.en ?? ""}`.toLocaleLowerCase("vi-VN").includes(normalizedSearch))
+    : options
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!wrapperRef.current?.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick)
+    return () => document.removeEventListener("mousedown", closeOnOutsideClick)
+  }, [])
+
+  useEffect(() => {
+    setIsOpen(false)
+    setSearch("")
+  }, [options])
+
+  const handleSelect = (nextValue: string) => {
+    onChange(nextValue)
+    setIsOpen(false)
+    setSearch("")
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative">
+      <button
+        id={id}
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen((open) => !open)}
+        className="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-po-border bg-white px-4 text-left text-sm text-po-text transition focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        <span className="truncate">{selectedBreed?.vi ?? "Chọn giống"}</span>
+        <ChevronDown className={cn("size-4 shrink-0 text-po-text-muted transition-transform", isOpen && "rotate-180")} />
+      </button>
+
+      {isOpen && (
+        <div
+          role="listbox"
+          aria-labelledby={id}
+          className="absolute z-30 mt-2 w-full overflow-hidden rounded-xl border border-po-border bg-white p-1 shadow-xl shadow-black/10"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setIsOpen(false)
+          }}
+        >
+          <div className="border-b border-po-border p-2">
+            <label className="sr-only" htmlFor={`${id}-search`}>Tìm giống</label>
+            <div className="flex items-center gap-2 rounded-lg bg-po-surface-muted px-3">
+              <Search className="size-4 shrink-0 text-po-text-muted" />
+              <input
+                id={`${id}-search`}
+                type="search"
+                autoFocus
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Tìm giống..."
+                className="h-9 min-w-0 flex-1 bg-transparent text-sm text-po-text outline-none placeholder:text-po-text-subtle"
+              />
+            </div>
+          </div>
+          <div className="max-h-52 overflow-y-auto py-1">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => {
+                const isSelected = option.vi === value
+                return (
+                  <button
+                    key={option.vi}
+                    type="button"
+                    role="option"
+                    aria-selected={isSelected}
+                    onClick={() => handleSelect(option.vi)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm transition",
+                      isSelected
+                        ? "bg-po-primary/10 font-semibold text-po-primary"
+                        : "text-po-text hover:bg-po-surface-muted",
+                    )}
+                  >
+                    <span className="min-w-0 truncate">{option.vi}</span>
+                    {isSelected && <Check className="size-4 shrink-0" />}
+                  </button>
+                )
+              })
+            ) : (
+              <p className="px-3 py-4 text-center text-sm text-po-text-muted">Không tìm thấy giống phù hợp.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface FormState {
   name: string
@@ -317,17 +429,13 @@ export default function PetModal({ isOpen, onClose, pet, onSuccess }: PetModalPr
           <label htmlFor="pet-breed" className="text-sm font-semibold text-po-text">
             Giống
           </label>
-          <select
+          <BreedCombobox
             id="pet-breed"
             value={form.breed}
-            onChange={(e) => setField("breed", e.target.value)}
-            disabled={isLoading}
-            className="h-11 w-full cursor-pointer rounded-xl border border-po-border bg-white px-4 text-sm text-po-text focus:border-po-primary focus:outline-none focus:ring-2 focus:ring-po-primary/20 disabled:opacity-60"
-          >
-            {breeds.map((b) => (
-              <option key={b.vi} value={b.vi}>{b.vi}</option>
-            ))}
-          </select>
+            options={breeds}
+            disabled={isSaving}
+            onChange={(breed) => setField("breed", breed)}
+          />
           {form.breed === "Khác" && (
             <input
               type="text"

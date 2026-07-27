@@ -28,7 +28,6 @@ import PromotionOffers from "@/components/dashboard/owner/PromotionOffers"
 import PremiumCheckoutModal from "./PremiumCheckoutModal"
 import { cn } from "@/lib/utils"
 import { formatCurrency, formatDate } from "@/lib/format"
-import { getPetsApi } from "@/services/pets.service"
 import {
   createChatSubscriptionPaymentApi,
   getChatSubscriptionPaymentStatusApi,
@@ -96,18 +95,13 @@ export default function OwnerAiPlanPage() {
   const [isPremiumCheckoutOpen, setIsPremiumCheckoutOpen] = useState(false)
   const [voucherCode, setVoucherCode] = useState("")
 
-  const { data: pets = [] } = useQuery({
-    queryKey: ["owner-pets"],
-    queryFn: getPetsApi,
-  })
-
-  // Gói gộp chung theo tài khoản: trạng thái/usage không phụ thuộc pet nào.
+  // Quota và thanh toán được gộp chung theo tài khoản, không theo từng thú cưng.
   const {
     data: subscriptionStatus,
     isLoading: isLoadingSubscription,
   } = useQuery({
     queryKey: ["owner-chat-subscription", "account"],
-    queryFn: () => getChatSubscriptionStatusApi(null),
+    queryFn: () => getChatSubscriptionStatusApi(),
     staleTime: 30 * 1000,
   })
 
@@ -118,7 +112,7 @@ export default function OwnerAiPlanPage() {
       setVoucherCode("")
       setPaymentRequest(payment)
       if (payment.status.toLowerCase() === "paid") {
-        toast.success("Da ap dung uu dai va bat Premium cho tat ca thu cung cua ban!")
+        toast.success("Đã áp dụng ưu đãi và bật Premium cho tài khoản của bạn!")
         void queryClient.invalidateQueries({ queryKey: ["owner-chat-subscription"] })
         return
       }
@@ -159,7 +153,7 @@ export default function OwnerAiPlanPage() {
         latestPayment.status.toLowerCase() === "paid" &&
         prev?.status.toLowerCase() !== "paid"
       if (justPaid) {
-        toast.success("Đã bật Premium cho tất cả thú cưng của bạn! 🎉")
+        toast.success("Đã bật Premium cho tài khoản của bạn! 🎉")
         void queryClient.invalidateQueries({
           queryKey: ["owner-chat-subscription"],
         })
@@ -216,7 +210,6 @@ export default function OwnerAiPlanPage() {
   const handleRegeneratePayment = (payment: ChatSubscriptionPaymentResponse) => {
     createPaymentMutation.mutate({
       planCode: payment.planCode,
-      petId: payment.petId,
       voucherCode: payment.voucherCode ?? undefined,
     })
   }
@@ -233,11 +226,11 @@ export default function OwnerAiPlanPage() {
             PetOmi AI
           </span>
           <h1 className="mt-3 text-3xl font-extrabold leading-tight text-po-text md:text-4xl">
-            Gói AI cho thú cưng
+            Gói PetOmi AI
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted md:text-base">
-            Một gói dùng chung cho tất cả thú cưng của bạn. Nâng cấp Premium để
-            có thêm lượt nhắn và tính năng tư vấn nâng cao cho mọi bé.
+            Một quota dùng chung cho toàn bộ tài khoản. Khi chat, bạn vẫn chọn thú cưng
+            để AI dùng đúng hồ sơ sức khỏe của bé.
           </p>
         </div>
 
@@ -253,7 +246,7 @@ export default function OwnerAiPlanPage() {
       {/* Ưu đãi: free trial, early-bird, referral */}
       <PromotionOffers />
 
-      {/* Hero: pet selector + current status */}
+      {/* Current account plan and shared quota */}
       <section className="overflow-hidden rounded-3xl bg-white ring-1 ring-po-border/80">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-po-border/70 bg-po-surface-muted/50 px-5 py-4">
           <div className="flex items-center gap-3">
@@ -265,17 +258,11 @@ export default function OwnerAiPlanPage() {
                 Gói của bạn
               </p>
               <p className="text-base font-bold text-po-text">
-                Dùng chung cho tất cả thú cưng
+                Quota dùng chung trong tài khoản
               </p>
             </div>
           </div>
 
-          {pets.length > 0 ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-po-primary-soft px-3 py-1.5 text-xs font-semibold text-po-primary">
-              <PawPrint className="size-3.5" />
-              {pets.length} bé đang dùng được
-            </span>
-          ) : null}
         </div>
 
         <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_300px]">
@@ -399,43 +386,6 @@ export default function OwnerAiPlanPage() {
         </div>
       </DashboardSection>
 
-      {/* Các bé dùng chung gói */}
-      <DashboardSection
-        title="Những bé đang dùng gói này"
-        subtitle={
-          subscriptionStatus?.isPremium
-            ? "Tất cả thú cưng của bạn đều được dùng Premium."
-            : "Tất cả thú cưng của bạn đang dùng gói Free."
-        }
-      >
-        {pets.length ? (
-          <div className="grid gap-2 sm:grid-cols-2">
-            {pets.map((pet) => (
-              <div
-                key={pet.petId}
-                className="flex items-center justify-between gap-3 rounded-2xl bg-po-surface-muted px-4 py-3"
-              >
-                <span className="inline-flex min-w-0 items-center gap-2 text-sm font-semibold text-po-text">
-                  {subscriptionStatus?.isPremium ? (
-                    <Crown className="size-4 shrink-0 text-po-primary" />
-                  ) : (
-                    <PawPrint className="size-4 shrink-0 text-po-text-muted" />
-                  )}
-                  <span className="truncate">{pet.name}</span>
-                </span>
-                <span className="shrink-0 text-xs font-bold text-po-text-muted">
-                  {subscriptionStatus?.isPremium ? "Premium" : "Free"}
-                </span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="rounded-2xl bg-po-surface-muted px-4 py-5 text-center text-sm font-semibold text-po-text-muted">
-            Bạn chưa thêm thú cưng nào.
-          </p>
-        )}
-      </DashboardSection>
-
       {/* Payment modal */}
       {isPremiumCheckoutOpen ? (
         <PremiumCheckoutModal
@@ -528,7 +478,7 @@ function CapabilityRow({
   active?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5 text-sm ring-1 ring-po-border/60">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-sm ring-1 ring-po-border/60">
       <span className="inline-flex min-w-0 items-center gap-2 font-medium text-po-text-muted">
         <Icon
           className={cn(
@@ -540,7 +490,7 @@ function CapabilityRow({
       </span>
       <span
         className={cn(
-          "shrink-0 text-sm font-bold",
+          "max-w-[42%] truncate text-right text-sm font-bold",
           active ? "text-po-text" : "text-po-text-subtle",
         )}
       >

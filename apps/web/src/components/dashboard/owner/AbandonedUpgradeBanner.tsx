@@ -62,7 +62,7 @@ export default function AbandonedUpgradeBanner() {
 
   const { data: status } = useQuery({
     queryKey: ["owner-chat-subscription", "account"],
-    queryFn: () => getChatSubscriptionStatusApi(null),
+    queryFn: getChatSubscriptionStatusApi,
     enabled: isAuthenticated,
     staleTime: 60_000,
   })

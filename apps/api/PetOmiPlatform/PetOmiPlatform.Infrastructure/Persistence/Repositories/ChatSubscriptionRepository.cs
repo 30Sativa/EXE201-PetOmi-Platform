@@ -216,6 +216,63 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
         return affectedRows == 1;
     }
 
+    public async Task<bool> TryCancelOpenPaymentAsync(Guid paymentId, DateTime utcNow)
+    {
+        var connection = _context.Database.GetDbConnection();
+        var shouldCloseConnection = connection.State == System.Data.ConnectionState.Closed;
+
+        if (shouldCloseConnection)
+            await _context.Database.OpenConnectionAsync();
+
+        try
+        {
+            using var command = connection.CreateCommand();
+            command.Transaction = _context.Database.CurrentTransaction?.GetDbTransaction();
+            command.CommandText = """
+                DECLARE @CancelledPayment TABLE
+                (
+                    PaymentID UNIQUEIDENTIFIER NOT NULL,
+                    VoucherID UNIQUEIDENTIFIER NULL
+                );
+
+                UPDATE dbo.ChatSubscriptionPayments
+                SET Status = @cancelledStatus,
+                    IsOpen = 0,
+                    HasVoucherReservation = 0,
+                    UpdatedAt = @utcNow
+                OUTPUT INSERTED.PaymentID,
+                    CASE
+                        WHEN DELETED.HasVoucherReservation = CAST(1 AS bit) THEN DELETED.VoucherID
+                        ELSE NULL
+                    END
+                INTO @CancelledPayment (PaymentID, VoucherID)
+                WHERE PaymentID = @paymentId
+                  AND Status = @pendingStatus
+                  AND IsOpen = 1;
+
+                UPDATE voucher
+                SET ReservedCount = CASE WHEN voucher.ReservedCount > 0 THEN voucher.ReservedCount - 1 ELSE 0 END,
+                    UpdatedAt = @utcNow
+                FROM dbo.ChatSubscriptionVouchers voucher
+                INNER JOIN @CancelledPayment cancelledPayment ON cancelledPayment.VoucherID = voucher.VoucherID;
+
+                SELECT COUNT_BIG(1) FROM @CancelledPayment;
+                """;
+            command.Parameters.Add(new SqlParameter("@paymentId", paymentId));
+            command.Parameters.Add(new SqlParameter("@utcNow", utcNow));
+            command.Parameters.Add(new SqlParameter("@cancelledStatus", ChatSubscriptionPaymentStatus.Cancelled.ToString()));
+            command.Parameters.Add(new SqlParameter("@pendingStatus", ChatSubscriptionPaymentStatus.Pending.ToString()));
+
+            var result = await command.ExecuteScalarAsync();
+            return Convert.ToInt64(result) > 0;
+        }
+        finally
+        {
+            if (shouldCloseConnection)
+                await _context.Database.CloseConnectionAsync();
+        }
+    }
+
     public async Task<bool> TryExpirePaymentAsync(Guid paymentId, DateTime utcNow)
     {
         var connection = _context.Database.GetDbConnection();

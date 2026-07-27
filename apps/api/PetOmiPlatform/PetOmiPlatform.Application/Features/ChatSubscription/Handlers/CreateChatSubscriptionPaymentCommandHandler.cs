@@ -59,12 +59,6 @@ public class CreateChatSubscriptionPaymentCommandHandler
         var now = DateTime.UtcNow;
         await _subscriptionRepository.ExpirePendingPaymentsForOwnerAsync(command.OwnerUserId, now);
 
-        var openPayment = await _subscriptionRepository.GetOpenPaymentByOwnerAsync(command.OwnerUserId, now);
-        if (openPayment != null)
-        {
-            return await BuildResponseAsync(openPayment, plan, pet, 0);
-        }
-
         // Early-bird: giam % cho user trong nhung chu ky thanh toan dau (neu setting bat).
         var promo = await _promotionSettings.GetAsync(cancellationToken);
         var originalAmount = plan.PriceMonthly;
@@ -98,6 +92,47 @@ public class CreateChatSubscriptionPaymentCommandHandler
         }
 
         var finalAmount = Math.Max(0m, originalAmount - discountAmount);
+
+        var openPayment = await _subscriptionRepository.GetOpenPaymentByOwnerAsync(command.OwnerUserId, now);
+        if (openPayment != null)
+        {
+            if (MatchesCheckout(
+                    openPayment,
+                    plan,
+                    pet,
+                    platformAccount.BankAccountNo,
+                    platformAccount.BankCode,
+                    originalAmount,
+                    discountAmount,
+                    finalAmount,
+                    voucher?.Code))
+            {
+                return await BuildResponseAsync(openPayment, plan, pet, discountPercent);
+            }
+
+            if (!await _subscriptionRepository.TryCancelOpenPaymentAsync(openPayment.Id, now))
+            {
+                var concurrentOpenPayment = await _subscriptionRepository.GetOpenPaymentByOwnerAsync(
+                    command.OwnerUserId,
+                    now);
+
+                if (concurrentOpenPayment != null && MatchesCheckout(
+                        concurrentOpenPayment,
+                        plan,
+                        pet,
+                        platformAccount.BankAccountNo,
+                        platformAccount.BankCode,
+                        originalAmount,
+                        discountAmount,
+                        finalAmount,
+                        voucher?.Code))
+                {
+                    return await BuildResponseAsync(concurrentOpenPayment, plan, pet, discountPercent);
+                }
+
+                throw new ConflictException("Thong tin thanh toan vua thay doi. Vui long thu lai.");
+            }
+        }
 
         if (voucher != null && !await _subscriptionRepository.TryReserveVoucherAsync(voucher.Id, now))
         {
@@ -157,6 +192,37 @@ public class CreateChatSubscriptionPaymentCommandHandler
         }
 
         return await BuildResponseAsync(payment, plan, pet, discountPercent);
+    }
+
+    private static bool MatchesCheckout(
+        ChatSubscriptionPaymentDomain payment,
+        ChatSubscriptionPlanDomain plan,
+        PetOmiPlatform.Domain.Entities.PetDomain? pet,
+        string bankAccountNo,
+        string bankCode,
+        decimal originalAmount,
+        decimal discountAmount,
+        decimal finalAmount,
+        string? voucherCode)
+    {
+        return payment.PlanId == plan.Id
+            && payment.PetId == pet?.Id
+            && payment.OriginalAmount == originalAmount
+            && payment.DiscountAmount == discountAmount
+            && payment.Amount == finalAmount
+            && string.Equals(
+                NormalizeVoucherCode(payment.VoucherCode),
+                NormalizeVoucherCode(voucherCode),
+                StringComparison.Ordinal)
+            && string.Equals(payment.BankAccountNo.Trim(), bankAccountNo.Trim(), StringComparison.Ordinal)
+            && string.Equals(payment.BankCode.Trim(), bankCode.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? NormalizeVoucherCode(string? voucherCode)
+    {
+        return string.IsNullOrWhiteSpace(voucherCode)
+            ? null
+            : voucherCode.Trim().Replace(" ", string.Empty).ToUpperInvariant();
     }
 
     private async Task<ChatSubscriptionPaymentResponse> CompleteComplimentaryPaymentAsync(

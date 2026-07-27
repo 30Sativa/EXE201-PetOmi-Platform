@@ -21,6 +21,7 @@ public interface IChatSubscriptionRepository
     Task<bool> AnyPaymentReferenceAsync(string paymentReference);
     Task<bool> AnyProviderTransactionAsync(PaymentProvider provider, string providerTransactionId);
     Task<bool> TryClaimPaymentAsync(Guid paymentId, DateTime utcNow);
+    Task<bool> TryCancelOpenPaymentAsync(Guid paymentId, DateTime utcNow);
     Task<bool> TryExpirePaymentAsync(Guid paymentId, DateTime utcNow);
     Task<int> ExpirePendingPaymentsForOwnerAsync(Guid ownerUserId, DateTime utcNow);
     Task<int> ExpirePendingPaymentsAsync(DateTime utcNow);

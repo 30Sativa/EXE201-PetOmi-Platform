@@ -8,6 +8,8 @@
 --   - MERGE/conditional INSERT for all seeded rows
 --
 -- Login password for all 10 accounts: 194551524@Thanh
+-- PasswordHash stored in Users:
+-- $2a$11$uO6OrIPbvHZcd/uJ95rit.erWy0kevXR5ZZjG1fbQ9O5QOTRgXtxG
 -- All accounts are active, profile-complete and e-mail verified.
 --
 -- Recommended manual payment accounts:
@@ -69,7 +71,7 @@ BEGIN TRY
     DECLARE @Now DATETIME = GETUTCDATE();
     DECLARE @Today DATE = CONVERT(DATE, @Now);
     DECLARE @PasswordHash NVARCHAR(255) =
-        N'$2a$11$3FhJ22U7m0GdVXspO7s23e/TCW.TwB0LYg8KqaCvgeVJGTNpo2Ugq';
+        N'$2a$11$uO6OrIPbvHZcd/uJ95rit.erWy0kevXR5ZZjG1fbQ9O5QOTRgXtxG';
 
     DECLARE @OwnerRoleID UNIQUEIDENTIFIER =
         (SELECT TOP (1) RoleID FROM dbo.Roles WHERE RoleName = N'Owner');

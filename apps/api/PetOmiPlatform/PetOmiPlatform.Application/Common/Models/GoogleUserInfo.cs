@@ -7,6 +7,7 @@ namespace PetOmiPlatform.Application.Common.Models
     public record GoogleUserInfo(
     string ProviderKey,
     string Email,
+    bool EmailVerified,
     string? Name
 );
 }

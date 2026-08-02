@@ -31,11 +31,14 @@ namespace PetOmiPlatform.Infrastructure.External
 
             var content = await response.Content.ReadAsStringAsync();
 
-            var json = JsonDocument.Parse(content).RootElement;
+            using var document = JsonDocument.Parse(content);
+            var json = document.RootElement;
 
             return new GoogleUserInfo(
                 ProviderKey: json.GetProperty("sub").GetString()!,
                 Email: json.GetProperty("email").GetString()!,
+                EmailVerified: json.TryGetProperty("email_verified", out var emailVerified) &&
+                    emailVerified.ValueKind == JsonValueKind.True,
                 Name: json.TryGetProperty("name", out var name) ? name.GetString() : null
             );
         }

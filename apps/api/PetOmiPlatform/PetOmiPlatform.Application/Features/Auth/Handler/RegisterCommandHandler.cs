@@ -59,7 +59,12 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
             // 1. Check email tồn tại
             var existingUser = await _userRepository.GetByNormalizedEmail(email.NormalizedValue);
             if (existingUser != null)
-                throw new ConflictException("Email này đã được sử dụng.");
+            {
+                var message = existingUser.EmailVerified
+                    ? "Email này đã được sử dụng."
+                    : "Email này đã được đăng ký nhưng chưa xác minh. Vui lòng đăng nhập để gửi lại email xác minh.";
+                throw new ConflictException(message);
+            }
 
             // 2. Hash password
             var passwordHash = _passwordHasher.Hash(request.Request.Password);

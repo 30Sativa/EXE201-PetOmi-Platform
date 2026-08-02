@@ -57,6 +57,10 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
         {
             // 1. Lấy thông tin user từ Google
             var googleUser = await _googleAuthService.GetUserInfoAsync(command.AccessToken);
+            if (!googleUser.EmailVerified)
+                throw new UnauthorizedException("Google chưa xác minh email của tài khoản này.");
+
+            var googleEmail = new Email(googleUser.Email);
 
             // 2. Check ExternalLogin đã tồn tại chưa
             var existingUserId = await _externalLoginRepository
@@ -70,26 +74,26 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 // 3a. Đã có → load user lên
                 user = await _userRepository.GetByIdAsync(existingUserId.Value)
                     ?? throw new NotFoundException("Không tìm thấy tài khoản.");
+                VerifyMatchingGoogleEmail(user, googleEmail);
                 requiresPasswordSetup = !user.HasPassword;
             }
             else
             {
                 // 3b. Chưa có → tạo User mới
-                var email = new Email(googleUser.Email);
-
                 // Kiểm tra email đã tồn tại chưa (user đã register bằng password)
-                var existingUser = await _userRepository.GetByNormalizedEmail(email.NormalizedValue);
+                var existingUser = await _userRepository.GetByNormalizedEmail(googleEmail.NormalizedValue);
 
                 if (existingUser != null)
                 {
                     // Email đã tồn tại → link ExternalLogin vào account cũ
                     user = existingUser;
+                    VerifyMatchingGoogleEmail(user, googleEmail);
                     requiresPasswordSetup = !user.HasPassword;
                 }
                 else
                 {
                     // Tạo user mới — không có password (OAuth user)
-                    user = UserDomain.CreateWithoutPassword(email);
+                    user = UserDomain.CreateWithoutPassword(googleEmail);
                     await _userRepository.AddAsync(user);
                     requiresPasswordSetup = true;
 
@@ -107,6 +111,9 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
 
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
+
+            user.EnsureCanLogin();
+            user.RecordLoginSuccess();
 
             var userAgent = string.IsNullOrWhiteSpace(command.UserAgent)
                 ? "Unknown"
@@ -190,6 +197,23 @@ namespace PetOmiPlatform.Application.Features.Auth.Handler
                 IsProfileCompleted = user.IsProfileCompleted,
                 RequiresPasswordSetup = requiresPasswordSetup
             };
+        }
+
+        private static void VerifyMatchingGoogleEmail(UserDomain user, Email googleEmail)
+        {
+            if (user.EmailVerified)
+                return;
+
+            if (!string.Equals(
+                    user.Email.NormalizedValue,
+                    googleEmail.NormalizedValue,
+                    StringComparison.Ordinal))
+            {
+                throw new UnauthorizedException(
+                    "Email Google không khớp với email của tài khoản đã liên kết.");
+            }
+
+            user.VerifyEmail();
         }
     }
 }

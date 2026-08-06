@@ -10,6 +10,7 @@ import {
   Clock3,
   KeyRound,
   Mail,
+  MapPin,
   Search,
   ShieldCheck,
   ToggleRight,
@@ -278,6 +279,13 @@ export default function AdminUsersPage() {
                             <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
                             <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
                           </div>
+                          <div
+                            className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted"
+                            title={user.address ?? undefined}
+                          >
+                            <MapPin className="size-3 shrink-0" />
+                            <span className="truncate">{user.address || "Chưa có địa chỉ"}</span>
+                          </div>
                           <div className="mt-0.5 flex items-center gap-1.5">
                             {user.emailVerified ? (
                               <span className="inline-flex items-center gap-1 text-[#FF8A1E]">
@@ -516,6 +524,13 @@ function UserMobileCard({
                 <span className="truncate">{maskEmail(user.email)}</span>
                 <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
                 <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
+              </p>
+              <p
+                className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted"
+                title={user.address ?? undefined}
+              >
+                <MapPin className="size-3 shrink-0" />
+                <span className="truncate">{user.address || "Chưa có địa chỉ"}</span>
               </p>
             </div>
             <StatusBadge

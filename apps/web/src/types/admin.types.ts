@@ -259,6 +259,7 @@ export interface AdminUserListResponse {
   email: string
   fullName: string | null
   dateOfBirth: string | null
+  address: string | null
   emailVerified: boolean
   isActive: boolean
   isProfileCompleted: boolean

@@ -116,6 +116,7 @@ public class GetAdminAlertsQueryHandler : IRequestHandler<GetAdminAlertsQuery, A
                 Email = user.Email.Value,
                 FullName = profile?.FullName,
                 DateOfBirth = profile?.DateOfBirth,
+                Address = profile?.Address,
                 EmailVerified = user.EmailVerified,
                 IsActive = user.IsActive,
                 IsProfileCompleted = user.IsProfileCompleted,

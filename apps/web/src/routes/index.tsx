@@ -35,7 +35,7 @@ import AdminWebsiteFeedbackPage from "@/pages/dashboard/AdminWebsiteFeedbackPage
 import AdminProfilePage from "@/pages/dashboard/AdminProfilePage"
 import AdminRolesPage from "@/pages/dashboard/AdminRolesPage"
 import AdminSettingsPage from "@/pages/dashboard/AdminSettingsPage"
-import AdminSyntheticActivityPage from "@/pages/dashboard/AdminSyntheticActivityPage"
+import AdminUserBehaviorPage from "@/pages/dashboard/AdminUserBehaviorPage"
 import AdminUsersPage from "@/pages/dashboard/AdminUsersPage"
 import WebsiteFeedbackPage from "@/pages/dashboard/WebsiteFeedbackPage"
 import ClinicDashboardPage from "@/pages/dashboard/ClinicDashboardPage"
@@ -339,8 +339,12 @@ const router = createBrowserRouter([
             element: <AdminAiPage />,
           },
           {
+            path: "behavior",
+            element: <AdminUserBehaviorPage />,
+          },
+          {
             path: "synthetic-activity",
-            element: <AdminSyntheticActivityPage />,
+            element: <Navigate to="/dashboard/admin/behavior" replace />,
           },
           {
             path: "chat-subscriptions",

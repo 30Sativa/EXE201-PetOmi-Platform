@@ -243,11 +243,11 @@ export default function AdminDashboardPage() {
                 Quản lý người dùng
               </button>
               <button
-                onClick={() => navigate("/dashboard/admin/ai")}
+                onClick={() => navigate("/dashboard/admin/behavior")}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-semibold text-po-text ring-1 ring-po-border/90 transition hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 max-[480px]:w-full"
               >
                 <ChartNoAxesCombined className="size-4 text-po-primary" />
-                Xem AI monitor
+                Phân tích hành vi
               </button>
             </div>
           </div>

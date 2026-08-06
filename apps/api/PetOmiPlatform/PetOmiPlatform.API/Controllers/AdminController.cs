@@ -36,16 +36,16 @@ public class AdminController : BaseController
     }
 
     /// <summary>
-    /// Báo cáo riêng cho dữ liệu demo/synthetic, không trộn với bằng chứng khách hàng thật.
+    /// Phân tích hành vi chủ nuôi, funnel kích hoạt và mức sử dụng tính năng.
     /// </summary>
-    [HttpGet("synthetic-activity")]
-    public async Task<IActionResult> GetSyntheticActivity(
+    [HttpGet("user-behavior")]
+    public async Task<IActionResult> GetUserBehavior(
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate,
-        [FromQuery] string? origin = "real")
+        [FromQuery] string? origin = "all")
     {
-        var result = await Mediator.Send(new GetAdminSyntheticActivityQuery(fromDate, toDate, origin));
-        return Ok(BaseResponse<AdminSyntheticActivityResponse>.Ok(result));
+        var result = await Mediator.Send(new GetAdminUserBehaviorQuery(fromDate, toDate, origin));
+        return Ok(BaseResponse<AdminUserBehaviorResponse>.Ok(result));
     }
 
     /// <summary>

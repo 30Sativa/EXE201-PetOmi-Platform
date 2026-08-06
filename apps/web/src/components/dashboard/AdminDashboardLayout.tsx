@@ -5,7 +5,6 @@ import {
   Bot,
   ChartNoAxesCombined,
   CreditCard,
-  FlaskConical,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -26,7 +25,7 @@ import { cn } from "@/lib/utils"
 const navItems = [
   { label: "Tổng quan", to: "/dashboard/admin", icon: LayoutDashboard, exact: true },
   { label: "AI monitor", to: "/dashboard/admin/ai", icon: Bot },
-  { label: "Hoạt động OC3", to: "/dashboard/admin/synthetic-activity", icon: FlaskConical },
+  { label: "Phân tích hành vi", to: "/dashboard/admin/behavior", icon: Activity },
   { label: "AI Subscriptions", to: "/dashboard/admin/chat-subscriptions", icon: CreditCard },
   { label: "Góp ý web", to: "/dashboard/admin/feedback", icon: MessageSquareText },
   { label: "Báo cáo CTA", to: "/dashboard/admin/cta-report", icon: ChartNoAxesCombined },

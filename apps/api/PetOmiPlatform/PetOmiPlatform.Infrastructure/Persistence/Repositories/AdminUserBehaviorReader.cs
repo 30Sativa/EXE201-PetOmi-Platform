@@ -4,46 +4,49 @@ using PetOmiPlatform.Infrastructure.Persistence.Contexts;
 
 namespace PetOmiPlatform.Infrastructure.Persistence.Repositories;
 
-public sealed class AdminSyntheticActivityReader : IAdminSyntheticActivityReader
+public sealed class AdminUserBehaviorReader : IAdminUserBehaviorReader
 {
     private readonly PetOmniDbContext _context;
 
-    public AdminSyntheticActivityReader(PetOmniDbContext context)
+    public AdminUserBehaviorReader(PetOmniDbContext context)
     {
         _context = context;
     }
 
-    public async Task<AdminSyntheticActivityReadModel> ReadAsync(
+    public async Task<AdminUserBehaviorReadModel> ReadAsync(
         DateTime fromUtc,
         DateTime toExclusiveUtc,
-        bool isSynthetic,
+        bool? isSynthetic,
         CancellationToken cancellationToken = default)
     {
         var users = await _context.Users
             .AsNoTracking()
             .Where(user =>
-                user.IsSynthetic == isSynthetic &&
+                (!isSynthetic.HasValue || user.IsSynthetic == isSynthetic.Value) &&
+                user.CreatedAt < toExclusiveUtc &&
                 user.DeletedAt == null &&
                 user.UserRoles.Any(userRole =>
                     userRole.Role != null && userRole.Role.RoleName == "Owner"))
             .OrderBy(user => user.CreatedAt)
-            .Select(user => new SyntheticActivityUserReadModel(
+            .Select(user => new UserBehaviorUserReadModel(
                 user.UserId,
                 user.Email,
                 user.UserProfile != null ? user.UserProfile.FullName : null,
+                user.IsSynthetic,
                 user.CreatedAt))
             .ToListAsync(cancellationToken);
 
         var pets = await _context.Pets
             .AsNoTracking()
             .Where(pet =>
-                pet.OwnerUser.IsSynthetic == isSynthetic &&
+                (!isSynthetic.HasValue || pet.OwnerUser.IsSynthetic == isSynthetic.Value) &&
+                pet.CreatedAt < toExclusiveUtc &&
                 pet.OwnerUser.UserRoles.Any(userRole =>
                     userRole.Role != null && userRole.Role.RoleName == "Owner") &&
                 pet.IsActive &&
                 pet.DeletedAt == null)
             .OrderBy(pet => pet.CreatedAt)
-            .Select(pet => new SyntheticActivityPetReadModel(
+            .Select(pet => new UserBehaviorPetReadModel(
                 pet.PetId,
                 pet.OwnerUserId,
                 pet.Name,
@@ -53,12 +56,12 @@ public sealed class AdminSyntheticActivityReader : IAdminSyntheticActivityReader
         var sessions = await _context.UserSessions
             .AsNoTracking()
             .Where(session =>
-                session.User.IsSynthetic == isSynthetic &&
+                (!isSynthetic.HasValue || session.User.IsSynthetic == isSynthetic.Value) &&
                 session.User.UserRoles.Any(userRole =>
                     userRole.Role != null && userRole.Role.RoleName == "Owner") &&
                 session.CreatedAt >= fromUtc &&
                 session.CreatedAt < toExclusiveUtc)
-            .Select(session => new SyntheticActivitySessionReadModel(
+            .Select(session => new UserBehaviorSessionReadModel(
                 session.UserId,
                 session.CreatedAt,
                 session.LogoutAt))
@@ -70,16 +73,18 @@ public sealed class AdminSyntheticActivityReader : IAdminSyntheticActivityReader
                 message.IsActive &&
                 message.Conversation != null &&
                 message.Conversation.User != null &&
-                message.Conversation.User.IsSynthetic == isSynthetic &&
+                (!isSynthetic.HasValue || message.Conversation.User.IsSynthetic == isSynthetic.Value) &&
                 message.Conversation.User.UserRoles.Any(userRole =>
                     userRole.Role != null && userRole.Role.RoleName == "Owner") &&
                 message.CreatedAt >= fromUtc &&
                 message.CreatedAt < toExclusiveUtc)
-            .Select(message => new SyntheticActivityMessageReadModel(
+            .Select(message => new UserBehaviorMessageReadModel(
                 message.MessageId,
                 message.ConversationId,
                 message.Conversation!.UserId,
                 message.SenderRole,
+                message.Content,
+                message.Intent,
                 message.CreatedAt))
             .ToListAsync(cancellationToken);
 
@@ -88,12 +93,12 @@ public sealed class AdminSyntheticActivityReader : IAdminSyntheticActivityReader
             .Where(record =>
                 record.IsActive &&
                 record.DeletedAt == null &&
-                record.Pet.OwnerUser.IsSynthetic == isSynthetic &&
+                (!isSynthetic.HasValue || record.Pet.OwnerUser.IsSynthetic == isSynthetic.Value) &&
                 record.Pet.OwnerUser.UserRoles.Any(userRole =>
                     userRole.Role != null && userRole.Role.RoleName == "Owner") &&
                 record.CreatedAt >= fromUtc &&
                 record.CreatedAt < toExclusiveUtc)
-            .Select(record => new SyntheticActivityMedicalNoteReadModel(
+            .Select(record => new UserBehaviorMedicalNoteReadModel(
                 record.MedicalRecordId,
                 record.Pet.OwnerUserId,
                 record.CreatedAt))
@@ -102,18 +107,18 @@ public sealed class AdminSyntheticActivityReader : IAdminSyntheticActivityReader
         var reminders = await _context.Reminders
             .AsNoTracking()
             .Where(reminder =>
-                reminder.User.IsSynthetic == isSynthetic &&
+                (!isSynthetic.HasValue || reminder.User.IsSynthetic == isSynthetic.Value) &&
                 reminder.User.UserRoles.Any(userRole =>
                     userRole.Role != null && userRole.Role.RoleName == "Owner") &&
                 reminder.CreatedAt >= fromUtc &&
                 reminder.CreatedAt < toExclusiveUtc)
-            .Select(reminder => new SyntheticActivityReminderReadModel(
+            .Select(reminder => new UserBehaviorReminderReadModel(
                 reminder.ReminderId,
                 reminder.UserId,
                 reminder.CreatedAt))
             .ToListAsync(cancellationToken);
 
-        return new AdminSyntheticActivityReadModel
+        return new AdminUserBehaviorReadModel
         {
             Users = users,
             Pets = pets,

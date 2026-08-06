@@ -76,25 +76,105 @@ export interface AdminDashboardResponse {
   aiIntentStats: AiIntentStatItem[]
 }
 
-// Admin synthetic/demo activity report
-export interface AdminSyntheticActivitySummary {
+// Admin user behavior analytics
+export type AdminBehaviorOrigin = "ALL" | "REAL" | "SYNTHETIC"
+
+export interface AdminUserBehaviorSummary {
   usersInDataset: number
-  usersWithPet: number
-  usersWhoCreatedPetInRange: number
-  usersWhoUsedServiceInRange: number
-  qualifiedUsers: number
+  newUsers: number
+  activeUsers: number
+  activatedUsers: number
+  returningUsers: number
+  dormantUsers: number
   petsCreated: number
-  activeUserDays: number
+  conversations: number
   ownerMessages: number
   aiResponses: number
   medicalNotes: number
   remindersCreated: number
+  totalSessions: number
   averageSessionMinutes: number
+  averageDailyActiveUsers: number
+  engagementRate: number
+  activationRate: number
+  returnRate: number
 }
 
-export interface AdminSyntheticDailyActivityItem {
+export interface AdminBehaviorFunnelItem {
+  key: string
+  label: string
+  description: string
+  users: number
+  dropOffUsers: number
+  conversionRate: number
+}
+
+export interface AdminFeatureAdoptionItem {
+  key: string
+  label: string
+  description: string
+  users: number
+  events: number
+  adoptionRate: number
+}
+
+export interface AdminUserSegmentItem {
+  key: string
+  label: string
+  description: string
+  users: number
+  percentage: number
+}
+
+export interface AdminBehaviorInsightItem {
+  severity: "positive" | "warning" | "opportunity"
+  title: string
+  description: string
+  recommendedAction: string
+  metric: string
+}
+
+export interface AdminChatTopicItem {
+  intent: string
+  label: string
+  questions: number
+  users: number
+  percentage: number
+}
+
+export interface AdminTopQuestionItem {
+  question: string
+  intent: string
+  intentLabel: string
+  askCount: number
+  users: number
+  lastAskedAt: string
+}
+
+export interface AdminTopChatUserItem {
+  userId: string
+  email: string
+  fullName: string | null
+  questions: number
+  conversations: number
+  activeDays: number
+}
+
+export interface AdminChatBehaviorAnalytics {
+  totalQuestions: number
+  uniqueChatUsers: number
+  questionsPerChatUser: number
+  questionsPerConversation: number
+  topTopics: AdminChatTopicItem[]
+  topQuestions: AdminTopQuestionItem[]
+  topUsers: AdminTopChatUserItem[]
+}
+
+export interface AdminUserBehaviorDailyItem {
   date: string
   activeUsers: number
+  sessions: number
+  conversations: number
   petsCreated: number
   ownerMessages: number
   aiResponses: number
@@ -102,34 +182,46 @@ export interface AdminSyntheticDailyActivityItem {
   remindersCreated: number
 }
 
-export interface AdminSyntheticUserActivityItem {
+export interface AdminUserBehaviorItem {
   userId: string
   email: string
   fullName: string | null
   isSynthetic: boolean
+  accountCreatedAt: string
   petNames: string[]
-  firstPetCreatedAt: string | null
   activeDays: number
+  sessions: number
+  conversations: number
   ownerMessages: number
   aiResponses: number
   medicalNotes: number
   remindersCreated: number
+  featuresUsed: number
+  totalActions: number
+  engagementScore: number
+  segment: string
+  segmentLabel: string
   firstActivityAt: string | null
   lastActivityAt: string | null
-  createdPetInRange: boolean
+  hasPet: boolean
   usedServiceInRange: boolean
-  qualifiedForScenario: boolean
+  isReturning: boolean
 }
 
-export interface AdminSyntheticActivityResponse {
+export interface AdminUserBehaviorResponse {
   datasetLabel: string
-  dataOrigin: "REAL" | "SYNTHETIC"
-  notice: string
+  dataOrigin: AdminBehaviorOrigin
   fromDate: string
   toDate: string
-  summary: AdminSyntheticActivitySummary
-  dailyActivity: AdminSyntheticDailyActivityItem[]
-  users: AdminSyntheticUserActivityItem[]
+  generatedAt: string
+  summary: AdminUserBehaviorSummary
+  chatAnalytics: AdminChatBehaviorAnalytics
+  funnel: AdminBehaviorFunnelItem[]
+  featureAdoption: AdminFeatureAdoptionItem[]
+  segments: AdminUserSegmentItem[]
+  insights: AdminBehaviorInsightItem[]
+  dailyActivity: AdminUserBehaviorDailyItem[]
+  users: AdminUserBehaviorItem[]
 }
 
 // Admin Roles

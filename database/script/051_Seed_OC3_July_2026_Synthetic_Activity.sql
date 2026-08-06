@@ -15,7 +15,8 @@
 --   - deterministic IDs and MERGE statements, so reruns are idempotent
 --
 -- Login password for the seven new demo.oc3.* accounts: 194551524@Thanh
--- Before running, deliberately change @AllowSyntheticDemoData from 0 to 1.
+-- Local/demo execution is enabled below. Change it back to 0 before sharing
+-- this script for use outside the controlled demo environment.
 -- Requires migrations 001..050 plus demo seeds 034 and 047.
 -- =====================================================================
 
@@ -25,7 +26,7 @@ GO
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
 
-DECLARE @AllowSyntheticDemoData BIT = 0;
+DECLARE @AllowSyntheticDemoData BIT = 1;
 
 IF @AllowSyntheticDemoData <> 1
 BEGIN

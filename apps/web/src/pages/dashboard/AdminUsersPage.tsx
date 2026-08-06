@@ -15,7 +15,6 @@ import {
   MapPin,
   Phone,
   Search,
-  ShieldCheck,
   ToggleRight,
   UsersRound,
   X,
@@ -216,10 +215,10 @@ export default function AdminUsersPage() {
         </div>
 
         <div className="admin-table-scroll hidden md:block">
-          <table className="admin-table min-w-[1040px]">
+          <table className="admin-table min-w-[820px]">
             <thead>
               <tr className="border-b border-[#F1E3D2] bg-gradient-to-b from-[#FFFCF8] to-[#FFF9F2]">
-                <th className="w-[320px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[300px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   <div className="flex items-center gap-3">
                     <span className="grid size-8 place-items-center rounded-full bg-[#F5F7FA] text-po-text-subtle ring-1 ring-[#EAEFF5]">
                       <UsersRound className="size-4" />
@@ -237,23 +236,15 @@ export default function AdminUsersPage() {
                     <span>Quyền</span>
                   </div>
                 </th>
-                <th className="w-[120px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="grid size-7 place-items-center rounded-full bg-[#F5F7FA] text-po-text-subtle ring-1 ring-[#EAEFF5]">
-                      <CalendarDays className="size-4" />
-                    </span>
-                    <span>Ngày tạo</span>
-                  </div>
-                </th>
-                <th className="w-[140px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[180px] border-r border-[#F4E7D8] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   <div className="flex items-center justify-center gap-2">
                     <span className="grid size-7 place-items-center rounded-full bg-[#F5F7FA] text-po-text-subtle ring-1 ring-[#EAEFF5]">
                       <Clock3 className="size-4" />
                     </span>
-                    <span>Đăng nhập cuối</span>
+                    <span>Hoạt động gần nhất</span>
                   </div>
                 </th>
-                <th className="w-[220px] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
+                <th className="w-[140px] px-4 py-4 text-xs font-semibold uppercase tracking-wider text-po-text-subtle">
                   <div className="flex items-center justify-center gap-2">
                     <span>Hành động</span>
                   </div>
@@ -263,13 +254,13 @@ export default function AdminUsersPage() {
             <tbody className="divide-y divide-[#F4E8D9]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center">
+                  <td colSpan={5} className="py-16 text-center">
                     <LoadingSpinner />
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={5}>
                     <EmptyState
                       icon={UsersRound}
                       title="Không có người dùng nào"
@@ -285,7 +276,7 @@ export default function AdminUsersPage() {
                     key={user.userId}
                     className="group transition hover:bg-[#FFF9F2]"
                   >
-                    <td className="px-4 py-4">
+                    <td className="px-4 py-3.5">
                       <div className="flex items-center gap-3">
                         <div className="grid size-11 shrink-0 place-items-center rounded-full bg-[#FFE4BF] text-[#B96A00] text-sm font-extrabold ring-1 ring-[#FFD8A0]">
                           {user.fullName ? user.fullName[0].toUpperCase() : user.email[0].toUpperCase()}
@@ -294,42 +285,9 @@ export default function AdminUsersPage() {
                           <p className="truncate text-sm font-bold text-po-text">
                             {user.fullName ?? "Chưa có tên"}
                           </p>
-                          <div className="flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
+                          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
                             <Mail className="size-3 shrink-0" />
                             <span className="truncate">{maskEmail(user.email)}</span>
-                            <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
-                            <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
-                          </div>
-                          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
-                            <Phone className="size-3 shrink-0" />
-                            <span className="shrink-0">{user.phone || "Chưa có SĐT"}</span>
-                            <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
-                            <span
-                              className="flex min-w-0 items-center gap-1.5"
-                              title={user.address ?? undefined}
-                            >
-                              <MapPin className="size-3 shrink-0" />
-                              <span className="truncate">{user.address || "Chưa có địa chỉ"}</span>
-                            </span>
-                          </div>
-                          <div className="mt-0.5 flex items-center gap-1.5">
-                            {user.emailVerified ? (
-                              <span className="inline-flex items-center gap-1 text-[#FF8A1E]">
-                                <CheckCircle2 className="size-3" />
-                                <span className="text-[10px] font-medium">Đã xác thực</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[#FF8A1E]">
-                                <XCircle className="size-3" />
-                                <span className="text-[10px] font-medium">Chưa xác thực</span>
-                              </span>
-                            )}
-                            {user.isProfileCompleted && (
-                              <span className="inline-flex items-center gap-1 text-[#F59E0B]">
-                                <ShieldCheck className="size-3" />
-                                <span className="text-[10px] font-medium">Hoàn thành</span>
-                              </span>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -362,9 +320,6 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 text-center text-sm text-po-text-muted whitespace-nowrap">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-4 py-4 text-center text-sm text-po-text-muted whitespace-nowrap">
                       {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Chưa đăng nhập"}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
@@ -372,7 +327,7 @@ export default function AdminUsersPage() {
                         <button
                           type="button"
                           onClick={() => setDetailTarget(user)}
-                          className="grid size-8 shrink-0 place-items-center rounded-full border border-[#E8D9C7] bg-white text-po-text-muted transition hover:-translate-y-0.5 hover:border-po-primary/40 hover:bg-po-primary-soft hover:text-po-primary"
+                          className="grid size-9 shrink-0 place-items-center rounded-full border border-[#E8D9C7] bg-white text-po-text-muted transition hover:-translate-y-0.5 hover:border-po-primary/40 hover:bg-po-primary-soft hover:text-po-primary"
                           title="Xem chi tiết"
                           aria-label={`Xem chi tiết ${user.fullName ?? user.email}`}
                         >
@@ -380,37 +335,34 @@ export default function AdminUsersPage() {
                         </button>
 
                         <button
+                          type="button"
                           onClick={() => setToggleTarget(user)}
                           disabled={toggleMutation.isPending}
-                          className={`inline-flex h-8 min-w-[82px] shrink-0 items-center justify-center gap-1 rounded-full border px-2.5 text-[11px] font-semibold transition hover:-translate-y-0.5 ${
+                          className={`grid size-9 shrink-0 place-items-center rounded-full border transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 ${
                             user.isActive
                               ? "border-[#FFB8B8] bg-[#FFF1F1] text-[#FF4D4F] hover:bg-[#FF4D4F] hover:text-white"
                               : "border-[#BFE7C6] bg-[#F0FFF3] text-[#10A04A] hover:bg-[#10A04A] hover:text-white"
                           }`}
                           title={user.isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                          aria-label={`${user.isActive ? "Khóa" : "Mở khóa"} ${user.fullName ?? user.email}`}
                         >
                           {user.isActive ? (
-                            <>
-                              <Ban className="size-3" />
-                              Khóa
-                            </>
+                            <Ban className="size-3.5" />
                           ) : (
-                            <>
-                              <ToggleRight className="size-3" />
-                              Mở khóa
-                            </>
+                            <ToggleRight className="size-3.5" />
                           )}
                         </button>
 
                         {!user.roles.includes("Admin") && (
                           <button
+                            type="button"
                             onClick={() => setAssignTarget(user)}
                             disabled={assignMutation.isPending}
-                            className="inline-flex h-8 min-w-[96px] shrink-0 items-center justify-center gap-1 rounded-full border border-[#FFD39A] bg-[#FFF6EA] px-2.5 text-[11px] font-semibold text-[#F59E0B] transition hover:-translate-y-0.5 hover:bg-[#F59E0B] hover:text-white"
+                            className="grid size-9 shrink-0 place-items-center rounded-full border border-[#FFD39A] bg-[#FFF6EA] text-[#F59E0B] transition hover:-translate-y-0.5 hover:bg-[#F59E0B] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                             title="Gán quyền Admin"
+                            aria-label={`Gán quyền Admin cho ${user.fullName ?? user.email}`}
                           >
-                            <KeyRound className="size-3" />
-                            Gán Admin
+                            <KeyRound className="size-3.5" />
                           </button>
                         )}
                       </div>
@@ -564,20 +516,8 @@ function UserMobileCard({
                 {user.fullName ?? "Chưa có tên"}
               </h3>
               <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
+                <Mail className="size-3 shrink-0" />
                 <span className="truncate">{maskEmail(user.email)}</span>
-                <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
-                <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
-              </p>
-              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
-                <Phone className="size-3 shrink-0" />
-                <span className="truncate">{user.phone || "Chưa có số điện thoại"}</span>
-              </p>
-              <p
-                className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted"
-                title={user.address ?? undefined}
-              >
-                <MapPin className="size-3 shrink-0" />
-                <span className="truncate">{user.address || "Chưa có địa chỉ"}</span>
               </p>
             </div>
             <StatusBadge
@@ -607,14 +547,15 @@ function UserMobileCard({
         </div>
       </div>
 
-      <div className="mt-4 grid gap-2 rounded-2xl bg-white/70 p-3 text-xs text-po-text-muted ring-1 ring-po-border/60">
-        <span>Email: {user.emailVerified ? "Đã xác thực" : "Chưa xác thực"}</span>
-        <span>Profile: {user.isProfileCompleted ? "Hoàn thành" : "Chưa hoàn thành"}</span>
-        <span>Ngày tạo: {formatDate(user.createdAt)}</span>
-        <span>Đăng nhập cuối: {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Chưa đăng nhập"}</span>
+      <div className="mt-4 flex items-center gap-2 rounded-2xl bg-white/70 px-3 py-2.5 text-xs text-po-text-muted ring-1 ring-po-border/60">
+        <Clock3 className="size-3.5 shrink-0" />
+        <span>Hoạt động gần nhất:</span>
+        <span className="font-semibold text-po-text">
+          {user.lastLoginAt ? formatDate(user.lastLoginAt) : "Chưa đăng nhập"}
+        </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2">
         <button
           type="button"
           onClick={onView}
@@ -652,7 +593,7 @@ function UserMobileCard({
             type="button"
             onClick={onAssign}
             disabled={isAssignPending}
-            className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white disabled:opacity-50"
+            className="col-span-2 inline-flex h-9 items-center justify-center gap-1.5 rounded-2xl bg-po-primary-soft px-3 text-xs font-semibold text-po-primary transition hover:-translate-y-0.5 hover:bg-po-primary hover:text-white disabled:opacity-50"
           >
             <KeyRound className="size-3.5" />
             Gán Admin

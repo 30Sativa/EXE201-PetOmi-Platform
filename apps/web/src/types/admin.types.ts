@@ -66,6 +66,17 @@ export interface AiIntentStatItem {
   ragCount: number
 }
 
+export interface DemographicBucketItem {
+  key: string
+  label: string
+  count: number
+}
+
+export interface AdminUserDemographics {
+  ageGroups: DemographicBucketItem[]
+  locations: DemographicBucketItem[]
+}
+
 export interface AdminDashboardResponse {
   summary: AdminStatsSummary
   clinicStats: AdminClinicStats
@@ -74,6 +85,7 @@ export interface AdminDashboardResponse {
   clinicTrend: ClinicTrendItem[]
   userTrend: UserTrendItem[]
   aiIntentStats: AiIntentStatItem[]
+  userDemographics: AdminUserDemographics
 }
 
 // Admin user behavior analytics

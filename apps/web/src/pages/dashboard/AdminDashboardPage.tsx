@@ -2,11 +2,13 @@ import {
   BadgeCheck,
   Bot,
   Building2,
+  CalendarDays,
   ChartNoAxesCombined,
   Clock,
   Database,
   FileText,
   MessageCircle,
+  MapPin,
   ShieldCheck,
   TrendingUp,
   UserRound,
@@ -30,6 +32,7 @@ import {
 import type {
   AuditLogItemResponse,
   ClinicListItemResponse,
+  DemographicBucketItem,
   PagedData,
 } from "@/types"
 
@@ -183,6 +186,8 @@ export default function AdminDashboardPage() {
   const clinicStats = dashboard?.clinicStats
   const aiStats = dashboard?.aiStats
   const aiIntentStats = dashboard?.aiIntentStats ?? []
+  const ageGroups = dashboard?.userDemographics?.ageGroups ?? []
+  const locationGroups = dashboard?.userDemographics?.locations ?? []
   const pendingCount = clinicStats?.pending ?? getPagedTotal(pendingClinics)
   const maxIntentCount = Math.max(...aiIntentStats.map((item) => item.count), 1)
 
@@ -316,6 +321,28 @@ export default function AdminDashboardPage() {
           </>
         )}
       </div>
+
+      <DashboardSection
+        title="Nhân khẩu học người dùng"
+        subtitle="Phân bố độ tuổi và nơi ở từ hồ sơ tài khoản hiện có. Dữ liệu thiếu được giữ thành nhóm riêng."
+      >
+        {dashLoading ? (
+          <div className="flex justify-center py-10">
+            <LoadingSpinner />
+          </div>
+        ) : (
+          <div className="grid gap-7 lg:grid-cols-2 lg:divide-x lg:divide-po-border/80">
+            <AgeDistributionChart
+              items={ageGroups}
+              totalUsers={summary?.totalUsers ?? 0}
+            />
+            <LocationDistributionChart
+              items={locationGroups}
+              totalUsers={summary?.totalUsers ?? 0}
+            />
+          </div>
+        )}
+      </DashboardSection>
 
       <DashboardSection
         title="AI / RAG intelligence"
@@ -650,6 +677,166 @@ function StatCardSkeleton() {
       <div className="h-7 w-16 rounded-lg bg-po-surface-muted mb-2" />
       <div className="h-4 w-24 rounded bg-po-surface-muted" />
     </div>
+  )
+}
+
+const demographicColors = [
+  "bg-po-primary",
+  "bg-po-success",
+  "bg-sky-500",
+  "bg-violet-500",
+  "bg-amber-500",
+  "bg-po-text-muted",
+]
+
+function AgeDistributionChart({
+  items,
+  totalUsers,
+}: {
+  items: DemographicBucketItem[]
+  totalUsers: number
+}) {
+  const maxCount = Math.max(...items.map((item) => item.count), 1)
+  const unknownCount = items.find((item) => item.key === "unknown")?.count ?? 0
+  const coveredUsers = items.length > 0 ? Math.max(0, totalUsers - unknownCount) : 0
+
+  return (
+    <section className="min-w-0 lg:pr-7">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary">
+            <CalendarDays className="size-4" />
+          </span>
+          <div>
+            <h3 className="text-base font-extrabold text-po-text">Phân bố độ tuổi</h3>
+            <p className="mt-1 text-xs leading-5 text-po-text-muted">
+              {formatNumber(coveredUsers)}/{formatNumber(totalUsers)} hồ sơ có ngày sinh
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 text-sm font-extrabold text-po-text">
+          {formatPercent(totalUsers > 0 ? coveredUsers / totalUsers * 100 : 0)}
+        </span>
+      </div>
+
+      {totalUsers === 0 || items.length === 0 ? (
+        <EmptyState
+          icon={CalendarDays}
+          title="Chưa có dữ liệu độ tuổi"
+          description="Biểu đồ sẽ cập nhật khi có tài khoản trong hệ thống."
+        />
+      ) : (
+        <div className="mt-6 overflow-x-auto pb-1">
+          <div
+            className="grid min-w-[430px] grid-cols-6 gap-3"
+            role="img"
+            aria-label={`Phân bố độ tuổi: ${items.map((item) => `${item.label} ${item.count}`).join(", ")}`}
+          >
+            {items.map((item, index) => {
+              const height = item.count === 0
+                ? "0%"
+                : `${Math.max(8, Math.round(item.count / maxCount * 100))}%`
+
+              return (
+                <div key={item.key} className="grid min-w-0 grid-rows-[24px_144px_36px] gap-2 text-center">
+                  <span className="text-xs font-extrabold tabular-nums text-po-text">
+                    {formatNumber(item.count)}
+                  </span>
+                  <div className="flex items-end justify-center border-b border-po-border bg-po-surface-muted/45 px-2 pt-2">
+                    <div
+                      className={cn(
+                        "w-full max-w-10 rounded-t-md transition-[height] duration-300",
+                        demographicColors[index % demographicColors.length],
+                      )}
+                      style={{ height }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-semibold leading-4 text-po-text-muted">
+                    {item.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function LocationDistributionChart({
+  items,
+  totalUsers,
+}: {
+  items: DemographicBucketItem[]
+  totalUsers: number
+}) {
+  const maxCount = Math.max(...items.map((item) => item.count), 1)
+  const unknownCount = items.find((item) => item.key === "unknown")?.count ?? 0
+  const coveredUsers = items.length > 0 ? Math.max(0, totalUsers - unknownCount) : 0
+
+  return (
+    <section className="min-w-0 lg:pl-7">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-success-soft text-po-success">
+            <MapPin className="size-4" />
+          </span>
+          <div>
+            <h3 className="text-base font-extrabold text-po-text">Phân bố nơi ở</h3>
+            <p className="mt-1 text-xs leading-5 text-po-text-muted">
+              Top tỉnh/thành theo {formatNumber(coveredUsers)} hồ sơ có địa chỉ
+            </p>
+          </div>
+        </div>
+        <span className="shrink-0 text-sm font-extrabold text-po-text">
+          {formatPercent(totalUsers > 0 ? coveredUsers / totalUsers * 100 : 0)}
+        </span>
+      </div>
+
+      {totalUsers === 0 || items.length === 0 ? (
+        <EmptyState
+          icon={MapPin}
+          title="Chưa có dữ liệu nơi ở"
+          description="Biểu đồ sẽ cập nhật khi người dùng hoàn thiện địa chỉ."
+        />
+      ) : (
+        <div
+          className="mt-6 grid gap-3"
+          role="img"
+          aria-label={`Phân bố nơi ở: ${items.map((item) => `${item.label} ${item.count}`).join(", ")}`}
+        >
+          {items.map((item, index) => {
+            const width = item.count === 0
+              ? "0%"
+              : `${Math.max(4, Math.round(item.count / maxCount * 100))}%`
+            const percent = totalUsers > 0 ? item.count / totalUsers * 100 : 0
+
+            return (
+              <div key={item.key}>
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="truncate font-semibold text-po-text" title={item.label}>
+                    {item.label}
+                  </span>
+                  <span className="shrink-0 font-extrabold tabular-nums text-po-text">
+                    {formatNumber(item.count)} · {formatPercent(percent)}
+                  </span>
+                </div>
+                <div className="mt-2 h-2.5 overflow-hidden rounded-md bg-po-surface-muted">
+                  <div
+                    className={cn(
+                      "h-full rounded-md transition-[width] duration-300",
+                      demographicColors[(index + 1) % demographicColors.length],
+                    )}
+                    style={{ width }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </section>
   )
 }
 

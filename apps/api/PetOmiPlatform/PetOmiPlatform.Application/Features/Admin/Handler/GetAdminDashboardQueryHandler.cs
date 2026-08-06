@@ -1,6 +1,7 @@
 using MediatR;
 using PetOmiPlatform.Application.Features.Admin.DTOs.Response;
 using PetOmiPlatform.Application.Features.Admin.Queries;
+using PetOmiPlatform.Application.Interfaces;
 using PetOmiPlatform.Domain.Interfaces.Repositories;
 
 namespace PetOmiPlatform.Application.Features.Admin.Handler;
@@ -12,19 +13,22 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
     private readonly IUserSessionRepository _userSessionRepository;
     private readonly IAppointmentRepository _appointmentRepository;
     private readonly IChatMessageRepository _chatMessageRepository;
+    private readonly IAdminUserDemographicsReader _userDemographicsReader;
 
     public GetAdminDashboardQueryHandler(
         IClinicRepository clinicRepository,
         IUserRepository userRepository,
         IUserSessionRepository userSessionRepository,
         IAppointmentRepository appointmentRepository,
-        IChatMessageRepository chatMessageRepository)
+        IChatMessageRepository chatMessageRepository,
+        IAdminUserDemographicsReader userDemographicsReader)
     {
         _clinicRepository = clinicRepository;
         _userRepository = userRepository;
         _userSessionRepository = userSessionRepository;
         _appointmentRepository = appointmentRepository;
         _chatMessageRepository = chatMessageRepository;
+        _userDemographicsReader = userDemographicsReader;
     }
 
     public async Task<AdminDashboardResponse> Handle(GetAdminDashboardQuery request, CancellationToken cancellationToken)
@@ -54,6 +58,9 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
         var aiIntentWindowStartUtc = nowUtc.AddDays(-30);
         var aiDashboardStats = await _chatMessageRepository.GetAiDashboardStatsAsync(aiStatsWindowStartUtc);
         var aiIntentStats = await _chatMessageRepository.GetIntentDashboardStatsAsync(aiIntentWindowStartUtc);
+        var userDemographics = await _userDemographicsReader.ReadAsync(
+            DateOnly.FromDateTime(nowUtc),
+            cancellationToken);
         var ragUsageRate = aiDashboardStats.AiResponsesSince == 0
             ? 0
             : Math.Round((decimal)aiDashboardStats.RagResponsesSince / aiDashboardStats.AiResponsesSince * 100, 1);
@@ -102,7 +109,22 @@ public class GetAdminDashboardQueryHandler : IRequestHandler<GetAdminDashboardQu
                 Intent = item.Intent,
                 Count = item.Count,
                 RagCount = item.RagCount
-            }).ToList()
+            }).ToList(),
+            UserDemographics = new AdminUserDemographics
+            {
+                AgeGroups = userDemographics.AgeGroups.Select(item => new DemographicBucketItem
+                {
+                    Key = item.Key,
+                    Label = item.Label,
+                    Count = item.Count
+                }).ToList(),
+                Locations = userDemographics.Locations.Select(item => new DemographicBucketItem
+                {
+                    Key = item.Key,
+                    Label = item.Label,
+                    Count = item.Count
+                }).ToList()
+            }
         };
     }
 }

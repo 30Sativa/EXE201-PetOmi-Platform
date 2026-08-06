@@ -136,6 +136,7 @@ namespace PetOmiPlatform.Infrastructure
             // Repositories
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IAdminUserBehaviorReader, AdminUserBehaviorReader>();
+            services.AddScoped<IAdminUserDemographicsReader, AdminUserDemographicsReader>();
             services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IJwtService, JwtService>();

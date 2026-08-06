@@ -9,6 +9,7 @@ public class AdminDashboardResponse
     public List<ClinicTrendItem> ClinicTrend { get; set; } = new();
     public List<UserTrendItem> UserTrend { get; set; } = new();
     public List<AiIntentStatItem> AiIntentStats { get; set; } = new();
+    public AdminUserDemographics UserDemographics { get; set; } = new();
 }
 
 public class AdminStatsSummary
@@ -67,4 +68,17 @@ public class AiIntentStatItem
     public string Intent { get; set; } = string.Empty;
     public int Count { get; set; }
     public int RagCount { get; set; }
+}
+
+public class AdminUserDemographics
+{
+    public List<DemographicBucketItem> AgeGroups { get; set; } = new();
+    public List<DemographicBucketItem> Locations { get; set; } = new();
+}
+
+public class DemographicBucketItem
+{
+    public string Key { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
+    public int Count { get; set; }
 }

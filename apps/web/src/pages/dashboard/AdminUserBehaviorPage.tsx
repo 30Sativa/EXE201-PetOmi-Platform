@@ -176,12 +176,16 @@ export default function AdminUserBehaviorPage() {
 
   const data = query.data
   const summary = data?.summary
+  const dailyActivity = data?.dailyActivity ?? []
   const maxDailyValue = Math.max(
-    ...(data?.dailyActivity.map((item) => Math.max(item.activeUsers, item.sessions, item.conversations)) ?? [1]),
+    ...(dailyActivity.map((item) => Math.max(item.activeUsers, item.sessions, item.conversations)) ?? [1]),
     1,
   )
   const maxFunnelUsers = Math.max(data?.funnel[0]?.users ?? 0, 1)
-  const dayLabelStep = Math.max(1, Math.ceil((data?.dailyActivity.length ?? 1) / 10))
+  const dayLabelStep = Math.max(1, Math.ceil((dailyActivity.length || 1) / 10))
+  const peakActivityDay = dailyActivity.length
+    ? dailyActivity.reduce((peak, day) => day.sessions > peak.sessions ? day : peak, dailyActivity[0])
+    : null
   const usersPerPage = 8
   const userPageCount = Math.max(1, Math.ceil(users.length / usersPerPage))
   const currentUserPage = Math.min(userPage, userPageCount)
@@ -530,44 +534,61 @@ export default function AdminUserBehaviorPage() {
 
           {activeView === "overview" && (
           <>
-          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)] xl:items-start">
-            <Panel
-              title="Lượt truy cập theo ngày"
-              subtitle={`Phiên truy cập, người dùng hoạt động và hội thoại từ ${formatDate(data.fromDate)} đến ${formatDate(data.toDate)}.`}
-              icon={BarChart3}
-              action={
-                <div className="flex items-center gap-4 text-[11px] font-bold text-po-text-muted">
-                  <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-po-primary" /> Người dùng hoạt động</span>
-                  <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-[#f49a62]" /> Lượt truy cập</span>
+          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+            <section className="rounded-[24px] bg-white p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80 md:p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-po-primary ring-1 ring-orange-100"><BarChart3 className="size-4.5" /></span>
+                  <div>
+                    <h3 className="text-base font-extrabold text-po-text">Tổng quan truy cập</h3>
+                    <p className="mt-1 text-xs leading-5 text-po-text-muted">
+                      {formatDate(data.fromDate)} đến {formatDate(data.toDate)} · so sánh lượt truy cập, người hoạt động và hội thoại.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 text-[11px] font-bold text-po-text-muted">
+                  <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-po-primary" /> Người hoạt động</span>
+                  <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-[#f49a62]" /> Truy cập</span>
                   <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-emerald-700" /> Hội thoại</span>
                 </div>
-              }
-            >
-              <div className="pt-3">
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                <MiniStat label="Tổng truy cập" value={formatNumber(summary.totalSessions)} />
+                <MiniStat label="Ngày cao nhất" value={peakActivityDay ? `${formatNumber(peakActivityDay.sessions)} phiên` : "0 phiên"} />
+                <MiniStat label="TB người/ngày" value={percentFormatter.format(summary.averageDailyActiveUsers)} />
+              </div>
+
+              <div className="relative mt-5 rounded-[20px] bg-[#fff8f1] px-4 pb-3 pt-4 ring-1 ring-orange-100/80">
+                <div className="pointer-events-none absolute inset-x-4 top-8 bottom-10 grid grid-rows-3">
+                  <span className="border-t border-orange-100/80" />
+                  <span className="border-t border-orange-100/70" />
+                  <span className="border-t border-orange-100/60" />
+                </div>
                 <div
-                  className="grid h-[224px] items-end gap-1"
-                  style={{ gridTemplateColumns: `repeat(${data.dailyActivity.length}, minmax(0, 1fr))` }}
+                  className="relative grid h-[170px] items-end gap-1"
+                  style={{ gridTemplateColumns: `repeat(${Math.max(1, dailyActivity.length)}, minmax(0, 1fr))` }}
                 >
-                  {data.dailyActivity.map((day, index) => {
-                    const activeHeight = Math.max(4, (day.activeUsers / maxDailyValue) * 164)
-                    const sessionHeight = Math.max(3, (day.sessions / maxDailyValue) * 164)
-                    const conversationHeight = Math.max(3, (day.conversations / maxDailyValue) * 164)
-                    const showLabel = index % dayLabelStep === 0 || index === data.dailyActivity.length - 1
+                  {dailyActivity.map((day, index) => {
+                    const activeHeight = Math.max(4, (day.activeUsers / maxDailyValue) * 126)
+                    const sessionHeight = Math.max(3, (day.sessions / maxDailyValue) * 126)
+                    const conversationHeight = Math.max(3, (day.conversations / maxDailyValue) * 126)
+                    const showLabel = index % dayLabelStep === 0 || index === dailyActivity.length - 1
                     return (
                       <div key={day.date} className="group relative flex min-w-0 flex-col items-center justify-end gap-2">
-                        <div className="relative flex h-[164px] w-full items-end justify-center gap-0.5">
+                        <div className="relative flex h-[126px] w-full items-end justify-center gap-0.5">
                           <div
-                            className="w-[28%] rounded-t-sm bg-po-primary transition group-hover:bg-po-primary-hover"
+                            className="w-[28%] rounded-t-[3px] bg-po-primary transition group-hover:bg-po-primary-hover"
                             style={{ height: `${activeHeight}px` }}
                             title={`${formatDate(day.date)}: ${day.activeUsers} người dùng hoạt động`}
                           />
                           <div
-                            className="w-[28%] rounded-t-sm bg-[#f49a62] transition group-hover:bg-[#e88245]"
+                            className="w-[28%] rounded-t-[3px] bg-[#f49a62] transition group-hover:bg-[#e88245]"
                             style={{ height: `${sessionHeight}px` }}
                             title={`${formatDate(day.date)}: ${day.sessions} lượt truy cập`}
                           />
                           <div
-                            className="w-[28%] rounded-t-sm bg-emerald-700/80 transition group-hover:bg-emerald-700"
+                            className="w-[28%] rounded-t-[3px] bg-emerald-700/80 transition group-hover:bg-emerald-700"
                             style={{ height: `${conversationHeight}px` }}
                             title={`${formatDate(day.date)}: ${day.conversations} hội thoại`}
                           />
@@ -585,19 +606,25 @@ export default function AdminUserBehaviorPage() {
                   })}
                 </div>
               </div>
-            </Panel>
+            </section>
 
-            <Panel
-              title="Tín hiệu cần ưu tiên"
-              subtitle="Gợi ý hành động dựa trên số liệu hiện tại."
-              icon={Lightbulb}
-            >
-              <div className="grid gap-3">
+            <section className="rounded-[24px] bg-[#173b33] p-5 text-white shadow-sm shadow-emerald-950/10 ring-1 ring-[#173b33] md:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-[#ffad78] ring-1 ring-white/10"><Lightbulb className="size-4.5" /></span>
+                  <div>
+                    <h3 className="text-base font-extrabold">Việc cần chú ý</h3>
+                    <p className="mt-1 text-xs leading-5 text-emerald-50/60">Tối đa 3 tín hiệu quan trọng nhất trong kỳ.</p>
+                  </div>
+                </div>
+                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-extrabold text-emerald-50/75 ring-1 ring-white/10">{data.insights.slice(0, 3).length} mục</span>
+              </div>
+              <div className="mt-5 grid gap-2.5">
                 {data.insights.slice(0, 3).map((insight) => (
-                  <InsightCard key={`${insight.title}-${insight.metric}`} insight={insight} />
+                  <CompactInsight key={`${insight.title}-${insight.metric}`} insight={insight} />
                 ))}
               </div>
-            </Panel>
+            </section>
           </section>
 
           <section className="grid gap-5 xl:grid-cols-[minmax(360px,0.85fr)_minmax(0,1.15fr)]">
@@ -893,23 +920,23 @@ function Panel({ title, subtitle, icon: Icon, action, children }: { title: strin
   )
 }
 
-function InsightCard({ insight }: { insight: AdminBehaviorInsightItem }) {
+function CompactInsight({ insight }: { insight: AdminBehaviorInsightItem }) {
   const style = insight.severity === "positive"
-    ? { shell: "bg-emerald-50/75 ring-emerald-100", icon: "bg-emerald-100 text-emerald-700", Icon: CheckCircle2 }
+    ? { icon: "bg-emerald-400/15 text-emerald-200 ring-emerald-300/15", Icon: CheckCircle2 }
     : insight.severity === "warning"
-      ? { shell: "bg-amber-50/80 ring-amber-100", icon: "bg-amber-100 text-amber-700", Icon: TrendingUp }
-      : { shell: "bg-violet-50/75 ring-violet-100", icon: "bg-violet-100 text-violet-700", Icon: Sparkles }
+      ? { icon: "bg-amber-300/15 text-amber-200 ring-amber-200/15", Icon: TrendingUp }
+      : { icon: "bg-violet-300/15 text-violet-100 ring-violet-200/15", Icon: Sparkles }
   return (
-    <article className={cn("rounded-[20px] p-4 ring-1", style.shell)}>
+    <article className="rounded-2xl bg-white/[0.07] p-3.5 ring-1 ring-white/10">
       <div className="flex items-start gap-3">
-        <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl", style.icon)}><style.Icon className="size-4" /></span>
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-start justify-between gap-2">
-            <h4 className="text-sm font-extrabold leading-5 text-po-text">{insight.title}</h4>
-            <span className="rounded-full bg-white/80 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-po-text-muted">{insight.metric}</span>
+        <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl ring-1", style.icon)}><style.Icon className="size-4" /></span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <h4 className="text-sm font-extrabold leading-5 text-white">{insight.title}</h4>
+            <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-emerald-50/70 ring-1 ring-white/10">{insight.metric}</span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-po-text-muted">{insight.description}</p>
-          <p className="mt-2 flex items-start gap-1.5 text-[11px] font-bold leading-5 text-po-text"><ArrowRight className="mt-0.5 size-3.5 shrink-0 text-po-primary" />{insight.recommendedAction}</p>
+          <p className="mt-1.5 text-xs leading-5 text-emerald-50/60">{insight.description}</p>
+          <p className="mt-2 flex items-start gap-1.5 text-[11px] font-bold leading-5 text-emerald-50"><ArrowRight className="mt-0.5 size-3.5 shrink-0 text-[#ffad78]" />{insight.recommendedAction}</p>
         </div>
       </div>
     </article>

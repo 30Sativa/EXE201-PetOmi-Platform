@@ -139,6 +139,7 @@ export default function AdminUserBehaviorPage() {
   const [activeView, setActiveView] = useState<BehaviorView>("overview")
   const [search, setSearch] = useState("")
   const [segment, setSegment] = useState("all")
+  const [userPage, setUserPage] = useState(1)
 
   const query = useQuery({
     queryKey: ["admin", "user-behavior", fromDate, toDate, origin],
@@ -151,12 +152,14 @@ export default function AdminUserBehaviorPage() {
     if (value === "july") {
       setFromDate("2026-07-01")
       setToDate("2026-07-31")
+      setUserPage(1)
       return
     }
 
     const days = Number(value)
     setFromDate(toInputDate(addDays(today, -(days - 1))))
     setToDate(toInputDate(today))
+    setUserPage(1)
   }
 
   const users = useMemo(() => {
@@ -165,7 +168,6 @@ export default function AdminUserBehaviorPage() {
       const matchesSegment = segment === "all" || user.segment === segment
       const matchesSearch =
         !keyword ||
-        user.email.toLocaleLowerCase("vi").includes(keyword) ||
         user.fullName?.toLocaleLowerCase("vi").includes(keyword) ||
         user.petNames.some((pet) => pet.toLocaleLowerCase("vi").includes(keyword))
       return matchesSegment && Boolean(matchesSearch)
@@ -180,6 +182,13 @@ export default function AdminUserBehaviorPage() {
   )
   const maxFunnelUsers = Math.max(data?.funnel[0]?.users ?? 0, 1)
   const dayLabelStep = Math.max(1, Math.ceil((data?.dailyActivity.length ?? 1) / 10))
+  const usersPerPage = 8
+  const userPageCount = Math.max(1, Math.ceil(users.length / usersPerPage))
+  const currentUserPage = Math.min(userPage, userPageCount)
+  const firstUserIndex = (currentUserPage - 1) * usersPerPage
+  const pagedUsers = users.slice(firstUserIndex, firstUserIndex + usersPerPage)
+  const userRangeStart = users.length === 0 ? 0 : firstUserIndex + 1
+  const userRangeEnd = firstUserIndex + pagedUsers.length
   const viewTabs: Array<{ key: BehaviorView; label: string; detail: string; icon: ElementType }> = [
     { key: "overview", label: "Tổng quan", detail: "Lượt truy cập, funnel, tính năng", icon: BarChart3 },
     { key: "chat", label: "Chat AI", detail: "Chủ đề, câu hỏi, người hỏi nhiều", icon: Bot },
@@ -278,6 +287,7 @@ export default function AdminUserBehaviorPage() {
                   onChange={(event) => {
                     setFromDate(event.target.value)
                     setPreset("30")
+                    setUserPage(1)
                   }}
                   className="h-11 w-full rounded-xl bg-po-surface-muted pl-9 pr-3 text-sm font-semibold text-po-text outline-none ring-1 ring-po-border transition focus:ring-2 focus:ring-po-primary/35"
                 />
@@ -294,6 +304,7 @@ export default function AdminUserBehaviorPage() {
                   onChange={(event) => {
                     setToDate(event.target.value)
                     setPreset("30")
+                    setUserPage(1)
                   }}
                   className="h-11 w-full rounded-xl bg-po-surface-muted pl-9 pr-3 text-sm font-semibold text-po-text outline-none ring-1 ring-po-border transition focus:ring-2 focus:ring-po-primary/35"
                 />
@@ -303,7 +314,10 @@ export default function AdminUserBehaviorPage() {
               Phạm vi tài khoản
               <select
                 value={origin}
-                onChange={(event) => setOrigin(event.target.value as DataOrigin)}
+                onChange={(event) => {
+                  setOrigin(event.target.value as DataOrigin)
+                  setUserPage(1)
+                }}
                 className="h-11 rounded-xl bg-po-surface-muted px-3 text-sm font-semibold text-po-text outline-none ring-1 ring-po-border transition focus:ring-2 focus:ring-po-primary/35"
               >
                 <option value="all">Toàn bộ tài khoản</option>
@@ -654,7 +668,10 @@ export default function AdminUserBehaviorPage() {
                 <button
                   type="button"
                   key={item.key}
-                  onClick={() => setSegment(item.key === segment ? "all" : item.key)}
+                  onClick={() => {
+                    setSegment(item.key === segment ? "all" : item.key)
+                    setUserPage(1)
+                  }}
                   className={cn(
                     "rounded-[22px] p-4 text-left ring-1 transition hover:-translate-y-0.5 hover:shadow-md",
                     segment === item.key ? "bg-[#173b33] text-white ring-[#173b33]" : "bg-po-surface-muted/65 text-po-text ring-po-border/70",
@@ -687,14 +704,20 @@ export default function AdminUserBehaviorPage() {
                   <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-po-text-subtle" />
                   <input
                     value={search}
-                    onChange={(event) => setSearch(event.target.value)}
+                    onChange={(event) => {
+                      setSearch(event.target.value)
+                      setUserPage(1)
+                    }}
                     placeholder="Tên hoặc tên thú cưng…"
                     className="h-10 w-full rounded-xl bg-po-surface-muted pl-9 pr-3 text-sm font-medium outline-none ring-1 ring-po-border focus:ring-2 focus:ring-po-primary/30"
                   />
                 </label>
                 <select
                   value={segment}
-                  onChange={(event) => setSegment(event.target.value)}
+                  onChange={(event) => {
+                    setSegment(event.target.value)
+                    setUserPage(1)
+                  }}
                   className="h-10 rounded-xl bg-po-surface-muted px-3 text-sm font-semibold text-po-text outline-none ring-1 ring-po-border focus:ring-2 focus:ring-po-primary/30"
                 >
                   <option value="all">Tất cả phân khúc</option>
@@ -703,74 +726,94 @@ export default function AdminUserBehaviorPage() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1040px] border-collapse text-left">
-                <thead>
-                  <tr className="bg-[#fff8f1] text-[10px] font-extrabold uppercase tracking-[0.1em] text-po-text-subtle">
-                    <th className="px-5 py-3">Người dùng</th>
-                    <th className="px-4 py-3">Phân khúc</th>
-                    <th className="px-4 py-3">Mức sử dụng</th>
-                    <th className="px-4 py-3">Tính năng</th>
-                    <th className="px-4 py-3">Điểm gắn kết</th>
-                    <th className="px-5 py-3">Hoạt động gần nhất</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-po-border/60">
-                  {users.map((user) => (
-                    <tr key={user.userId} className="transition hover:bg-orange-50/25">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#173b33] text-xs font-extrabold text-white shadow-sm shadow-emerald-950/10">{initials(user)}</span>
-                          <div className="min-w-0">
-                            <p className="max-w-56 truncate text-sm font-extrabold text-po-text">{displayUserName(user.fullName, user.userId)}</p>
-                            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-po-text-subtle">{displayUserCode(user.userId)}</p>
-                            <p className="mt-1 max-w-64 truncate text-[11px] font-semibold text-po-text-muted">{user.petNames.length ? `Thú cưng: ${user.petNames.join(", ")}` : "Chưa có thú cưng"}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className={cn("inline-flex min-w-[86px] justify-center rounded-xl px-2.5 py-1.5 text-[10px] font-extrabold ring-1", segmentStyles[user.segment] ?? segmentStyles.dormant)}>{user.segmentLabel}</span>
-                        <p className="mt-1.5 text-[11px] font-semibold text-po-text-muted">{user.activeDays} ngày hoạt động</p>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="text-sm font-extrabold text-po-text">{formatNumber(user.totalActions)} hành động</p>
-                        <p className="mt-1 text-[11px] text-po-text-muted">{user.sessions} phiên · {user.conversations} hội thoại</p>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex flex-wrap gap-1.5">
-                          <FeatureDot active={user.hasPet} label="Thú cưng" icon={PawPrint} />
-                          <FeatureDot active={user.ownerMessages > 0} label="AI" icon={Bot} />
-                          <FeatureDot active={user.medicalNotes > 0} label="Ghi chú" icon={Stethoscope} />
-                          <FeatureDot active={user.remindersCreated > 0} label="Nhắc lịch" icon={BellRing} />
-                        </div>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <div className="h-2.5 w-28 overflow-hidden rounded-full bg-po-surface-muted">
-                            <div className={cn("h-full rounded-full", user.engagementScore >= 70 ? "bg-emerald-600" : user.engagementScore >= 40 ? "bg-po-primary" : "bg-amber-400")} style={{ width: `${user.engagementScore}%` }} />
-                          </div>
-                          <span className="text-sm font-extrabold text-po-text">{user.engagementScore}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <p className="text-xs font-bold text-po-text">{formatDateTime(user.lastActivityAt)}</p>
-                        <p className="mt-1 text-[10px] font-semibold text-po-text-subtle">{user.isReturning ? "Đã quay lại" : user.totalActions > 0 ? "Mới hoạt động 1 ngày" : "Cần kích hoạt"}</p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <div className="p-5 md:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-po-text-subtle">Danh sách rút gọn</p>
+                  <p className="mt-1 text-sm font-semibold text-po-text-muted">
+                    Hiển thị {formatNumber(userRangeStart)}-{formatNumber(userRangeEnd)} / {formatNumber(users.length)} tài khoản phù hợp
+                  </p>
+                </div>
+                <div className="inline-flex items-center rounded-2xl bg-po-surface-muted p-1 text-xs font-bold text-po-text-muted ring-1 ring-po-border/70">
+                  <button
+                    type="button"
+                    onClick={() => setUserPage(Math.max(1, currentUserPage - 1))}
+                    disabled={currentUserPage <= 1}
+                    className="inline-flex h-8 items-center gap-1 rounded-xl px-3 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ArrowRight className="size-3.5 rotate-180" />
+                    Trước
+                  </button>
+                  <span className="px-3 text-po-text">{currentUserPage}/{userPageCount}</span>
+                  <button
+                    type="button"
+                    onClick={() => setUserPage(Math.min(userPageCount, currentUserPage + 1))}
+                    disabled={currentUserPage >= userPageCount}
+                    className="inline-flex h-8 items-center gap-1 rounded-xl px-3 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Sau
+                    <ArrowRight className="size-3.5" />
+                  </button>
+                </div>
+              </div>
 
-            {users.length === 0 && (
-              <div className="grid min-h-44 place-items-center p-6 text-center">
+              {users.length === 0 ? (
+                <div className="mt-5 grid min-h-44 place-items-center rounded-[22px] bg-po-surface-muted/55 p-6 text-center ring-1 ring-po-border/60">
                 <div>
                   <Search className="mx-auto size-8 text-po-text-subtle" />
                   <p className="mt-3 text-sm font-extrabold text-po-text">Không tìm thấy người dùng phù hợp</p>
                   <p className="mt-1 text-xs text-po-text-muted">Thử đổi từ khóa hoặc chọn lại phân khúc.</p>
                 </div>
-              </div>
-            )}
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-3 xl:grid-cols-2">
+                  {pagedUsers.map((user) => (
+                    <article key={user.userId} className="rounded-[22px] bg-[#fffaf5] p-4 ring-1 ring-orange-100/80 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-md hover:shadow-orange-100/50">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#173b33] text-xs font-extrabold text-white shadow-sm shadow-emerald-950/10">{initials(user)}</span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-extrabold text-po-text">{displayUserName(user.fullName, user.userId)}</p>
+                            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-po-text-subtle">{displayUserCode(user.userId)}</p>
+                            <p className="mt-1 truncate text-xs font-semibold text-po-text-muted">{user.petNames.length ? `Thú cưng: ${user.petNames.join(", ")}` : "Chưa có thú cưng"}</p>
+                          </div>
+                        </div>
+                        <span className={cn("inline-flex shrink-0 rounded-xl px-2.5 py-1.5 text-[10px] font-extrabold ring-1", segmentStyles[user.segment] ?? segmentStyles.dormant)}>{user.segmentLabel}</span>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        <MiniStat label="Hành động" value={formatNumber(user.totalActions)} />
+                        <MiniStat label="Phiên" value={formatNumber(user.sessions)} />
+                        <MiniStat label="Hội thoại" value={formatNumber(user.conversations)} />
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-1.5">
+                        <FeatureDot active={user.hasPet} label="Thú cưng" icon={PawPrint} />
+                        <FeatureDot active={user.ownerMessages > 0} label="AI" icon={Bot} />
+                        <FeatureDot active={user.medicalNotes > 0} label="Ghi chú" icon={Stethoscope} />
+                        <FeatureDot active={user.remindersCreated > 0} label="Nhắc lịch" icon={BellRing} />
+                      </div>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                        <div>
+                          <div className="flex items-center justify-between text-[11px] font-bold text-po-text-muted">
+                            <span>Điểm gắn kết</span>
+                            <span className="text-po-text">{user.engagementScore}</span>
+                          </div>
+                          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white ring-1 ring-orange-100">
+                            <div className={cn("h-full rounded-full", user.engagementScore >= 70 ? "bg-emerald-600" : user.engagementScore >= 40 ? "bg-po-primary" : "bg-amber-400")} style={{ width: `${user.engagementScore}%` }} />
+                          </div>
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <p className="text-xs font-extrabold text-po-text">{formatDateTime(user.lastActivityAt)}</p>
+                          <p className="mt-1 text-[10px] font-semibold text-po-text-subtle">{user.isReturning ? "Đã quay lại" : user.totalActions > 0 ? `${user.activeDays} ngày hoạt động` : "Cần kích hoạt"}</p>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
           </>
           )}
@@ -894,6 +937,15 @@ function FeatureCard({ feature }: { feature: AdminFeatureAdoptionItem }) {
         <span>{formatNumber(feature.events)} lượt</span>
       </div>
     </article>
+  )
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-white p-3 ring-1 ring-orange-100/80">
+      <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-po-text-subtle">{label}</p>
+      <p className="mt-1 text-sm font-extrabold text-po-text">{value}</p>
+    </div>
   )
 }
 

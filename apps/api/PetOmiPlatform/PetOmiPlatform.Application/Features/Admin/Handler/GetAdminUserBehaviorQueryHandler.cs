@@ -438,7 +438,7 @@ public sealed class GetAdminUserBehaviorQueryHandler
                 Severity = "warning",
                 Title = "Onboarding đang mất người dùng trước điểm kích hoạt",
                 Description = $"Chỉ {summary.ActivationRate:0.#}% tài khoản vừa có pet vừa dùng một tính năng cốt lõi trong kỳ.",
-                RecommendedAction = "Rút ngắn luồng tạo pet và đặt CTA chat AI / nhắc lịch ngay sau khi hoàn tất hồ sơ.",
+                RecommendedAction = "Rút ngắn luồng tạo pet và đặt nút gợi ý chat AI / nhắc lịch ngay sau khi hoàn tất hồ sơ.",
                 Metric = $"{summary.ActivatedUsers}/{summary.UsersInDataset} đã kích hoạt"
             }
             : new AdminBehaviorInsightItem
@@ -457,9 +457,9 @@ public sealed class GetAdminUserBehaviorQueryHandler
             insights.Add(new AdminBehaviorInsightItem
             {
                 Severity = weakestFeature.AdoptionRate < 25 ? "warning" : "opportunity",
-                Title = $"{weakestFeature.Label} là tính năng có adoption thấp nhất",
+                Title = $"{weakestFeature.Label} là tính năng có tỷ lệ dùng thấp nhất",
                 Description = $"{weakestFeature.Users} người dùng, tương đương {weakestFeature.AdoptionRate:0.#}% người dùng hoạt động, đã sử dụng tính năng này.",
-                RecommendedAction = $"Đưa {weakestFeature.Label.ToLowerInvariant()} vào CTA sau khi tạo pet và phỏng vấn nhóm chưa sử dụng để tìm điểm vướng.",
+                RecommendedAction = $"Đưa {weakestFeature.Label.ToLowerInvariant()} vào gợi ý hành động sau khi tạo pet và phỏng vấn nhóm chưa sử dụng để tìm điểm vướng.",
                 Metric = $"{weakestFeature.Events} lượt sử dụng"
             });
         }
@@ -478,7 +478,7 @@ public sealed class GetAdminUserBehaviorQueryHandler
                 Severity = "positive",
                 Title = "Người dùng có tín hiệu hình thành thói quen",
                 Description = $"{summary.ReturnRate:0.#}% người dùng hoạt động đã quay lại ít nhất một ngày khác.",
-                RecommendedAction = "Phân tích nhóm gắn bó cao để nhân rộng hành trình và CTA họ đang sử dụng.",
+                RecommendedAction = "Phân tích nhóm gắn bó cao để nhân rộng hành trình và lời gợi ý hành động họ đang sử dụng.",
                 Metric = $"{summary.ReturningUsers} người dùng quay lại"
             });
 

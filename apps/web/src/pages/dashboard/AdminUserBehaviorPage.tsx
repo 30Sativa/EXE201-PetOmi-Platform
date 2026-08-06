@@ -37,6 +37,7 @@ import type {
 
 type DataOrigin = "all" | "real" | "synthetic"
 type Preset = "7" | "30" | "90" | "july"
+type BehaviorView = "overview" | "chat" | "users"
 
 const numberFormatter = new Intl.NumberFormat("vi-VN")
 const percentFormatter = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 })
@@ -127,6 +128,7 @@ export default function AdminUserBehaviorPage() {
   const [fromDate, setFromDate] = useState(toInputDate(addDays(today, -29)))
   const [toDate, setToDate] = useState(toInputDate(today))
   const [origin, setOrigin] = useState<DataOrigin>("all")
+  const [activeView, setActiveView] = useState<BehaviorView>("overview")
   const [search, setSearch] = useState("")
   const [segment, setSegment] = useState("all")
 
@@ -165,31 +167,36 @@ export default function AdminUserBehaviorPage() {
   const data = query.data
   const summary = data?.summary
   const maxDailyValue = Math.max(
-    ...(data?.dailyActivity.map((item) => Math.max(item.activeUsers, item.conversations)) ?? [1]),
+    ...(data?.dailyActivity.map((item) => Math.max(item.activeUsers, item.sessions, item.conversations)) ?? [1]),
     1,
   )
   const maxFunnelUsers = Math.max(data?.funnel[0]?.users ?? 0, 1)
   const dayLabelStep = Math.max(1, Math.ceil((data?.dailyActivity.length ?? 1) / 10))
+  const viewTabs: Array<{ key: BehaviorView; label: string; detail: string; icon: ElementType }> = [
+    { key: "overview", label: "Tổng quan", detail: "Lượt truy cập, funnel, tính năng", icon: BarChart3 },
+    { key: "chat", label: "Chat AI", detail: "Chủ đề, câu hỏi, người hỏi nhiều", icon: Bot },
+    { key: "users", label: "Người dùng", detail: "Phân khúc và bảng chi tiết", icon: UsersRound },
+  ]
 
   return (
     <div className="grid gap-5 md:gap-6">
       <Seo title="Phân tích hành vi người dùng" noindex />
 
-      <section className="relative overflow-hidden rounded-[32px] bg-[#14372f] px-5 py-6 text-white shadow-xl shadow-emerald-950/10 md:px-7 md:py-8">
+      <section className="relative overflow-hidden rounded-[24px] bg-[#14372f] px-5 py-5 text-white shadow-xl shadow-emerald-950/10 md:px-6 md:py-6">
         <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-[#f49a62]/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-32 left-1/3 size-72 rounded-full bg-emerald-300/10 blur-3xl" />
 
-        <div className="relative grid gap-8 xl:grid-cols-[minmax(0,1.15fr)_minmax(440px,0.85fr)] xl:items-end">
+        <div className="relative grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(440px,0.85fr)] xl:items-center">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.15em] text-emerald-50 ring-1 ring-white/15">
               <Activity className="size-3.5 text-[#ffad78]" />
-              Product intelligence
+              Phân tích sản phẩm
             </div>
-            <h2 className="mt-5 max-w-3xl text-3xl font-extrabold leading-[1.08] tracking-[-0.02em] md:text-4xl">
+            <h2 className="mt-3 max-w-3xl text-2xl font-extrabold leading-[1.1] tracking-[-0.02em] md:text-3xl">
               Hiểu người dùng đang làm gì,
               <span className="text-[#ffad78]"> biết sản phẩm cần đổi ở đâu.</span>
             </h2>
-            <p className="mt-4 max-w-2xl text-sm font-medium leading-7 text-emerald-50/75 md:text-base">
+            <p className="mt-3 max-w-2xl text-sm font-medium leading-6 text-emerald-50/75">
               Theo dõi hành trình từ tạo tài khoản đến tạo pet, sử dụng dịch vụ và quay lại. Các tín hiệu bên dưới được tạo trực tiếp từ hành vi trong hệ thống.
             </p>
           </div>
@@ -214,7 +221,7 @@ export default function AdminUserBehaviorPage() {
               icon={TrendingUp}
             />
             <HeroMetric
-              label="DAU trung bình"
+              label="Trung bình mỗi ngày"
               value={summary ? percentFormatter.format(summary.averageDailyActiveUsers) : "—"}
               detail="Người dùng hoạt động / ngày"
               icon={Zap}
@@ -341,9 +348,9 @@ export default function AdminUserBehaviorPage() {
               tone="orange"
             />
             <MetricCard
-              label="Phiên sử dụng"
+              label="Lượt truy cập"
               value={formatNumber(summary.totalSessions)}
-              detail={`Trung bình ${formatMinutes(summary.averageSessionMinutes)} / phiên`}
+              detail={`Tính theo phiên đăng nhập, ${formatMinutes(summary.averageSessionMinutes)} / phiên`}
               icon={Clock3}
               tone="green"
             />
@@ -363,6 +370,37 @@ export default function AdminUserBehaviorPage() {
             />
           </section>
 
+          <section className="rounded-[24px] bg-white p-2 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+            <div className="grid gap-2 md:grid-cols-3">
+              {viewTabs.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeView === tab.key
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveView(tab.key)}
+                    className={cn(
+                      "flex min-h-[74px] items-center gap-3 rounded-[18px] px-4 py-3 text-left transition",
+                      isActive
+                        ? "bg-[#173b33] text-white shadow-sm shadow-emerald-950/10"
+                        : "bg-po-surface-muted/60 text-po-text hover:bg-orange-50",
+                    )}
+                  >
+                    <span className={cn("grid size-10 shrink-0 place-items-center rounded-2xl", isActive ? "bg-white/12 text-[#ffad78]" : "bg-white text-po-primary ring-1 ring-po-border/70")}>
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-extrabold">{tab.label}</span>
+                      <span className={cn("mt-0.5 block text-xs leading-5", isActive ? "text-emerald-50/65" : "text-po-text-muted")}>{tab.detail}</span>
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          {activeView === "chat" && (
           <Panel
             title="Người dùng đang hỏi gì?"
             subtitle="Tổng hợp trực tiếp từ câu hỏi gửi cho AI trong khoảng thời gian đã chọn."
@@ -466,44 +504,54 @@ export default function AdminUserBehaviorPage() {
               </div>
             </div>
           </Panel>
+          )}
 
-          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)]">
+          {activeView === "overview" && (
+          <>
+          <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(330px,0.65fr)] xl:items-start">
             <Panel
-              title="Nhịp độ sử dụng"
-              subtitle={`Người dùng hoạt động và hội thoại từ ${formatDate(data.fromDate)} đến ${formatDate(data.toDate)}.`}
+              title="Lượt truy cập theo ngày"
+              subtitle={`Phiên truy cập, người dùng hoạt động và hội thoại từ ${formatDate(data.fromDate)} đến ${formatDate(data.toDate)}.`}
               icon={BarChart3}
               action={
                 <div className="flex items-center gap-4 text-[11px] font-bold text-po-text-muted">
-                  <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-po-primary" /> Active users</span>
+                  <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-po-primary" /> Người dùng hoạt động</span>
+                  <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-[#f49a62]" /> Lượt truy cập</span>
                   <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-sm bg-emerald-700" /> Hội thoại</span>
                 </div>
               }
             >
-              <div className="overflow-x-auto pb-2">
+              <div className="pt-3">
                 <div
-                  className="flex h-64 items-end gap-2 pt-8"
-                  style={{ minWidth: `${Math.max(680, data.dailyActivity.length * 30)}px` }}
+                  className="grid h-[224px] items-end gap-1"
+                  style={{ gridTemplateColumns: `repeat(${data.dailyActivity.length}, minmax(0, 1fr))` }}
                 >
                   {data.dailyActivity.map((day, index) => {
-                    const activeHeight = Math.max(4, (day.activeUsers / maxDailyValue) * 180)
-                    const conversationHeight = Math.max(3, (day.conversations / maxDailyValue) * 180)
+                    const activeHeight = Math.max(4, (day.activeUsers / maxDailyValue) * 164)
+                    const sessionHeight = Math.max(3, (day.sessions / maxDailyValue) * 164)
+                    const conversationHeight = Math.max(3, (day.conversations / maxDailyValue) * 164)
                     const showLabel = index % dayLabelStep === 0 || index === data.dailyActivity.length - 1
                     return (
-                      <div key={day.date} className="group flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                        <div className="relative flex h-[180px] w-full items-end justify-center gap-1">
+                      <div key={day.date} className="group relative flex min-w-0 flex-col items-center justify-end gap-2">
+                        <div className="relative flex h-[164px] w-full items-end justify-center gap-0.5">
                           <div
-                            className="w-[42%] max-w-4 rounded-t-md bg-po-primary transition group-hover:bg-po-primary-hover"
+                            className="w-[28%] rounded-t-sm bg-po-primary transition group-hover:bg-po-primary-hover"
                             style={{ height: `${activeHeight}px` }}
                             title={`${formatDate(day.date)}: ${day.activeUsers} người dùng hoạt động`}
                           />
                           <div
-                            className="w-[42%] max-w-4 rounded-t-md bg-emerald-700/80 transition group-hover:bg-emerald-700"
+                            className="w-[28%] rounded-t-sm bg-[#f49a62] transition group-hover:bg-[#e88245]"
+                            style={{ height: `${sessionHeight}px` }}
+                            title={`${formatDate(day.date)}: ${day.sessions} lượt truy cập`}
+                          />
+                          <div
+                            className="w-[28%] rounded-t-sm bg-emerald-700/80 transition group-hover:bg-emerald-700"
                             style={{ height: `${conversationHeight}px` }}
                             title={`${formatDate(day.date)}: ${day.conversations} hội thoại`}
                           />
                           <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-44 -translate-x-1/2 rounded-xl bg-[#102e27] p-3 text-[11px] text-white shadow-xl group-hover:block">
                             <p className="font-extrabold">{formatDate(day.date)}</p>
-                            <p className="mt-1 text-emerald-50/75">{day.activeUsers} active · {day.sessions} phiên</p>
+                            <p className="mt-1 text-emerald-50/75">{day.sessions} lượt truy cập · {day.activeUsers} người hoạt động</p>
                             <p className="text-emerald-50/75">{day.conversations} hội thoại · {day.ownerMessages} tin nhắn</p>
                           </div>
                         </div>
@@ -573,7 +621,7 @@ export default function AdminUserBehaviorPage() {
 
             <Panel
               title="Mức độ sử dụng tính năng"
-              subtitle="Adoption theo người dùng hoạt động và tổng lượt thao tác."
+              subtitle="Tỷ lệ dùng tính năng theo người dùng hoạt động và tổng lượt thao tác."
               icon={Sparkles}
             >
               <div className="grid gap-3 sm:grid-cols-2">
@@ -583,7 +631,11 @@ export default function AdminUserBehaviorPage() {
               </div>
             </Panel>
           </section>
+          </>
+          )}
 
+          {activeView === "users" && (
+          <>
           <Panel
             title="Phân khúc người dùng"
             subtitle="Nhìn nhanh quy mô từng nhóm để chọn đúng cách kích hoạt và giữ chân."
@@ -664,10 +716,10 @@ export default function AdminUserBehaviorPage() {
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="max-w-52 truncate text-sm font-extrabold text-po-text">{user.fullName || "Chưa cập nhật tên"}</p>
-                              {user.isSynthetic && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[9px] font-extrabold uppercase text-violet-700 ring-1 ring-violet-200">Demo</span>}
+                              {user.isSynthetic && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[9px] font-extrabold uppercase text-violet-700 ring-1 ring-violet-200">Dữ liệu demo</span>}
                             </div>
                             <p className="mt-0.5 max-w-64 truncate text-xs text-po-text-muted">{user.email}</p>
-                            <p className="mt-1 text-[10px] font-semibold text-po-text-subtle">{user.petNames.length ? `Pet: ${user.petNames.join(", ")}` : "Chưa có pet"}</p>
+                            <p className="mt-1 text-[10px] font-semibold text-po-text-subtle">{user.petNames.length ? `Thú cưng: ${user.petNames.join(", ")}` : "Chưa có thú cưng"}</p>
                           </div>
                         </div>
                       </td>
@@ -681,7 +733,7 @@ export default function AdminUserBehaviorPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-1.5">
-                          <FeatureDot active={user.hasPet} label="Pet" icon={PawPrint} />
+                          <FeatureDot active={user.hasPet} label="Thú cưng" icon={PawPrint} />
                           <FeatureDot active={user.ownerMessages > 0} label="AI" icon={Bot} />
                           <FeatureDot active={user.medicalNotes > 0} label="Ghi chú" icon={Stethoscope} />
                           <FeatureDot active={user.remindersCreated > 0} label="Nhắc lịch" icon={BellRing} />
@@ -715,6 +767,8 @@ export default function AdminUserBehaviorPage() {
               </div>
             )}
           </section>
+          </>
+          )}
 
           <p className="px-1 text-right text-[11px] font-medium text-po-text-subtle">
             Cập nhật lúc {new Date(data.generatedAt).toLocaleString("vi-VN")} · {data.datasetLabel}
@@ -822,7 +876,7 @@ function FeatureCard({ feature }: { feature: AdminFeatureAdoptionItem }) {
         <span className="grid size-10 place-items-center rounded-2xl bg-white text-po-primary shadow-sm ring-1 ring-po-border/70"><Icon className="size-4.5" /></span>
         <div className="text-right">
           <p className="text-xl font-extrabold text-po-text">{formatPercent(feature.adoptionRate)}</p>
-          <p className="text-[10px] font-bold uppercase tracking-wide text-po-text-subtle">adoption</p>
+          <p className="text-[10px] font-bold uppercase tracking-wide text-po-text-subtle">Tỷ lệ dùng</p>
         </div>
       </div>
       <h4 className="mt-4 text-sm font-extrabold text-po-text">{feature.label}</h4>

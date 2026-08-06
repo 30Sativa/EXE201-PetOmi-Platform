@@ -24,6 +24,7 @@ import {
 import type { ElementType } from "react"
 
 import Seo from "@/components/common/Seo"
+import SelectMenu from "@/components/ui/SelectMenu"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import { cn } from "@/lib/utils"
 import { getAdminUserBehaviorApi } from "@/services/admin.service"
@@ -35,6 +36,12 @@ import type {
 type DataOrigin = "all" | "real" | "synthetic"
 type Preset = "7" | "30" | "90" | "july"
 type BehaviorView = "overview" | "chat" | "users"
+
+const dataOriginOptions: Array<{ value: DataOrigin; label: string }> = [
+  { value: "all", label: "Toàn bộ tài khoản" },
+  { value: "real", label: "Tài khoản thường" },
+  { value: "synthetic", label: "Tập phân tích nội bộ" },
+]
 
 const numberFormatter = new Intl.NumberFormat("vi-VN")
 const percentFormatter = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 })
@@ -311,21 +318,19 @@ export default function AdminUserBehaviorPage() {
                 />
               </span>
             </label>
-            <label className="grid gap-1.5 text-xs font-bold text-po-text-muted sm:col-span-2 xl:min-w-48">
-              Phạm vi tài khoản
-              <select
+            <div className="grid gap-1.5 text-xs font-bold text-po-text-muted sm:col-span-2 xl:min-w-48">
+              <span>Phạm vi tài khoản</span>
+              <SelectMenu
+                ariaLabel="Phạm vi tài khoản"
                 value={origin}
-                onChange={(event) => {
-                  setOrigin(event.target.value as DataOrigin)
+                options={dataOriginOptions}
+                onChange={(nextOrigin) => {
+                  setOrigin(nextOrigin)
                   setUserPage(1)
                 }}
-                className="h-11 rounded-xl bg-po-surface-muted px-3 text-sm font-semibold text-po-text outline-none ring-1 ring-po-border transition focus:ring-2 focus:ring-po-primary/35"
-              >
-                <option value="all">Toàn bộ tài khoản</option>
-                <option value="real">Tài khoản thường</option>
-                <option value="synthetic">Tập phân tích nội bộ</option>
-              </select>
-            </label>
+                triggerClassName="h-11 bg-po-surface-muted font-semibold"
+              />
+            </div>
             <button
               type="button"
               onClick={() => query.refetch()}
@@ -718,17 +723,20 @@ export default function AdminUserBehaviorPage() {
                     className="h-10 w-full rounded-xl bg-po-surface-muted pl-9 pr-3 text-sm font-medium outline-none ring-1 ring-po-border focus:ring-2 focus:ring-po-primary/30"
                   />
                 </label>
-                <select
+                <SelectMenu
+                  ariaLabel="Lọc phân khúc người dùng"
                   value={segment}
-                  onChange={(event) => {
-                    setSegment(event.target.value)
+                  options={[
+                    { value: "all", label: "Tất cả phân khúc" },
+                    ...data.segments.map((item) => ({ value: item.key, label: item.label })),
+                  ]}
+                  onChange={(nextSegment) => {
+                    setSegment(nextSegment)
                     setUserPage(1)
                   }}
-                  className="h-10 rounded-xl bg-po-surface-muted px-3 text-sm font-semibold text-po-text outline-none ring-1 ring-po-border focus:ring-2 focus:ring-po-primary/30"
-                >
-                  <option value="all">Tất cả phân khúc</option>
-                  {data.segments.map((item) => <option key={item.key} value={item.key}>{item.label}</option>)}
-                </select>
+                  className="sm:w-48"
+                  triggerClassName="h-10 bg-po-surface-muted font-semibold"
+                />
               </div>
             </div>
 

@@ -16,6 +16,7 @@ import type { FormEvent, ReactNode } from "react"
 import { toast } from "sonner"
 
 import StatusBadge from "@/components/ui/StatusBadge"
+import SelectMenu from "@/components/ui/SelectMenu"
 import {
   createAdminChatSubscriptionVoucherApi,
   deleteAdminChatSubscriptionVoucherApi,
@@ -26,6 +27,20 @@ import {
 import type { ChatSubscriptionVoucherRequest, ChatSubscriptionVoucherResponse } from "@/types"
 
 type VoucherFilter = "all" | "active" | "inactive"
+
+const voucherFilterOptions: Array<{ value: VoucherFilter; label: string }> = [
+  { value: "all", label: "Tất cả trạng thái" },
+  { value: "active", label: "Đang bật" },
+  { value: "inactive", label: "Đã tắt" },
+]
+
+const discountTypeOptions: Array<{
+  value: VoucherFormState["discountType"]
+  label: string
+}> = [
+  { value: "Percent", label: "Phần trăm" },
+  { value: "FixedAmount", label: "Số tiền" },
+]
 
 type VoucherFormState = {
   code: string
@@ -277,18 +292,17 @@ export default function AdminChatVouchersPage() {
                 className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-po-text outline-none placeholder:text-po-text-subtle"
               />
             </label>
-            <select
+            <SelectMenu
+              ariaLabel="Lọc trạng thái voucher"
               value={filter}
-              onChange={(event) => {
-                setFilter(event.target.value as VoucherFilter)
+              options={voucherFilterOptions}
+              onChange={(nextFilter) => {
+                setFilter(nextFilter)
                 setPage(1)
               }}
-              className="h-11 rounded-2xl border border-po-border bg-white px-3 text-sm font-bold text-po-text outline-none"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Đang bật</option>
-              <option value="inactive">Đã tắt</option>
-            </select>
+              className="sm:w-48"
+              triggerClassName="rounded-2xl font-bold"
+            />
           </div>
         </div>
 
@@ -429,7 +443,16 @@ function VoucherModal({
           </div>
           <Field label="Mô tả nội bộ"><input value={form.description} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} maxLength={300} placeholder="Ghi chú cho admin" className={inputClass} /></Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Kiểu giảm"><select value={form.discountType} onChange={(event) => setForm((prev) => ({ ...prev, discountType: event.target.value as "Percent" | "FixedAmount" }))} className={inputClass}><option value="Percent">Phần trăm</option><option value="FixedAmount">Số tiền</option></select></Field>
+            <div className="grid gap-1.5">
+              <span className="text-xs font-extrabold uppercase tracking-[0.08em] text-po-text-subtle">Kiểu giảm</span>
+              <SelectMenu
+                ariaLabel="Kiểu giảm giá"
+                value={form.discountType}
+                options={discountTypeOptions}
+                onChange={(discountType) => setForm((prev) => ({ ...prev, discountType }))}
+                triggerClassName={inputClass}
+              />
+            </div>
             <Field label={form.discountType === "Percent" ? "Giảm (%)" : "Giảm (VND)"}><input type="number" min="1" max={form.discountType === "Percent" ? 90 : undefined} value={form.discountValue} onChange={(event) => setForm((prev) => ({ ...prev, discountValue: event.target.value }))} required className={inputClass} /></Field>
           </div>
           <div className="grid gap-3 sm:grid-cols-3">

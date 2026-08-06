@@ -1,6 +1,5 @@
 import {
   ArrowUpDown,
-  ChevronDown,
   CircleCheckBig,
   Clock3,
   Crown,
@@ -18,6 +17,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 
 import StatusBadge from "@/components/ui/StatusBadge"
+import SelectMenu from "@/components/ui/SelectMenu"
 import { getAdminChatSubscriptionsApi } from "@/services/chat-subscription.service"
 import type {
   AdminChatSubscriptionItemResponse,
@@ -75,6 +75,13 @@ const ownerName = (name?: string | null, email?: string | null, fallback?: strin
   name?.trim() || email?.split("@")[0] || (fallback ? `KH-${fallback.slice(0, 6).toUpperCase()}` : "Khách hàng")
 
 type PaymentSort = "newest" | "oldest" | "amount-desc" | "amount-asc"
+
+const paymentSortOptions: Array<{ value: PaymentSort; label: string }> = [
+  { value: "newest", label: "Mới nhất" },
+  { value: "oldest", label: "Cũ nhất" },
+  { value: "amount-desc", label: "Số tiền cao nhất" },
+  { value: "amount-asc", label: "Số tiền thấp nhất" },
+]
 
 const subscriptionPageSize = 6
 const paymentPageSize = 8
@@ -216,24 +223,18 @@ export default function AdminChatSubscriptionsPage() {
                 detail={`${payments.length} giao dịch theo số tiền, voucher và chủ tài khoản.`}
               />
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <label className="relative flex h-11 items-center gap-2 rounded-2xl border border-po-border bg-white pl-4 pr-3 text-sm font-bold text-po-text-muted">
-                  <ArrowUpDown className="size-4 text-po-primary" />
-                  <span className="sr-only">Sắp xếp giao dịch</span>
-                  <select
-                    value={paymentSort}
-                    onChange={(event) => {
-                      setPaymentSort(event.target.value as PaymentSort)
-                      setPaymentPage(1)
-                    }}
-                    className="h-full cursor-pointer appearance-none bg-transparent pr-6 text-sm font-bold text-po-text outline-none"
-                  >
-                    <option value="newest">Mới nhất</option>
-                    <option value="oldest">Cũ nhất</option>
-                    <option value="amount-desc">Số tiền cao nhất</option>
-                    <option value="amount-asc">Số tiền thấp nhất</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 size-3.5 text-po-text-subtle" />
-                </label>
+                <SelectMenu
+                  ariaLabel="Sắp xếp giao dịch"
+                  value={paymentSort}
+                  options={paymentSortOptions}
+                  leadingIcon={ArrowUpDown}
+                  onChange={(nextSort) => {
+                    setPaymentSort(nextSort)
+                    setPaymentPage(1)
+                  }}
+                  className="sm:w-52"
+                  triggerClassName="rounded-2xl font-bold"
+                />
                 <div className="rounded-2xl bg-po-primary-soft px-4 py-3 text-sm font-extrabold text-po-primary ring-1 ring-orange-100">
                   {formatCurrency(paidRevenue)}
                 </div>

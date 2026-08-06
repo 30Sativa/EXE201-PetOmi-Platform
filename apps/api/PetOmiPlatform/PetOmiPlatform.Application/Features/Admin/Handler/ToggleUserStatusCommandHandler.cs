@@ -47,6 +47,7 @@ public class ToggleUserStatusCommandHandler : IRequestHandler<ToggleUserStatusCo
             UserId = user.Id,
             Email = user.Email.Value,
             FullName = profile?.FullName,
+            Phone = profile?.Phone,
             DateOfBirth = profile?.DateOfBirth,
             Address = profile?.Address,
             EmailVerified = user.EmailVerified,

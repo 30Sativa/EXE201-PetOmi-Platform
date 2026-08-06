@@ -39,6 +39,7 @@ public class GetAdminUsersQueryHandler : IRequestHandler<GetAdminUsersQuery, Pag
                 UserId = user.Id,
                 Email = user.Email.Value,
                 FullName = profile?.FullName,
+                Phone = profile?.Phone,
                 DateOfBirth = profile?.DateOfBirth,
                 Address = profile?.Address,
                 EmailVerified = user.EmailVerified,

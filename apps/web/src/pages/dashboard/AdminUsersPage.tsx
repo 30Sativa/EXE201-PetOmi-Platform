@@ -11,6 +11,7 @@ import {
   KeyRound,
   Mail,
   MapPin,
+  Phone,
   Search,
   ShieldCheck,
   ToggleRight,
@@ -279,12 +280,17 @@ export default function AdminUsersPage() {
                             <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
                             <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
                           </div>
-                          <div
-                            className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted"
-                            title={user.address ?? undefined}
-                          >
-                            <MapPin className="size-3 shrink-0" />
-                            <span className="truncate">{user.address || "Chưa có địa chỉ"}</span>
+                          <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
+                            <Phone className="size-3 shrink-0" />
+                            <span className="shrink-0">{user.phone || "Chưa có SĐT"}</span>
+                            <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
+                            <span
+                              className="flex min-w-0 items-center gap-1.5"
+                              title={user.address ?? undefined}
+                            >
+                              <MapPin className="size-3 shrink-0" />
+                              <span className="truncate">{user.address || "Chưa có địa chỉ"}</span>
+                            </span>
                           </div>
                           <div className="mt-0.5 flex items-center gap-1.5">
                             {user.emailVerified ? (
@@ -524,6 +530,10 @@ function UserMobileCard({
                 <span className="truncate">{maskEmail(user.email)}</span>
                 <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
                 <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
+              </p>
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
+                <Phone className="size-3 shrink-0" />
+                <span className="truncate">{user.phone || "Chưa có số điện thoại"}</span>
               </p>
               <p
                 className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted"

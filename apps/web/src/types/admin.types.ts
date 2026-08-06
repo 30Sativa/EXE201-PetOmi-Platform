@@ -270,6 +270,7 @@ export interface AdminUserListResponse {
   userId: string
   email: string
   fullName: string | null
+  phone: string | null
   dateOfBirth: string | null
   address: string | null
   emailVerified: boolean

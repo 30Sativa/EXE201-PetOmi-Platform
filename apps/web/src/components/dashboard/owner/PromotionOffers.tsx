@@ -123,12 +123,12 @@ export default function PromotionOffers() {
               <Users className="size-4" />
             </span>
             <p className="mt-3 text-sm font-extrabold text-po-text">
-              Giới thiệu bạn bè → +{offers.referralBonusMessages} lượt AI
+              Giới thiệu bạn bè, nhận thêm mức sử dụng AI
             </p>
             <p className="mt-1 flex-1 text-xs text-po-text-muted">
-              Mỗi bạn đăng ký bằng mã của bạn, bạn được cộng thêm lượt trò chuyện.
+              Mỗi bạn đăng ký bằng mã của bạn, mức sử dụng của bạn được cộng thêm.
               {referral
-                ? ` Đã giới thiệu: ${referral.successfulReferrals} • Tổng thưởng: +${referral.totalBonusMessages} lượt.`
+                ? ` Đã giới thiệu: ${referral.successfulReferrals} • Quyền lợi đã được cộng tự động.`
                 : ""}
             </p>
             <div className="mt-3 flex items-center gap-2">

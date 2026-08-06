@@ -151,7 +151,7 @@ export default function AdminChatSubscriptionsPage() {
               <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-emerald-50/65">Giá Premium</p>
               <p className="mt-2 text-3xl font-extrabold text-[#ffad78]">{formatCurrency(premiumPlan.priceMonthly)}</p>
               <p className="mt-1 text-xs font-bold text-emerald-50/70">
-                {premiumPlan.monthlyMessageQuota} tin nhắn trong {premiumPlan.billingCycleDays} ngày
+                Mức sử dụng mở rộng · chu kỳ {premiumPlan.billingCycleDays} ngày
               </p>
             </div>
           ) : null}
@@ -179,7 +179,7 @@ export default function AdminChatSubscriptionsPage() {
                 </span>
                 <div>
                   <h3 className="text-lg font-extrabold text-po-text">Các gói dịch vụ</h3>
-                  <p className="mt-1 text-sm font-medium text-po-text-muted">Cấu hình Free/Premium theo tài khoản.</p>
+                  <p className="mt-1 text-sm font-medium text-po-text-muted">Hai mức sử dụng Free/Premium theo tài khoản.</p>
                 </div>
               </div>
               <div className="mt-5 grid gap-3">
@@ -313,6 +313,8 @@ function SectionHeader({
 }
 
 function PlanCard({ plan }: { plan: ChatSubscriptionPlanResponse }) {
+  const isPremium = plan.code.toLowerCase() === "premium"
+
   return (
     <article className="rounded-[22px] border border-po-border bg-po-surface-muted/35 p-4">
       <div className="flex items-start justify-between gap-3">
@@ -327,10 +329,10 @@ function PlanCard({ plan }: { plan: ChatSubscriptionPlanResponse }) {
         <p className="text-xs font-bold text-po-text-muted">{plan.billingCycleDays} ngày</p>
       </div>
       <div className="mt-4 grid gap-2 text-sm font-semibold text-po-text-muted">
-        <FeatureLine label="Tin nhắn" value={`${plan.monthlyMessageQuota}/tháng`} />
+        <FeatureLine label="Mức sử dụng" value={isPremium ? "Mở rộng" : "Cơ bản"} />
         <FeatureLine label="Tư vấn chuyên sâu" value={plan.deepRagEnabled ? "Có" : "Không"} />
-        <FeatureLine label="Gửi ảnh" value={plan.imageUploadEnabled ? `${plan.maxImageUploadsPerMonth}/tháng` : "Không"} />
-        <FeatureLine label="Mức ưu tiên" value={String(plan.priorityLevel)} />
+        <FeatureLine label="Gửi ảnh" value={plan.imageUploadEnabled ? "Có" : "Không"} />
+        <FeatureLine label="Tốc độ phản hồi" value={plan.priorityLevel > 0 ? "Ưu tiên" : "Tiêu chuẩn"} />
       </div>
     </article>
   )

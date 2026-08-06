@@ -516,10 +516,7 @@ export default function OwnerChatPage() {
     const content = input.trim()
     if (!content || isAiBusy) return
     if (quotaBlocked) {
-      setError(
-        subscriptionStatus?.blockReason ??
-          "Ban da dung het quota PetOmi AI trong chu ky hien tai.",
-      )
+      setError("Bạn đã dùng hết mức sử dụng PetOmi AI trong chu kỳ hiện tại.")
       return
     }
 
@@ -950,8 +947,7 @@ export default function OwnerChatPage() {
           {quotaBlocked ? (
             <div className="mb-3 flex flex-col gap-2 rounded-2xl bg-po-danger-soft px-4 py-3 text-sm font-semibold text-po-danger sm:flex-row sm:items-center sm:justify-between">
               <span>
-                {subscriptionStatus?.blockReason ??
-                  "Bạn đã dùng hết lượt nhắn với PetOmi AI tháng này rồi."}
+                Bạn đã dùng hết mức sử dụng PetOmi AI trong chu kỳ hiện tại.
               </span>
               <Link
                 to="/dashboard/owner/ai-plan"
@@ -973,7 +969,7 @@ export default function OwnerChatPage() {
               disabled={!isAiBusy && quotaBlocked}
               placeholder={
                 quotaBlocked
-                  ? "Bạn đã hết lượt nhắn tháng này. Xem các gói để dùng tiếp nhé."
+                  ? "Mức sử dụng hiện tại đã hết. Xem các gói để tiếp tục nhé."
                   : "Nhập câu hỏi cho PetOmi AI..."
               }
               className="max-h-40 min-h-14 w-full resize-none overflow-y-auto rounded-2xl border border-po-border bg-white px-4 py-3 pr-16 text-sm leading-6 text-po-text outline-none transition placeholder:text-po-text-subtle focus:border-po-primary focus:ring-[var(--po-focus-ring)] disabled:cursor-not-allowed disabled:bg-po-surface-muted/70"

@@ -63,7 +63,7 @@ export default function PremiumCheckoutModal({
               </span>
               <div className="min-w-0">
                 <p className="font-bold text-po-text">Premium cho cả tài khoản</p>
-                <p className="text-xs text-po-text-muted">500 tin nhắn mỗi tháng</p>
+                <p className="text-xs text-po-text-muted">Mức sử dụng mở rộng cho cả tài khoản</p>
               </div>
             </div>
             <p className="shrink-0 text-lg font-extrabold text-po-text">{formatCurrency(99000)}</p>

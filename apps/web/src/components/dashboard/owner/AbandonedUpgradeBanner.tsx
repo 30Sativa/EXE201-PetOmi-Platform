@@ -9,7 +9,7 @@ import { useNotifications } from "@/contexts/NotificationContext"
 import { getChatSubscriptionStatusApi } from "@/services/chat-subscription.service"
 
 /**
- * Banner "Abandoned Upgrade": hien khi user dang dung goi Free da HET quota luot nhan
+ * Banner "Abandoned Upgrade": hien khi user dang dung goi Free da HET muc su dung
  * AI thang nay nhung CHUA nang cap Premium.
  *
  * Yeu cau nghiep vu:
@@ -98,8 +98,7 @@ export default function AbandonedUpgradeBanner() {
           Bạn đã bỏ dở nâng cấp Premium
         </p>
         <p className="mt-0.5 text-xs font-medium text-po-text-muted">
-          {status?.blockReason ||
-            "Bạn đã dùng hết lượt trò chuyện miễn phí với PetOmi AI tháng này. Nâng cấp Premium để tiếp tục tư vấn không giới hạn."}
+          Bạn đã dùng hết mức sử dụng Free trong chu kỳ này. Nâng cấp Premium để mở rộng mức sử dụng và tiếp tục tư vấn.
         </p>
       </div>
 

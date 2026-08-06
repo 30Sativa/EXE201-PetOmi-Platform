@@ -162,7 +162,7 @@ export default function OwnerAiPlanPage() {
     })
   }, [paymentStatusQuery.data, queryClient])
 
-  const quotaPercent = subscriptionStatus
+  const usagePercent = subscriptionStatus
     ? Math.min(
         100,
         Math.round(
@@ -214,7 +214,8 @@ export default function OwnerAiPlanPage() {
     })
   }
 
-  const quotaIsBlocked = Boolean(subscriptionStatus && !subscriptionStatus.canSend)
+  const remainingUsagePercent = Math.max(0, 100 - usagePercent)
+  const usageIsBlocked = Boolean(subscriptionStatus && !subscriptionStatus.canSend)
 
   return (
     <div className="grid gap-6">
@@ -229,7 +230,7 @@ export default function OwnerAiPlanPage() {
             Gói PetOmi AI
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-7 text-po-text-muted md:text-base">
-            Một quota dùng chung cho toàn bộ tài khoản. Khi chat, bạn vẫn chọn thú cưng
+            Một mức sử dụng dùng chung cho toàn bộ tài khoản. Khi chat, bạn vẫn chọn thú cưng
             để AI dùng đúng hồ sơ sức khỏe của bé.
           </p>
         </div>
@@ -246,7 +247,7 @@ export default function OwnerAiPlanPage() {
       {/* Ưu đãi: free trial, early-bird, referral */}
       <PromotionOffers />
 
-      {/* Current account plan and shared quota */}
+      {/* Current account plan and shared usage */}
       <section className="overflow-hidden rounded-3xl bg-white ring-1 ring-po-border/80">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-po-border/70 bg-po-surface-muted/50 px-5 py-4">
           <div className="flex items-center gap-3">
@@ -258,7 +259,7 @@ export default function OwnerAiPlanPage() {
                 Gói của bạn
               </p>
               <p className="text-base font-bold text-po-text">
-                Quota dùng chung trong tài khoản
+                Mức sử dụng dùng chung trong tài khoản
               </p>
             </div>
           </div>
@@ -283,13 +284,13 @@ export default function OwnerAiPlanPage() {
                 tone={subscriptionStatus?.isPremium ? "primary" : "muted"}
               />
               <StatCard
-                label="Lượt nhắn còn lại"
+                label="Mức sử dụng còn lại"
                 value={
                   subscriptionStatus
-                    ? String(subscriptionStatus.usage.remainingMessages)
+                    ? `${remainingUsagePercent}%`
                     : "--"
                 }
-                hint={`/ ${subscriptionStatus?.usage.monthlyMessageQuota ?? "--"} tin nhắn`}
+                hint="Dùng chung cho toàn bộ tài khoản"
                 tone="primary"
               />
               <StatCard
@@ -302,23 +303,23 @@ export default function OwnerAiPlanPage() {
 
             <div className="mt-5">
               <div className="flex items-center justify-between text-xs font-semibold text-po-text-muted">
-                <span>Đã dùng trong tháng</span>
-                <span className={cn(quotaIsBlocked && "text-po-danger")}>
-                  {quotaPercent}%
+                <span>Đã sử dụng trong chu kỳ</span>
+                <span className={cn(usageIsBlocked && "text-po-danger")}>
+                  {usagePercent}%
                 </span>
               </div>
               <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-po-surface-muted">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all",
-                    quotaIsBlocked ? "bg-po-danger" : "bg-po-primary",
+                    usageIsBlocked ? "bg-po-danger" : "bg-po-primary",
                   )}
-                  style={{ width: `${quotaPercent}%` }}
+                  style={{ width: `${usagePercent}%` }}
                 />
               </div>
-              {subscriptionStatus?.blockReason ? (
+              {usageIsBlocked ? (
                 <p className="mt-3 rounded-xl bg-po-danger-soft px-3 py-2.5 text-sm font-semibold text-po-danger">
-                  {subscriptionStatus.blockReason}
+                  Bạn đã dùng hết mức sử dụng {subscriptionStatus?.isPremium ? "Premium" : "Free"} trong chu kỳ hiện tại.
                 </p>
               ) : null}
             </div>
@@ -342,7 +343,7 @@ export default function OwnerAiPlanPage() {
                 label="Gửi ảnh cho AI xem"
                 value={
                   subscriptionStatus?.capabilities.imageUploadEnabled
-                    ? `${subscriptionStatus.capabilities.maxImageUploadsPerMonth} ảnh/tháng`
+                    ? "Có"
                     : "Chưa"
                 }
                 active={subscriptionStatus?.capabilities.imageUploadEnabled}
@@ -365,7 +366,7 @@ export default function OwnerAiPlanPage() {
       {/* Plan picker */}
       <DashboardSection
         title="Chọn gói AI"
-        subtitle="Gói Free để chat cơ bản. Lên Premium thì có nhiều lượt nhắn hơn và tư vấn kỹ hơn cho tất cả các bé."
+        subtitle="Free có mức sử dụng cơ bản. Premium mở rộng mức sử dụng, ưu tiên phản hồi và tư vấn chuyên sâu cho tất cả các bé."
       >
         <div className="grid gap-4 md:grid-cols-2">
           {(subscriptionStatus?.plans ?? []).map((plan) => (
@@ -518,10 +519,9 @@ function PlanCard({
   const isCurrent =
     normalizedCode === subscriptionStatus?.currentPlanCode?.toLowerCase()
   const alreadyPremium = Boolean(subscriptionStatus?.isPremium)
-  const description =
-    plan.description === "Mot goi dung cho tat ca thu cung cua ban: nhieu luot nhan hon, phan hoi nhanh hon, tu van sau theo ho so va gui duoc anh cho AI xem."
-      ? "Một gói dùng chung cho tất cả thú cưng của bạn: nhiều lượt nhắn hơn, phản hồi nhanh hơn, tư vấn sâu theo hồ sơ và gửi được ảnh cho AI xem."
-      : plan.description
+  const description = isPremium
+    ? "Mức sử dụng mở rộng cho toàn bộ tài khoản, kèm phản hồi ưu tiên, tư vấn chuyên sâu theo hồ sơ và hỗ trợ gửi ảnh."
+    : "Mức sử dụng cơ bản để trải nghiệm PetOmi AI và hỏi nhanh về chăm sóc thú cưng."
 
   return (
     <article
@@ -577,14 +577,10 @@ function PlanCard({
       ) : null}
 
       <ul className="mt-4 grid gap-2.5 text-sm">
-        <PlanFeature label={`${plan.monthlyMessageQuota} tin nhắn mỗi tháng`} included />
+        <PlanFeature label={isPremium ? "Mức sử dụng mở rộng" : "Mức sử dụng cơ bản"} included />
         <PlanFeature label="Tư vấn sâu theo hồ sơ của bé" included={plan.deepRagEnabled} />
         <PlanFeature
-          label={
-            plan.imageUploadEnabled
-              ? `Gửi ảnh cho AI xem — ${plan.maxImageUploadsPerMonth} ảnh/tháng`
-              : "Gửi ảnh cho AI xem"
-          }
+          label="Gửi ảnh cho AI xem"
           included={plan.imageUploadEnabled}
         />
         <PlanFeature

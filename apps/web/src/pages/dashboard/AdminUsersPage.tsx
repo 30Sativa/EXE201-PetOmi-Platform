@@ -1,6 +1,7 @@
-﻿import { useState } from "react"
+﻿import { useEffect, useState } from "react"
 import {
   Ban,
+  CakeSlice,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
@@ -8,6 +9,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Clock3,
+  Eye,
   KeyRound,
   Mail,
   MapPin,
@@ -16,7 +18,9 @@ import {
   ShieldCheck,
   ToggleRight,
   UsersRound,
+  X,
   XCircle,
+  type LucideIcon,
 } from "lucide-react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
@@ -53,6 +57,20 @@ function formatDate(dateStr: string) {
   }
 }
 
+function formatDateTime(dateStr: string) {
+  try {
+    return new Date(dateStr).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  } catch {
+    return dateStr
+  }
+}
+
 function formatAge(dateOfBirth: string | null) {
   if (!dateOfBirth) return "Chưa có tuổi"
 
@@ -80,6 +98,7 @@ export default function AdminUsersPage() {
 
   const [toggleTarget, setToggleTarget] = useState<AdminUserListResponse | null>(null)
   const [assignTarget, setAssignTarget] = useState<AdminUserListResponse | null>(null)
+  const [detailTarget, setDetailTarget] = useState<AdminUserListResponse | null>(null)
 
   const isActiveParam =
     filter === "active" ? true : filter === "inactive" ? false : undefined
@@ -190,6 +209,7 @@ export default function AdminUsersPage() {
                 isAssignPending={assignMutation.isPending}
                 onToggle={() => setToggleTarget(user)}
                 onAssign={() => setAssignTarget(user)}
+                onView={() => setDetailTarget(user)}
               />
             ))
           )}
@@ -350,6 +370,16 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1.5">
                         <button
+                          type="button"
+                          onClick={() => setDetailTarget(user)}
+                          className="grid size-8 shrink-0 place-items-center rounded-full border border-[#E8D9C7] bg-white text-po-text-muted transition hover:-translate-y-0.5 hover:border-po-primary/40 hover:bg-po-primary-soft hover:text-po-primary"
+                          title="Xem chi tiết"
+                          aria-label={`Xem chi tiết ${user.fullName ?? user.email}`}
+                        >
+                          <Eye className="size-3.5" />
+                        </button>
+
+                        <button
                           onClick={() => setToggleTarget(user)}
                           disabled={toggleMutation.isPending}
                           className={`inline-flex h-8 min-w-[82px] shrink-0 items-center justify-center gap-1 rounded-full border px-2.5 text-[11px] font-semibold transition hover:-translate-y-0.5 ${
@@ -497,6 +527,11 @@ export default function AdminUsersPage() {
         variant="primary"
         isLoading={assignMutation.isPending}
       />
+
+      <UserDetailModal
+        user={detailTarget}
+        onClose={() => setDetailTarget(null)}
+      />
     </div>
   )
 }
@@ -507,12 +542,14 @@ function UserMobileCard({
   isAssignPending,
   onToggle,
   onAssign,
+  onView,
 }: {
   user: AdminUserListResponse
   isTogglePending: boolean
   isAssignPending: boolean
   onToggle: () => void
   onAssign: () => void
+  onView: () => void
 }) {
   return (
     <article className="rounded-[24px] bg-po-surface-muted/70 p-4 ring-1 ring-po-border/70">
@@ -580,6 +617,15 @@ function UserMobileCard({
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
+          onClick={onView}
+          className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl bg-white px-3 text-xs font-semibold text-po-text-muted ring-1 ring-po-border/70 transition hover:-translate-y-0.5 hover:text-po-primary"
+        >
+          <Eye className="size-3.5" />
+          Chi tiết
+        </button>
+
+        <button
+          type="button"
           onClick={onToggle}
           disabled={isTogglePending}
           className={`inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 text-xs font-semibold transition hover:-translate-y-0.5 disabled:opacity-50 ${
@@ -614,5 +660,194 @@ function UserMobileCard({
         ) : null}
       </div>
     </article>
+  )
+}
+
+function UserDetailModal({
+  user,
+  onClose,
+}: {
+  user: AdminUserListResponse | null
+  onClose: () => void
+}) {
+  useEffect(() => {
+    if (!user) return
+
+    const previousOverflow = document.body.style.overflow
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose()
+    }
+
+    document.body.style.overflow = "hidden"
+    document.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [onClose, user])
+
+  if (!user) return null
+
+  const displayName = user.fullName ?? "Chưa có tên"
+
+  return (
+    <div
+      className="fixed inset-0 z-50 grid place-items-center bg-po-text/45 px-3 py-5 backdrop-blur-sm sm:px-4"
+      onClick={onClose}
+    >
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-user-detail-title"
+        className="max-h-[90vh] w-full max-w-3xl overflow-hidden rounded-[28px] bg-white shadow-2xl shadow-orange-950/20 ring-1 ring-po-border/80"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="flex items-start justify-between gap-4 border-b border-po-border/70 px-5 py-4 sm:px-6 sm:py-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-po-primary-soft text-base font-extrabold text-po-primary ring-1 ring-po-primary/15">
+              {displayName === "Chưa có tên"
+                ? user.email[0].toUpperCase()
+                : displayName[0].toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase text-po-text-subtle">
+                Chi tiết người dùng
+              </p>
+              <h2 id="admin-user-detail-title" className="truncate text-xl font-extrabold text-po-text sm:text-2xl">
+                {displayName}
+              </h2>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span className="text-xs text-po-text-muted">{maskEmail(user.email)}</span>
+                <StatusBadge
+                  variant={user.isActive ? "success" : "danger"}
+                  label={user.isActive ? "Hoạt động" : "Bị khóa"}
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid size-10 shrink-0 place-items-center rounded-2xl bg-po-surface-muted text-po-text-muted transition hover:bg-po-border/50 hover:text-po-text"
+            aria-label="Đóng chi tiết người dùng"
+            title="Đóng"
+          >
+            <X className="size-4" />
+          </button>
+        </header>
+
+        <div className="max-h-[calc(90vh-106px)] overflow-y-auto p-5 sm:p-6">
+          <section>
+            <h3 className="text-xs font-bold uppercase text-po-text-subtle">
+              Thông tin cá nhân
+            </h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <UserDetailField icon={Mail} label="Email" value={maskEmail(user.email)} />
+              <UserDetailField icon={Phone} label="Số điện thoại" value={user.phone || "Chưa cập nhật"} />
+              <UserDetailField
+                icon={CakeSlice}
+                label="Ngày sinh"
+                value={user.dateOfBirth ? `${formatDate(user.dateOfBirth)} · ${formatAge(user.dateOfBirth)}` : "Chưa cập nhật"}
+              />
+              <UserDetailField
+                icon={MapPin}
+                label="Địa chỉ"
+                value={user.address || "Chưa cập nhật"}
+              />
+            </div>
+          </section>
+
+          <section className="mt-6">
+            <h3 className="text-xs font-bold uppercase text-po-text-subtle">
+              Tài khoản và phân quyền
+            </h3>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <UserDetailField
+                icon={KeyRound}
+                label="Quyền hiện tại"
+                value={user.roles.length > 0 ? user.roles.join(", ") : "Không có quyền"}
+              />
+              <UserDetailField
+                icon={CalendarDays}
+                label="Ngày tạo"
+                value={formatDateTime(user.createdAt)}
+              />
+              <UserDetailField
+                icon={Clock3}
+                label="Đăng nhập cuối"
+                value={user.lastLoginAt ? formatDateTime(user.lastLoginAt) : "Chưa đăng nhập"}
+              />
+              <UserDetailField
+                icon={UsersRound}
+                label="Mã người dùng"
+                value={user.userId}
+              />
+            </div>
+          </section>
+
+          <section className="mt-6 grid gap-3 sm:grid-cols-2">
+            <ProfileStatus
+              isComplete={user.emailVerified}
+              completeLabel="Email đã xác thực"
+              incompleteLabel="Email chưa xác thực"
+            />
+            <ProfileStatus
+              isComplete={user.isProfileCompleted}
+              completeLabel="Hồ sơ đã hoàn thành"
+              incompleteLabel="Hồ sơ chưa hoàn thành"
+            />
+          </section>
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function UserDetailField({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+}) {
+  return (
+    <div className="flex min-w-0 items-start gap-3 rounded-2xl bg-po-surface-muted/55 p-4 ring-1 ring-po-border/70">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-white text-po-primary ring-1 ring-po-border/70">
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase text-po-text-subtle">{label}</p>
+        <p className="mt-1 break-words text-sm font-semibold text-po-text">{value}</p>
+      </div>
+    </div>
+  )
+}
+
+function ProfileStatus({
+  isComplete,
+  completeLabel,
+  incompleteLabel,
+}: {
+  isComplete: boolean
+  completeLabel: string
+  incompleteLabel: string
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 rounded-2xl px-4 py-3 ring-1 ${
+        isComplete
+          ? "bg-po-success-soft/55 text-po-success ring-po-success/15"
+          : "bg-po-surface-muted/65 text-po-text-muted ring-po-border/70"
+      }`}
+    >
+      {isComplete ? <CheckCircle2 className="size-4 shrink-0" /> : <XCircle className="size-4 shrink-0" />}
+      <span className="text-sm font-semibold">
+        {isComplete ? completeLabel : incompleteLabel}
+      </span>
+    </div>
   )
 }

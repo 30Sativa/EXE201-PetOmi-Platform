@@ -29,6 +29,7 @@ import AdminAiPage from "@/pages/dashboard/AdminAiPage"
 import AdminAlertsPage from "@/pages/dashboard/AdminAlertsPage"
 import AdminAuditLogsPage from "@/pages/dashboard/AdminAuditLogsPage"
 import AdminChatSubscriptionsPage from "@/pages/dashboard/AdminChatSubscriptionsPage"
+import AdminChatVouchersPage from "@/pages/dashboard/AdminChatVouchersPage"
 import AdminClinicsPage from "@/pages/dashboard/AdminClinicsPage"
 import AdminCtaReportPage from "@/pages/dashboard/AdminCtaReportPage"
 import AdminWebsiteFeedbackPage from "@/pages/dashboard/AdminWebsiteFeedbackPage"
@@ -349,6 +350,10 @@ const router = createBrowserRouter([
           {
             path: "chat-subscriptions",
             element: <AdminChatSubscriptionsPage />,
+          },
+          {
+            path: "chat-vouchers",
+            element: <AdminChatVouchersPage />,
           },
           {
             path: "cta-report",

@@ -8,9 +8,7 @@ import {
   BellRing,
   Bot,
   CalendarDays,
-  CheckCircle2,
   Clock3,
-  Lightbulb,
   MessageCircleMore,
   PawPrint,
   RefreshCw,
@@ -30,7 +28,6 @@ import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import { cn } from "@/lib/utils"
 import { getAdminUserBehaviorApi } from "@/services/admin.service"
 import type {
-  AdminBehaviorInsightItem,
   AdminFeatureAdoptionItem,
   AdminUserBehaviorItem,
 } from "@/types"
@@ -534,7 +531,7 @@ export default function AdminUserBehaviorPage() {
 
           {activeView === "overview" && (
           <>
-          <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+          <div>
             <section className="rounded-[24px] bg-white p-5 shadow-sm shadow-orange-200/15 ring-1 ring-po-border/80 md:p-6">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex items-start gap-3">
@@ -566,17 +563,17 @@ export default function AdminUserBehaviorPage() {
                   <span className="border-t border-orange-100/60" />
                 </div>
                 <div
-                  className="relative grid h-[170px] items-end gap-1"
+                  className="relative grid h-[220px] items-end gap-1"
                   style={{ gridTemplateColumns: `repeat(${Math.max(1, dailyActivity.length)}, minmax(0, 1fr))` }}
                 >
                   {dailyActivity.map((day, index) => {
-                    const activeHeight = Math.max(4, (day.activeUsers / maxDailyValue) * 126)
-                    const sessionHeight = Math.max(3, (day.sessions / maxDailyValue) * 126)
-                    const conversationHeight = Math.max(3, (day.conversations / maxDailyValue) * 126)
+                    const activeHeight = Math.max(4, (day.activeUsers / maxDailyValue) * 176)
+                    const sessionHeight = Math.max(3, (day.sessions / maxDailyValue) * 176)
+                    const conversationHeight = Math.max(3, (day.conversations / maxDailyValue) * 176)
                     const showLabel = index % dayLabelStep === 0 || index === dailyActivity.length - 1
                     return (
                       <div key={day.date} className="group relative flex min-w-0 flex-col items-center justify-end gap-2">
-                        <div className="relative flex h-[126px] w-full items-end justify-center gap-0.5">
+                        <div className="relative flex h-[176px] w-full items-end justify-center gap-0.5">
                           <div
                             className="w-[28%] rounded-t-[3px] bg-po-primary transition group-hover:bg-po-primary-hover"
                             style={{ height: `${activeHeight}px` }}
@@ -607,25 +604,7 @@ export default function AdminUserBehaviorPage() {
                 </div>
               </div>
             </section>
-
-            <section className="rounded-[24px] bg-[#173b33] p-5 text-white shadow-sm shadow-emerald-950/10 ring-1 ring-[#173b33] md:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3">
-                  <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-white/10 text-[#ffad78] ring-1 ring-white/10"><Lightbulb className="size-4.5" /></span>
-                  <div>
-                    <h3 className="text-base font-extrabold">Việc cần chú ý</h3>
-                    <p className="mt-1 text-xs leading-5 text-emerald-50/60">Tối đa 3 tín hiệu quan trọng nhất trong kỳ.</p>
-                  </div>
-                </div>
-                <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-extrabold text-emerald-50/75 ring-1 ring-white/10">{data.insights.slice(0, 3).length} mục</span>
-              </div>
-              <div className="mt-5 grid gap-2.5">
-                {data.insights.slice(0, 3).map((insight) => (
-                  <CompactInsight key={`${insight.title}-${insight.metric}`} insight={insight} />
-                ))}
-              </div>
-            </section>
-          </section>
+          </div>
 
           <section className="grid gap-5 xl:grid-cols-[minmax(360px,0.85fr)_minmax(0,1.15fr)]">
             <Panel
@@ -917,29 +896,6 @@ function Panel({ title, subtitle, icon: Icon, action, children }: { title: strin
       </div>
       <div className="mt-5">{children}</div>
     </section>
-  )
-}
-
-function CompactInsight({ insight }: { insight: AdminBehaviorInsightItem }) {
-  const style = insight.severity === "positive"
-    ? { icon: "bg-emerald-400/15 text-emerald-200 ring-emerald-300/15", Icon: CheckCircle2 }
-    : insight.severity === "warning"
-      ? { icon: "bg-amber-300/15 text-amber-200 ring-amber-200/15", Icon: TrendingUp }
-      : { icon: "bg-violet-300/15 text-violet-100 ring-violet-200/15", Icon: Sparkles }
-  return (
-    <article className="rounded-2xl bg-white/[0.07] p-3.5 ring-1 ring-white/10">
-      <div className="flex items-start gap-3">
-        <span className={cn("grid size-8 shrink-0 place-items-center rounded-xl ring-1", style.icon)}><style.Icon className="size-4" /></span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-3">
-            <h4 className="text-sm font-extrabold leading-5 text-white">{insight.title}</h4>
-            <span className="shrink-0 rounded-full bg-white/10 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wide text-emerald-50/70 ring-1 ring-white/10">{insight.metric}</span>
-          </div>
-          <p className="mt-1.5 text-xs leading-5 text-emerald-50/60">{insight.description}</p>
-          <p className="mt-2 flex items-start gap-1.5 text-[11px] font-bold leading-5 text-emerald-50"><ArrowRight className="mt-0.5 size-3.5 shrink-0 text-[#ffad78]" />{insight.recommendedAction}</p>
-        </div>
-      </div>
-    </article>
   )
 }
 

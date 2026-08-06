@@ -11,6 +11,7 @@ import {
   MessageSquareText,
   Settings,
   ShieldAlert,
+  TicketPercent,
   UserCircle,
   UsersRound,
 } from "lucide-react"
@@ -27,6 +28,7 @@ const navItems = [
   { label: "AI monitor", to: "/dashboard/admin/ai", icon: Bot },
   { label: "Phân tích hành vi", to: "/dashboard/admin/behavior", icon: Activity },
   { label: "AI Subscriptions", to: "/dashboard/admin/chat-subscriptions", icon: CreditCard },
+  { label: "Voucher AI", to: "/dashboard/admin/chat-vouchers", icon: TicketPercent },
   { label: "Góp ý web", to: "/dashboard/admin/feedback", icon: MessageSquareText },
   { label: "Báo cáo CTA", to: "/dashboard/admin/cta-report", icon: ChartNoAxesCombined },
   { label: "Duyệt phòng khám", to: "/dashboard/admin/clinics", icon: BadgeCheck },

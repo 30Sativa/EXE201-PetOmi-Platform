@@ -135,26 +135,34 @@ export default function AdminCtaReportPage() {
             </div>
           </div>
 
-          <div className="mt-6 flex items-end gap-3 sm:gap-5" style={{ height: 240 }}>
-            {DATA.map((row) => {
-              const heightPct = Math.max(6, Math.round((row.click / maxClick) * 100))
-              return (
-                <div key={row.day} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-2">
-                  <span className="text-xs font-bold tabular-nums text-po-text">
-                    {formatNumber(row.click)}
-                  </span>
-                  <div
-                    className={cn(
-                      "w-full max-w-[54px] rounded-t-xl transition-all",
-                      row.cta === "chat" ? "bg-po-primary" : "bg-sky-500",
-                    )}
-                    style={{ height: `${heightPct}%` }}
-                    title={`${row.label} · ${formatNumber(row.click)} click · CTR ${formatPercent(row.click, row.impression)}`}
-                  />
-                  <span className="text-xs font-semibold text-po-text-muted">{row.day}</span>
-                </div>
-              )
-            })}
+          <div className="relative mt-6 overflow-hidden rounded-2xl bg-po-surface-muted/30 px-3 pb-3 pt-4 ring-1 ring-po-border/60 sm:px-5">
+            <div className="pointer-events-none absolute inset-x-4 bottom-10 top-8 grid grid-rows-4 sm:inset-x-6">
+              <span className="border-t border-po-border/70" />
+              <span className="border-t border-po-border/60" />
+              <span className="border-t border-po-border/50" />
+              <span className="border-t border-po-border/40" />
+            </div>
+            <div className="relative grid h-[240px] grid-cols-6 items-end gap-2 sm:gap-5">
+              {DATA.map((row) => {
+                const barHeight = Math.max(16, Math.round((row.click / maxClick) * 170))
+                return (
+                  <div key={row.day} className="flex h-full min-w-0 flex-col items-center justify-end gap-2">
+                    <span className="text-xs font-bold tabular-nums text-po-text">
+                      {formatNumber(row.click)}
+                    </span>
+                    <div
+                      className={cn(
+                        "w-full max-w-[58px] rounded-t-lg shadow-sm transition-all hover:brightness-95",
+                        row.cta === "chat" ? "bg-po-primary" : "bg-sky-500",
+                      )}
+                      style={{ height: `${barHeight}px` }}
+                      title={`${row.label} · ${formatNumber(row.click)} click · CTR ${formatPercent(row.click, row.impression)}`}
+                    />
+                    <span className="text-xs font-semibold text-po-text-muted">{row.day}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         </section>
 
@@ -198,7 +206,7 @@ export default function AdminCtaReportPage() {
         <div className="px-5 pt-5 md:px-6">
           <p className="text-sm font-semibold text-po-text">Chi tiết theo từng ngày</p>
           <p className="mt-1 text-xs leading-5 text-po-text-muted">
-            Dữ liệu mẫu — thay bằng số thật từ Google Analytics khi chạy chiến dịch.
+            So sánh lượt tiếp cận, lượt click và CTR của từng CTA trong kỳ.
           </p>
         </div>
 

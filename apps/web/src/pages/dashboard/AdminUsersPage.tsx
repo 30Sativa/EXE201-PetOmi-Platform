@@ -9,7 +9,6 @@ import {
   ChevronsRight,
   Clock3,
   KeyRound,
-  Mail,
   Search,
   ShieldCheck,
   ToggleRight,
@@ -255,11 +254,7 @@ export default function AdminUsersPage() {
                           <p className="truncate text-sm font-bold text-po-text">
                             {user.fullName ?? "Chưa có tên"}
                           </p>
-                          <div className="flex items-center gap-1.5 text-xs text-po-text-muted">
-                            <Mail className="size-3 shrink-0" />
-                            <span className="truncate">{user.email}</span>
-                          </div>
-                          <div className="mt-0.5 flex items-center gap-1.5">
+                          <div className="mt-1.5 flex items-center gap-1.5">
                             {user.emailVerified ? (
                               <span className="inline-flex items-center gap-1 text-[#FF8A1E]">
                                 <CheckCircle2 className="size-3" />
@@ -493,7 +488,6 @@ function UserMobileCard({
               <h3 className="truncate text-sm font-extrabold text-po-text">
                 {user.fullName ?? "Chưa có tên"}
               </h3>
-              <p className="mt-1 truncate text-xs text-po-text-muted">{user.email}</p>
             </div>
             <StatusBadge
               variant={user.isActive ? "success" : "danger"}

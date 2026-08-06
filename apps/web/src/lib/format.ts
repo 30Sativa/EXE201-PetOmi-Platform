@@ -29,6 +29,19 @@ export const formatShortId = (value?: string | null) => {
   return value.slice(0, 8)
 }
 
+export const maskEmail = (value?: string | null) => {
+  if (!value) return "-"
+
+  const separatorIndex = value.lastIndexOf("@")
+  if (separatorIndex <= 0 || separatorIndex === value.length - 1) return value
+
+  const localPart = value.slice(0, separatorIndex)
+  const domain = value.slice(separatorIndex + 1)
+  const visibleLength = Math.min(5, localPart.length)
+
+  return `${localPart.slice(0, visibleLength)}*****@${domain}`
+}
+
 export const toDateInputValue = (date: Date) => {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
   return localDate.toISOString().slice(0, 10)

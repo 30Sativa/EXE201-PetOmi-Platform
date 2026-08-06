@@ -18,6 +18,7 @@ import { useState } from "react"
 
 import StatusBadge from "@/components/ui/StatusBadge"
 import SelectMenu from "@/components/ui/SelectMenu"
+import { maskEmail } from "@/lib/format"
 import { getAdminChatSubscriptionsApi } from "@/services/chat-subscription.service"
 import type {
   AdminChatSubscriptionItemResponse,
@@ -414,7 +415,7 @@ function PersonBlock({
       </span>
       <div className="min-w-0">
         <p className="truncate text-sm font-extrabold text-po-text">{ownerName(name, email, fallback)}</p>
-        <p className="mt-0.5 truncate text-xs font-semibold text-po-text-muted">{email ?? "--"}</p>
+        <p className="mt-0.5 truncate text-xs font-semibold text-po-text-muted">{maskEmail(email)}</p>
       </div>
     </div>
   )

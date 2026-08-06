@@ -23,6 +23,7 @@ import StatusBadge from "@/components/ui/StatusBadge"
 import { LoadingSpinner } from "@/components/ui/LoadingStates"
 import EmptyState from "@/components/ui/EmptyState"
 import ConfirmDialog from "@/components/ui/ConfirmDialog"
+import { maskEmail } from "@/lib/format"
 import {
   getAdminUsersApi,
   toggleUserStatusApi,
@@ -273,7 +274,7 @@ export default function AdminUsersPage() {
                           </p>
                           <div className="flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
                             <Mail className="size-3 shrink-0" />
-                            <span className="truncate">{user.email}</span>
+                            <span className="truncate">{maskEmail(user.email)}</span>
                             <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
                             <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
                           </div>
@@ -512,7 +513,7 @@ function UserMobileCard({
                 {user.fullName ?? "Chưa có tên"}
               </h3>
               <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
-                <span className="truncate">{user.email}</span>
+                <span className="truncate">{maskEmail(user.email)}</span>
                 <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
                 <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
               </p>

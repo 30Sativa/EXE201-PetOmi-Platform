@@ -85,12 +85,13 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task<int> CountAllAsync()
         {
-            return await _context.Users.AsNoTracking().CountAsync();
+            return await _context.Users.AsNoTracking().CountAsync(user => !user.IsSynthetic);
         }
 
         public async Task<Dictionary<string, int>> GetUserCountByRoleAsync()
         {
             return await _context.UserRoles
+                .Where(userRole => !userRole.User!.IsSynthetic)
                 .GroupBy(ur => ur.Role!.RoleName)
                 .Select(g => new { Role = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Role, x => x.Count);
@@ -101,7 +102,7 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
             var startDate = DateTime.UtcNow.AddDays(-days).Date;
 
             var data = await _context.Users
-                .Where(u => u.CreatedAt >= startDate)
+                .Where(u => !u.IsSynthetic && u.CreatedAt >= startDate)
                 .GroupBy(u => u.CreatedAt.Date)
                 .Select(g => new { Date = g.Key, Count = g.Count() })
                 .ToListAsync();
@@ -119,12 +120,12 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
         public async Task<int> CountByIsActiveAsync(bool isActive)
         {
-            return await _context.Users.CountAsync(u => u.IsActive == isActive);
+            return await _context.Users.CountAsync(u => !u.IsSynthetic && u.IsActive == isActive);
         }
 
         public async Task<int> CountByEmailVerifiedAsync(bool emailVerified)
         {
-            return await _context.Users.CountAsync(u => u.EmailVerified == emailVerified);
+            return await _context.Users.CountAsync(u => !u.IsSynthetic && u.EmailVerified == emailVerified);
         }
 
         public async Task<List<Guid>> GetAllUserIdsAsync()

@@ -76,6 +76,62 @@ export interface AdminDashboardResponse {
   aiIntentStats: AiIntentStatItem[]
 }
 
+// Admin synthetic/demo activity report
+export interface AdminSyntheticActivitySummary {
+  usersInDataset: number
+  usersWithPet: number
+  usersWhoCreatedPetInRange: number
+  usersWhoUsedServiceInRange: number
+  qualifiedUsers: number
+  petsCreated: number
+  activeUserDays: number
+  ownerMessages: number
+  aiResponses: number
+  medicalNotes: number
+  remindersCreated: number
+  averageSessionMinutes: number
+}
+
+export interface AdminSyntheticDailyActivityItem {
+  date: string
+  activeUsers: number
+  petsCreated: number
+  ownerMessages: number
+  aiResponses: number
+  medicalNotes: number
+  remindersCreated: number
+}
+
+export interface AdminSyntheticUserActivityItem {
+  userId: string
+  email: string
+  fullName: string | null
+  isSynthetic: boolean
+  petNames: string[]
+  firstPetCreatedAt: string | null
+  activeDays: number
+  ownerMessages: number
+  aiResponses: number
+  medicalNotes: number
+  remindersCreated: number
+  firstActivityAt: string | null
+  lastActivityAt: string | null
+  createdPetInRange: boolean
+  usedServiceInRange: boolean
+  qualifiedForScenario: boolean
+}
+
+export interface AdminSyntheticActivityResponse {
+  datasetLabel: string
+  dataOrigin: "REAL" | "SYNTHETIC"
+  notice: string
+  fromDate: string
+  toDate: string
+  summary: AdminSyntheticActivitySummary
+  dailyActivity: AdminSyntheticDailyActivityItem[]
+  users: AdminSyntheticUserActivityItem[]
+}
+
 // Admin Roles
 export interface AdminRoleStatsResponse {
   globalRoleCount: number

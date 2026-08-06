@@ -31,6 +31,8 @@ public partial class User
 
     public bool IsProfileCompleted { get; set; }
 
+    public bool IsSynthetic { get; set; }
+
     public string? ReferralCode { get; set; }
 
     public virtual ICollection<Appointment> AppointmentBookedByUsers { get; set; } = new List<Appointment>();

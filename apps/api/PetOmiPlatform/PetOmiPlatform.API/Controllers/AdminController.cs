@@ -36,6 +36,19 @@ public class AdminController : BaseController
     }
 
     /// <summary>
+    /// Báo cáo riêng cho dữ liệu demo/synthetic, không trộn với bằng chứng khách hàng thật.
+    /// </summary>
+    [HttpGet("synthetic-activity")]
+    public async Task<IActionResult> GetSyntheticActivity(
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate,
+        [FromQuery] string? origin = "real")
+    {
+        var result = await Mediator.Send(new GetAdminSyntheticActivityQuery(fromDate, toDate, origin));
+        return Ok(BaseResponse<AdminSyntheticActivityResponse>.Ok(result));
+    }
+
+    /// <summary>
     /// Danh sách cảnh báo cho trang admin alerts.
     /// </summary>
     [HttpGet("alerts")]

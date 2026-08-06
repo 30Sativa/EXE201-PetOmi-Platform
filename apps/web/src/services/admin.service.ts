@@ -2,6 +2,7 @@ import { api } from "@/lib/axios"
 import type {
   AdminAlertsResponse,
   AdminDashboardResponse,
+  AdminSyntheticActivityResponse,
   AdminRolesResponse,
   AdminUserListResponse,
   AuditLogItemResponse,
@@ -23,6 +24,21 @@ const unwrapResponse = <T>(response: { data: T | { data: T } }): T => {
 export const getAdminDashboardApi = async (): Promise<AdminDashboardResponse> => {
   const response = await api.get("/admin/dashboard")
   return unwrapResponse<AdminDashboardResponse>(response)
+}
+
+export const getAdminSyntheticActivityApi = async (params?: {
+  fromDate?: string
+  toDate?: string
+  origin?: "real" | "synthetic"
+}): Promise<AdminSyntheticActivityResponse> => {
+  const response = await api.get("/admin/synthetic-activity", {
+    params: {
+      fromDate: params?.fromDate || undefined,
+      toDate: params?.toDate || undefined,
+      origin: params?.origin ?? "real",
+    },
+  })
+  return unwrapResponse<AdminSyntheticActivityResponse>(response)
 }
 
 export const getAdminRolesApi = async (): Promise<AdminRolesResponse> => {

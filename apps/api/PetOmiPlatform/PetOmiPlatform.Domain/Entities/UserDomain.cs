@@ -25,6 +25,7 @@ namespace PetOmiPlatform.Domain.Entities
         public DateTime? DeletedAt { get; private set; }
 
         public bool IsActive { get; private set; }
+        public bool IsSynthetic { get; private set; }
 
         // === Constructors ===
         // Private constructor for EF Core and reconstitution
@@ -56,7 +57,8 @@ namespace PetOmiPlatform.Domain.Entities
             DateTime? updatedAt,
             DateTime? lastLoginAt,
             DateTime? deletedAt,
-            bool isActive)
+            bool isActive,
+            bool isSynthetic)
         {
             var user = new UserDomain
             {
@@ -71,7 +73,8 @@ namespace PetOmiPlatform.Domain.Entities
                 UpdatedAt = updatedAt,
                 LastLoginAt = lastLoginAt,
                 DeletedAt = deletedAt,
-                IsActive = isActive
+                IsActive = isActive,
+                IsSynthetic = isSynthetic
             };
             return user;
         }

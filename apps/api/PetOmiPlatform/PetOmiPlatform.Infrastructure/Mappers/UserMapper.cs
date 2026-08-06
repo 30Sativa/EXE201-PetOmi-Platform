@@ -23,7 +23,8 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 updatedAt: entity.UpdatedAt,
                 lastLoginAt: entity.LastLoginAt,
                 deletedAt: entity.DeletedAt,
-                isActive: entity.IsActive
+                isActive: entity.IsActive,
+                isSynthetic: entity.IsSynthetic
                 );
         }
 
@@ -45,7 +46,8 @@ namespace PetOmiPlatform.Infrastructure.Mappers
                 UpdatedAt = domain.UpdatedAt,
                 LastLoginAt = domain.LastLoginAt,
                 DeletedAt = domain.DeletedAt,
-                IsActive = domain.IsActive
+                IsActive = domain.IsActive,
+                IsSynthetic = domain.IsSynthetic
             };
         }
     }

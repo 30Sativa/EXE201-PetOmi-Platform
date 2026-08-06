@@ -41,7 +41,10 @@ namespace PetOmiPlatform.Infrastructure.Persistence.Repositories
 
             var averageSeconds = await _dbContext.UserSessions
                 .AsNoTracking()
-                .Where(s => s.CreatedAt >= windowStart && s.ActiveRole == activeRole)
+                .Where(s =>
+                    !s.User.IsSynthetic &&
+                    s.CreatedAt >= windowStart &&
+                    s.ActiveRole == activeRole)
                 .Select(s => EF.Functions.DateDiffSecond(
                     s.CreatedAt,
                     s.LogoutAt ?? (s.IsActive ? nowUtc : s.LastActivityAt)))

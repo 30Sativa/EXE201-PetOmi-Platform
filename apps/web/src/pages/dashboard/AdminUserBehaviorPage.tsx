@@ -104,7 +104,7 @@ function formatMinutes(value: number) {
 }
 
 function initials(user: AdminUserBehaviorItem) {
-  const source = user.fullName?.trim() || user.email
+  const source = user.fullName?.trim() || displayUserCode(user.userId)
   return source
     .split(/[\s.@]+/)
     .filter(Boolean)
@@ -113,8 +113,16 @@ function initials(user: AdminUserBehaviorItem) {
     .join("")
 }
 
-function chatInitials(fullName: string | null, email: string) {
-  return (fullName?.trim() || email)
+function displayUserCode(userId: string) {
+  return `KH-${userId.replace(/-/g, "").slice(0, 6).toUpperCase()}`
+}
+
+function displayUserName(fullName: string | null, userId: string) {
+  return fullName?.trim() || displayUserCode(userId)
+}
+
+function chatInitials(fullName: string | null, userId: string) {
+  return displayUserName(fullName, userId)
     .split(/[\s.@]+/)
     .filter(Boolean)
     .slice(0, 2)
@@ -300,7 +308,7 @@ export default function AdminUserBehaviorPage() {
               >
                 <option value="all">Toàn bộ tài khoản</option>
                 <option value="real">Tài khoản thường</option>
-                <option value="synthetic">Dữ liệu demo</option>
+                <option value="synthetic">Tập phân tích nội bộ</option>
               </select>
             </label>
             <button
@@ -370,7 +378,7 @@ export default function AdminUserBehaviorPage() {
             />
           </section>
 
-          <section className="rounded-[24px] bg-white p-2 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+          <section className="rounded-[22px] bg-white p-1.5 shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
             <div className="grid gap-2 md:grid-cols-3">
               {viewTabs.map((tab) => {
                 const Icon = tab.icon
@@ -381,13 +389,13 @@ export default function AdminUserBehaviorPage() {
                     type="button"
                     onClick={() => setActiveView(tab.key)}
                     className={cn(
-                      "flex min-h-[74px] items-center gap-3 rounded-[18px] px-4 py-3 text-left transition",
+                      "flex min-h-[62px] items-center gap-3 rounded-2xl px-3.5 py-2.5 text-left transition",
                       isActive
                         ? "bg-[#173b33] text-white shadow-sm shadow-emerald-950/10"
-                        : "bg-po-surface-muted/60 text-po-text hover:bg-orange-50",
+                        : "bg-white text-po-text hover:bg-orange-50/70",
                     )}
                   >
-                    <span className={cn("grid size-10 shrink-0 place-items-center rounded-2xl", isActive ? "bg-white/12 text-[#ffad78]" : "bg-white text-po-primary ring-1 ring-po-border/70")}>
+                    <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl", isActive ? "bg-white/12 text-[#ffad78]" : "bg-orange-50 text-po-primary ring-1 ring-orange-100")}>
                       <Icon className="size-4" />
                     </span>
                     <span className="min-w-0">
@@ -489,9 +497,9 @@ export default function AdminUserBehaviorPage() {
                     <p className="rounded-2xl bg-white/8 p-4 text-center text-xs text-emerald-50/60">Chưa có người dùng chat.</p>
                   ) : data.chatAnalytics.topUsers.map((user, index) => (
                     <div key={user.userId} className="flex items-center gap-3 rounded-2xl bg-white/7 p-2.5 ring-1 ring-white/8">
-                      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-white/12 text-[10px] font-extrabold">{chatInitials(user.fullName, user.email)}</span>
+                      <span className="grid size-8 shrink-0 place-items-center rounded-xl bg-white/12 text-[10px] font-extrabold">{chatInitials(user.fullName, user.userId)}</span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-extrabold">{user.fullName || user.email}</p>
+                        <p className="truncate text-xs font-extrabold">{displayUserName(user.fullName, user.userId)}</p>
                         <p className="mt-0.5 truncate text-[10px] text-emerald-50/55">{user.conversations} hội thoại · {user.activeDays} ngày</p>
                       </div>
                       <div className="shrink-0 text-right">
@@ -663,8 +671,8 @@ export default function AdminUserBehaviorPage() {
             </div>
           </Panel>
 
-          <section className="overflow-hidden rounded-[28px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
-            <div className="flex flex-col gap-4 border-b border-po-border/70 p-5 md:flex-row md:items-center md:justify-between md:p-6">
+          <section className="overflow-hidden rounded-[24px] bg-white shadow-sm shadow-orange-200/20 ring-1 ring-po-border/80">
+            <div className="flex flex-col gap-4 border-b border-po-border/70 bg-gradient-to-r from-white to-orange-50/45 p-5 md:flex-row md:items-center md:justify-between md:p-6">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="grid size-9 place-items-center rounded-xl bg-po-primary-soft text-po-primary"><Activity className="size-4" /></span>
@@ -680,7 +688,7 @@ export default function AdminUserBehaviorPage() {
                   <input
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Tên, email hoặc tên pet…"
+                    placeholder="Tên hoặc tên thú cưng…"
                     className="h-10 w-full rounded-xl bg-po-surface-muted pl-9 pr-3 text-sm font-medium outline-none ring-1 ring-po-border focus:ring-2 focus:ring-po-primary/30"
                   />
                 </label>
@@ -696,42 +704,39 @@ export default function AdminUserBehaviorPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1020px] border-collapse text-left">
+              <table className="w-full min-w-[1040px] border-collapse text-left">
                 <thead>
-                  <tr className="bg-po-surface-muted/70 text-[10px] font-extrabold uppercase tracking-[0.1em] text-po-text-subtle">
-                    <th className="px-5 py-3.5">Người dùng</th>
-                    <th className="px-4 py-3.5">Phân khúc</th>
-                    <th className="px-4 py-3.5">Mức sử dụng</th>
-                    <th className="px-4 py-3.5">Tính năng</th>
-                    <th className="px-4 py-3.5">Điểm gắn kết</th>
-                    <th className="px-5 py-3.5">Hoạt động gần nhất</th>
+                  <tr className="bg-[#fff8f1] text-[10px] font-extrabold uppercase tracking-[0.1em] text-po-text-subtle">
+                    <th className="px-5 py-3">Người dùng</th>
+                    <th className="px-4 py-3">Phân khúc</th>
+                    <th className="px-4 py-3">Mức sử dụng</th>
+                    <th className="px-4 py-3">Tính năng</th>
+                    <th className="px-4 py-3">Điểm gắn kết</th>
+                    <th className="px-5 py-3">Hoạt động gần nhất</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-po-border/65">
+                <tbody className="divide-y divide-po-border/60">
                   {users.map((user) => (
-                    <tr key={user.userId} className="transition hover:bg-orange-50/35">
-                      <td className="px-5 py-4">
+                    <tr key={user.userId} className="transition hover:bg-orange-50/25">
+                      <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
-                          <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-[#173b33] text-xs font-extrabold text-white">{initials(user)}</span>
+                          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#173b33] text-xs font-extrabold text-white shadow-sm shadow-emerald-950/10">{initials(user)}</span>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="max-w-52 truncate text-sm font-extrabold text-po-text">{user.fullName || "Chưa cập nhật tên"}</p>
-                              {user.isSynthetic && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[9px] font-extrabold uppercase text-violet-700 ring-1 ring-violet-200">Dữ liệu demo</span>}
-                            </div>
-                            <p className="mt-0.5 max-w-64 truncate text-xs text-po-text-muted">{user.email}</p>
-                            <p className="mt-1 text-[10px] font-semibold text-po-text-subtle">{user.petNames.length ? `Thú cưng: ${user.petNames.join(", ")}` : "Chưa có thú cưng"}</p>
+                            <p className="max-w-56 truncate text-sm font-extrabold text-po-text">{displayUserName(user.fullName, user.userId)}</p>
+                            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-po-text-subtle">{displayUserCode(user.userId)}</p>
+                            <p className="mt-1 max-w-64 truncate text-[11px] font-semibold text-po-text-muted">{user.petNames.length ? `Thú cưng: ${user.petNames.join(", ")}` : "Chưa có thú cưng"}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4">
-                        <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[10px] font-extrabold ring-1", segmentStyles[user.segment] ?? segmentStyles.dormant)}>{user.segmentLabel}</span>
-                        <p className="mt-2 text-[11px] font-semibold text-po-text-muted">{user.activeDays} ngày hoạt động</p>
+                      <td className="px-4 py-3.5">
+                        <span className={cn("inline-flex min-w-[86px] justify-center rounded-xl px-2.5 py-1.5 text-[10px] font-extrabold ring-1", segmentStyles[user.segment] ?? segmentStyles.dormant)}>{user.segmentLabel}</span>
+                        <p className="mt-1.5 text-[11px] font-semibold text-po-text-muted">{user.activeDays} ngày hoạt động</p>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-3.5">
                         <p className="text-sm font-extrabold text-po-text">{formatNumber(user.totalActions)} hành động</p>
                         <p className="mt-1 text-[11px] text-po-text-muted">{user.sessions} phiên · {user.conversations} hội thoại</p>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-3.5">
                         <div className="flex flex-wrap gap-1.5">
                           <FeatureDot active={user.hasPet} label="Thú cưng" icon={PawPrint} />
                           <FeatureDot active={user.ownerMessages > 0} label="AI" icon={Bot} />
@@ -739,15 +744,15 @@ export default function AdminUserBehaviorPage() {
                           <FeatureDot active={user.remindersCreated > 0} label="Nhắc lịch" icon={BellRing} />
                         </div>
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="h-2 w-24 overflow-hidden rounded-full bg-po-surface-muted">
+                          <div className="h-2.5 w-28 overflow-hidden rounded-full bg-po-surface-muted">
                             <div className={cn("h-full rounded-full", user.engagementScore >= 70 ? "bg-emerald-600" : user.engagementScore >= 40 ? "bg-po-primary" : "bg-amber-400")} style={{ width: `${user.engagementScore}%` }} />
                           </div>
                           <span className="text-sm font-extrabold text-po-text">{user.engagementScore}</span>
                         </div>
                       </td>
-                      <td className="px-5 py-4">
+                      <td className="px-5 py-3.5">
                         <p className="text-xs font-bold text-po-text">{formatDateTime(user.lastActivityAt)}</p>
                         <p className="mt-1 text-[10px] font-semibold text-po-text-subtle">{user.isReturning ? "Đã quay lại" : user.totalActions > 0 ? "Mới hoạt động 1 ngày" : "Cần kích hoạt"}</p>
                       </td>

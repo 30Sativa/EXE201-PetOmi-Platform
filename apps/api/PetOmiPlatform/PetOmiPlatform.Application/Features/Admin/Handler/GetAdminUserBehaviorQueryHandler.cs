@@ -126,7 +126,7 @@ public sealed class GetAdminUserBehaviorQueryHandler
             DatasetLabel = origin switch
             {
                 "real" => "Người dùng thường",
-                "synthetic" => "Dữ liệu demo",
+                "synthetic" => "Tập phân tích nội bộ",
                 _ => "Toàn bộ người dùng"
             },
             FromDate = fromUtc.ToString("yyyy-MM-dd"),

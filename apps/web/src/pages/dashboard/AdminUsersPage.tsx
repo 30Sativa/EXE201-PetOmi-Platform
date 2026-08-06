@@ -9,6 +9,7 @@ import {
   ChevronsRight,
   Clock3,
   KeyRound,
+  Mail,
   Search,
   ShieldCheck,
   ToggleRight,
@@ -47,6 +48,22 @@ function formatDate(dateStr: string) {
   } catch {
     return dateStr
   }
+}
+
+function formatAge(dateOfBirth: string | null) {
+  if (!dateOfBirth) return "Chưa có tuổi"
+
+  const birthDate = new Date(`${dateOfBirth.slice(0, 10)}T00:00:00`)
+  if (Number.isNaN(birthDate.getTime())) return "Chưa có tuổi"
+
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const birthdayHasPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() >= birthDate.getDate())
+
+  if (!birthdayHasPassed) age -= 1
+  return age >= 0 ? `${age} tuổi` : "Chưa có tuổi"
 }
 
 type FilterTab = "all" | "active" | "inactive"
@@ -254,7 +271,13 @@ export default function AdminUsersPage() {
                           <p className="truncate text-sm font-bold text-po-text">
                             {user.fullName ?? "Chưa có tên"}
                           </p>
-                          <div className="mt-1.5 flex items-center gap-1.5">
+                          <div className="flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
+                            <Mail className="size-3 shrink-0" />
+                            <span className="truncate">{user.email}</span>
+                            <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
+                            <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
+                          </div>
+                          <div className="mt-0.5 flex items-center gap-1.5">
                             {user.emailVerified ? (
                               <span className="inline-flex items-center gap-1 text-[#FF8A1E]">
                                 <CheckCircle2 className="size-3" />
@@ -488,6 +511,11 @@ function UserMobileCard({
               <h3 className="truncate text-sm font-extrabold text-po-text">
                 {user.fullName ?? "Chưa có tên"}
               </h3>
+              <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-po-text-muted">
+                <span className="truncate">{user.email}</span>
+                <span aria-hidden="true" className="shrink-0 text-po-border">•</span>
+                <span className="shrink-0">{formatAge(user.dateOfBirth)}</span>
+              </p>
             </div>
             <StatusBadge
               variant={user.isActive ? "success" : "danger"}

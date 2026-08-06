@@ -43,6 +43,7 @@ public class AssignAdminRoleCommandHandler : IRequestHandler<AssignAdminRoleComm
             UserId = user.Id,
             Email = user.Email.Value,
             FullName = profile?.FullName,
+            DateOfBirth = profile?.DateOfBirth,
             EmailVerified = user.EmailVerified,
             IsActive = user.IsActive,
             IsProfileCompleted = user.IsProfileCompleted,

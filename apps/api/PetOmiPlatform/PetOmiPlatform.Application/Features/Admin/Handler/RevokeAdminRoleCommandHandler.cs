@@ -48,6 +48,7 @@ public class RevokeAdminRoleCommandHandler : IRequestHandler<RevokeAdminRoleComm
             UserId = targetUser.Id,
             Email = targetUser.Email.Value,
             FullName = profile?.FullName,
+            DateOfBirth = profile?.DateOfBirth,
             EmailVerified = targetUser.EmailVerified,
             IsActive = targetUser.IsActive,
             IsProfileCompleted = targetUser.IsProfileCompleted,

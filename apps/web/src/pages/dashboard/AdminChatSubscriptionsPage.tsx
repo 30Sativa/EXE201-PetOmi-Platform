@@ -414,6 +414,7 @@ function PersonBlock({
       </span>
       <div className="min-w-0">
         <p className="truncate text-sm font-extrabold text-po-text">{ownerName(name, email, fallback)}</p>
+        <p className="mt-0.5 truncate text-xs font-semibold text-po-text-muted">{email ?? "--"}</p>
       </div>
     </div>
   )

@@ -75,6 +75,7 @@ public static class ChatSubscriptionResponseMapper
             SubscriptionId = item.SubscriptionId,
             ScopeType = item.ScopeType,
             OwnerUserId = item.OwnerUserId,
+            OwnerName = item.OwnerName,
             OwnerEmail = item.OwnerEmail,
             PetId = item.PetId,
             PetName = item.PetName,
@@ -96,6 +97,7 @@ public static class ChatSubscriptionResponseMapper
         {
             PaymentId = item.PaymentId,
             OwnerUserId = item.OwnerUserId,
+            OwnerName = item.OwnerName,
             OwnerEmail = item.OwnerEmail,
             PetId = item.PetId,
             PetName = item.PetName,

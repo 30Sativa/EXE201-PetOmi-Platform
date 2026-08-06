@@ -92,6 +92,7 @@ export type AdminChatSubscriptionItemResponse = {
   subscriptionId: string
   scopeType: string
   ownerUserId?: string | null
+  ownerName?: string | null
   ownerEmail?: string | null
   petId?: string | null
   petName?: string | null
@@ -109,6 +110,7 @@ export type AdminChatSubscriptionItemResponse = {
 export type AdminChatSubscriptionPaymentItemResponse = {
   paymentId: string
   ownerUserId: string
+  ownerName?: string | null
   ownerEmail: string
   petId?: string | null
   petName?: string | null

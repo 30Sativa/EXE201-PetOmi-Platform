@@ -417,6 +417,7 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
                 SubscriptionId = s.SubscriptionId,
                 ScopeType = s.ScopeType,
                 OwnerUserId = s.OwnerUserId,
+                OwnerName = s.OwnerUser != null && s.OwnerUser.UserProfile != null ? s.OwnerUser.UserProfile.FullName : null,
                 OwnerEmail = s.OwnerUser != null ? s.OwnerUser.Email : null,
                 PetId = s.PetId,
                 PetName = s.Pet != null ? s.Pet.Name : null,
@@ -445,6 +446,7 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             {
                 PaymentId = p.PaymentId,
                 OwnerUserId = p.OwnerUserId,
+                OwnerName = p.OwnerUser.UserProfile != null ? p.OwnerUser.UserProfile.FullName : null,
                 OwnerEmail = p.OwnerUser.Email,
                 PetId = p.PetId,
                 PetName = p.Pet != null ? p.Pet.Name : null,

@@ -80,6 +80,7 @@ public class AdminChatSubscriptionItem
     public Guid SubscriptionId { get; set; }
     public string ScopeType { get; set; } = string.Empty;
     public Guid? OwnerUserId { get; set; }
+    public string? OwnerName { get; set; }
     public string? OwnerEmail { get; set; }
     public Guid? PetId { get; set; }
     public string? PetName { get; set; }
@@ -98,6 +99,7 @@ public class AdminChatSubscriptionPaymentItem
 {
     public Guid PaymentId { get; set; }
     public Guid OwnerUserId { get; set; }
+    public string? OwnerName { get; set; }
     public string OwnerEmail { get; set; } = string.Empty;
     public Guid? PetId { get; set; }
     public string? PetName { get; set; }

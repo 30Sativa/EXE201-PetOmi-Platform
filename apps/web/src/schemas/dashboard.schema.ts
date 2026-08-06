@@ -4,6 +4,12 @@ export const OwnerProfileSchema = z.object({
   fullName: z.string().min(2, "Tên phải có ít nhất 2 ký tự"),
   email: z.email("Email không hợp lệ"),
   phone: z.string().min(8, "Số điện thoại không hợp lệ"),
+  dateOfBirth: z
+    .string()
+    .refine(
+      (value) => !value || new Date(`${value}T00:00:00`) <= new Date(),
+      "Ngày sinh không thể ở tương lai",
+    ),
   city: z.string().min(2, "Vui lòng nhập thành phố"),
 })
 

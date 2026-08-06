@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
@@ -11,10 +11,18 @@ import { OwnerProfileSchema, type OwnerProfileForm } from "@/schemas/dashboard.s
 import { getErrorMessage } from "@/lib/utils"
 import { useAuth } from "@/contexts/AuthContext"
 
+function getTodayDateInputValue() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, "0")
+  const day = String(today.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
 export default function OwnerProfilePage() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
-  const [avatarUrl, setAvatarUrl] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [isAvatarUploading, setIsAvatarUploading] = useState(false)
   const queryClient = useQueryClient()
   const { user } = useAuth()
@@ -23,12 +31,6 @@ export default function OwnerProfilePage() {
     queryKey: ["profile"],
     queryFn: getProfileApi,
   })
-
-  useEffect(() => {
-    if (profile?.avatarUrl) {
-      setAvatarUrl(profile.avatarUrl)
-    }
-  }, [profile?.avatarUrl])
 
   const {
     register,
@@ -41,6 +43,7 @@ export default function OwnerProfilePage() {
           fullName: profile.fullName ?? "",
           email: user?.email ?? "",
           phone: profile.phone ?? "",
+          dateOfBirth: profile.dateOfBirth?.slice(0, 10) ?? "",
           city: profile.address ?? "",
         }
       : undefined,
@@ -66,8 +69,9 @@ export default function OwnerProfilePage() {
       await updateMutation.mutateAsync({
         fullName: data.fullName,
         phone: data.phone,
+        dateOfBirth: data.dateOfBirth || undefined,
         address: data.city,
-        avatarUrl: avatarUrl || undefined,
+        avatarUrl: avatarUrl === null ? undefined : avatarUrl,
       })
     } catch {
       setStatus("error")
@@ -76,6 +80,7 @@ export default function OwnerProfilePage() {
   }
 
   const isSaving = isSubmitting || updateMutation.isPending || isAvatarUploading
+  const currentAvatarUrl = avatarUrl ?? profile?.avatarUrl ?? ""
 
   if (isLoading) {
     return (
@@ -103,13 +108,13 @@ export default function OwnerProfilePage() {
         >
           <div className="flex flex-col items-center gap-4 text-center">
             <Avatar
-              src={avatarUrl || profile?.avatarUrl}
+              src={currentAvatarUrl}
               alt={profile?.fullName ?? "User"}
               size="xl"
               className="size-24 border-4 border-white shadow-sm"
             />
             <ImageUploadField
-              value={avatarUrl}
+              value={currentAvatarUrl}
               onChange={setAvatarUrl}
               imageType="user_avatar"
               disabled={isSaving}
@@ -189,6 +194,25 @@ export default function OwnerProfilePage() {
           </div>
 
           <div className="grid gap-2">
+            <label
+              className="text-sm font-semibold text-po-text"
+              htmlFor="owner-date-of-birth"
+            >
+              Ngày sinh
+            </label>
+            <input
+              id="owner-date-of-birth"
+              type="date"
+              max={getTodayDateInputValue()}
+              className="h-11 rounded-lg border border-po-border bg-white px-3 text-sm focus:border-po-primary focus:ring-2 focus:ring-po-primary/20"
+              {...register("dateOfBirth")}
+            />
+            {errors.dateOfBirth?.message && (
+              <p className="text-xs text-po-danger">{errors.dateOfBirth.message}</p>
+            )}
+          </div>
+
+          <div className="grid gap-2 md:col-span-2">
             <label
               className="text-sm font-semibold text-po-text"
               htmlFor="owner-city"

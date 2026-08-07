@@ -468,53 +468,6 @@ public class ChatSubscriptionRepository : IChatSubscriptionRepository
             .ToListAsync();
     }
 
-    public async Task<List<AdminPremiumPaymentExportItem>> GetAdminPaidPremiumPaymentsForExportAsync(
-        DateTime? fromPaidAtUtc,
-        DateTime? toPaidAtExclusiveUtc,
-        CancellationToken cancellationToken)
-    {
-        var query = _context.ChatSubscriptionPayments
-            .AsNoTracking()
-            .Where(payment =>
-                payment.Status == "Paid" &&
-                payment.Plan.Code == "premium" &&
-                payment.PaidAt.HasValue);
-
-        if (fromPaidAtUtc.HasValue)
-            query = query.Where(payment => payment.PaidAt >= fromPaidAtUtc.Value);
-
-        if (toPaidAtExclusiveUtc.HasValue)
-            query = query.Where(payment => payment.PaidAt < toPaidAtExclusiveUtc.Value);
-
-        return await query
-            .OrderByDescending(payment => payment.PaidAt)
-            .ThenByDescending(payment => payment.CreatedAt)
-            .Select(payment => new AdminPremiumPaymentExportItem
-            {
-                OwnerUserId = payment.OwnerUserId,
-                OwnerName = payment.OwnerUser.UserProfile != null
-                    ? payment.OwnerUser.UserProfile.FullName
-                    : null,
-                OwnerEmail = payment.OwnerUser.Email,
-                PlanName = payment.Plan.Name,
-                OriginalAmount = payment.OriginalAmount > 0
-                    ? payment.OriginalAmount
-                    : payment.Amount + payment.DiscountAmount,
-                DiscountAmount = payment.DiscountAmount,
-                Amount = payment.Amount,
-                Currency = payment.Currency,
-                VoucherCode = payment.VoucherCode,
-                Provider = payment.Provider,
-                PaymentReference = payment.PaymentReference,
-                ProviderTransactionId = payment.ProviderTransactionId,
-                PaidAt = payment.PaidAt!.Value,
-                CurrentSubscriptionExpiresAt = payment.Subscription != null
-                    ? payment.Subscription.ExpiresAt
-                    : null
-            })
-            .ToListAsync(cancellationToken);
-    }
-
     public async Task<List<ChatSubscriptionVoucherDomain>> GetAdminVouchersAsync(int take)
     {
         take = Math.Clamp(take, 1, 200);

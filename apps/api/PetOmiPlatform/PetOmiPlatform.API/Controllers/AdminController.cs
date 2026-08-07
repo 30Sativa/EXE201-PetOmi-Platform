@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PetOmiPlatform.API.Common;
 using PetOmiPlatform.API.Common.Authorization;
-using PetOmiPlatform.API.Common.Excel;
 using PetOmiPlatform.Application.Common.Models;
 using PetOmiPlatform.Application.Features.Admin.Commands;
 using PetOmiPlatform.Application.Features.Admin.DTOs.Request;
@@ -70,24 +69,6 @@ public class AdminController : BaseController
     }
 
     /// <summary>
-    /// Xuat Excel lich su giao dich AI Premium da thanh toan.
-    /// </summary>
-    [HttpGet("chat-subscriptions/export")]
-    public async Task<IActionResult> ExportPremiumPayments(
-        [FromQuery] DateOnly? fromDate,
-        [FromQuery] DateOnly? toDate)
-    {
-        var report = await Mediator.Send(new GetAdminPremiumPaymentsExportQuery(fromDate, toDate));
-        var content = AdminPremiumPaymentsWorkbookBuilder.Build(report);
-        var fileName = BuildPremiumPaymentsExportFileName(report);
-
-        return File(
-            content,
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            fileName);
-    }
-
-    /// <summary>
     /// Danh sach voucher giam gia cho goi chat AI Premium.
     /// </summary>
     [HttpGet("chat-subscriptions/vouchers")]
@@ -139,16 +120,6 @@ public class AdminController : BaseController
     {
         await Mediator.Send(new DeleteChatSubscriptionVoucherCommand(voucherId));
         return Ok(BaseResponse<object>.Ok(null, "Da xoa voucher chat AI."));
-    }
-
-    private static string BuildPremiumPaymentsExportFileName(
-        AdminPremiumPaymentsExportResponse report)
-    {
-        var range = report.FromDate.HasValue || report.ToDate.HasValue
-            ? $"{report.FromDate?.ToString("yyyyMMdd") ?? "dau"}-{report.ToDate?.ToString("yyyyMMdd") ?? "nay"}"
-            : "toan-bo";
-
-        return $"PetOmi_AI_Premium_{range}_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
     }
 
     /// <summary>

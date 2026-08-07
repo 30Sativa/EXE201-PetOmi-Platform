@@ -151,32 +151,6 @@ public class AdminChatSubscriptionsResponse
     public List<ChatSubscriptionVoucherResponse> Vouchers { get; set; } = new();
 }
 
-public class AdminPremiumPaymentsExportResponse
-{
-    public DateOnly? FromDate { get; set; }
-    public DateOnly? ToDate { get; set; }
-    public DateTime GeneratedAtUtc { get; set; }
-    public List<AdminPremiumPaymentExportItemResponse> Items { get; set; } = new();
-}
-
-public class AdminPremiumPaymentExportItemResponse
-{
-    public Guid OwnerUserId { get; set; }
-    public string? OwnerName { get; set; }
-    public string OwnerEmail { get; set; } = string.Empty;
-    public string PlanName { get; set; } = string.Empty;
-    public decimal OriginalAmount { get; set; }
-    public decimal DiscountAmount { get; set; }
-    public decimal Amount { get; set; }
-    public string Currency { get; set; } = string.Empty;
-    public string? VoucherCode { get; set; }
-    public string Provider { get; set; } = string.Empty;
-    public string PaymentReference { get; set; } = string.Empty;
-    public string? ProviderTransactionId { get; set; }
-    public DateTime PaidAt { get; set; }
-    public DateTime? CurrentSubscriptionExpiresAt { get; set; }
-}
-
 public class ChatSubscriptionVoucherRequest
 {
     public string Code { get; set; } = string.Empty;

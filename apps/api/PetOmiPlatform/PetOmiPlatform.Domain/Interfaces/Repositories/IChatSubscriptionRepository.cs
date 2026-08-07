@@ -34,10 +34,6 @@ public interface IChatSubscriptionRepository
     Task<int> CountPaidPaymentsAsync(Guid ownerUserId);
     Task<List<AdminChatSubscriptionItem>> GetAdminSubscriptionsAsync(int take);
     Task<List<AdminChatSubscriptionPaymentItem>> GetAdminPaymentsAsync(int take);
-    Task<List<AdminPremiumPaymentExportItem>> GetAdminPaidPremiumPaymentsForExportAsync(
-        DateTime? fromPaidAtUtc,
-        DateTime? toPaidAtExclusiveUtc,
-        CancellationToken cancellationToken);
     Task<List<ChatSubscriptionVoucherDomain>> GetAdminVouchersAsync(int take);
     Task<ChatSubscriptionVoucherDomain?> GetVoucherByIdAsync(Guid voucherId);
     Task<ChatSubscriptionVoucherDomain?> GetVoucherByCodeAsync(string code);
@@ -121,22 +117,4 @@ public class AdminChatSubscriptionPaymentItem
     public DateTime? PaidAt { get; set; }
     public DateTime ExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; }
-}
-
-public class AdminPremiumPaymentExportItem
-{
-    public Guid OwnerUserId { get; set; }
-    public string? OwnerName { get; set; }
-    public string OwnerEmail { get; set; } = string.Empty;
-    public string PlanName { get; set; } = string.Empty;
-    public decimal OriginalAmount { get; set; }
-    public decimal DiscountAmount { get; set; }
-    public decimal Amount { get; set; }
-    public string Currency { get; set; } = string.Empty;
-    public string? VoucherCode { get; set; }
-    public string Provider { get; set; } = string.Empty;
-    public string PaymentReference { get; set; } = string.Empty;
-    public string? ProviderTransactionId { get; set; }
-    public DateTime PaidAt { get; set; }
-    public DateTime? CurrentSubscriptionExpiresAt { get; set; }
 }

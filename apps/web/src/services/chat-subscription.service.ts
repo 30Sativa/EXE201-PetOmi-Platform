@@ -37,6 +37,21 @@ export const getAdminChatSubscriptionsApi = async (
   return unwrapResponse<AdminChatSubscriptionsResponse>(response)
 }
 
+export const exportAdminPremiumPaymentsApi = async (filters: {
+  fromDate?: string
+  toDate?: string
+}): Promise<Blob> => {
+  const response = await api.get("/admin/chat-subscriptions/export", {
+    params: {
+      fromDate: filters.fromDate || undefined,
+      toDate: filters.toDate || undefined,
+    },
+    responseType: "blob",
+  })
+
+  return response.data as Blob
+}
+
 export const getAdminChatSubscriptionVouchersApi = async (
   take = 100,
 ): Promise<ChatSubscriptionVoucherResponse[]> => {

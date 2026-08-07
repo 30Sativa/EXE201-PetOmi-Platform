@@ -3,6 +3,7 @@ import {
   CircleCheckBig,
   Clock3,
   Crown,
+  Download,
   Eye,
   Layers3,
   Loader2,
@@ -15,11 +16,15 @@ import {
 import type { LucideIcon } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { toast } from "sonner"
 
 import StatusBadge from "@/components/ui/StatusBadge"
 import SelectMenu from "@/components/ui/SelectMenu"
 import { maskEmail } from "@/lib/format"
-import { getAdminChatSubscriptionsApi } from "@/services/chat-subscription.service"
+import {
+  exportAdminPremiumPaymentsApi,
+  getAdminChatSubscriptionsApi,
+} from "@/services/chat-subscription.service"
 import type {
   AdminChatSubscriptionItemResponse,
   AdminChatSubscriptionPaymentItemResponse,
@@ -91,6 +96,9 @@ export default function AdminChatSubscriptionsPage() {
   const [subscriptionPage, setSubscriptionPage] = useState(1)
   const [paymentPage, setPaymentPage] = useState(1)
   const [paymentSort, setPaymentSort] = useState<PaymentSort>("newest")
+  const [exportFromDate, setExportFromDate] = useState("")
+  const [exportToDate, setExportToDate] = useState("")
+  const [isExporting, setIsExporting] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<AdminChatSubscriptionPaymentItemResponse | null>(null)
 
   const { data, isLoading } = useQuery({
@@ -129,6 +137,41 @@ export default function AdminChatSubscriptionsPage() {
     (currentPaymentPage - 1) * paymentPageSize,
     currentPaymentPage * paymentPageSize,
   )
+
+  const handleExportPremiumPayments = async () => {
+    if (exportFromDate && exportToDate && exportFromDate > exportToDate) {
+      toast.error("Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.")
+      return
+    }
+
+    setIsExporting(true)
+
+    try {
+      const file = await exportAdminPremiumPaymentsApi({
+        fromDate: exportFromDate || undefined,
+        toDate: exportToDate || undefined,
+      })
+      const downloadUrl = URL.createObjectURL(file)
+      const link = document.createElement("a")
+      const rangeLabel =
+        exportFromDate || exportToDate
+          ? `${exportFromDate || "tu-dau"}-${exportToDate || "den-nay"}`
+          : "toan-bo"
+
+      link.href = downloadUrl
+      link.download = `PetOmi_AI_Premium_${rangeLabel}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000)
+      toast.success("Đã xuất danh sách giao dịch AI Premium.")
+    } catch (error) {
+      console.error("Export AI Premium payments failed", error)
+      toast.error("Không thể xuất file Excel. Vui lòng thử lại.")
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   return (
     <div className="grid gap-5 md:gap-6">
@@ -239,6 +282,48 @@ export default function AdminChatSubscriptionsPage() {
                 <div className="rounded-2xl bg-po-primary-soft px-4 py-3 text-sm font-extrabold text-po-primary ring-1 ring-orange-100">
                   {formatCurrency(paidRevenue)}
                 </div>
+              </div>
+            </div>
+            <div className="mt-4 flex flex-col gap-3 rounded-[20px] border border-po-border bg-po-surface-muted/30 p-4 xl:flex-row xl:items-end xl:justify-between">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-xs font-extrabold text-po-text-muted">
+                  Từ ngày
+                  <input
+                    type="date"
+                    value={exportFromDate}
+                    max={exportToDate || undefined}
+                    onChange={(event) => setExportFromDate(event.target.value)}
+                    className="h-11 rounded-2xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/15"
+                  />
+                </label>
+                <label className="grid gap-1.5 text-xs font-extrabold text-po-text-muted">
+                  Đến ngày
+                  <input
+                    type="date"
+                    value={exportToDate}
+                    min={exportFromDate || undefined}
+                    onChange={(event) => setExportToDate(event.target.value)}
+                    className="h-11 rounded-2xl border border-po-border bg-white px-3 text-sm font-semibold text-po-text outline-none transition focus:border-po-primary focus:ring-2 focus:ring-po-primary/15"
+                  />
+                </label>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <p className="text-xs font-semibold leading-5 text-po-text-muted">
+                  Để trống để xuất toàn bộ giao dịch Premium đã thanh toán, gồm cả voucher 0đ.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleExportPremiumPayments}
+                  disabled={isExporting}
+                  className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#14372f] px-4 text-sm font-extrabold text-white transition hover:bg-[#1c4a40] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isExporting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Download className="size-4" />
+                  )}
+                  {isExporting ? "Đang xuất..." : "Xuất Excel"}
+                </button>
               </div>
             </div>
             <div className="mt-5 grid gap-3">
